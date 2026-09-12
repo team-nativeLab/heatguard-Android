@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">HeartGuard</string>
+    <string name="common_menu">메뉴</string>
+    <string name="common_notifications">알림</string>
+    <string name="common_confirm">확인</string>
+    <string name="record_type_selection_title">기록 유형을 선택하세요</string>
+    <string name="record_temperature_title">온도계 사진</string>
+    <string name="record_temperature_description">온도/습도 입력 후 체감온도 계산</string>
+    <string name="record_work_photo_title">작업 사진</string>
+    <string name="record_work_photo_description">작업 중 사진을 1~2장 업로드</string>
+    <string name="record_rest_photo_title">휴식 사진</string>
+    <string name="record_rest_photo_description">휴식 중 사진을 1~2장 업로드</string>
+    <string name="record_type_selection_content_description">선택된 기록 유형</string>
 </resources>
