@@ -35,7 +35,9 @@ fun TemperatureUnavailableRow(
                 fontWeight = FontWeight.Bold,
             ),
         )
-        Column {
+        Column(
+            modifier = Modifier.weight(1f),
+        ) {
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,

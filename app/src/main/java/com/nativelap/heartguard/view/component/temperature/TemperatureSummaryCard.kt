@@ -1,8 +1,9 @@
 package com.nativelap.heartguard.view.component.temperature
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,25 +51,37 @@ fun TemperatureSummaryCard(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
-            Row(
+            BoxWithConstraints(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
-                TemperatureSummaryMetric(
-                    label = currentTemperatureLabel,
-                    value = currentTemperature,
-                    modifier = Modifier.weight(1f),
-                )
-                TemperatureSummaryMetric(
-                    label = humidityLabel,
-                    value = humidity,
-                    modifier = Modifier.weight(1f),
-                )
-                TemperatureSummaryMetric(
-                    label = feelsLikeLabel,
-                    value = feelsLikeTemperature,
-                    modifier = Modifier.weight(1f),
-                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    maxItemsInEachRow = if (
+                        maxWidth < HeartGuardComponentSize.MetricThreeColumnBreakpoint
+                    ) {
+                        1
+                    } else {
+                        3
+                    },
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                ) {
+                    TemperatureSummaryMetric(
+                        label = currentTemperatureLabel,
+                        value = currentTemperature,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TemperatureSummaryMetric(
+                        label = humidityLabel,
+                        value = humidity,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TemperatureSummaryMetric(
+                        label = feelsLikeLabel,
+                        value = feelsLikeTemperature,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }

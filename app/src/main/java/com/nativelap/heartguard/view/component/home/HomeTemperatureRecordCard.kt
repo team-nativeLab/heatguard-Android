@@ -1,7 +1,9 @@
 package com.nativelap.heartguard.view.component.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -50,16 +53,28 @@ fun HomeTemperatureRecordCard(
                     onCheckedChange = onAutomaticRecordChange,
                 )
             }
-            Row(
+            BoxWithConstraints(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
             ) {
-                metrics.take(3).forEach { metric ->
-                    WeatherMetric(
-                        metricLabel = metric.label,
-                        metricValue = metric.value,
-                        modifier = Modifier.weight(1f),
-                    )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    maxItemsInEachRow = if (
+                        maxWidth < HeartGuardComponentSize.MetricThreeColumnBreakpoint
+                    ) {
+                        1
+                    } else {
+                        3
+                    },
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                ) {
+                    metrics.take(3).forEach { metric ->
+                        WeatherMetric(
+                            metricLabel = metric.label,
+                            metricValue = metric.value,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }

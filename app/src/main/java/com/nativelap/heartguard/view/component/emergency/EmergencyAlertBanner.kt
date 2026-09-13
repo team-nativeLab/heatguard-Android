@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.component.emergency
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -44,7 +45,9 @@ fun EmergencyAlertBanner(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
             )
-            androidx.compose.foundation.layout.Column {
+            Column(
+                modifier = Modifier.weight(1f),
+            ) {
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.error,
