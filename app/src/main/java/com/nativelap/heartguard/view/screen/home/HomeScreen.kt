@@ -56,6 +56,7 @@ fun HomeScreen(
     onManagerClick: () -> Unit,
     onSiteClick: () -> Unit,
     onTeamClick: () -> Unit,
+    onTemperatureRecordClick: () -> Unit = {},
     onWorkPhotoClick: () -> Unit,
     onRestPhotoClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -143,6 +144,7 @@ fun HomeScreen(
                     isAutomaticRecordEnabled = isAutomaticRecordEnabled,
                     onAutomaticRecordChange = onAutomaticRecordChange,
                     metrics = temperatureMetrics,
+                    onClick = onTemperatureRecordClick,
                 )
             }
 

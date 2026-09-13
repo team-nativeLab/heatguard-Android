@@ -28,10 +28,12 @@ fun HomeTemperatureRecordCard(
     isAutomaticRecordEnabled: Boolean,
     onAutomaticRecordChange: (Boolean) -> Unit,
     metrics: List<WeatherMetricValue>,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
