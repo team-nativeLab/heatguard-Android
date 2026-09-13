@@ -22,13 +22,13 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardExtraColors
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
@@ -66,7 +66,11 @@ fun RecordTypeOptionCard(
             MaterialTheme.colorScheme.surface
         },
         border = BorderStroke(
-            width = if (isSelected) 2.dp else HeartGuardSpacing.Hairline,
+            width = if (isSelected) {
+                HeartGuardBorderWidth.RecordTypeSelection
+            } else {
+                HeartGuardSpacing.Hairline
+            },
             color = if (isSelected) {
                 MaterialTheme.colorScheme.primary
             } else {

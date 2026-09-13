@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -50,7 +50,7 @@ fun AuthTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.Compact)
-                .heightIn(min = 45.dp),
+                .heightIn(min = HeartGuardComponentSize.TextFieldHeight),
             placeholder = { Text(text = placeholder) },
             singleLine = true,
             isError = isError,

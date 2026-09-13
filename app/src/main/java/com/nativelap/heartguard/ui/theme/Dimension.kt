@@ -57,14 +57,18 @@ object HeartGuardComponentSize {
     val CameraAction = 64.dp
     val WeatherCardMinHeight = 244.dp
     val WeatherWideLayoutBreakpoint = 300.dp
+    val MetricThreeColumnBreakpoint = 280.dp
+    val CompactLayoutBreakpoint = 360.dp
     val RecordTypeOptionHeight = 143.dp
     val PhotoSelectionHeight = 313.dp
+    val PhotoMemoMinHeight = 96.dp
     val TemperatureSummaryHeight = 138.dp
     val HomeActionCardHeight = 148.dp
 }
 
 object HeartGuardBorderWidth {
     val Checkbox = 2.dp
+    val RecordTypeSelection = 2.dp
     val EmergencyIndicator = 8.dp
     val TimelineRail = 1.dp
 }

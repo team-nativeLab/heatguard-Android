@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -201,7 +202,7 @@ private fun WeatherStatusSummary(
     }
 }
 
-/** 세부 날씨 지표가 부모 폭을 균등하게 나눠 사용하도록 구성한다. */
+/** 세부 날씨 지표를 넓은 화면에서는 3열, 좁은 화면에서는 세로로 재배치한다. */
 @Composable
 private fun WeatherMetrics(
     currentTemperature: String,
@@ -212,25 +213,37 @@ private fun WeatherMetrics(
     humidityLabel: String,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {
-        WeatherMetric(
-            metricLabel = currentTemperatureLabel,
-            metricValue = currentTemperature,
-            modifier = Modifier.weight(1f),
-        )
-        WeatherMetric(
-            metricLabel = feelsLikeTemperatureLabel,
-            metricValue = feelsLikeTemperature,
-            modifier = Modifier.weight(1f),
-        )
-        WeatherMetric(
-            metricLabel = humidityLabel,
-            metricValue = humidity,
-            modifier = Modifier.weight(1f),
-        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            maxItemsInEachRow = if (
+                maxWidth < HeartGuardComponentSize.MetricThreeColumnBreakpoint
+            ) {
+                1
+            } else {
+                3
+            },
+            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+        ) {
+            WeatherMetric(
+                metricLabel = currentTemperatureLabel,
+                metricValue = currentTemperature,
+                modifier = Modifier.weight(1f),
+            )
+            WeatherMetric(
+                metricLabel = feelsLikeTemperatureLabel,
+                metricValue = feelsLikeTemperature,
+                modifier = Modifier.weight(1f),
+            )
+            WeatherMetric(
+                metricLabel = humidityLabel,
+                metricValue = humidity,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
