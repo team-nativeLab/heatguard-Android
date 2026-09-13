@@ -1,4 +1,4 @@
-package com.nativelap.heartguard.view.component.auth
+package com.nativelap.heartguard.view.component.temperature
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,41 +16,37 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 인증 흐름에서 가장 중요한 제출 동작을 나타내는 기본 버튼이다. */
+/** 온도·사진 기록 카드 하단에서 저장 동작을 일관된 primary 버튼으로 제공한다. */
 @Composable
-fun AuthPrimaryButton(
+fun RecordSaveButton(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isEnabled: Boolean = true,
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
-        enabled = isEnabled,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.AuthButtonHeight),
+            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
             disabledContainerColor = MaterialTheme.extraColors.disabledContent,
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary,
         ),
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun AuthPrimaryButtonPreview() {
+private fun RecordSaveButtonPreview() {
     HeartGuardTheme {
-        AuthPrimaryButton(title = "로그인", onClick = {})
+        RecordSaveButton(title = "저장하기", onClick = {})
     }
 }

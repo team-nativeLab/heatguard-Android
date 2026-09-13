@@ -8,16 +8,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.input.VisualTransformation
-import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 로그인과 회원가입에서 사용하는 라벨-입력-오류 메시지 묶음이다. */
 @Composable
@@ -48,15 +50,41 @@ fun AuthTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.Compact)
-                .heightIn(min = HeartGuardComponentSize.TextFieldHeight),
+                .heightIn(min = 45.dp),
             placeholder = { Text(text = placeholder) },
             singleLine = true,
             isError = isError,
             keyboardOptions = keyboardOptions,
             visualTransformation = visualTransformation,
             shape = RoundedCornerShape(HeartGuardRadius.Button),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
+                unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
+                errorContainerColor = MaterialTheme.extraColors.alertContainer,
+                focusedBorderColor = if (isError) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    androidx.compose.ui.graphics.Color.Transparent
+                },
+                unfocusedBorderColor = if (isError) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    androidx.compose.ui.graphics.Color.Transparent
+                },
+                errorBorderColor = MaterialTheme.colorScheme.error,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                errorPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
             supportingText = supportingText?.let { message ->
-                { Text(text = message) }
+                {
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             },
         )
     }
