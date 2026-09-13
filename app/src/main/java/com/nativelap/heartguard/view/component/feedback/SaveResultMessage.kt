@@ -50,7 +50,7 @@ fun SaveResultMessage(
             Image(
                 painter = resultIconPainter,
                 contentDescription = resultIconContentDescription,
-                modifier = Modifier.size(HeartGuardIconSize.Weather),
+                modifier = Modifier.size(HeartGuardIconSize.Result),
             )
             Text(
                 text = title,

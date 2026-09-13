@@ -18,6 +18,12 @@ data class HeartGuardExtraColors(
     val infoContainer: Color,
     val cameraContainer: Color,
     val disabledContent: Color,
+    val disabledText: Color,
+    val authInputBackground: Color,
+    val sheetBackground: Color,
+    val photoContainer: Color,
+    val alertContainer: Color,
+    val successContainer: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -60,6 +66,12 @@ private val cardBorderColor = Color(0xFFE5E5E5)
 private val infoContainerColor = Color(0xFFEAF3FF)
 private val cameraContainerColor = Color(0xFFEAF3FF)
 private val disabledContentColor = Color(0xFFBDBDBD)
+private val disabledTextColor = Color(0xFFAEB3C4)
+private val authInputBackgroundColor = Color(0xFFF7FAFF)
+private val sheetBackgroundColor = Color(0xFFF9FBFC)
+private val photoContainerColor = Color(0xFFE7F2FF)
+private val alertContainerColor = Color(0xFFFFEEEE)
+private val successContainerColor = Color(0xFFE2F5EA)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -96,6 +108,12 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     infoContainer = infoContainerColor,
     cameraContainer = cameraContainerColor,
     disabledContent = disabledContentColor,
+    disabledText = disabledTextColor,
+    authInputBackground = authInputBackgroundColor,
+    sheetBackground = sheetBackgroundColor,
+    photoContainer = photoContainerColor,
+    alertContainer = alertContainerColor,
+    successContainer = successContainerColor,
 )
 
 /**

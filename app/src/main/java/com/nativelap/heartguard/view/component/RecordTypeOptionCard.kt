@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.res.painterResource
@@ -51,16 +52,27 @@ fun RecordTypeOptionCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.RecordOptionMinHeight)
-            .clip(RoundedCornerShape(HeartGuardRadius.Card))
+            .heightIn(min = HeartGuardComponentSize.RecordTypeOptionHeight)
+            .clip(RoundedCornerShape(HeartGuardRadius.LargeCard))
             .selectable(
                 selected = isSelected,
                 role = Role.RadioButton,
                 onClick = onClick,
             ),
-        shape = RoundedCornerShape(HeartGuardRadius.Card),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(HeartGuardSpacing.Hairline, extraColors.cardBorder),
+        shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else HeartGuardSpacing.Hairline,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                extraColors.cardBorder
+            },
+        ),
     ) {
         Row(
             modifier = Modifier

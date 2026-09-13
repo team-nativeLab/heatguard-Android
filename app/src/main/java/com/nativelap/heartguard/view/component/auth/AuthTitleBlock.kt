@@ -1,0 +1,58 @@
+package com.nativelap.heartguard.view.component.auth
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+
+/** 로그인·회원가입 화면의 큰 제목과 보조 설명을 하나의 수직 블록으로 제공한다. */
+@Composable
+fun AuthTitleBlock(
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = HeartGuardFontSize.AuthTitle,
+            ),
+        )
+        Text(
+            text = description,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = HeartGuardSpacing.Compact),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 402)
+@Composable
+private fun AuthTitleBlockPreview() {
+    HeartGuardTheme {
+        AuthTitleBlock(
+            title = "폭염가드 로그인",
+            description = "현장 안전 관리를 시작해 보세요",
+        )
+    }
+}
