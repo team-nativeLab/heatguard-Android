@@ -40,11 +40,12 @@ fun WeatherStatusCard(
     weatherContentDescription: String,
     statusTitle: String,
     currentTemperature: String,
-    currentTemperatureLabel: String,
     feelsLikeTemperature: String,
     feelsLikeTemperatureLabel: String,
     humidity: String,
     humidityLabel: String,
+    weatherValue: String,
+    weatherLabel: String,
     temperatureDeltaLabel: String,
     temperatureDelta: String,
     riskLabel: String,
@@ -89,13 +90,19 @@ fun WeatherStatusCard(
                             modifier = Modifier.weight(0.42f),
                         )
                     }
+                    WeatherSummaryLine(
+                        humidityLabel = humidityLabel,
+                        humidity = humidity,
+                        feelsLikeTemperatureLabel = feelsLikeTemperatureLabel,
+                        feelsLikeTemperature = feelsLikeTemperature,
+                    )
                     WeatherMetrics(
-                        currentTemperature = currentTemperature,
-                        currentTemperatureLabel = currentTemperatureLabel,
                         feelsLikeTemperature = feelsLikeTemperature,
                         feelsLikeTemperatureLabel = feelsLikeTemperatureLabel,
                         humidity = humidity,
                         humidityLabel = humidityLabel,
+                        weatherValue = weatherValue,
+                        weatherLabel = weatherLabel,
                     )
                 }
             } else {
@@ -125,13 +132,19 @@ fun WeatherStatusCard(
                                 .weight(0.68f),
                         )
                     }
+                    WeatherSummaryLine(
+                        humidityLabel = humidityLabel,
+                        humidity = humidity,
+                        feelsLikeTemperatureLabel = feelsLikeTemperatureLabel,
+                        feelsLikeTemperature = feelsLikeTemperature,
+                    )
                     WeatherMetrics(
-                        currentTemperature = currentTemperature,
-                        currentTemperatureLabel = currentTemperatureLabel,
                         feelsLikeTemperature = feelsLikeTemperature,
                         feelsLikeTemperatureLabel = feelsLikeTemperatureLabel,
                         humidity = humidity,
                         humidityLabel = humidityLabel,
+                        weatherValue = weatherValue,
+                        weatherLabel = weatherLabel,
                     )
                 }
             }
@@ -202,15 +215,42 @@ private fun WeatherStatusSummary(
     }
 }
 
+/**
+ * Figma 02_홈_리디자인: 온도 강조 영역 아래 "습도 55% · 체감온도 40.5°C" 형태의
+ * 한 줄 요약을 보여준다.
+ *
+ */
+@Composable
+private fun WeatherSummaryLine(
+    humidityLabel: String,
+    humidity: String,
+    feelsLikeTemperatureLabel: String,
+    feelsLikeTemperature: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = androidx.compose.ui.res.stringResource(
+            R.string.home_weather_summary_format,
+            humidityLabel,
+            humidity,
+            feelsLikeTemperatureLabel,
+            feelsLikeTemperature,
+        ),
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodyMedium,
+    )
+}
+
 /** 세부 날씨 지표를 넓은 화면에서는 3열, 좁은 화면에서는 세로로 재배치한다. */
 @Composable
 private fun WeatherMetrics(
-    currentTemperature: String,
-    currentTemperatureLabel: String,
     feelsLikeTemperature: String,
     feelsLikeTemperatureLabel: String,
     humidity: String,
     humidityLabel: String,
+    weatherValue: String,
+    weatherLabel: String,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(
@@ -229,8 +269,8 @@ private fun WeatherMetrics(
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
             WeatherMetric(
-                metricLabel = currentTemperatureLabel,
-                metricValue = currentTemperature,
+                metricLabel = humidityLabel,
+                metricValue = humidity,
                 modifier = Modifier.weight(1f),
             )
             WeatherMetric(
@@ -239,8 +279,8 @@ private fun WeatherMetrics(
                 modifier = Modifier.weight(1f),
             )
             WeatherMetric(
-                metricLabel = humidityLabel,
-                metricValue = humidity,
+                metricLabel = weatherLabel,
+                metricValue = weatherValue,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -255,14 +295,15 @@ private fun WeatherStatusCardPreview() {
             weatherPainter = androidx.compose.ui.res.painterResource(R.drawable.weather_sunny),
             weatherContentDescription = "맑음",
             statusTitle = "현재 현장 날씨",
-            currentTemperature = "37℃",
-            currentTemperatureLabel = "현재 온도",
-            feelsLikeTemperature = "40℃",
+            currentTemperature = "37°C",
+            feelsLikeTemperature = "40°C",
             feelsLikeTemperatureLabel = "체감온도",
             humidity = "65%",
             humidityLabel = "습도",
+            weatherValue = "맑음",
+            weatherLabel = "날씨",
             temperatureDeltaLabel = "온도 변화",
-            temperatureDelta = "+2℃",
+            temperatureDelta = "+2°C",
             riskLabel = "주의",
             isTemperatureIncreasing = true,
         )

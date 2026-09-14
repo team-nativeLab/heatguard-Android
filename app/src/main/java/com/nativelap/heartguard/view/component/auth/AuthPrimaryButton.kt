@@ -32,7 +32,7 @@ fun AuthPrimaryButton(
             .heightIn(min = HeartGuardComponentSize.AuthButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
+            containerColor = MaterialTheme.extraColors.authPrimary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             disabledContainerColor = MaterialTheme.extraColors.disabledContent,
             disabledContentColor = MaterialTheme.colorScheme.onPrimary,

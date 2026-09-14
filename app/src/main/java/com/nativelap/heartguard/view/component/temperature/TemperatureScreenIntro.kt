@@ -1,4 +1,4 @@
-package com.nativelap.heartguard.view.component.photo
+package com.nativelap.heartguard.view.component.temperature
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 
-/** 사진 기록 화면의 제목과 안내 문구를 Figma의 상단 소개 영역으로 표현한다. */
+/** 온도 기록 화면의 제목과 입력 목적을 안내한다. */
 @Composable
-fun PhotoScreenIntro(
+fun TemperatureScreenIntro(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
@@ -22,7 +22,6 @@ fun PhotoScreenIntro(
     ) {
         Text(
             text = title,
-            modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
@@ -30,9 +29,7 @@ fun PhotoScreenIntro(
         )
         Text(
             text = description,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.Compact),
+            modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
         )

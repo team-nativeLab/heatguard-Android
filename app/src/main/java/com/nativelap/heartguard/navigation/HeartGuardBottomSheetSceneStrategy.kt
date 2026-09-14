@@ -16,6 +16,8 @@ import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+import com.nativelap.heartguard.core.component.overlay.ApplyDialogWindowBackgroundBlur
+import com.nativelap.heartguard.ui.theme.HeartGuardOverlayBlur
 
 /** 기록 유형 선택 목적지를 Material 3 ModalBottomSheet overlay로 표시한다. */
 internal class HeartGuardBottomSheetSceneStrategy : SceneStrategy<NavKey> {
@@ -76,6 +78,10 @@ private data class HeartGuardBottomSheetScene(
                 }
             }
         }
+
+        ApplyDialogWindowBackgroundBlur(
+            blurRadius = HeartGuardOverlayBlur.FigmaBackdrop,
+        )
 
         ModalBottomSheet(
             onDismissRequest = onBack,

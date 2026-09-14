@@ -52,26 +52,33 @@ internal fun HeartGuardRecordTypeSelectionRoute(
     )
 }
 
-/** 온도 입력 상태를 보유하고 저장 이벤트를 상위 Navigation에 전달하는 Route이다. */
+/** 온도·습도 입력 상태를 보유하고 온도 기록 Screen의 로컬 이벤트를 연결한다. */
 @Composable
 internal fun HeartGuardTemperatureRecordRoute(
+    onFieldPhotoClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
     var temperatureText by rememberSaveable {
-        mutableStateOf("37")
+        mutableStateOf("47.5")
     }
-    var isThermometerInstalled by rememberSaveable {
-        mutableStateOf(true)
+    var humidityText by rememberSaveable {
+        mutableStateOf("55")
+    }
+    var isManualInputEnabled by rememberSaveable {
+        mutableStateOf(false)
     }
 
     TemperatureRecordScreen(
-        currentTemperature = "37℃",
-        humidity = "65%",
-        feelsLikeTemperature = "40℃",
+        currentTemperature = "47.5°C",
+        humidity = "55%",
+        feelsLikeTemperature = "40.5°C",
         temperatureText = temperatureText,
-        isThermometerInstalled = isThermometerInstalled,
+        humidityText = humidityText,
+        isManualInputEnabled = isManualInputEnabled,
         onTemperatureChange = { temperatureText = it },
-        onThermometerInstalledChange = { isThermometerInstalled = it },
+        onHumidityChange = { humidityText = it },
+        onManualInputChange = { isManualInputEnabled = it },
+        onFieldPhotoClick = onFieldPhotoClick,
         onSaveClick = onSaveClick,
     )
 }

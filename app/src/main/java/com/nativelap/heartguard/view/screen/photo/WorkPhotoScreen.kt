@@ -1,37 +1,33 @@
 package com.nativelap.heartguard.view.screen.photo
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-import com.nativelap.heartguard.view.component.photo.PhotoCaptureButton
+import com.nativelap.heartguard.view.component.HeartGuardHeader
 import com.nativelap.heartguard.view.component.photo.PhotoMemoField
-import com.nativelap.heartguard.view.component.photo.PhotoPreview
 import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
 import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
+import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
 import com.nativelap.heartguard.view.component.photo.PhotoUploadButton
 
-/** 작업 사진 기록의 촬영 전·촬영 후 상태를 하나의 조합 화면으로 표현한다. */
+/** 작업 전·중 사진 선택과 메모 입력을 Figma 화면 흐름으로 조합한다. */
 @Composable
 fun WorkPhotoScreen(
     memo: String,
-    photoPainter: Painter?,
+    selectedPhotoCount: Int,
     onCaptureClick: () -> Unit,
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
@@ -47,33 +43,35 @@ fun WorkPhotoScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(HeartGuardSpacing.ScreenHorizontal),
+                .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
-            if (photoPainter == null) {
-                PhotoSelectionCard(
-                    title = stringResource(R.string.photo_take_instruction),
-                    description = stringResource(R.string.photo_work_instruction),
-                    cameraPainter = painterResource(R.drawable.record_camera),
-                    cameraContentDescription = stringResource(R.string.photo_capture),
-                    onClick = onCaptureClick,
-                    selectedPhotoCountLabel = stringResource(R.string.photo_count_empty),
-                )
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    PhotoCaptureButton(
-                        cameraPainter = painterResource(R.drawable.record_camera),
-                        contentDescription = stringResource(R.string.photo_capture),
-                        onClick = onCaptureClick,
-                    )
-                }
-            } else {
-                PhotoPreview(
-                    photoPainter = photoPainter,
-                    contentDescription = stringResource(R.string.photo_preview),
-                )
+            HeartGuardHeader(
+                title = stringResource(R.string.brand_name),
+                menuPainter = painterResource(R.drawable.menu_hamburger),
+                notificationPainter = painterResource(R.drawable.notification_bell),
+                onMenuClick = {},
+                onNotificationClick = {},
+            )
+
+            PhotoScreenIntro(
+                title = stringResource(R.string.photo_work_screen_title),
+                description = stringResource(R.string.photo_work_screen_description),
+            )
+
+            PhotoSelectionCard(
+                title = stringResource(R.string.photo_selection_action_title),
+                description = if (selectedPhotoCount == 0) {
+                    stringResource(R.string.photo_selection_empty)
+                } else {
+                    stringResource(R.string.photo_selected_count, selectedPhotoCount)
+                },
+                cameraPainter = painterResource(R.drawable.record_camera),
+                cameraContentDescription = stringResource(R.string.photo_capture),
+                onClick = onCaptureClick,
+            )
+
+            if (selectedPhotoCount > 0) {
                 PhotoRetakeButton(
                     title = stringResource(R.string.photo_retake),
                     onClick = onRetakeClick,
@@ -84,14 +82,14 @@ fun WorkPhotoScreen(
                 label = stringResource(R.string.photo_memo),
                 text = memo,
                 onTextChange = onMemoChange,
-                placeholder = stringResource(R.string.photo_memo_hint),
+                placeholder = stringResource(R.string.photo_work_memo_hint),
                 isOptional = true,
             )
 
             PhotoUploadButton(
                 title = stringResource(R.string.photo_upload),
                 onClick = onUploadClick,
-                isEnabled = photoPainter != null,
+                isEnabled = selectedPhotoCount > 0,
             )
         }
     }
@@ -103,7 +101,7 @@ private fun WorkPhotoScreenPreview() {
     HeartGuardTheme {
         WorkPhotoScreen(
             memo = "",
-            photoPainter = null,
+            selectedPhotoCount = 0,
             onCaptureClick = {},
             onRetakeClick = {},
             onMemoChange = {},

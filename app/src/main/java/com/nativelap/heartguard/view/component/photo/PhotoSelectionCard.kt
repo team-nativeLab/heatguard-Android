@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,7 +17,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
@@ -31,23 +35,30 @@ import com.nativelap.heartguard.ui.theme.extraColors
 @Composable
 fun PhotoSelectionCard(
     title: String,
-    description: String,
+    description: String?,
     cameraPainter: Painter,
     cameraContentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     selectedPhotoCountLabel: String? = null,
+    isEnabled: Boolean = true,
+    minHeight: Dp = HeartGuardComponentSize.PhotoSelectionHeight,
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PhotoSelectionHeight)
+            .heightIn(min = minHeight)
             .clickable(
+                enabled = isEnabled,
                 role = Role.Button,
                 onClick = onClick,
             ),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
-        color = MaterialTheme.extraColors.photoContainer,
+        color = if (isEnabled) {
+            MaterialTheme.extraColors.photoContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
     ) {
         Column(
             modifier = Modifier
@@ -60,18 +71,38 @@ fun PhotoSelectionCard(
                 painter = cameraPainter,
                 contentDescription = cameraContentDescription,
                 modifier = Modifier.size(HeartGuardIconSize.CameraAction),
+                colorFilter = ColorFilter.tint(
+                    if (isEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.extraColors.disabledContent
+                    },
+                ),
             )
             Text(
                 text = title,
-                modifier = Modifier.padding(top = HeartGuardSpacing.Item),
-                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .padding(top = HeartGuardSpacing.Item)
+                    .widthIn(max = HeartGuardComponentSize.PhotoSelectionTitleMaxWidth),
+                color = if (isEnabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.extraColors.disabledText
+                },
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
-            Text(
-                text = description,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
+            description?.let { descriptionText ->
+                Text(
+                    text = descriptionText,
+                    color = if (isEnabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.extraColors.disabledText
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             selectedPhotoCountLabel?.let { countLabel ->
                 Text(
                     text = countLabel,

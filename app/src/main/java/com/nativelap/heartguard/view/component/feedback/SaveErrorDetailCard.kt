@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.component.feedback
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +18,8 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 저장 실패 화면에서 사용자가 재시도할 수 있도록 원인 안내를 강조한다. */
+/** 저장 실패 화면에서 사용자가 재시도할 수 있도록 원인 안내를 강조한다.
+ *  Figma 10_저장실패 스펙: 흰 배경 + cardBorder 테두리를 사용한다(강조 배경색 아님). */
 @Composable
 fun SaveErrorDetailCard(
     title: String,
@@ -27,7 +29,11 @@ fun SaveErrorDetailCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
-        color = MaterialTheme.extraColors.alertContainer,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            width = HeartGuardSpacing.Hairline,
+            color = MaterialTheme.extraColors.cardBorder,
+        ),
     ) {
         Column(
             modifier = Modifier.padding(HeartGuardSpacing.Section),
@@ -35,13 +41,13 @@ fun SaveErrorDetailCard(
         ) {
             Text(
                 text = title,
-                color = MaterialTheme.colorScheme.error,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
             details.forEach { detail ->
                 Text(
-                    text = "• $detail",
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text = detail,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

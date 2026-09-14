@@ -23,8 +23,8 @@ fun HeatRiskBadge(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
-        color = MaterialTheme.extraColors.warning,
-        contentColor = MaterialTheme.colorScheme.onTertiary,
+        color = MaterialTheme.extraColors.warningContainer,
+        contentColor = MaterialTheme.extraColors.onWarningContainer,
     ) {
         Text(
             text = riskLabel,

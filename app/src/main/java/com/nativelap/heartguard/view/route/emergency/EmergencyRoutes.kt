@@ -1,18 +1,20 @@
 package com.nativelap.heartguard.view.route.emergency
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.screen.emergency.CallingScreen
 import com.nativelap.heartguard.view.screen.emergency.EmergencyScreen
 
-/** 긴급 화면의 고정 현장 관리자 정보와 호출 Navigation callback을 연결한다. */
+/** 긴급 화면의 고정 현장 관리자 정보와 호출 취소 Navigation callback을 연결한다. */
 @Composable
 internal fun HeartGuardEmergencyRoute(
-    onCallClick: () -> Unit,
+    onCancelClick: () -> Unit,
 ) {
     EmergencyScreen(
-        contactName = "홍길동",
-        phoneNumber = "010-1234-5678",
-        onCallClick = onCallClick,
+        contactName = stringResource(R.string.emergency_contact_name),
+        phoneNumber = stringResource(R.string.emergency_contact_phone),
+        onCancelClick = onCancelClick,
         onContactClick = {},
     )
 }
@@ -25,6 +27,8 @@ internal fun HeartGuardCallingRoute(
 ) {
     CallingScreen(
         isConnected = false,
+        contactName = stringResource(R.string.emergency_contact_name),
+        phoneNumber = stringResource(R.string.emergency_contact_phone),
         onCancelClick = onCancelClick,
         onEndClick = onEndClick,
     )

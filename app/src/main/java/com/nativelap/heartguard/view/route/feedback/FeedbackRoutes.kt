@@ -1,9 +1,6 @@
 package com.nativelap.heartguard.view.route.feedback
 
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.component.feedback.SaveConfirmationDialog
@@ -20,7 +17,6 @@ internal fun HeartGuardSaveConfirmationRoute(
     SaveConfirmationDialog(
         onDismissClick = onDismissClick,
         onConfirmClick = onConfirmClick,
-        modifier = Modifier.widthIn(max = 320.dp),
     )
 }
 
@@ -32,16 +28,23 @@ internal fun HeartGuardSaveSuccessRoute(
     SaveSuccessScreen(
         records = listOf(
             SavedRecordSummaryItem(
-                label = stringResource(R.string.home_current_temperature),
-                value = "37℃",
+                label = stringResource(R.string.save_temperature_summary),
+                value = "47.5°C",
+                hasDetails = true,
             ),
             SavedRecordSummaryItem(
-                label = stringResource(R.string.home_feels_like),
-                value = "40℃",
+                label = stringResource(R.string.save_work_photo_summary),
+                value = "2장",
+                hasDetails = true,
             ),
             SavedRecordSummaryItem(
-                label = stringResource(R.string.home_humidity),
-                value = "65%",
+                label = stringResource(R.string.save_rest_photo_summary),
+                value = "2장",
+                hasDetails = true,
+            ),
+            SavedRecordSummaryItem(
+                label = stringResource(R.string.save_time_summary),
+                value = stringResource(R.string.save_time_value),
             ),
         ),
         onCompleteClick = onCompleteClick,
@@ -52,12 +55,14 @@ internal fun HeartGuardSaveSuccessRoute(
 @Composable
 internal fun HeartGuardSaveFailureRoute(
     onRetryClick: () -> Unit,
+    onSaveDraftAndExitClick: () -> Unit,
 ) {
     SaveFailureScreen(
         errorDetails = listOf(
             stringResource(R.string.save_error_network),
-            stringResource(R.string.save_failure_description),
+            stringResource(R.string.save_error_retry),
         ),
         onRetryClick = onRetryClick,
+        onSaveDraftAndExitClick = onSaveDraftAndExitClick,
     )
 }

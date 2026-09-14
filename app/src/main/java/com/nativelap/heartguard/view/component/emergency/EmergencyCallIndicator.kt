@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -71,8 +71,9 @@ fun EmergencyCallIndicator(
                     color = indicatorColor,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
+                        // Figma 03_긴급상황·04_호출중 모두 원형 인디케이터 아이콘이 경고 삼각형으로 통일되어 있다.
                         Icon(
-                            imageVector = Icons.Outlined.Phone,
+                            imageVector = Icons.Outlined.WarningAmber,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onError,
                             modifier = Modifier.fillMaxSize(0.48f),

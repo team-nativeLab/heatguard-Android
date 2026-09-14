@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.control.HeartGuardCheckbox
@@ -32,19 +33,20 @@ fun TemperatureCheckboxRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-            ),
-        )
         HeartGuardCheckbox(
             isChecked = isChecked,
             onCheckedChange = onCheckedChange,
             contentDescription = checkboxContentDescription,
             isEnabled = isEnabled,
+        )
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = HeartGuardFontSize.SmallLabel,
+                fontWeight = FontWeight.Medium,
+            ),
         )
     }
 }

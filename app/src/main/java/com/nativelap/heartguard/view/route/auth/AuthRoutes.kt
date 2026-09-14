@@ -37,6 +37,9 @@ internal fun HeartGuardSignUpRoute(
     onSignUpClick: () -> Unit,
     onLoginClick: () -> Unit,
 ) {
+    var companyName by rememberSaveable {
+        mutableStateOf("")
+    }
     var name by rememberSaveable {
         mutableStateOf("")
     }
@@ -51,10 +54,12 @@ internal fun HeartGuardSignUpRoute(
     }
 
     AuthSignUpScreen(
+        companyName = companyName,
         name = name,
         email = email,
         password = password,
         passwordConfirmation = passwordConfirmation,
+        onCompanyNameChange = { companyName = it },
         onNameChange = { name = it },
         onEmailChange = { email = it },
         onPasswordChange = { password = it },
