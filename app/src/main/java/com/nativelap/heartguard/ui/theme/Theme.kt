@@ -24,6 +24,12 @@ data class HeartGuardExtraColors(
     val photoContainer: Color,
     val alertContainer: Color,
     val successContainer: Color,
+    val warningContainer: Color,
+    val onWarningContainer: Color,
+    val authBackground: Color,
+    val authPrimary: Color,
+    val authOnSurface: Color,
+    val authOnSurfaceVariant: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -67,11 +73,17 @@ private val infoContainerColor = Color(0xFFEAF3FF)
 private val cameraContainerColor = Color(0xFFEAF3FF)
 private val disabledContentColor = Color(0xFFBDBDBD)
 private val disabledTextColor = Color(0xFFAEB3C4)
-private val authInputBackgroundColor = Color(0xFFF7FAFF)
+private val authInputBackgroundColor = Color(0xFFF8FAFF)
 private val sheetBackgroundColor = Color(0xFFF9FBFC)
 private val photoContainerColor = Color(0xFFE7F2FF)
 private val alertContainerColor = Color(0xFFFFEEEE)
 private val successContainerColor = Color(0xFFE2F5EA)
+private val warningContainerColor = Color(0xFFFFE2D6)
+private val onWarningContainerColor = Color(0xFFFF6B00)
+private val authBackgroundColor = Color(0xFFFFFFFF)
+private val authPrimaryColor = Color(0xFF467EE5)
+private val authOnSurfaceColor = Color(0xFF202632)
+private val authOnSurfaceVariantColor = Color(0xFF7A8292)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -114,6 +126,12 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     photoContainer = photoContainerColor,
     alertContainer = alertContainerColor,
     successContainer = successContainerColor,
+    warningContainer = warningContainerColor,
+    onWarningContainer = onWarningContainerColor,
+    authBackground = authBackgroundColor,
+    authPrimary = authPrimaryColor,
+    authOnSurface = authOnSurfaceColor,
+    authOnSurfaceVariant = authOnSurfaceVariantColor,
 )
 
 /**

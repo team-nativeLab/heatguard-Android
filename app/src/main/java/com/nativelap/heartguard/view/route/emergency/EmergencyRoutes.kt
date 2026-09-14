@@ -1,6 +1,8 @@
 package com.nativelap.heartguard.view.route.emergency
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.screen.emergency.CallingScreen
 import com.nativelap.heartguard.view.screen.emergency.EmergencyScreen
 
@@ -10,8 +12,8 @@ internal fun HeartGuardEmergencyRoute(
     onCancelClick: () -> Unit,
 ) {
     EmergencyScreen(
-        contactName = "홍길동",
-        phoneNumber = "010-1234-5678",
+        contactName = stringResource(R.string.emergency_contact_name),
+        phoneNumber = stringResource(R.string.emergency_contact_phone),
         onCancelClick = onCancelClick,
         onContactClick = {},
     )
@@ -25,6 +27,8 @@ internal fun HeartGuardCallingRoute(
 ) {
     CallingScreen(
         isConnected = false,
+        contactName = stringResource(R.string.emergency_contact_name),
+        phoneNumber = stringResource(R.string.emergency_contact_phone),
         onCancelClick = onCancelClick,
         onEndClick = onEndClick,
     )

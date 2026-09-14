@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.route.photo
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -17,7 +18,7 @@ internal fun HeartGuardFieldPhotoRoute(
     onSaveClick: () -> Unit,
 ) {
     var selectedPhotoCount by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
     var showTemperatureSaveError by rememberSaveable {
         mutableStateOf(false)
@@ -53,7 +54,7 @@ internal fun HeartGuardWorkPhotoRoute(
         mutableStateOf("")
     }
     var selectedPhotoCount by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
 
     WorkPhotoScreen(
@@ -79,7 +80,7 @@ internal fun HeartGuardRestPhotoRoute(
         mutableStateOf("")
     }
     var selectedPhotoCount by rememberSaveable {
-        mutableStateOf(0)
+        mutableIntStateOf(0)
     }
     var isAlternateRestTimeSelected by rememberSaveable {
         mutableStateOf(false)

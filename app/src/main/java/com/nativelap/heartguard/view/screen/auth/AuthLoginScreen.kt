@@ -1,11 +1,13 @@
 package com.nativelap.heartguard.view.screen.auth
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -19,8 +21,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
@@ -28,6 +30,7 @@ import com.nativelap.heartguard.view.component.auth.AuthPrompt
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.brand.BrandMark
+import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 이메일 로그인 화면을 기존 인증 Component 조합으로 구성한다. */
 @Composable
@@ -44,65 +47,80 @@ fun AuthLoginScreen(
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.extraColors.authBackground,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
                 .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
-                .padding(vertical = HeartGuardSpacing.LargeSection),
+                .imePadding()
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
         ) {
             Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .widthIn(max = AUTH_CONTENT_MAX_WIDTH),
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                BrandMark(
-                    brandPainter = painterResource(R.drawable.heart_guard_logo),
-                    contentDescription = stringResource(R.string.brand_name),
-                )
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = HeartGuardComponentSize.AuthContentMaxWidth)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTop))
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.LargeSection))
+                    BrandMark(
+                        brandPainter = painterResource(R.drawable.heart_guard_logo),
+                        contentDescription = stringResource(R.string.brand_name),
+                    )
 
-                AuthTitleBlock(
-                    title = stringResource(R.string.auth_login_title),
-                    description = stringResource(R.string.auth_login_description),
-                )
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthLogoTitle))
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.LargeSection))
+                    AuthTitleBlock(
+                        title = stringResource(R.string.auth_login_title),
+                        description = stringResource(R.string.auth_login_description),
+                    )
 
-                AuthTextField(
-                    label = stringResource(R.string.auth_email),
-                    text = email,
-                    onTextChange = onEmailChange,
-                    placeholder = stringResource(R.string.auth_email_hint),
-                )
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTitleForm))
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
+                    AuthTextField(
+                        label = stringResource(R.string.auth_email),
+                        text = email,
+                        onTextChange = onEmailChange,
+                        placeholder = stringResource(R.string.auth_email_hint),
+                    )
 
-                AuthTextField(
-                    label = stringResource(R.string.auth_password),
-                    text = password,
-                    onTextChange = onPasswordChange,
-                    placeholder = stringResource(R.string.auth_password_hint),
-                    isError = isPasswordError,
-                    supportingText = passwordErrorMessage,
-                    visualTransformation = PasswordVisualTransformation(),
-                )
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFieldGroup))
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.Section))
+                    AuthTextField(
+                        label = stringResource(R.string.auth_password),
+                        text = password,
+                        onTextChange = onPasswordChange,
+                        placeholder = stringResource(R.string.auth_password_hint),
+                        isError = isPasswordError,
+                        supportingText = passwordErrorMessage,
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+            }
 
+            Column(
+                modifier = Modifier
+                    .widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 AuthPrimaryButton(
                     title = stringResource(R.string.auth_login),
                     onClick = onLoginClick,
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthButtonPrompt))
 
                 AuthPrompt(
                     message = stringResource(R.string.auth_signup_prompt),
@@ -113,8 +131,6 @@ fun AuthLoginScreen(
         }
     }
 }
-
-private val AUTH_CONTENT_MAX_WIDTH = 286.dp
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable

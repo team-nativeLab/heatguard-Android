@@ -1,5 +1,8 @@
 package com.nativelap.heartguard.navigation
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +58,27 @@ private fun HeartGuardAuthNavDisplay(
             if (backStack.size > 1) {
                 backStack.removeLastOrNull()
             }
+        },
+        transitionSpec = {
+            ContentTransform(
+                targetContentEnter = EnterTransition.None,
+                initialContentExit = ExitTransition.None,
+                sizeTransform = null,
+            )
+        },
+        popTransitionSpec = {
+            ContentTransform(
+                targetContentEnter = EnterTransition.None,
+                initialContentExit = ExitTransition.None,
+                sizeTransform = null,
+            )
+        },
+        predictivePopTransitionSpec = {
+            ContentTransform(
+                targetContentEnter = EnterTransition.None,
+                initialContentExit = ExitTransition.None,
+                sizeTransform = null,
+            )
         },
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Login> {
@@ -123,6 +147,27 @@ private fun HeartGuardMainNavDisplay() {
         backStack = backStack,
         onBack = ::goBack,
         sceneStrategies = sceneStrategies,
+        transitionSpec = {
+            ContentTransform(
+                targetContentEnter = EnterTransition.None,
+                initialContentExit = ExitTransition.None,
+                sizeTransform = null,
+            )
+        },
+        popTransitionSpec = {
+            ContentTransform(
+                targetContentEnter = EnterTransition.None,
+                initialContentExit = ExitTransition.None,
+                sizeTransform = null,
+            )
+        },
+        predictivePopTransitionSpec = {
+            ContentTransform(
+                targetContentEnter = EnterTransition.None,
+                initialContentExit = ExitTransition.None,
+                sizeTransform = null,
+            )
+        },
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Home> {
                 HeartGuardHomeRoute(

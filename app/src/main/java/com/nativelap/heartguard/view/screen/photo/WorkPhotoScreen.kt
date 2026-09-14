@@ -56,18 +56,13 @@ fun WorkPhotoScreen(
 
             PhotoScreenIntro(
                 title = stringResource(R.string.photo_work_screen_title),
-                // TODO: Figma "11_작업 사진 촬영" 프레임 기준 문구다.
-                // strings.xml의 photo_work_screen_description 값과 달라 우선 하드코딩한다.
-                // 디자인 문구가 확정되면 strings.xml을 갱신해야 한다.
-                description = "작업 현장과 보호조치를 확인 할 수 있는 사진을 촬영해 주세요",
+                description = stringResource(R.string.photo_work_screen_description),
             )
 
             PhotoSelectionCard(
-                title = stringResource(R.string.photo_take_instruction),
+                title = stringResource(R.string.photo_selection_action_title),
                 description = if (selectedPhotoCount == 0) {
-                    // TODO: Figma 박스 안내 문구는 "1 ~ 2장 선택 가능"이다.
-                    // strings.xml의 photo_work_instruction 값과 달라 우선 하드코딩한다.
-                    "1~2장 선택 가능"
+                    stringResource(R.string.photo_selection_empty)
                 } else {
                     stringResource(R.string.photo_selected_count, selectedPhotoCount)
                 },
@@ -87,8 +82,7 @@ fun WorkPhotoScreen(
                 label = stringResource(R.string.photo_memo),
                 text = memo,
                 onTextChange = onMemoChange,
-                // TODO: Figma 작업 사진 화면 전용 placeholder다. strings.xml에 아직 없어 하드코딩한다.
-                placeholder = "작업 전·중 특이사항이 있다면 입력해주세요",
+                placeholder = stringResource(R.string.photo_work_memo_hint),
                 isOptional = true,
             )
 
@@ -101,7 +95,7 @@ fun WorkPhotoScreen(
     }
 }
 
-@Preview(showBackground = true, widthDp = 402, heightDp = 933)
+@Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable
 private fun WorkPhotoScreenPreview() {
     HeartGuardTheme {

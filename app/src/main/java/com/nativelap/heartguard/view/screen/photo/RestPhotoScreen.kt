@@ -69,11 +69,9 @@ fun RestPhotoScreen(
             )
 
             PhotoSelectionCard(
-                title = stringResource(R.string.photo_take_instruction),
+                title = stringResource(R.string.photo_selection_action_title),
                 description = if (selectedPhotoCount == 0) {
-                    // TODO: Figma 박스 안내 문구는 "1 ~ 2장 선택 가능"이다.
-                    // strings.xml의 photo_rest_instruction 값과 달라 우선 하드코딩한다.
-                    "1~2장 선택 가능"
+                    stringResource(R.string.photo_selection_empty)
                 } else {
                     stringResource(R.string.photo_selected_count, selectedPhotoCount)
                 },

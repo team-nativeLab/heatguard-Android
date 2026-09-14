@@ -36,8 +36,8 @@ fun HomeTemperatureRecordCard(
     isManualInputEnabled: Boolean,
     onManualInputChange: (Boolean) -> Unit,
     metrics: List<WeatherMetricValue>,
-    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),

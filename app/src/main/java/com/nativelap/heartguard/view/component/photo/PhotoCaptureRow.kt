@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -17,20 +18,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-
-// TODO: Figma "14_현장사진_촬영전" 프레임의 재촬영 박스 높이는 79px다.
-// 기존 HeartGuardComponentSize.FieldPhotoSelectionHeight(160dp)와 값이 달라
-// 이 컴포넌트는 임시로 로컬 상수를 사용한다. 토큰 값을 확정하면 Dimension.kt로 옮겨야 한다.
-private val FieldPhotoCaptureRowHeight = 79.dp
 
 /** 현장 사진 화면의 "다시하기" 영역처럼 상단 라벨과 한 줄짜리 촬영 안내 박스를 함께 보여주는 컴포넌트다. */
 @Composable
@@ -53,7 +50,7 @@ fun PhotoCaptureRow(
             modifier = Modifier
                 .padding(top = HeartGuardSpacing.Compact)
                 .fillMaxWidth()
-                .height(FieldPhotoCaptureRowHeight)
+                .heightIn(min = HeartGuardComponentSize.FieldPhotoCaptureRowHeight)
                 .clickable(
                     role = Role.Button,
                     onClick = onClick,
@@ -73,9 +70,13 @@ fun PhotoCaptureRow(
                     painter = cameraPainter,
                     contentDescription = cameraContentDescription,
                     modifier = Modifier.size(HeartGuardIconSize.Small),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                 )
                 Text(
                     text = instructionText,
+                    modifier = Modifier
+                        .weight(1f)
+                        .widthIn(max = HeartGuardComponentSize.PhotoCaptureTextMaxWidth),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                 )

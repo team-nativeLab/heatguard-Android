@@ -48,9 +48,8 @@ fun EmergencyScreen(
                 .padding(HeartGuardSpacing.ScreenHorizontal),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
-            // TODO: strings.xml에 emergency_screen_title(값: "긴급 호출") 키 추가 필요 — 지금은 하드코딩한다.
             Text(
-                text = "긴급 호출",
+                text = stringResource(R.string.emergency_screen_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
@@ -65,10 +64,8 @@ fun EmergencyScreen(
             )
 
             EmergencyCallIndicator(
-                // TODO: strings.xml에 emergency_indicator_title(값: "긴급 호출하기") 키 추가 필요 — 지금은 하드코딩한다.
-                title = "긴급 호출하기",
-                // TODO: strings.xml에 emergency_indicator_description(값: "버튼을 누르면 즉시 관리자에게 전화가 연결됩니다") 키 갱신 필요 — 지금은 하드코딩한다.
-                description = "버튼을 누르면 즉시 관리자에게 전화가 연결됩니다",
+                title = stringResource(R.string.emergency_indicator_title),
+                description = stringResource(R.string.emergency_indicator_description),
                 isCalling = true,
             )
 

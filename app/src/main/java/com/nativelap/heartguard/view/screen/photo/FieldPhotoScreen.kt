@@ -21,7 +21,7 @@ import com.nativelap.heartguard.view.component.photo.PhotoCaptureRow
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
 import com.nativelap.heartguard.view.component.photo.TemperatureDataErrorCard
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
-import com.nativelap.heartguard.view.component.temperature.TemperatureSummaryCard
+import com.nativelap.heartguard.view.component.temperature.TemperatureInputSummaryCard
 
 /** 현장 사진 촬영 전·저장 전 오류 상태를 Figma 화면 구조로 조합한다. */
 @Composable
@@ -68,7 +68,7 @@ fun FieldPhotoScreen(
                 )
             }
 
-            TemperatureSummaryCard(
+            TemperatureInputSummaryCard(
                 currentTemperature = currentTemperature,
                 humidity = humidity,
                 feelsLikeTemperature = feelsLikeTemperature,

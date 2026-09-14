@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 로그인·회원가입 화면의 큰 제목과 보조 설명을 하나의 수직 블록으로 제공한다. */
 @Composable
@@ -29,20 +30,24 @@ fun AuthTitleBlock(
             text = title,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.extraColors.authOnSurface,
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = HeartGuardFontSize.AuthTitle,
+                lineHeight = HeartGuardFontSize.AuthTitleLineHeight,
+                letterSpacing = HeartGuardFontSize.AuthTitleLetterSpacing,
             ),
         )
         Text(
             text = description,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.Compact),
+                .padding(top = HeartGuardSpacing.AuthTitleDescription),
             textAlign = TextAlign.Start,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.extraColors.authOnSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = HeartGuardFontSize.AuthDescription,
+            ),
         )
     }
 }

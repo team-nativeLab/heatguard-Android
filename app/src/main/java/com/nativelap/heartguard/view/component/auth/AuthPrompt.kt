@@ -11,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 인증 화면의 안내 문구와 후속 행동 링크를 한 줄로 표현한다. */
 @Composable
@@ -28,14 +30,17 @@ fun AuthPrompt(
     ) {
         Text(
             text = message,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.extraColors.authOnSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = HeartGuardFontSize.AuthPrompt,
+            ),
         )
         TextButton(onClick = onActionClick) {
             Text(
                 text = actionTitle,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.extraColors.authPrimary,
                 style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = HeartGuardFontSize.AuthPrompt,
                     fontWeight = FontWeight.SemiBold,
                 ),
             )

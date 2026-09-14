@@ -219,8 +219,6 @@ private fun WeatherStatusSummary(
  * Figma 02_홈_리디자인: 온도 강조 영역 아래 "습도 55% · 체감온도 40.5°C" 형태의
  * 한 줄 요약을 보여준다.
  *
- * TODO: " · " 구분자와 "라벨 값" 결합 방식을 strings.xml의 format string
- *  (예: home_weather_summary_format="%1$s %2$s · %3$s %4$s")으로 옮긴다.
  */
 @Composable
 private fun WeatherSummaryLine(
@@ -231,7 +229,13 @@ private fun WeatherSummaryLine(
     modifier: Modifier = Modifier,
 ) {
     Text(
-        text = "$humidityLabel $humidity · $feelsLikeTemperatureLabel $feelsLikeTemperature",
+        text = androidx.compose.ui.res.stringResource(
+            R.string.home_weather_summary_format,
+            humidityLabel,
+            humidity,
+            feelsLikeTemperatureLabel,
+            feelsLikeTemperature,
+        ),
         modifier = modifier,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyMedium,

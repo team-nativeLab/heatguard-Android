@@ -57,7 +57,7 @@ fun SaveFailureScreen(
             )
 
             RetryButton(
-                title = stringResource(R.string.common_retry),
+                title = stringResource(R.string.save_retry),
                 onClick = onRetryClick,
             )
 

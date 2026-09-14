@@ -1,13 +1,16 @@
 package com.nativelap.heartguard.view.screen.temperature
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -44,72 +47,98 @@ fun TemperatureRecordScreen(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+                .padding(innerPadding),
         ) {
-            HeartGuardHeader(
-                title = stringResource(R.string.brand_name),
-                menuPainter = painterResource(R.drawable.menu_hamburger),
-                notificationPainter = painterResource(R.drawable.notification_bell),
-                onMenuClick = {},
-                onNotificationClick = {},
-            )
+            // 시스템 바를 제외한 높이가 짧은 기기에서는 섹션 간격만 줄이고, 콘텐츠는 계속 세로 스크롤한다.
+            val sectionSpacing = if (
+                maxHeight < HeartGuardComponentSize.CompactScreenHeightBreakpoint
+            ) {
+                HeartGuardSpacing.CompactSection
+            } else {
+                HeartGuardSpacing.Section
+            }
 
-            TemperatureScreenIntro(
-                title = stringResource(R.string.temperature_screen_title),
-                description = stringResource(R.string.temperature_screen_description),
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(sectionSpacing),
+            ) {
+                HeartGuardHeader(
+                    title = stringResource(R.string.brand_name),
+                    menuPainter = painterResource(R.drawable.menu_hamburger),
+                    notificationPainter = painterResource(R.drawable.notification_bell),
+                    onMenuClick = {},
+                    onNotificationClick = {},
+                )
 
-            TemperatureSummaryCard(
-                currentTemperature = currentTemperature,
-                humidity = humidity,
-                feelsLikeTemperature = feelsLikeTemperature,
-                currentTemperatureLabel = stringResource(R.string.home_current_temperature),
-                humidityLabel = stringResource(R.string.home_humidity),
-                feelsLikeLabel = stringResource(R.string.home_feels_like),
-                title = stringResource(R.string.temperature_current_measurement),
-            )
+                TemperatureScreenIntro(
+                    title = stringResource(R.string.temperature_screen_title),
+                    description = stringResource(R.string.temperature_screen_description),
+                )
 
-            TemperatureRecordCard(
-                temperatureLabel = stringResource(R.string.home_temperature_field),
-                temperatureText = temperatureText,
-                temperatureUnit = stringResource(R.string.home_temperature_unit),
-                onTemperatureChange = onTemperatureChange,
-                humidityLabel = stringResource(R.string.home_humidity_field),
-                humidityText = humidityText,
-                humidityUnit = stringResource(R.string.home_percent_unit),
-                onHumidityChange = onHumidityChange,
-                feelsLikeLabel = stringResource(R.string.home_feels_like_field),
-                feelsLikeText = if (isManualInputEnabled) {
-                    feelsLikeTemperature
-                } else {
-                    stringResource(R.string.home_calculated)
-                },
-                installationLabel = stringResource(R.string.temperature_not_installed),
-                isManualInputEnabled = isManualInputEnabled,
-                onManualInputChange = onManualInputChange,
-                checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
-                title = stringResource(R.string.temperature_installation_status),
-            )
+                TemperatureSummaryCard(
+                    currentTemperature = currentTemperature,
+                    humidity = humidity,
+                    feelsLikeTemperature = feelsLikeTemperature,
+                    currentTemperatureLabel = stringResource(R.string.home_current_temperature),
+                    humidityLabel = stringResource(R.string.home_humidity),
+                    feelsLikeLabel = stringResource(R.string.home_feels_like),
+                    title = stringResource(R.string.temperature_current_measurement),
+                    thermometerPainter = painterResource(R.drawable.record_temperature),
+                )
 
-            PhotoSelectionCard(
-                title = stringResource(R.string.home_field_photo),
-                description = stringResource(R.string.photo_field_instruction),
-                cameraPainter = painterResource(R.drawable.record_camera),
-                cameraContentDescription = stringResource(R.string.photo_capture),
-                onClick = onFieldPhotoClick,
-                minHeight = HeartGuardComponentSize.FieldPhotoSelectionHeight,
-            )
+                TemperatureRecordCard(
+                    temperatureLabel = stringResource(R.string.home_temperature_field),
+                    temperatureText = temperatureText,
+                    temperatureUnit = stringResource(R.string.home_temperature_unit),
+                    onTemperatureChange = onTemperatureChange,
+                    humidityLabel = stringResource(R.string.home_humidity_field),
+                    humidityText = humidityText,
+                    humidityUnit = stringResource(R.string.home_percent_unit),
+                    onHumidityChange = onHumidityChange,
+                    feelsLikeLabel = stringResource(R.string.home_feels_like_field),
+                    feelsLikeText = if (isManualInputEnabled) {
+                        feelsLikeTemperature
+                    } else {
+                        stringResource(R.string.home_calculated)
+                    },
+                    installationLabel = stringResource(R.string.temperature_not_installed),
+                    isManualInputEnabled = isManualInputEnabled,
+                    onManualInputChange = onManualInputChange,
+                    checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
+                    title = stringResource(R.string.temperature_installation_status),
+                )
 
-            RecordSaveButton(
-                title = stringResource(R.string.temperature_save),
-                onClick = onSaveClick,
-            )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_field_photo),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    PhotoSelectionCard(
+                        title = stringResource(R.string.photo_field_instruction),
+                        description = null,
+                        cameraPainter = painterResource(R.drawable.record_camera),
+                        cameraContentDescription = stringResource(R.string.photo_capture),
+                        onClick = onFieldPhotoClick,
+                        isEnabled = !isManualInputEnabled,
+                        minHeight = HeartGuardComponentSize.FieldPhotoSelectionHeight,
+                    )
+                }
+
+                RecordSaveButton(
+                    title = stringResource(R.string.temperature_save),
+                    onClick = onSaveClick,
+                )
+            }
         }
     }
 }
