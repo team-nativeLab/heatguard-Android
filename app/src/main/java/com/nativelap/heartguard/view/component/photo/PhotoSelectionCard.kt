@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,17 +38,24 @@ fun PhotoSelectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     selectedPhotoCountLabel: String? = null,
+    isEnabled: Boolean = true,
+    minHeight: Dp = HeartGuardComponentSize.PhotoSelectionHeight,
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PhotoSelectionHeight)
+            .heightIn(min = minHeight)
             .clickable(
+                enabled = isEnabled,
                 role = Role.Button,
                 onClick = onClick,
             ),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
-        color = MaterialTheme.extraColors.photoContainer,
+        color = if (isEnabled) {
+            MaterialTheme.extraColors.photoContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
     ) {
         Column(
             modifier = Modifier

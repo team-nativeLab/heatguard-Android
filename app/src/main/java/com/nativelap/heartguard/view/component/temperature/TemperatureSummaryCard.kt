@@ -38,7 +38,7 @@ fun TemperatureSummaryCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier = Modifier
@@ -48,7 +48,7 @@ fun TemperatureSummaryCard(
         ) {
             Text(
                 text = title,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
             BoxWithConstraints(
@@ -96,12 +96,12 @@ private fun TemperatureSummaryMetric(
     Column(modifier = modifier) {
         Text(
             text = label,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelMedium,
         )
         Text(
             text = value,
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleLarge.copy(
                 fontSize = HeartGuardFontSize.TemperatureSummary,
                 fontWeight = FontWeight.ExtraBold,
