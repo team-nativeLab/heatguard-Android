@@ -1,10 +1,12 @@
 package com.nativelap.heartguard.view.component.feedback
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.Card
@@ -13,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
@@ -23,11 +26,13 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 
 @Immutable
 data class SavedRecordSummaryItem(
     val label: String,
     val value: String,
+    val hasDetails: Boolean = false,
 )
 
 /** 저장 성공 화면에서 방금 저장한 기록의 주요 값을 행 단위로 보여준다. */
@@ -40,8 +45,12 @@ fun SavedRecordSummaryCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(HeartGuardRadius.LargeCard),
+        shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            width = HeartGuardSpacing.Hairline,
+            color = MaterialTheme.extraColors.cardBorder,
+        ),
     ) {
         Column(
             modifier = Modifier.padding(HeartGuardSpacing.Section),
@@ -58,17 +67,24 @@ fun SavedRecordSummaryCard(
                 ) {
                     Text(
                         text = record.label,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(0.75f),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
                         text = record.value,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1.25f),
                         textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                    if (record.hasDetails) {
+                        Icon(
+                            imageVector = Icons.Outlined.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             onDetailsClick?.let { click ->
@@ -76,7 +92,7 @@ fun SavedRecordSummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    androidx.compose.material3.TextButton(onClick = click) {
+                    TextButton(onClick = click) {
                         Text(text = stringResource(R.string.common_details))
                         Icon(
                             imageVector = Icons.Outlined.ChevronRight,
