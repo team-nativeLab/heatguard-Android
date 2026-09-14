@@ -24,10 +24,11 @@ fun AuthTitleBlock(
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
+        // Figma 01_로그인·회원가입: 브랜드 로고는 중앙, 제목/설명은 왼쪽 정렬로 배치된다.
         Text(
             text = title,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
@@ -39,7 +40,7 @@ fun AuthTitleBlock(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.Compact),
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
         )

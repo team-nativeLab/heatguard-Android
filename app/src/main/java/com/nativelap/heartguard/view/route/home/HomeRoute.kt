@@ -7,68 +7,45 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.view.component.home.CheckTimelineItem
 import com.nativelap.heartguard.view.component.home.WeatherMetricValue
 import com.nativelap.heartguard.view.screen.home.HomeScreen
 
-/** 홈 화면의 임시 표시 상태를 관리하고 Home Screen에 Navigation callback을 연결한다. */
+/** 홈의 직접 입력 Switch 상태를 보유하고 Figma 홈 Screen에 로컬 이벤트를 연결한다. */
 @Composable
 internal fun HeartGuardHomeRoute(
-    onEmergencyClick: () -> Unit,
     onTemperatureRecordClick: () -> Unit,
-    onWorkPhotoClick: () -> Unit,
-    onRestPhotoClick: () -> Unit,
+    onFieldPhotoClick: () -> Unit,
 ) {
-    var isAutomaticRecordEnabled by rememberSaveable {
-        mutableStateOf(true)
+    var isManualInputEnabled by rememberSaveable {
+        mutableStateOf(false)
     }
 
     HomeScreen(
-        currentTemperature = "37℃",
-        feelsLikeTemperature = "40℃",
-        humidity = "65%",
-        temperatureDelta = "+2℃",
+        currentTemperature = "47.5°C",
+        feelsLikeTemperature = "40.5°C",
+        humidity = "55%",
+        temperatureDelta = "+3.2°C",
         riskLabel = stringResource(R.string.home_heat_caution),
-        siteName = "서울 강남구 건설 현장",
-        teamName = "안전관리팀",
-        timelineItems = listOf(
-            CheckTimelineItem(
-                timeLabel = "09:00",
-                title = stringResource(R.string.home_check_morning),
-                isCompleted = true,
-            ),
-            CheckTimelineItem(
-                timeLabel = "13:00",
-                title = stringResource(R.string.home_check_afternoon),
-                isCompleted = false,
-            ),
-        ),
         temperatureMetrics = listOf(
             WeatherMetricValue(
-                label = stringResource(R.string.home_current_temperature),
-                value = "37℃",
+                label = stringResource(R.string.home_temperature_field),
+                value = "47.5",
             ),
             WeatherMetricValue(
-                label = stringResource(R.string.home_feels_like),
-                value = "40℃",
+                label = stringResource(R.string.home_humidity_field),
+                value = "55",
             ),
             WeatherMetricValue(
-                label = stringResource(R.string.home_humidity),
-                value = "65%",
+                label = stringResource(R.string.home_feels_like_field),
+                value = stringResource(R.string.home_calculated),
             ),
         ),
-        workPhotoDescription = "오늘 등록된 작업 사진 2장",
-        restPhotoDescription = "오늘 등록된 휴식 사진 1장",
-        isAutomaticRecordEnabled = isAutomaticRecordEnabled,
-        onAutomaticRecordChange = { isAutomaticRecordEnabled = it },
+        isManualInputEnabled = isManualInputEnabled,
+        onManualInputChange = { isManualInputEnabled = it },
         onMenuClick = {},
         onNotificationClick = {},
-        onEmergencyClick = onEmergencyClick,
-        onManagerClick = {},
-        onSiteClick = {},
-        onTeamClick = {},
         onTemperatureRecordClick = onTemperatureRecordClick,
-        onWorkPhotoClick = onWorkPhotoClick,
-        onRestPhotoClick = onRestPhotoClick,
+        onFieldPhotoClick = onFieldPhotoClick,
+        onRecordHistoryClick = {},
     )
 }

@@ -1,32 +1,40 @@
 package com.nativelap.heartguard.view.component.home
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 
-/** 리디자인 홈에서 자동·수동 온도 기록 상태와 세부 지표를 함께 보여준다. */
+/** 홈에서 온도계 직접 입력 상태와 세부 기상 지표를 Figma 카드 구조로 보여준다. */
 @Composable
 fun HomeTemperatureRecordCard(
     title: String,
-    isAutomaticRecordEnabled: Boolean,
-    onAutomaticRecordChange: (Boolean) -> Unit,
+    recordHint: String,
+    manualInputTitle: String,
+    isManualInputEnabled: Boolean,
+    onManualInputChange: (Boolean) -> Unit,
     metrics: List<WeatherMetricValue>,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -41,8 +49,10 @@ fun HomeTemperatureRecordCard(
             modifier = Modifier.padding(HeartGuardSpacing.Section),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
+            // Figma 02_홈_리디자인: 1행은 "데이터 기록" 제목과 안내 문구를 양끝에 배치한다.
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
@@ -50,31 +60,65 @@ fun HomeTemperatureRecordCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium,
                 )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(HeartGuardIconSize.Small),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = recordHint,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            // 2행은 "온도계 데이터 직접 입력" 라벨과 Switch를 양끝에 배치한다.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = manualInputTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                )
                 Switch(
-                    checked = isAutomaticRecordEnabled,
-                    onCheckedChange = onAutomaticRecordChange,
+                    checked = isManualInputEnabled,
+                    onCheckedChange = onManualInputChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.surface,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.outline,
+                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
                 )
             }
-            BoxWithConstraints(
+
+            // Figma 02_홈_리디자인: 온도/습도/체감온도 값은 연한 배경(surfaceVariant)의 카드로 구분된다.
+            Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
             ) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    maxItemsInEachRow = if (
-                        maxWidth < HeartGuardComponentSize.MetricThreeColumnBreakpoint
+                metrics.take(3).forEach { metric ->
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
-                        1
-                    } else {
-                        3
-                    },
-                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                ) {
-                    metrics.take(3).forEach { metric ->
                         WeatherMetric(
                             metricLabel = metric.label,
                             metricValue = metric.value,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.padding(HeartGuardSpacing.Item),
                         )
                     }
                 }
@@ -93,13 +137,15 @@ data class WeatherMetricValue(
 private fun HomeTemperatureRecordCardPreview() {
     HeartGuardTheme {
         HomeTemperatureRecordCard(
-            title = "오늘의 온도 기록",
-            isAutomaticRecordEnabled = true,
-            onAutomaticRecordChange = {},
+            title = "데이터 기록",
+            recordHint = "미설치 시 자동으로 기록됩니다",
+            manualInputTitle = "온도계 데이터 직접 입력",
+            isManualInputEnabled = false,
+            onManualInputChange = {},
             metrics = listOf(
-                WeatherMetricValue("현재 온도", "37℃"),
-                WeatherMetricValue("체감온도", "40℃"),
-                WeatherMetricValue("습도", "65%"),
+                WeatherMetricValue("온도(°C)", "47.5"),
+                WeatherMetricValue("습도(%)", "55"),
+                WeatherMetricValue("체감온도(°C)", "자동계산"),
             ),
         )
     }

@@ -12,9 +12,12 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -34,6 +37,8 @@ fun AuthTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
+    val softwareKeyboardController = LocalSoftwareKeyboardController.current
+
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -50,7 +55,13 @@ fun AuthTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.Compact)
-                .heightIn(min = HeartGuardComponentSize.TextFieldHeight),
+                .heightIn(min = HeartGuardComponentSize.TextFieldHeight)
+                // 포커스를 얻은 직후 IME를 명시적으로 열어 에뮬레이터에서도 입력을 보장한다.
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        softwareKeyboardController?.show()
+                    }
+                },
             placeholder = { Text(text = placeholder) },
             singleLine = true,
             isError = isError,
@@ -61,15 +72,16 @@ fun AuthTextField(
                 focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
                 unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
                 errorContainerColor = MaterialTheme.extraColors.alertContainer,
+                // Figma 01_로그인·회원가입: 입력 필드는 테두리 없이 배경색만으로 구분된다.
                 focusedBorderColor = if (isError) {
                     MaterialTheme.colorScheme.error
                 } else {
-                    androidx.compose.ui.graphics.Color.Transparent
+                    Color.Transparent
                 },
                 unfocusedBorderColor = if (isError) {
                     MaterialTheme.colorScheme.error
                 } else {
-                    androidx.compose.ui.graphics.Color.Transparent
+                    Color.Transparent
                 },
                 errorBorderColor = MaterialTheme.colorScheme.error,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,

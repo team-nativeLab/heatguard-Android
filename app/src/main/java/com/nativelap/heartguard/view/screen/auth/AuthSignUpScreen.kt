@@ -32,10 +32,12 @@ import com.nativelap.heartguard.view.component.brand.BrandMark
 /** 회원가입 화면을 이름·이메일·비밀번호 입력 Component로 구성한다. */
 @Composable
 fun AuthSignUpScreen(
+    companyName: String,
     name: String,
     email: String,
     password: String,
     passwordConfirmation: String,
+    onCompanyNameChange: (String) -> Unit,
     onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
@@ -78,6 +80,15 @@ fun AuthSignUpScreen(
                 )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Section))
+
+                AuthTextField(
+                    label = stringResource(R.string.auth_company),
+                    text = companyName,
+                    onTextChange = onCompanyNameChange,
+                    placeholder = stringResource(R.string.auth_company_hint),
+                )
+
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
 
                 AuthTextField(
                     label = stringResource(R.string.auth_name),
@@ -142,10 +153,12 @@ private val AUTH_SIGN_UP_CONTENT_MAX_WIDTH = 286.dp
 private fun AuthSignUpScreenPreview() {
     HeartGuardTheme {
         AuthSignUpScreen(
+            companyName = "",
             name = "",
             email = "",
             password = "",
             passwordConfirmation = "",
+            onCompanyNameChange = {},
             onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
