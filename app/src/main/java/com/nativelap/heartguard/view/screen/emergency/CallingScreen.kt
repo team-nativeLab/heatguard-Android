@@ -8,11 +8,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
@@ -40,6 +43,17 @@ fun CallingScreen(
                 .padding(HeartGuardSpacing.ScreenHorizontal),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
+            // TODO: strings.xml에 emergency_screen_title(값: "긴급 호출") 키 추가 필요 — 지금은 하드코딩한다.
+            Text(
+                text = "긴급 호출",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = HeartGuardFontSize.PageTitle,
+                    lineHeight = HeartGuardFontSize.PageTitle,
+                ),
+            )
+
             EmergencyCallIndicator(
                 title = if (isConnected) {
                     stringResource(R.string.emergency_connected_status)
