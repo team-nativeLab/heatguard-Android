@@ -8,10 +8,12 @@ object HeartGuardSpacing {
     val HeaderHorizontal = 24.dp
     val RecordContentHorizontal = 28.dp
     val AuthHorizontal = 48.dp
+    val PageContentTop = 12.dp
     val HomeCardHorizontal = 25.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
     val LargeSection = 24.dp
+    val Card = 16.dp
     val Item = 12.dp
     val Compact = 8.dp
     val Tight = 4.dp
@@ -45,6 +47,7 @@ object HeartGuardIconSize {
     val Result = 84.dp
     val StatusIndicator = 12.dp
     val Small = 16.dp
+    val WeatherStatus = 48.dp
 }
 
 object HeartGuardComponentSize {
@@ -61,9 +64,15 @@ object HeartGuardComponentSize {
     val CompactLayoutBreakpoint = 360.dp
     val RecordTypeOptionHeight = 143.dp
     val PhotoSelectionHeight = 313.dp
+    val FieldPhotoSelectionHeight = 160.dp
     val PhotoMemoMinHeight = 96.dp
     val TemperatureSummaryHeight = 138.dp
     val HomeActionCardHeight = 148.dp
+    val TemperatureDeltaMinWidth = 72.dp
+}
+
+object HeartGuardOverlayBlur {
+    val FigmaBackdrop = 4.dp
 }
 
 object HeartGuardBorderWidth {
