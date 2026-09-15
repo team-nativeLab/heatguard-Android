@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
+import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 
@@ -32,11 +33,20 @@ fun HeartGuardHeader(
     onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // 접근성을 위해 아이콘 버튼은 48dp 터치 타깃(HeartGuardComponentSize.TouchTarget)을 유지하지만,
+    // 실제 아이콘은 그 안에서 28dp(HeartGuardIconSize.HeaderAction)로 중앙 배치되어
+    // 터치 타깃 자체에 Figma 여백(HeaderHorizontal=24dp)을 그대로 주면 아이콘이
+    // (터치 타깃 - 아이콘 크기)/2 만큼 안쪽으로 더 밀려 보인다.
+    // Figma 실측(Menu/Bell 아이콘이 화면 가장자리에서 24dp)과 일치시키기 위해
+    // 그 차이만큼 Row 패딩을 줄여, 터치 타깃은 넓게 유지하면서 아이콘 시각 위치만 24dp에 맞춘다.
+    val headerActionTouchInset = (HeartGuardComponentSize.TouchTarget - HeartGuardIconSize.HeaderAction) / 2
+    val headerHorizontalPadding = HeartGuardSpacing.HeaderHorizontal - headerActionTouchInset
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = HeartGuardComponentSize.TouchTarget)
-            .padding(horizontal = HeartGuardSpacing.HeaderHorizontal),
+            .padding(horizontal = headerHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HeartGuardHeaderActionButton(
