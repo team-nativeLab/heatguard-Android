@@ -53,10 +53,11 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
+            // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
+            // 여기서는 세로 여백만 주고 가로 여백은 헤더가 아닌 항목에만 개별적으로 적용한다.
+            // (contentPadding에 가로 여백을 함께 주면 헤더의 자체 여백과 겹쳐 아이콘이 더 안쪽으로 밀린다.)
             contentPadding = PaddingValues(
-                start = HeartGuardSpacing.ScreenHorizontal,
                 top = HeartGuardSpacing.PageContentTop,
-                end = HeartGuardSpacing.ScreenHorizontal,
                 bottom = HeartGuardSpacing.LargeSection,
             ),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
@@ -73,6 +74,7 @@ fun HomeScreen(
 
             item {
                 WeatherStatusCard(
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     weatherPainter = painterResource(R.drawable.weather_sunny),
                     weatherContentDescription = stringResource(R.string.weather_sunny_description),
                     statusTitle = stringResource(R.string.home_weather_status),
@@ -92,6 +94,7 @@ fun HomeScreen(
 
             item {
                 HomeTemperatureRecordCard(
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     title = stringResource(R.string.home_temperature_records),
                     recordHint = stringResource(R.string.home_temperature_record_hint),
                     manualInputTitle = stringResource(R.string.home_manual_temperature_input),
@@ -105,7 +108,9 @@ fun HomeScreen(
             item {
                 Text(
                     text = stringResource(R.string.home_additional_records),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
@@ -115,6 +120,7 @@ fun HomeScreen(
 
             item {
                 HomeAdditionalRecordCard(
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     title = stringResource(R.string.home_field_photo),
                     description = stringResource(R.string.home_field_photo_description),
                     icon = Icons.Outlined.CameraAlt,
@@ -124,6 +130,7 @@ fun HomeScreen(
 
             item {
                 HomeAdditionalRecordCard(
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     title = stringResource(R.string.home_record_history),
                     description = stringResource(R.string.home_record_history_description),
                     // Figma 02_홈_리디자인: "기록 내역" 카드는 책 아이콘이 아닌 막대그래프 아이콘을 사용한다.
