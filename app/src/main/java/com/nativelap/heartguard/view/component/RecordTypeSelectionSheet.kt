@@ -13,14 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
-import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
 data class RecordTypeOptionUiModel(
-    val key: String,
+    val key: RecordType,
     val title: String,
     val description: String,
     val iconPainter: Painter,
@@ -31,8 +30,8 @@ data class RecordTypeOptionUiModel(
 fun RecordTypeSelectionSheet(
     title: String,
     options: List<RecordTypeOptionUiModel>,
-    selectedKey: String?,
-    onOptionSelected: (String) -> Unit,
+    selectedKey: RecordType?,
+    onOptionSelected: (RecordType) -> Unit,
     confirmTitle: String,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
@@ -84,27 +83,8 @@ private fun RecordTypeSelectionSheetPreview() {
     HeartGuardTheme {
         RecordTypeSelectionSheet(
             title = "기록 유형을 선택하세요",
-            options = listOf(
-                RecordTypeOptionUiModel(
-                    key = "temperature",
-                    title = "온도계 사진",
-                    description = "온도/습도 입력 후 체감온도 계산",
-                    iconPainter = androidx.compose.ui.res.painterResource(R.drawable.record_temperature),
-                ),
-                RecordTypeOptionUiModel(
-                    key = "work",
-                    title = "작업 사진",
-                    description = "작업 중 사진을 1~2장 업로드",
-                    iconPainter = androidx.compose.ui.res.painterResource(R.drawable.record_work_photo),
-                ),
-                RecordTypeOptionUiModel(
-                    key = "rest",
-                    title = "휴식 사진",
-                    description = "휴식 중 사진을 1~2장 업로드",
-                    iconPainter = androidx.compose.ui.res.painterResource(R.drawable.record_rest_photo),
-                ),
-            ),
-            selectedKey = "temperature",
+            options = recordTypeOptions(),
+            selectedKey = RecordType.TEMPERATURE,
             onOptionSelected = {},
             confirmTitle = "선택 완료",
             onConfirm = {},

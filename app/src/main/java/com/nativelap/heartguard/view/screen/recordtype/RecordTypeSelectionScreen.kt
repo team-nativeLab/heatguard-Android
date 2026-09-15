@@ -11,19 +11,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-import com.nativelap.heartguard.view.component.RecordTypeOptionUiModel
+import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.component.RecordTypeSelectionSheet
+import com.nativelap.heartguard.view.component.recordTypeOptions
 
 /** 홈 위에 기록 유형 선택 Sheet를 정적인 디자인 상태로 조합한다. */
 @Composable
 fun RecordTypeSelectionScreen(
-    selectedKey: String?,
-    onOptionSelected: (String) -> Unit,
+    selectedKey: RecordType?,
+    onOptionSelected: (RecordType) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -63,30 +63,6 @@ private fun BoxScope.RecordTypeScrim() {
     )
 }
 
-@Composable
-private fun recordTypeOptions(): List<RecordTypeOptionUiModel> {
-    return listOf(
-        RecordTypeOptionUiModel(
-            key = "temperature",
-            title = stringResource(R.string.record_temperature_title),
-            description = stringResource(R.string.record_temperature_description),
-            iconPainter = painterResource(R.drawable.record_temperature),
-        ),
-        RecordTypeOptionUiModel(
-            key = "work",
-            title = stringResource(R.string.record_work_photo_title),
-            description = stringResource(R.string.record_work_photo_description),
-            iconPainter = painterResource(R.drawable.record_work_photo),
-        ),
-        RecordTypeOptionUiModel(
-            key = "rest",
-            title = stringResource(R.string.record_rest_photo_title),
-            description = stringResource(R.string.record_rest_photo_description),
-            iconPainter = painterResource(R.drawable.record_rest_photo),
-        ),
-    )
-}
-
 private const val RECORD_TYPE_SCRIM_ALPHA = 0.32f
 private const val RECORD_TYPE_SHEET_HEIGHT_FRACTION = 0.73f
 
@@ -107,7 +83,7 @@ private fun RecordTypeSelectionScreenDefaultPreview() {
 private fun RecordTypeSelectionScreenSelectedPreview() {
     HeartGuardTheme {
         RecordTypeSelectionScreen(
-            selectedKey = "temperature",
+            selectedKey = RecordType.TEMPERATURE,
             onOptionSelected = {},
             onConfirm = {},
         )
