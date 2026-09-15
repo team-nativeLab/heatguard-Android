@@ -117,12 +117,12 @@
     <string name="save_time_summary">저장 시간</string>
     <string name="save_time_value">2026.07.18 10:30</string>
     <string name="record_type_selection_title">기록 유형을 선택하세요</string>
-    <string name="record_temperature_title">온도계 기록</string>
+    <string name="record_temperature_title">온도계 사진</string>
     <string name="record_temperature_description">온도/습도 입력 후 체감온도 계산</string>
     <string name="record_work_photo_title">작업 사진</string>
-    <string name="record_work_photo_description">작업 전·중 사진을 1~2장 선택</string>
+    <string name="record_work_photo_description">작업 중 사진을 1~2장 업로드</string>
     <string name="record_rest_photo_title">휴식 사진</string>
-    <string name="record_rest_photo_description">휴식 중 사진을 1~2장 선택</string>
+    <string name="record_rest_photo_description">휴식 중 사진을 1~2장 업로드</string>
     <string name="record_type_selection_content_description">선택된 기록 유형</string>
     <string name="emergency_alert_description">현장관리자에게 즉시 도움을 요청합니다</string>
     <string name="emergency_contact_title">연락 대상</string>

@@ -15,6 +15,7 @@ import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
@@ -198,17 +199,15 @@ private fun HeartGuardMainNavDisplay() {
             ) {
                 HeartGuardRecordTypeSelectionRoute(
                     onConfirm = { recordType ->
+                        // RecordType이 enum이라 when이 모든 분기를 강제하므로 else/null 분기가 필요 없다.
                         val nextDestination = when (recordType) {
-                            "temperature" -> HeartGuardDestination.TemperatureRecord
-                            "work" -> HeartGuardDestination.WorkPhoto
-                            "rest" -> HeartGuardDestination.RestPhoto
-                            else -> null
+                            RecordType.TEMPERATURE -> HeartGuardDestination.TemperatureRecord
+                            RecordType.WORK -> HeartGuardDestination.WorkPhoto
+                            RecordType.REST -> HeartGuardDestination.RestPhoto
                         }
 
-                        if (nextDestination != null) {
-                            backStack.removeLastOrNull()
-                            backStack.add(nextDestination)
-                        }
+                        backStack.removeLastOrNull()
+                        backStack.add(nextDestination)
                     },
                 )
             }

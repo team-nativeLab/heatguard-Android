@@ -62,12 +62,7 @@ fun RestPhotoScreen(
                 description = stringResource(R.string.photo_rest_screen_description),
             )
 
-            RestTimeCard(
-                title = stringResource(R.string.photo_rest_time),
-                selectedTime = selectedRestTime,
-                onClick = onRestTimeClick,
-            )
-
+            // Figma 12_휴식 사진 촬영: 사진 선택 카드가 휴식 시간 카드보다 먼저 온다.
             PhotoSelectionCard(
                 title = stringResource(R.string.photo_selection_action_title),
                 description = if (selectedPhotoCount == 0) {
@@ -86,6 +81,12 @@ fun RestPhotoScreen(
                     onClick = onRetakeClick,
                 )
             }
+
+            RestTimeCard(
+                title = stringResource(R.string.photo_rest_time),
+                selectedTime = selectedRestTime,
+                onClick = onRestTimeClick,
+            )
 
             PhotoMemoField(
                 label = stringResource(R.string.photo_memo),
