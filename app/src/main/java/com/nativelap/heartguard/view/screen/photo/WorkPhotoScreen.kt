@@ -3,6 +3,7 @@ package com.nativelap.heartguard.view.screen.photo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -38,12 +39,13 @@ fun WorkPhotoScreen(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
+        // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
+        // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             HeartGuardHeader(
@@ -54,43 +56,50 @@ fun WorkPhotoScreen(
                 onNotificationClick = {},
             )
 
-            PhotoScreenIntro(
-                title = stringResource(R.string.photo_work_screen_title),
-                description = stringResource(R.string.photo_work_screen_description),
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            ) {
+                PhotoScreenIntro(
+                    title = stringResource(R.string.photo_work_screen_title),
+                    description = stringResource(R.string.photo_work_screen_description),
+                )
 
-            PhotoSelectionCard(
-                title = stringResource(R.string.photo_selection_action_title),
-                description = if (selectedPhotoCount == 0) {
-                    stringResource(R.string.photo_selection_empty)
-                } else {
-                    stringResource(R.string.photo_selected_count, selectedPhotoCount)
-                },
-                cameraPainter = painterResource(R.drawable.record_camera),
-                cameraContentDescription = stringResource(R.string.photo_capture),
-                onClick = onCaptureClick,
-            )
+                PhotoSelectionCard(
+                    title = stringResource(R.string.photo_selection_action_title),
+                    description = if (selectedPhotoCount == 0) {
+                        stringResource(R.string.photo_selection_empty)
+                    } else {
+                        stringResource(R.string.photo_selected_count, selectedPhotoCount)
+                    },
+                    cameraPainter = painterResource(R.drawable.record_camera),
+                    cameraContentDescription = stringResource(R.string.photo_capture),
+                    onClick = onCaptureClick,
+                )
 
-            if (selectedPhotoCount > 0) {
-                PhotoRetakeButton(
-                    title = stringResource(R.string.photo_retake),
-                    onClick = onRetakeClick,
+                if (selectedPhotoCount > 0) {
+                    PhotoRetakeButton(
+                        title = stringResource(R.string.photo_retake),
+                        onClick = onRetakeClick,
+                    )
+                }
+
+                PhotoMemoField(
+                    label = stringResource(R.string.photo_memo),
+                    text = memo,
+                    onTextChange = onMemoChange,
+                    placeholder = stringResource(R.string.photo_work_memo_hint),
+                    isOptional = true,
+                )
+
+                PhotoUploadButton(
+                    title = stringResource(R.string.photo_upload),
+                    onClick = onUploadClick,
+                    isEnabled = selectedPhotoCount > 0,
                 )
             }
-
-            PhotoMemoField(
-                label = stringResource(R.string.photo_memo),
-                text = memo,
-                onTextChange = onMemoChange,
-                placeholder = stringResource(R.string.photo_work_memo_hint),
-                isOptional = true,
-            )
-
-            PhotoUploadButton(
-                title = stringResource(R.string.photo_upload),
-                onClick = onUploadClick,
-                isEnabled = selectedPhotoCount > 0,
-            )
         }
     }
 }

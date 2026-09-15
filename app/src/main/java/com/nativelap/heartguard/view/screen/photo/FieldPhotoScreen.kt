@@ -3,6 +3,7 @@ package com.nativelap.heartguard.view.screen.photo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -41,12 +42,13 @@ fun FieldPhotoScreen(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
+        // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
+        // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             HeartGuardHeader(
@@ -57,39 +59,46 @@ fun FieldPhotoScreen(
                 onNotificationClick = {},
             )
 
-            PhotoScreenIntro(
-                title = stringResource(R.string.photo_field_screen_title),
-                description = stringResource(R.string.photo_field_screen_description),
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            ) {
+                PhotoScreenIntro(
+                    title = stringResource(R.string.photo_field_screen_title),
+                    description = stringResource(R.string.photo_field_screen_description),
+                )
 
-            if (showTemperatureSaveError) {
-                TemperatureDataErrorCard(
-                    message = stringResource(R.string.photo_temperature_not_saved),
+                if (showTemperatureSaveError) {
+                    TemperatureDataErrorCard(
+                        message = stringResource(R.string.photo_temperature_not_saved),
+                    )
+                }
+
+                TemperatureInputSummaryCard(
+                    currentTemperature = currentTemperature,
+                    humidity = humidity,
+                    feelsLikeTemperature = feelsLikeTemperature,
+                    currentTemperatureLabel = stringResource(R.string.home_current_temperature),
+                    humidityLabel = stringResource(R.string.home_humidity),
+                    feelsLikeLabel = stringResource(R.string.home_feels_like),
+                    title = stringResource(R.string.temperature_installation_status),
+                )
+
+                PhotoCaptureRow(
+                    label = stringResource(R.string.photo_field_retry),
+                    instructionText = stringResource(R.string.photo_field_instruction),
+                    cameraPainter = painterResource(R.drawable.record_camera),
+                    cameraContentDescription = stringResource(R.string.photo_capture),
+                    onClick = onCaptureClick,
+                )
+
+                RecordSaveButton(
+                    title = stringResource(R.string.temperature_save),
+                    onClick = onSaveClick,
                 )
             }
-
-            TemperatureInputSummaryCard(
-                currentTemperature = currentTemperature,
-                humidity = humidity,
-                feelsLikeTemperature = feelsLikeTemperature,
-                currentTemperatureLabel = stringResource(R.string.home_current_temperature),
-                humidityLabel = stringResource(R.string.home_humidity),
-                feelsLikeLabel = stringResource(R.string.home_feels_like),
-                title = stringResource(R.string.temperature_installation_status),
-            )
-
-            PhotoCaptureRow(
-                label = stringResource(R.string.photo_field_retry),
-                instructionText = stringResource(R.string.photo_field_instruction),
-                cameraPainter = painterResource(R.drawable.record_camera),
-                cameraContentDescription = stringResource(R.string.photo_capture),
-                onClick = onCaptureClick,
-            )
-
-            RecordSaveButton(
-                title = stringResource(R.string.temperature_save),
-                onClick = onSaveClick,
-            )
         }
     }
 }
