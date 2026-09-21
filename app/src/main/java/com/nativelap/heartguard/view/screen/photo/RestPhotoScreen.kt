@@ -107,7 +107,6 @@ fun RestPhotoScreen(
                 PhotoUploadButton(
                     title = stringResource(R.string.photo_upload),
                     onClick = onUploadClick,
-                    isEnabled = selectedPhotoCount > 0,
                 )
             }
         }

@@ -30,6 +30,12 @@ data class HeartGuardExtraColors(
     val authPrimary: Color,
     val authOnSurface: Color,
     val authOnSurfaceVariant: Color,
+    val homeMetricContainer: Color,
+    val homeMutedText: Color,
+    val homeTimelineTrack: Color,
+    val homeTimelineActive: Color,
+    val homeTimelineInactive: Color,
+    val homeContactAlertContainer: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -84,6 +90,12 @@ private val authBackgroundColor = Color(0xFFFFFFFF)
 private val authPrimaryColor = Color(0xFF467EE5)
 private val authOnSurfaceColor = Color(0xFF202632)
 private val authOnSurfaceVariantColor = Color(0xFF7A8292)
+private val homeMetricContainerColor = Color(0xFFEBF0FB)
+private val homeMutedTextColor = Color(0xFF54596B)
+private val homeTimelineTrackColor = Color(0xFFE8EBF2)
+private val homeTimelineActiveColor = Color(0xFF4470ED)
+private val homeTimelineInactiveColor = Color(0xFFA6A8B2)
+private val homeContactAlertContainerColor = Color(0xFFFEE2E2)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -132,6 +144,12 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     authPrimary = authPrimaryColor,
     authOnSurface = authOnSurfaceColor,
     authOnSurfaceVariant = authOnSurfaceVariantColor,
+    homeMetricContainer = homeMetricContainerColor,
+    homeMutedText = homeMutedTextColor,
+    homeTimelineTrack = homeTimelineTrackColor,
+    homeTimelineActive = homeTimelineActiveColor,
+    homeTimelineInactive = homeTimelineInactiveColor,
+    homeContactAlertContainer = homeContactAlertContainerColor,
 )
 
 /**

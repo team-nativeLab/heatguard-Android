@@ -9,11 +9,13 @@ import com.nativelap.heartguard.view.screen.emergency.EmergencyScreen
 /** 긴급 화면의 고정 현장 관리자 정보와 호출 취소 Navigation callback을 연결한다. */
 @Composable
 internal fun HeartGuardEmergencyRoute(
+    onCallClick: () -> Unit,
     onCancelClick: () -> Unit,
 ) {
     EmergencyScreen(
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = stringResource(R.string.emergency_contact_phone),
+        onCallClick = onCallClick,
         onCancelClick = onCancelClick,
         onContactClick = {},
     )

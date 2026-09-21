@@ -2,8 +2,8 @@ package com.nativelap.heartguard.view.route.photo
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
@@ -20,28 +20,18 @@ internal fun HeartGuardFieldPhotoRoute(
     var selectedPhotoCount by rememberSaveable {
         mutableIntStateOf(0)
     }
-    var showTemperatureSaveError by rememberSaveable {
-        mutableStateOf(false)
-    }
-
     FieldPhotoScreen(
         currentTemperature = "47.5°C",
         humidity = "55%",
         feelsLikeTemperature = "40.5°C",
         selectedPhotoCount = selectedPhotoCount,
-        showTemperatureSaveError = showTemperatureSaveError,
+        showTemperatureSaveError = false,
         onCaptureClick = {
             if (selectedPhotoCount < 2) {
                 selectedPhotoCount += 1
             }
         },
-        onSaveClick = {
-            if (showTemperatureSaveError) {
-                onSaveClick()
-            } else {
-                showTemperatureSaveError = true
-            }
-        },
+        onSaveClick = onSaveClick,
     )
 }
 

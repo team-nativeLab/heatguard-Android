@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android Dialog Blur"
+  short_description: "Manage reusable Compose dialog backdrop blur."
+  default_prompt: "Use $android-dialog-blur to add reusable dialog backdrop blur safely."

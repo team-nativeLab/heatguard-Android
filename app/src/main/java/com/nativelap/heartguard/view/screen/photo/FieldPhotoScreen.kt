@@ -20,6 +20,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.HeartGuardHeader
 import com.nativelap.heartguard.view.component.photo.PhotoCaptureRow
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
+import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
 import com.nativelap.heartguard.view.component.photo.TemperatureDataErrorCard
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.temperature.TemperatureInputSummaryCard
@@ -70,9 +71,22 @@ fun FieldPhotoScreen(
                     description = stringResource(R.string.photo_field_screen_description),
                 )
 
+                // Figma "14_현장사진_촬영전"은 온도계 데이터 요약보다 먼저 오는 큰 사진 선택
+                // 영역을 별도로 갖고 있다. 기존 구현에는 이 영역이 빠져 있어 추가했다.
+                // "15_저장전_확인알림"은 별도 팝업이 아니라 이 화면의 상태 변형으로, 같은 박스
+                // 안에서 카메라 아이콘 대신 X 아이콘 + "온도계가 아직 저장이 안되었어요" 문구가
+                // 표시된다. 두 카드를 함께 보여주지 않고 상태에 따라 하나만 표시한다.
                 if (showTemperatureSaveError) {
                     TemperatureDataErrorCard(
                         message = stringResource(R.string.photo_temperature_not_saved),
+                    )
+                } else {
+                    PhotoSelectionCard(
+                        title = stringResource(R.string.photo_field_instruction),
+                        description = null,
+                        cameraPainter = painterResource(R.drawable.record_camera),
+                        cameraContentDescription = stringResource(R.string.photo_capture),
+                        onClick = onCaptureClick,
                     )
                 }
 

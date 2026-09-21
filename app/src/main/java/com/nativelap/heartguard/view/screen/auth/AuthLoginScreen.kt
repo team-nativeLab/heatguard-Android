@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.screen.auth
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -57,11 +58,13 @@ fun AuthLoginScreen(
                 .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
                 .imePadding()
                 .navigationBarsPadding(),
+            // 로그인 버튼·회원가입 안내가 Figma처럼 화면 하단에 밀착되도록 첫 자식(폼)과
+            // 마지막 자식(액션 영역) 사이 여백을 SpaceBetween으로 강제한다.
+            verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,

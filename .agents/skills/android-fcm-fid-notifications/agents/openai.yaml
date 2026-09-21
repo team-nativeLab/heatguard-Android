@@ -1,0 +1,4 @@
+interface:
+  display_name: "FCM FID Notifications"
+  short_description: "Implement Android FCM alarms with Firebase Installation IDs."
+  default_prompt: "Use $android-fcm-fid-notifications to add an Android FCM alarm feature that registers and targets Firebase Installation IDs (FIDs)."

@@ -102,20 +102,28 @@ fun TemperatureRecordScreen(
 
                     TemperatureRecordCard(
                         temperatureLabel = stringResource(R.string.home_temperature_field),
-                        temperatureText = temperatureText,
-                        temperatureUnit = stringResource(R.string.home_temperature_unit),
+                        temperatureText = if (isManualInputEnabled) {
+                            temperatureText
+                        } else {
+                            ""
+                        },
+                        temperatureUnit = "",
                         onTemperatureChange = onTemperatureChange,
                         humidityLabel = stringResource(R.string.home_humidity_field),
-                        humidityText = humidityText,
-                        humidityUnit = stringResource(R.string.home_percent_unit),
+                        humidityText = if (isManualInputEnabled) {
+                            humidityText
+                        } else {
+                            ""
+                        },
+                        humidityUnit = "",
                         onHumidityChange = onHumidityChange,
                         feelsLikeLabel = stringResource(R.string.home_feels_like_field),
                         feelsLikeText = if (isManualInputEnabled) {
                             feelsLikeTemperature
                         } else {
-                            stringResource(R.string.home_calculated)
+                            ""
                         },
-                        installationLabel = stringResource(R.string.temperature_not_installed),
+                        installationLabel = stringResource(R.string.temperature_not_installed_note),
                         isManualInputEnabled = isManualInputEnabled,
                         onManualInputChange = onManualInputChange,
                         checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
@@ -137,7 +145,9 @@ fun TemperatureRecordScreen(
                             cameraPainter = painterResource(R.drawable.record_camera),
                             cameraContentDescription = stringResource(R.string.photo_capture),
                             onClick = onFieldPhotoClick,
-                            isEnabled = !isManualInputEnabled,
+                            // Figma 06/13 모두 온도계 데이터 직접 입력 토글 상태와 무관하게
+                            // 현장 사진 카드가 항상 활성 상태로 표시된다.
+                            isEnabled = true,
                             minHeight = HeartGuardComponentSize.FieldPhotoSelectionHeight,
                         )
                     }

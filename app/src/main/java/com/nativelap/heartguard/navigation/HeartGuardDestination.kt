@@ -37,9 +37,6 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object RestPhoto : HeartGuardDestination
 
     @Serializable
-    data object SaveConfirmation : HeartGuardDestination
-
-    @Serializable
     data object SaveSuccess : HeartGuardDestination
 
     @Serializable

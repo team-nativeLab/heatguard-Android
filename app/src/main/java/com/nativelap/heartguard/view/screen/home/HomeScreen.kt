@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -16,18 +13,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.home.CheckTimelineItem
 import com.nativelap.heartguard.view.component.home.HomeAdditionalRecordCard
-import com.nativelap.heartguard.view.component.home.HomeTemperatureRecordCard
-import com.nativelap.heartguard.view.component.home.WeatherMetricValue
+import com.nativelap.heartguard.view.component.home.HomeCheckTimeline
+import com.nativelap.heartguard.view.component.home.HomeContactCard
 import com.nativelap.heartguard.view.component.home.WeatherStatusCard
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 
-/** Figma 현장앱 홈의 날씨·데이터 기록·추가 기록 영역을 조합한다. */
+/** Figma 홈 리디자인의 날씨, 점검, 연락처, 추가 기록 영역을 하나의 화면으로 조립한다. */
 @Composable
 fun HomeScreen(
     currentTemperature: String,
@@ -35,14 +33,13 @@ fun HomeScreen(
     humidity: String,
     temperatureDelta: String,
     riskLabel: String,
-    temperatureMetrics: List<WeatherMetricValue>,
-    isManualInputEnabled: Boolean,
-    onManualInputChange: (Boolean) -> Unit,
     onMenuClick: () -> Unit,
     onNotificationClick: () -> Unit,
-    onTemperatureRecordClick: () -> Unit,
+    onManagerCallClick: () -> Unit,
+    onEmergencyClick: () -> Unit,
     onFieldPhotoClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
+    onRecordClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -53,9 +50,6 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
-            // 여기서는 세로 여백만 주고 가로 여백은 헤더가 아닌 항목에만 개별적으로 적용한다.
-            // (contentPadding에 가로 여백을 함께 주면 헤더의 자체 여백과 겹쳐 아이콘이 더 안쪽으로 밀린다.)
             contentPadding = PaddingValues(
                 top = HeartGuardSpacing.PageContentTop,
                 bottom = HeartGuardSpacing.LargeSection,
@@ -74,8 +68,8 @@ fun HomeScreen(
 
             item {
                 WeatherStatusCard(
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
-                    weatherPainter = painterResource(R.drawable.weather_sunny),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    weatherPainter = painterResource(R.drawable.heartguard_home_weather),
                     weatherContentDescription = stringResource(R.string.weather_sunny_description),
                     statusTitle = stringResource(R.string.home_weather_status),
                     currentTemperature = currentTemperature,
@@ -93,15 +87,34 @@ fun HomeScreen(
             }
 
             item {
-                HomeTemperatureRecordCard(
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
-                    title = stringResource(R.string.home_temperature_records),
-                    recordHint = stringResource(R.string.home_temperature_record_hint),
-                    manualInputTitle = stringResource(R.string.home_manual_temperature_input),
-                    isManualInputEnabled = isManualInputEnabled,
-                    onManualInputChange = onManualInputChange,
-                    metrics = temperatureMetrics,
-                    onClick = onTemperatureRecordClick,
+                Text(
+                    text = stringResource(R.string.home_data_records),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+
+            item {
+                HomeCheckTimeline(
+                    title = stringResource(R.string.home_today_check_title),
+                    nextCheckDescription = stringResource(R.string.home_next_check_description),
+                    items = homeCheckTimelineItems(),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                )
+            }
+
+            item {
+                HomeContactCard(
+                    managerTitle = stringResource(R.string.home_manager_call),
+                    managerDescription = stringResource(R.string.home_manager_call_description),
+                    emergencyTitle = stringResource(R.string.home_emergency_call),
+                    emergencyDescription = stringResource(R.string.home_emergency_call_description),
+                    onManagerClick = onManagerCallClick,
+                    onEmergencyClick = onEmergencyClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
             }
 
@@ -110,39 +123,58 @@ fun HomeScreen(
                     text = stringResource(R.string.home_additional_records),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                        .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                     color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
 
             item {
                 HomeAdditionalRecordCard(
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     title = stringResource(R.string.home_field_photo),
                     description = stringResource(R.string.home_field_photo_description),
-                    icon = Icons.Outlined.CameraAlt,
+                    iconPainter = painterResource(R.drawable.home_photo),
                     onClick = onFieldPhotoClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
             }
 
             item {
                 HomeAdditionalRecordCard(
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
                     title = stringResource(R.string.home_record_history),
                     description = stringResource(R.string.home_record_history_description),
-                    // Figma 02_홈_리디자인: "기록 내역" 카드는 책 아이콘이 아닌 막대그래프 아이콘을 사용한다.
-                    icon = Icons.Outlined.BarChart,
+                    iconPainter = painterResource(R.drawable.home_history),
                     onClick = onRecordHistoryClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                )
+            }
+
+            item {
+                RecordSaveButton(
+                    title = stringResource(R.string.home_record_action),
+                    onClick = onRecordClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
             }
         }
     }
 }
 
-@Preview(showBackground = true, widthDp = 402, heightDp = 874)
+/** 홈 Preview와 로컬 샘플 화면에서 Figma의 08시~22시 점검 상태를 재현한다. */
+private fun homeCheckTimelineItems(): List<CheckTimelineItem> {
+    return listOf(
+        CheckTimelineItem("08시", isCompleted = true),
+        CheckTimelineItem("10시", isCompleted = true),
+        CheckTimelineItem("12시", isCompleted = false),
+        CheckTimelineItem("14시", isCompleted = true),
+        CheckTimelineItem("16시", isCompleted = false),
+        CheckTimelineItem("18시", isCompleted = true),
+        CheckTimelineItem("20시", isCompleted = true, isCurrent = true),
+        CheckTimelineItem("22시", isCompleted = false),
+    )
+}
+
+@Preview(showBackground = true, widthDp = 402, heightDp = 978)
 @Composable
 private fun HomeScreenPreview() {
     HeartGuardTheme {
@@ -152,27 +184,13 @@ private fun HomeScreenPreview() {
             humidity = "55%",
             temperatureDelta = "+3.2°C",
             riskLabel = stringResource(R.string.home_heat_caution),
-            temperatureMetrics = listOf(
-                WeatherMetricValue(
-                    label = stringResource(R.string.home_temperature_field),
-                    value = "47.5",
-                ),
-                WeatherMetricValue(
-                    label = stringResource(R.string.home_humidity_field),
-                    value = "55",
-                ),
-                WeatherMetricValue(
-                    label = stringResource(R.string.home_feels_like_field),
-                    value = stringResource(R.string.home_calculated),
-                ),
-            ),
-            isManualInputEnabled = false,
-            onManualInputChange = {},
             onMenuClick = {},
             onNotificationClick = {},
-            onTemperatureRecordClick = {},
+            onManagerCallClick = {},
+            onEmergencyClick = {},
             onFieldPhotoClick = {},
             onRecordHistoryClick = {},
+            onRecordClick = {},
         )
     }
 }

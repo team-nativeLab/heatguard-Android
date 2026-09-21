@@ -213,6 +213,15 @@ data class ProjectUiState(
 - 반복 spacing/radius/elevation/duration: 디자인 토큰
 - 한 번만 쓰이고 의미가 명확한 값까지 무조건 전역 상수로 만들지 않는다.
 
+## Figma 측정값과 제약 기반 레이아웃
+
+- Figma의 `Top`, `Left`, 절대 `X/Y`, 개별 `Width`는 부모 관계와 Auto Layout을 확인하기 위한 측정값으로만 취급한다.
+- Figma 좌표를 Compose의 `offset`, `absoluteOffset`, 고정 위치, 화면 기준 절대 배치로 그대로 옮기지 않는다.
+- 화면 크기와 무관하게 유지되어야 하는 의미적 불변값(예: 최소 터치 높이, 아이콘 렌더링 크기, 모서리 반경)은 디자인 토큰으로 관리할 수 있다.
+- 가로·세로 크기는 가능한 경우 부모의 `padding`, `fillMaxWidth`, `widthIn`, `wrapContent`, `weight`, `aspectRatio`, 정렬 제약으로 표현한다.
+- Figma의 부모·자식 제약을 확인할 수 없으면 좌표를 근거로 구현을 확정하지 말고, 확인되지 않은 값과 반응형 매핑을 구현 계획에 명시한다.
+- 기준 화면에서 확인한 픽셀값은 Preview 또는 시각 검증의 기준으로 사용하며, 다른 화면 크기에서도 콘텐츠가 잘리지 않고 RTL·텍스트 확대를 견디는지 함께 확인한다.
+
 ## 완료 체크
 
 - Route와 Screen이 분리되어 있다.
