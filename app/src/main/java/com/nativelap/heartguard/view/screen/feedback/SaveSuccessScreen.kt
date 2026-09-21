@@ -37,7 +37,7 @@ fun SaveSuccessScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(HeartGuardSpacing.ScreenHorizontal),
+                .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             SaveResultTitle(

@@ -17,7 +17,11 @@ object HeartGuardSpacing {
     val AuthFieldGroup = 26.dp
     val AuthTitleDescription = 4.dp
     val PageContentTop = 12.dp
+    val ResultHorizontal = 25.dp
     val HomeCardHorizontal = 25.dp
+    val HomeContentHorizontal = 27.dp
+    val HomeHeroHorizontal = 35.dp
+    val HomeMetricHorizontal = 18.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
     val CompactSection = 8.dp
@@ -33,6 +37,8 @@ object HeartGuardRadius {
     val Card = 16.dp
     val LargeCard = 25.dp
     val WeatherCard = 32.dp
+    val HomeMetric = 16.dp
+    val HomeAction = 12.dp
     val Sheet = 40.dp
     val Button = 8.dp
     val PrimaryAction = 12.dp
@@ -57,6 +63,10 @@ object HeartGuardIconSize {
     val StatusIndicator = 12.dp
     val Small = 16.dp
     val WeatherStatus = 48.dp
+    val HomeMetric = 36.dp
+    val HomeRecord = 44.dp
+    val EmergencyCall = 138.dp
+    val EmergencyCallInner = 110.dp
 }
 
 object HeartGuardComponentSize {
@@ -66,6 +76,7 @@ object HeartGuardComponentSize {
     val AuthActionMaxWidth = 318.dp
     val AuthTextFieldHeight = 45.dp
     val TextFieldHeight = 48.dp
+    val CompactInputHeight = 40.dp
     val TouchTarget = 48.dp
     // Figma 카드의 콘텐츠가 잘리지 않도록 최소 높이만 제공하고, 긴 텍스트에는 높이를 열어 둔다.
     val RecordOptionMinHeight = 110.dp
@@ -86,6 +97,10 @@ object HeartGuardComponentSize {
     val TemperatureSummaryHeight = 138.dp
     val FieldPhotoCaptureRowHeight = 79.dp
     val HomeActionCardHeight = 148.dp
+    val HomeWeatherMetricHeight = 78.dp
+    val HomeTimelineHeight = 136.dp
+    val HomeContactHeight = 130.dp
+    val HomeAdditionalRecordHeight = 69.dp
     val TemperatureDeltaMinWidth = 72.dp
 }
 

@@ -32,6 +32,7 @@ import com.nativelap.heartguard.view.component.emergency.EmergencyContactCard
 fun EmergencyScreen(
     contactName: String,
     phoneNumber: String,
+    onCallClick: () -> Unit,
     onCancelClick: () -> Unit,
     onContactClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -67,6 +68,7 @@ fun EmergencyScreen(
                 title = stringResource(R.string.emergency_indicator_title),
                 description = stringResource(R.string.emergency_indicator_description),
                 isCalling = true,
+                onClick = onCallClick,
             )
 
             EmergencyContactCard(
@@ -92,6 +94,7 @@ private fun EmergencyScreenPreview() {
             contactName = "홍길동",
             phoneNumber = "010-1234-5678",
             onCancelClick = {},
+            onCallClick = {},
             onContactClick = {},
         )
     }

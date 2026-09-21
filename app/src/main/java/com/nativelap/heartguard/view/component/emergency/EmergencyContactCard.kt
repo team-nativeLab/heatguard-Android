@@ -5,11 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -62,10 +62,10 @@ fun EmergencyContactCard(
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
-            Icon(
-                imageVector = Icons.Outlined.Phone,
+            Image(
+                painter = androidx.compose.ui.res.painterResource(R.drawable.emergency_phone),
                 contentDescription = stringResource(R.string.common_call),
-                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(HeartGuardIconSize.Information),
             )
         }
     }

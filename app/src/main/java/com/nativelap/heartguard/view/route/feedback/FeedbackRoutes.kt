@@ -3,22 +3,9 @@ package com.nativelap.heartguard.view.route.feedback
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.view.component.feedback.SaveConfirmationDialog
 import com.nativelap.heartguard.view.component.feedback.SavedRecordSummaryItem
 import com.nativelap.heartguard.view.screen.feedback.SaveFailureScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveSuccessScreen
-
-/** 저장 확인 Dialog의 UI와 Navigation callback을 연결하는 Route adapter이다. */
-@Composable
-internal fun HeartGuardSaveConfirmationRoute(
-    onDismissClick: () -> Unit,
-    onConfirmClick: () -> Unit,
-) {
-    SaveConfirmationDialog(
-        onDismissClick = onDismissClick,
-        onConfirmClick = onConfirmClick,
-    )
-}
 
 /** 저장 성공 결과의 샘플 데이터와 완료 Navigation callback을 연결한다. */
 @Composable

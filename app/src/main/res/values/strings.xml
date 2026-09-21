@@ -58,6 +58,14 @@
     <string name="home_feels_like_field">체감온도(°C)</string>
     <string name="home_calculated">자동계산</string>
     <string name="home_additional_records">추가 기록</string>
+    <string name="home_data_records">데이터 기록</string>
+    <string name="home_today_check_title">오늘 체크 시간</string>
+    <string name="home_next_check_description">다음 체크까지 57분 · 22:00 예정</string>
+    <string name="home_manager_call">관리자 전화</string>
+    <string name="home_manager_call_description">현장 관리자에게 연락</string>
+    <string name="home_emergency_call">긴급 전화</string>
+    <string name="home_emergency_call_description">본사와 즉시 연결</string>
+    <string name="home_record_action">기록하기</string>
     <string name="home_field_photo">현장 사진</string>
     <string name="home_field_photo_description">사진 촬영 또는 앨범에서 선택</string>
     <string name="home_record_history">기록 내역</string>
@@ -144,6 +152,7 @@
     <string name="emergency_waiting_status_description">연결을 기다리고 있습니다</string>
     <string name="emergency_connected_status_description">통화를 계속 진행해 주세요</string>
     <string name="temperature_not_installed_description">온도계를 사용할 수 없어 직접 입력할 수 없습니다.</string>
+    <string name="temperature_not_installed_note">미설치 시 자동으로 기록됩니다.</string>
     <string name="temperature_warning_label">주의</string>
     <string name="temperature_save">기록 저장</string>
     <string name="photo_field_screen_title">현장 사진</string>
