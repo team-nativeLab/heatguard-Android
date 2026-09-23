@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.core.network.di
 
+import com.nativelap.heartguard.core.network.BearerTokenAuthenticator
 import com.nativelap.heartguard.core.network.BearerTokenInterceptor
 import dagger.Module
 import dagger.Provides
@@ -29,8 +30,10 @@ object NetworkModule {
     @AuthenticatedApiClient
     fun provideAuthenticatedApiClient(
         bearerTokenInterceptor: BearerTokenInterceptor,
+        bearerTokenAuthenticator: BearerTokenAuthenticator,
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(bearerTokenInterceptor)
+        .authenticator(bearerTokenAuthenticator)
         .build()
 
     @Provides

@@ -2,6 +2,8 @@ package com.nativelap.heartguard.core.session
 
 import com.nativelap.heartguard.core.session.SessionState.Authenticated
 import com.nativelap.heartguard.core.session.SessionState.Unauthenticated
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -22,7 +24,7 @@ class SessionManagerTest {
     }
 
     @Test
-    fun loginAndSessionClearUpdateStoredAccessTokenAndState() = runTest {
+    fun loginAndExpireSessionUpdateStoredAccessTokenAndState() = runTest {
         val storage = FakeTokenStorage()
         val sessionManager = SessionManager(
             tokenStorage = storage,
@@ -35,10 +37,31 @@ class SessionManagerTest {
         assertEquals(sessionToken.accessToken, storage.accessToken)
         assertEquals(Authenticated, sessionManager.sessionState.value)
 
-        sessionManager.clearSession()
+        sessionManager.expireSession()
 
         assertEquals(null, storage.accessToken)
         assertEquals(Unauthenticated, sessionManager.sessionState.value)
+    }
+
+    @Test
+    fun expireSessionEmitsExpiredEvent() = runTest {
+        val storage = FakeTokenStorage()
+        val sessionManager = SessionManager(
+            tokenStorage = storage,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+
+        sessionManager.onLoginSucceeded(SessionToken(accessToken = "access-token"))
+
+        var receivedEvent: SessionEvent? = null
+        val collectJob = launch {
+            receivedEvent = sessionManager.sessionEvents.first()
+        }
+
+        sessionManager.expireSession()
+        collectJob.join()
+
+        assertEquals(SessionEvent.Expired, receivedEvent)
     }
 
     private class FakeTokenStorage : TokenStorage {

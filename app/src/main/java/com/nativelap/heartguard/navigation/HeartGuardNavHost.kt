@@ -4,16 +4,19 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
@@ -29,20 +32,24 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 
-/** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다. */
+/** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
+ * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
+ * (BearerTokenAuthenticator가 expireSession()을 호출한 경우 포함) 자동으로 로그인 화면으로 돌아간다. */
 @Composable
-internal fun HeartGuardNavHost() {
-    // TODO: 실제 로그인 API가 연결되면 이 로컬 상태 대신 SessionManager.sessionState를
-    // lifecycle-aware하게 수집해 Authenticated/Unauthenticated를 판단해야 한다. (이슈 #21 후속)
-    var isAuthenticated by rememberSaveable {
-        mutableStateOf(false)
-    }
+internal fun HeartGuardNavHost(
+    sessionViewModel: HeartGuardSessionViewModel = hiltViewModel(),
+) {
+    // TODO: androidx.lifecycle:lifecycle-runtime-compose를 새 dependency로 추가하는 것에 대한
+    // 사용자 확인을 받으면 collectAsState를 collectAsStateWithLifecycle로 교체한다.
+    val sessionState by sessionViewModel.sessionState.collectAsState()
 
-    if (isAuthenticated) {
-        HeartGuardMainNavDisplay()
-    } else {
-        HeartGuardAuthNavDisplay(
-            onAuthenticated = { isAuthenticated = true },
+    when (sessionState) {
+        // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 어느 화면도 그리지 않는다.
+        // TODO: 스플래시 화면이 추가되면 빈 화면 대신 그 화면을 보여준다.
+        SessionState.Initializing -> Unit
+        SessionState.Authenticated -> HeartGuardMainNavDisplay()
+        SessionState.Unauthenticated -> HeartGuardAuthNavDisplay(
+            onAuthenticated = sessionViewModel::onLoginSucceeded,
         )
     }
 }
