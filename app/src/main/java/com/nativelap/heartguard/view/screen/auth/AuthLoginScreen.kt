@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +28,6 @@ import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
-import com.nativelap.heartguard.view.component.auth.AuthPrompt
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.brand.BrandMark
@@ -41,10 +41,10 @@ fun AuthLoginScreen(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
-    onSignUpClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPasswordError: Boolean = false,
     passwordErrorMessage: String? = null,
+    loginInfoMessage: String? = null,
 ) {
     Scaffold(
         modifier = modifier,
@@ -123,13 +123,14 @@ fun AuthLoginScreen(
                     onClick = onLoginClick,
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthButtonPrompt))
-
-                AuthPrompt(
-                    message = stringResource(R.string.auth_signup_prompt),
-                    actionTitle = stringResource(R.string.auth_signup),
-                    onActionClick = onSignUpClick,
-                )
+                loginInfoMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthButtonPrompt))
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }
@@ -145,7 +146,6 @@ private fun AuthLoginScreenPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
-            onSignUpClick = {},
         )
     }
 }
@@ -160,7 +160,6 @@ private fun AuthLoginScreenErrorPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
-            onSignUpClick = {},
             isPasswordError = true,
             passwordErrorMessage = stringResource(R.string.auth_password_error),
         )

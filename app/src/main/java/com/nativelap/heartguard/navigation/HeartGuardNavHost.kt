@@ -16,10 +16,10 @@ import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
-import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
+import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveConfirmationRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
@@ -31,24 +31,12 @@ import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRou
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다. */
 @Composable
 internal fun HeartGuardNavHost() {
-    var isAuthenticated by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    if (isAuthenticated) {
-        HeartGuardMainNavDisplay()
-    } else {
-        HeartGuardAuthNavDisplay(
-            onAuthenticated = { isAuthenticated = true },
-        )
-    }
+    HeartGuardAuthNavDisplay()
 }
 
-/** 서버 인증이 연결되기 전까지 로그인·회원가입 화면 전환을 담당하는 임시 인증 흐름이다. */
+/** 팀 로그인 계약이 연결될 때까지 인증 화면만 제공한다. */
 @Composable
-private fun HeartGuardAuthNavDisplay(
-    onAuthenticated: () -> Unit,
-) {
+private fun HeartGuardAuthNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Login)
 
     NavDisplay(
@@ -81,22 +69,7 @@ private fun HeartGuardAuthNavDisplay(
         },
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Login> {
-                HeartGuardLoginRoute(
-                    onLoginClick = onAuthenticated,
-                    onSignUpClick = {
-                        backStack.add(HeartGuardDestination.SignUp)
-                    },
-                )
-            }
-            entry<HeartGuardDestination.SignUp> {
-                HeartGuardSignUpRoute(
-                    onSignUpClick = {
-                        backStack.removeLastOrNull()
-                    },
-                    onLoginClick = {
-                        backStack.removeLastOrNull()
-                    },
-                )
+                HeartGuardLoginRoute()
             }
         },
     )
@@ -122,6 +95,10 @@ private fun HeartGuardMainNavDisplay() {
         }
         isNextSaveAttemptSuccessful = !isNextSaveAttemptSuccessful
         backStack.add(resultDestination)
+    }
+
+    fun goToSaveConfirmation() {
+        backStack.add(HeartGuardDestination.SaveConfirmation)
     }
 
     fun goBack() {
@@ -223,22 +200,28 @@ private fun HeartGuardMainNavDisplay() {
                     onFieldPhotoClick = {
                         backStack.add(HeartGuardDestination.FieldPhoto)
                     },
-                    onSaveClick = ::goToSaveResult,
+                    onSaveClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.FieldPhoto> {
                 HeartGuardFieldPhotoRoute(
-                    onSaveClick = ::goToSaveResult,
+                    onSaveClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.WorkPhoto> {
                 HeartGuardWorkPhotoRoute(
-                    onUploadClick = ::goToSaveResult,
+                    onUploadClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.RestPhoto> {
                 HeartGuardRestPhotoRoute(
-                    onUploadClick = ::goToSaveResult,
+                    onUploadClick = ::goToSaveConfirmation,
+                )
+            }
+            entry<HeartGuardDestination.SaveConfirmation> {
+                HeartGuardSaveConfirmationRoute(
+                    onCaptureClick = ::goBack,
+                    onSaveClick = ::goToSaveResult,
                 )
             }
             entry<HeartGuardDestination.SaveSuccess> {

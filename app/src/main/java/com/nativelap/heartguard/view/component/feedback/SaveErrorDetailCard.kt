@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -27,7 +31,9 @@ fun SaveErrorDetailCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(HeartGuardComponentSize.ResultErrorDetailHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
@@ -36,20 +42,39 @@ fun SaveErrorDetailCard(
         ),
     ) {
         Column(
-            modifier = Modifier.padding(HeartGuardSpacing.Section),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = HeartGuardSpacing.ResultErrorDetailHorizontal,
+                    end = HeartGuardSpacing.ResultErrorDetailHorizontal,
+                    top = HeartGuardSpacing.ResultErrorDetailTop,
+                ),
         ) {
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = HeartGuardFontSize.ResultSummaryTitle,
+                    fontWeight = FontWeight.Bold,
+                ),
             )
-            details.forEach { detail ->
-                Text(
-                    text = detail,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+            Column(
+                modifier = Modifier
+                    .padding(start = HeartGuardSpacing.ResultErrorDetailTextIndent)
+                    .padding(top = HeartGuardSpacing.Item),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+            ) {
+                details.forEach { detail ->
+                    Text(
+                        text = detail,
+                        color = MaterialTheme.extraColors.disabledText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = HeartGuardFontSize.ResultMessageDescription,
+                            lineHeight = HeartGuardFontSize.ResultMessageDescriptionLineHeight,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                    )
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.screen.photo
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,9 +20,9 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.HeartGuardHeader
 import com.nativelap.heartguard.view.component.photo.PhotoCaptureRow
+import com.nativelap.heartguard.view.component.photo.PhotoPreviewPlaceholder
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
-import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
-import com.nativelap.heartguard.view.component.photo.TemperatureDataErrorCard
+import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.temperature.TemperatureInputSummaryCard
 
@@ -31,9 +32,9 @@ fun FieldPhotoScreen(
     currentTemperature: String,
     humidity: String,
     feelsLikeTemperature: String,
-    // TODO: Figma "14_현장사진_촬영전" 프레임의 재촬영 박스는 선택 개수 라벨을 표시하지 않는다.
-    // PhotoRoutes.kt 연결은 손대지 않는 범위라 매개변수는 유지하되 이 화면에서는 사용하지 않는다.
-    @Suppress("UNUSED_PARAMETER") selectedPhotoCount: Int,
+    selectedPhotoCount: Int,
+    selectedPhotoUris: List<Uri> = emptyList(),
+    onRemovePhoto: (Uri) -> Unit = {},
     showTemperatureSaveError: Boolean,
     onCaptureClick: () -> Unit,
     onSaveClick: () -> Unit,
@@ -62,13 +63,13 @@ fun FieldPhotoScreen(
 
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
                 PhotoScreenIntro(
                     title = stringResource(R.string.photo_field_screen_title),
                     description = stringResource(R.string.photo_field_screen_description),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
                 )
 
                 // Figma "14_현장사진_촬영전"은 온도계 데이터 요약보다 먼저 오는 큰 사진 선택
@@ -76,17 +77,22 @@ fun FieldPhotoScreen(
                 // "15_저장전_확인알림"은 별도 팝업이 아니라 이 화면의 상태 변형으로, 같은 박스
                 // 안에서 카메라 아이콘 대신 X 아이콘 + "온도계가 아직 저장이 안되었어요" 문구가
                 // 표시된다. 두 카드를 함께 보여주지 않고 상태에 따라 하나만 표시한다.
-                if (showTemperatureSaveError) {
-                    TemperatureDataErrorCard(
+                if (selectedPhotoUris.isNotEmpty()) {
+                    SelectedPhotoGrid(
+                        photoUris = selectedPhotoUris,
+                        onRemovePhoto = onRemovePhoto,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    )
+                } else if (showTemperatureSaveError) {
+                    PhotoPreviewPlaceholder(
                         message = stringResource(R.string.photo_temperature_not_saved),
+                        onClick = onCaptureClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                     )
                 } else {
-                    PhotoSelectionCard(
-                        title = stringResource(R.string.photo_field_instruction),
-                        description = null,
-                        cameraPainter = painterResource(R.drawable.record_camera),
-                        cameraContentDescription = stringResource(R.string.photo_capture),
+                    PhotoPreviewPlaceholder(
                         onClick = onCaptureClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                     )
                 }
 
@@ -98,6 +104,7 @@ fun FieldPhotoScreen(
                     humidityLabel = stringResource(R.string.home_humidity),
                     feelsLikeLabel = stringResource(R.string.home_feels_like),
                     title = stringResource(R.string.temperature_installation_status),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                 )
 
                 PhotoCaptureRow(
@@ -106,11 +113,14 @@ fun FieldPhotoScreen(
                     cameraPainter = painterResource(R.drawable.record_camera),
                     cameraContentDescription = stringResource(R.string.photo_capture),
                     onClick = onCaptureClick,
+                    isEnabled = selectedPhotoCount < 2,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                 )
 
                 RecordSaveButton(
                     title = stringResource(R.string.temperature_save),
                     onClick = onSaveClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                 )
             }
         }

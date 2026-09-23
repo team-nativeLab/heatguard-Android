@@ -32,26 +32,36 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 /** 현장 사진 화면의 "다시하기" 영역처럼 상단 라벨과 한 줄짜리 촬영 안내 박스를 함께 보여주는 컴포넌트다. */
 @Composable
 fun PhotoCaptureRow(
-    label: String,
+    label: String?,
     instructionText: String,
     cameraPainter: Painter,
     cameraContentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isEnabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium,
-        )
+        label?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
 
         Surface(
             modifier = Modifier
-                .padding(top = HeartGuardSpacing.Compact)
+                .padding(
+                    top = if (label == null) {
+                        HeartGuardSpacing.Tight
+                    } else {
+                        HeartGuardSpacing.Compact
+                    },
+                )
                 .fillMaxWidth()
                 .heightIn(min = HeartGuardComponentSize.FieldPhotoCaptureRowHeight)
                 .clickable(
+                    enabled = isEnabled,
                     role = Role.Button,
                     onClick = onClick,
                 ),
@@ -70,14 +80,24 @@ fun PhotoCaptureRow(
                     painter = cameraPainter,
                     contentDescription = cameraContentDescription,
                     modifier = Modifier.size(HeartGuardIconSize.Small),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                    colorFilter = ColorFilter.tint(
+                        if (isEnabled) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    ),
                 )
                 Text(
                     text = instructionText,
                     modifier = Modifier
                         .weight(1f)
                         .widthIn(max = HeartGuardComponentSize.PhotoCaptureTextMaxWidth),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (isEnabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

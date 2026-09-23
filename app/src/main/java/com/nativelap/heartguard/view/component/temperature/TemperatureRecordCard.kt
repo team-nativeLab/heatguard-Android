@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
@@ -43,9 +44,12 @@ fun TemperatureRecordCard(
     @Suppress("UNUSED_PARAMETER") checkboxContentDescription: String,
     modifier: Modifier = Modifier,
     title: String,
+    isCardEnabled: Boolean = true,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(if (isCardEnabled) 1f else 0.5f),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
@@ -68,6 +72,7 @@ fun TemperatureRecordCard(
                 Switch(
                     checked = isManualInputEnabled,
                     onCheckedChange = onManualInputChange,
+                    enabled = isCardEnabled,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary,
@@ -87,7 +92,7 @@ fun TemperatureRecordCard(
                     temperatureText = temperatureText,
                     unitLabel = temperatureUnit,
                     onTemperatureChange = onTemperatureChange,
-                    isEnabled = isManualInputEnabled,
+                    isEnabled = isCardEnabled && isManualInputEnabled,
                     placeholderText = "예: 47.5",
                     modifier = Modifier.weight(1f),
                 )
@@ -96,7 +101,7 @@ fun TemperatureRecordCard(
                     temperatureText = humidityText,
                     unitLabel = humidityUnit,
                     onTemperatureChange = onHumidityChange,
-                    isEnabled = isManualInputEnabled,
+                    isEnabled = isCardEnabled && isManualInputEnabled,
                     placeholderText = "예: 55",
                     modifier = Modifier.weight(1f),
                 )
