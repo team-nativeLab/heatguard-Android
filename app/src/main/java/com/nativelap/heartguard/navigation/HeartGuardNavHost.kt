@@ -16,6 +16,7 @@ import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
@@ -31,12 +32,26 @@ import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRou
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다. */
 @Composable
 internal fun HeartGuardNavHost() {
-    HeartGuardAuthNavDisplay()
+    // TODO: 실제 로그인 API가 연결되면 이 로컬 상태 대신 SessionManager.sessionState를
+    // lifecycle-aware하게 수집해 Authenticated/Unauthenticated를 판단해야 한다. (이슈 #21 후속)
+    var isAuthenticated by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (isAuthenticated) {
+        HeartGuardMainNavDisplay()
+    } else {
+        HeartGuardAuthNavDisplay(
+            onAuthenticated = { isAuthenticated = true },
+        )
+    }
 }
 
-/** 팀 로그인 계약이 연결될 때까지 인증 화면만 제공한다. */
+/** 서버 인증이 연결되기 전까지 로그인·회원가입 화면 전환을 담당하는 임시 인증 흐름이다. */
 @Composable
-private fun HeartGuardAuthNavDisplay() {
+private fun HeartGuardAuthNavDisplay(
+    onAuthenticated: () -> Unit,
+) {
     val backStack = rememberNavBackStack(HeartGuardDestination.Login)
 
     NavDisplay(
@@ -69,7 +84,22 @@ private fun HeartGuardAuthNavDisplay() {
         },
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Login> {
-                HeartGuardLoginRoute()
+                HeartGuardLoginRoute(
+                    onLoginClick = onAuthenticated,
+                    onSignUpClick = {
+                        backStack.add(HeartGuardDestination.SignUp)
+                    },
+                )
+            }
+            entry<HeartGuardDestination.SignUp> {
+                HeartGuardSignUpRoute(
+                    onSignUpClick = {
+                        backStack.removeLastOrNull()
+                    },
+                    onLoginClick = {
+                        backStack.removeLastOrNull()
+                    },
+                )
             }
         },
     )
