@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -21,6 +23,9 @@ fun AuthTitleBlock(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    titleFontSize: TextUnit = HeartGuardFontSize.AuthTitle,
+    titleLineHeight: TextUnit = HeartGuardFontSize.AuthTitleLineHeight,
+    descriptionTopPadding: Dp = HeartGuardSpacing.AuthTitleDescription,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -33,8 +38,8 @@ fun AuthTitleBlock(
             color = MaterialTheme.extraColors.authOnSurface,
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = HeartGuardFontSize.AuthTitle,
-                lineHeight = HeartGuardFontSize.AuthTitleLineHeight,
+                fontSize = titleFontSize,
+                lineHeight = titleLineHeight,
                 letterSpacing = HeartGuardFontSize.AuthTitleLetterSpacing,
             ),
         )
@@ -42,7 +47,7 @@ fun AuthTitleBlock(
             text = description,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.AuthTitleDescription),
+                .padding(top = descriptionTopPadding),
             textAlign = TextAlign.Start,
             color = MaterialTheme.extraColors.authOnSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium.copy(

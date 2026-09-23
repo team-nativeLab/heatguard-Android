@@ -7,17 +7,44 @@ object HeartGuardSpacing {
     val ScreenHorizontal = 16.dp
     val HeaderHorizontal = 24.dp
     val RecordContentHorizontal = 28.dp
+    val RecordCardHorizontal = 38.dp
+    val RecordPhotoCardHorizontal = 25.dp
+    val RecordTitleHorizontal = 46.dp
+    val RecordFieldHorizontal = 32.dp
+    val RecordFieldInset = 6.dp
+    val EmergencyAlertHorizontal = 19.dp
     val AuthHorizontal = 40.dp
     val AuthTop = 142.dp
+    val AuthSignUpTop = 147.dp
     val AuthLogoTitle = 20.dp
     val AuthTitleForm = 31.dp
+    val AuthSignUpTitleForm = 39.dp
+    val AuthSignUpFormButton = 72.dp
     val AuthFormButton = 19.dp
     val AuthButtonPrompt = 0.dp
     val AuthFieldLabelInput = 6.dp
     val AuthFieldGroup = 26.dp
+    val AuthSignUpFieldGroup = 19.dp
     val AuthTitleDescription = 4.dp
+    val AuthSignUpTitleDescription = 9.dp
     val PageContentTop = 12.dp
     val ResultHorizontal = 25.dp
+    val ResultTitleTop = 18.dp
+    val ResultTitleHeight = 24.dp
+    val ResultTitleMessageGap = 35.dp
+    val ResultCardGap = 26.dp
+    val ResultSuccessButtonGap = 16.dp
+    val ResultFailureRetryGap = 92.dp
+    val ResultFailureButtonGap = 14.dp
+    val ResultMessageTopBottom = 26.dp
+    val ResultMessageTitleGap = 23.dp
+    val ResultMessageDescriptionGap = 13.dp
+    val ResultSummaryHorizontal = 22.dp
+    val ResultSummaryRowIndent = 7.dp
+    val ResultSummaryRowHeight = 48.dp
+    val ResultErrorDetailHorizontal = 28.dp
+    val ResultErrorDetailTop = 20.dp
+    val ResultErrorDetailTextIndent = 25.dp
     val HomeCardHorizontal = 25.dp
     val HomeContentHorizontal = 27.dp
     val HomeHeroHorizontal = 35.dp
@@ -60,6 +87,8 @@ object HeartGuardIconSize {
     val TimelineMarker = 12.dp
     val EmergencyIndicatorMax = 112.dp
     val Result = 84.dp
+    val ResultSuccessGlyph = 53.dp
+    val ResultFailureGlyph = 59.dp
     val StatusIndicator = 12.dp
     val Small = 16.dp
     val WeatherStatus = 48.dp
@@ -67,12 +96,14 @@ object HeartGuardIconSize {
     val HomeRecord = 44.dp
     val EmergencyCall = 138.dp
     val EmergencyCallInner = 110.dp
+    val PhotoError = 68.dp
 }
 
 object HeartGuardComponentSize {
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
     val AuthContentMaxWidth = 280.dp
+    val AuthSignUpContentMaxWidth = 306.dp
     val AuthActionMaxWidth = 318.dp
     val AuthTextFieldHeight = 45.dp
     val TextFieldHeight = 48.dp
@@ -88,6 +119,7 @@ object HeartGuardComponentSize {
     val CompactLayoutBreakpoint = 360.dp
     val RecordTypeOptionHeight = 143.dp
     val PhotoSelectionHeight = 313.dp
+    val PhotoPreviewHeight = 290.dp
     val TemperatureErrorMessageMaxWidth = 180.dp
     val PhotoSelectionTitleMaxWidth = 200.dp
     val PhotoCaptureTextMaxWidth = 220.dp
@@ -96,12 +128,18 @@ object HeartGuardComponentSize {
     val PhotoMemoMinHeight = 96.dp
     val TemperatureSummaryHeight = 138.dp
     val FieldPhotoCaptureRowHeight = 79.dp
+    val EmergencyAlertHeight = 73.dp
+    val EmergencyDescriptionMaxWidth = 180.dp
     val HomeActionCardHeight = 148.dp
     val HomeWeatherMetricHeight = 78.dp
     val HomeTimelineHeight = 136.dp
     val HomeContactHeight = 130.dp
+    val EmergencyContactHeight = 143.dp
     val HomeAdditionalRecordHeight = 69.dp
     val TemperatureDeltaMinWidth = 72.dp
+    val ResultMessageHeight = 218.dp
+    val ResultSummaryHeight = 261.dp
+    val ResultErrorDetailHeight = 123.dp
 }
 
 object HeartGuardOverlayBlur {
@@ -119,11 +157,22 @@ object HeartGuardFontSize {
     val PageTitle = 20.sp
     val AuthTitle = 26.5.sp
     val AuthTitleLineHeight = 34.sp
+    val AuthSignUpTitle = 25.sp
+    val AuthSignUpTitleLineHeight = 30.sp
     val AuthDescription = 14.5.sp
     val AuthInput = 14.sp
     val AuthLabel = 13.25.sp
     val AuthPrompt = 14.5.sp
     val AuthTitleLetterSpacing = (-0.25).sp
+    val ResultTitle = 20.sp
+    val ResultTitleLineHeight = 24.sp
+    val ResultMessageTitle = 20.sp
+    val ResultMessageTitleLineHeight = 24.sp
+    val ResultMessageDescription = 15.sp
+    val ResultMessageDescriptionLineHeight = 18.sp
+    val ResultSummaryTitle = 15.sp
+    val ResultSummaryLabel = 14.sp
+    val ResultSummaryValue = 12.sp
     val HeroTemperature = 40.sp
     val TemperatureSummary = 32.sp
     val RecordOptionTitle = 16.sp

@@ -54,7 +54,7 @@ fun HomeScreen(
                 top = HeartGuardSpacing.PageContentTop,
                 bottom = HeartGuardSpacing.LargeSection,
             ),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             item {
                 HeartGuardHeader(
@@ -68,7 +68,11 @@ fun HomeScreen(
 
             item {
                 WeatherStatusCard(
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    modifier = Modifier.padding(
+                        start = HeartGuardSpacing.HomeContentHorizontal,
+                        top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                        end = HeartGuardSpacing.HomeContentHorizontal,
+                    ),
                     weatherPainter = painterResource(R.drawable.heartguard_home_weather),
                     weatherContentDescription = stringResource(R.string.weather_sunny_description),
                     statusTitle = stringResource(R.string.home_weather_status),
@@ -91,7 +95,11 @@ fun HomeScreen(
                     text = stringResource(R.string.home_data_records),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                        .padding(
+                            start = HeartGuardSpacing.HomeContentHorizontal,
+                            top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                            end = HeartGuardSpacing.HomeContentHorizontal,
+                        ),
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -114,7 +122,11 @@ fun HomeScreen(
                     emergencyDescription = stringResource(R.string.home_emergency_call_description),
                     onManagerClick = onManagerCallClick,
                     onEmergencyClick = onEmergencyClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    modifier = Modifier.padding(
+                        start = HeartGuardSpacing.HomeContentHorizontal,
+                        top = HeartGuardSpacing.Compact,
+                        end = HeartGuardSpacing.HomeContentHorizontal,
+                    ),
                 )
             }
 
@@ -123,7 +135,11 @@ fun HomeScreen(
                     text = stringResource(R.string.home_additional_records),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                        .padding(
+                            start = HeartGuardSpacing.HomeContentHorizontal,
+                            top = HeartGuardSpacing.Compact,
+                            end = HeartGuardSpacing.HomeContentHorizontal,
+                        ),
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -153,7 +169,11 @@ fun HomeScreen(
                 RecordSaveButton(
                     title = stringResource(R.string.home_record_action),
                     onClick = onRecordClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    modifier = Modifier.padding(
+                        start = HeartGuardSpacing.HomeContentHorizontal,
+                        top = HeartGuardSpacing.Tight / 2,
+                        end = HeartGuardSpacing.HomeContentHorizontal,
+                    ),
                 )
             }
         }

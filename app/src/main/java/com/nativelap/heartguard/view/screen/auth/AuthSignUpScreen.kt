@@ -17,19 +17,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
 import com.nativelap.heartguard.view.component.auth.AuthPrompt
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
-import com.nativelap.heartguard.view.component.brand.BrandMark
 import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 회원가입 화면을 이름·이메일·비밀번호 입력 Component로 구성한다. */
@@ -68,24 +67,20 @@ fun AuthSignUpScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = HeartGuardComponentSize.AuthContentMaxWidth),
+                    .widthIn(max = HeartGuardComponentSize.AuthSignUpContentMaxWidth),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTop))
-
-                BrandMark(
-                    brandPainter = painterResource(R.drawable.heart_guard_logo),
-                    contentDescription = stringResource(R.string.brand_name),
-                )
-
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthLogoTitle))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpTop))
 
                 AuthTitleBlock(
                     title = stringResource(R.string.auth_signup_title),
                     description = stringResource(R.string.auth_signup_description),
+                    titleFontSize = HeartGuardFontSize.AuthSignUpTitle,
+                    titleLineHeight = HeartGuardFontSize.AuthSignUpTitleLineHeight,
+                    descriptionTopPadding = HeartGuardSpacing.AuthSignUpTitleDescription,
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTitleForm))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpTitleForm))
 
                 AuthTextField(
                     label = stringResource(R.string.auth_company),
@@ -94,7 +89,7 @@ fun AuthSignUpScreen(
                     placeholder = stringResource(R.string.auth_company_hint),
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFieldGroup))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
 
                 AuthTextField(
                     label = stringResource(R.string.auth_name),
@@ -103,7 +98,7 @@ fun AuthSignUpScreen(
                     placeholder = stringResource(R.string.auth_name_hint),
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFieldGroup))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
 
                 AuthTextField(
                     label = stringResource(R.string.auth_email),
@@ -112,7 +107,7 @@ fun AuthSignUpScreen(
                     placeholder = stringResource(R.string.auth_email_hint),
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFieldGroup))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
 
                 AuthTextField(
                     label = stringResource(R.string.auth_password),
@@ -122,10 +117,10 @@ fun AuthSignUpScreen(
                     visualTransformation = PasswordVisualTransformation(),
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFieldGroup))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
 
                 AuthTextField(
-                    label = stringResource(R.string.auth_password_confirm),
+                    label = stringResource(R.string.auth_password),
                     text = passwordConfirmation,
                     onTextChange = onPasswordConfirmationChange,
                     placeholder = stringResource(R.string.auth_password_confirm_hint),
@@ -133,7 +128,7 @@ fun AuthSignUpScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFormButton))
+            Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFormButton))
 
             Column(
                 modifier = Modifier

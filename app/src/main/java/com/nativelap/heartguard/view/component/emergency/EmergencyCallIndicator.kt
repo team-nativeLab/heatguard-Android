@@ -6,15 +6,23 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -74,10 +82,11 @@ fun EmergencyCallIndicator(
                         shape = CircleShape,
                     ),
             )
-            Text(
-                text = "⚠️",
-                color = MaterialTheme.colorScheme.onError,
-                style = MaterialTheme.typography.displaySmall,
+            Icon(
+                imageVector = Icons.Filled.ReportProblem,
+                contentDescription = null,
+                modifier = Modifier.size(42.dp),
+                tint = Color.White,
             )
         }
         Text(
@@ -91,7 +100,9 @@ fun EmergencyCallIndicator(
         )
         Text(
             text = description,
+            modifier = Modifier.widthIn(max = HeartGuardComponentSize.EmergencyDescriptionMaxWidth),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium,
         )
     }

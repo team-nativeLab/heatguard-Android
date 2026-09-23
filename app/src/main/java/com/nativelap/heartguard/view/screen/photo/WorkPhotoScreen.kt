@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.screen.photo
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,13 +24,16 @@ import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
 import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
 import com.nativelap.heartguard.view.component.photo.PhotoUploadButton
+import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 
 /** 작업 전·중 사진 선택과 메모 입력을 Figma 화면 흐름으로 조합한다. */
 @Composable
 fun WorkPhotoScreen(
     memo: String,
     selectedPhotoCount: Int,
+    selectedPhotoUris: List<Uri> = emptyList(),
     onCaptureClick: () -> Unit,
+    onRemovePhoto: (Uri) -> Unit = {},
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
     onUploadClick: () -> Unit,
@@ -57,14 +61,13 @@ fun WorkPhotoScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
                 PhotoScreenIntro(
                     title = stringResource(R.string.photo_work_screen_title),
                     description = stringResource(R.string.photo_work_screen_description),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
                 )
 
                 PhotoSelectionCard(
@@ -77,6 +80,14 @@ fun WorkPhotoScreen(
                     cameraPainter = painterResource(R.drawable.record_camera),
                     cameraContentDescription = stringResource(R.string.photo_capture),
                     onClick = onCaptureClick,
+                    isEnabled = selectedPhotoCount < 2,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
+                )
+
+                SelectedPhotoGrid(
+                    photoUris = selectedPhotoUris,
+                    onRemovePhoto = onRemovePhoto,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
                 )
 
                 if (selectedPhotoCount > 0) {
@@ -92,11 +103,14 @@ fun WorkPhotoScreen(
                     onTextChange = onMemoChange,
                     placeholder = stringResource(R.string.photo_work_memo_hint),
                     isOptional = true,
+                    contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
 
                 PhotoUploadButton(
                     title = stringResource(R.string.photo_upload),
                     onClick = onUploadClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                 )
             }
         }
@@ -110,6 +124,7 @@ private fun WorkPhotoScreenPreview() {
         WorkPhotoScreen(
             memo = "",
             selectedPhotoCount = 0,
+            selectedPhotoUris = emptyList(),
             onCaptureClick = {},
             onRetakeClick = {},
             onMemoChange = {},

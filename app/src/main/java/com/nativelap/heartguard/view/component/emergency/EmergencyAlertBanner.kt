@@ -2,20 +2,17 @@ package com.nativelap.heartguard.view.component.emergency
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.WarningAmber
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -30,35 +27,26 @@ fun EmergencyAlertBanner(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(HeartGuardRadius.Card),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.extraColors.alertContainer,
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(HeartGuardSpacing.Item),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                .heightIn(min = HeartGuardComponentSize.EmergencyAlertHeight)
+                .padding(horizontal = HeartGuardSpacing.EmergencyAlertHorizontal),
+            verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.WarningAmber,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             )
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                )
-                Text(
-                    text = description,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+            Text(
+                text = description,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+            )
         }
     }
 }

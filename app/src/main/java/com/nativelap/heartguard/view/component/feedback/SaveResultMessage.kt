@@ -2,10 +2,11 @@ package com.nativelap.heartguard.view.component.feedback
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,15 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
-
-/** 결과 배지 안에 표시되는 체크·느낌표 글리프의 크기이다. 원형 배경(HeartGuardIconSize.Result) 안에서 잘리지 않는 비율로 이 파일에서만 한 번 사용된다. */
-private val RESULT_BADGE_GLYPH_SIZE = 28.dp
 
 /** 기록 저장 결과 화면의 상태별 아이콘, 제목, 설명을 표시한다.
  *  Figma 09_저장성공/10_저장실패 스펙: 흰 배경 + cardBorder 테두리 + LargeCard 라운드 카드 위에
@@ -44,7 +43,9 @@ fun SaveResultMessage(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(HeartGuardComponentSize.ResultMessageHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -57,9 +58,13 @@ fun SaveResultMessage(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(HeartGuardSpacing.Section),
+                .padding(
+                    start = HeartGuardSpacing.Section,
+                    end = HeartGuardSpacing.Section,
+                    top = HeartGuardSpacing.ResultMessageTopBottom,
+                    bottom = HeartGuardSpacing.ResultMessageTopBottom,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Box(
                 modifier = Modifier.size(HeartGuardIconSize.Result),
@@ -89,7 +94,13 @@ fun SaveResultMessage(
                         Icons.Filled.PriorityHigh
                     },
                     contentDescription = null,
-                    modifier = Modifier.size(RESULT_BADGE_GLYPH_SIZE),
+                    modifier = Modifier.size(
+                        if (isSuccess) {
+                            HeartGuardIconSize.ResultSuccessGlyph
+                        } else {
+                            HeartGuardIconSize.ResultFailureGlyph
+                        },
+                    ),
                     tint = if (isSuccess) {
                         MaterialTheme.extraColors.success
                     } else {
@@ -97,17 +108,25 @@ fun SaveResultMessage(
                     },
                 )
             }
+            Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultMessageTitleGap))
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = HeartGuardFontSize.ResultMessageTitle,
+                    lineHeight = HeartGuardFontSize.ResultMessageTitleLineHeight,
                     fontWeight = FontWeight.Bold,
                 ),
             )
+            Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultMessageDescriptionGap))
             Text(
                 text = description,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.extraColors.disabledText,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = HeartGuardFontSize.ResultMessageDescription,
+                    lineHeight = HeartGuardFontSize.ResultMessageDescriptionLineHeight,
+                    fontWeight = FontWeight.SemiBold,
+                ),
             )
         }
     }

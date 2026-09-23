@@ -1,10 +1,10 @@
 package com.nativelap.heartguard.view.route.photo
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
@@ -17,22 +17,19 @@ import com.nativelap.heartguard.view.screen.photo.WorkPhotoScreen
 internal fun HeartGuardFieldPhotoRoute(
     onSaveClick: () -> Unit,
 ) {
-    var selectedPhotoCount by rememberSaveable {
-        mutableIntStateOf(0)
+    PhotoSelectionFlow { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
+        FieldPhotoScreen(
+            currentTemperature = "47.5°C",
+            humidity = "55%",
+            feelsLikeTemperature = "40.5°C",
+            selectedPhotoCount = selectedPhotoUris.size,
+            selectedPhotoUris = selectedPhotoUris,
+            showTemperatureSaveError = false,
+            onCaptureClick = onAddPhotoClick,
+            onRemovePhoto = onRemovePhoto,
+            onSaveClick = onSaveClick,
+        )
     }
-    FieldPhotoScreen(
-        currentTemperature = "47.5°C",
-        humidity = "55%",
-        feelsLikeTemperature = "40.5°C",
-        selectedPhotoCount = selectedPhotoCount,
-        showTemperatureSaveError = false,
-        onCaptureClick = {
-            if (selectedPhotoCount < 2) {
-                selectedPhotoCount += 1
-            }
-        },
-        onSaveClick = onSaveClick,
-    )
 }
 
 /** 작업 사진의 로컬 선택 개수와 메모 상태를 관리하고 저장 Navigation을 연결한다. */
@@ -43,22 +40,18 @@ internal fun HeartGuardWorkPhotoRoute(
     var memo by rememberSaveable {
         mutableStateOf("")
     }
-    var selectedPhotoCount by rememberSaveable {
-        mutableIntStateOf(0)
+    PhotoSelectionFlow { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
+        WorkPhotoScreen(
+            memo = memo,
+            selectedPhotoCount = selectedPhotoUris.size,
+            selectedPhotoUris = selectedPhotoUris,
+            onCaptureClick = onAddPhotoClick,
+            onRemovePhoto = onRemovePhoto,
+            onRetakeClick = onClearPhotos,
+            onMemoChange = { memo = it },
+            onUploadClick = onUploadClick,
+        )
     }
-
-    WorkPhotoScreen(
-        memo = memo,
-        selectedPhotoCount = selectedPhotoCount,
-        onCaptureClick = {
-            if (selectedPhotoCount < 2) {
-                selectedPhotoCount += 1
-            }
-        },
-        onRetakeClick = { selectedPhotoCount = 0 },
-        onMemoChange = { memo = it },
-        onUploadClick = onUploadClick,
-    )
 }
 
 /** 휴식 사진의 시간·선택 개수·메모를 관리하고 저장 Navigation을 연결한다. */
@@ -69,31 +62,28 @@ internal fun HeartGuardRestPhotoRoute(
     var memo by rememberSaveable {
         mutableStateOf("")
     }
-    var selectedPhotoCount by rememberSaveable {
-        mutableIntStateOf(0)
-    }
     var isAlternateRestTimeSelected by rememberSaveable {
         mutableStateOf(false)
     }
 
-    RestPhotoScreen(
-        memo = memo,
-        selectedRestTime = if (isAlternateRestTimeSelected) {
-            stringResource(R.string.photo_rest_selected_time_alternate)
-        } else {
-            stringResource(R.string.photo_rest_selected_time)
-        },
-        selectedPhotoCount = selectedPhotoCount,
-        onRestTimeClick = {
-            isAlternateRestTimeSelected = !isAlternateRestTimeSelected
-        },
-        onCaptureClick = {
-            if (selectedPhotoCount < 2) {
-                selectedPhotoCount += 1
-            }
-        },
-        onRetakeClick = { selectedPhotoCount = 0 },
-        onMemoChange = { memo = it },
-        onUploadClick = onUploadClick,
-    )
+    PhotoSelectionFlow { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
+        RestPhotoScreen(
+            memo = memo,
+            selectedRestTime = if (isAlternateRestTimeSelected) {
+                stringResource(R.string.photo_rest_selected_time_alternate)
+            } else {
+                stringResource(R.string.photo_rest_selected_time)
+            },
+            selectedPhotoCount = selectedPhotoUris.size,
+            selectedPhotoUris = selectedPhotoUris,
+            onRestTimeClick = {
+                isAlternateRestTimeSelected = !isAlternateRestTimeSelected
+            },
+            onCaptureClick = onAddPhotoClick,
+            onRemovePhoto = onRemovePhoto,
+            onRetakeClick = onClearPhotos,
+            onMemoChange = { memo = it },
+            onUploadClick = onUploadClick,
+        )
+    }
 }

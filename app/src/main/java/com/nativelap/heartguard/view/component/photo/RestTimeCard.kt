@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -27,6 +29,7 @@ fun RestTimeCard(
     selectedTime: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    contentHorizontalPadding: Dp = 0.dp,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -38,6 +41,7 @@ fun RestTimeCard(
         Surface(
             modifier = Modifier
                 .padding(top = HeartGuardSpacing.Compact)
+                .padding(horizontal = contentHorizontalPadding)
                 .fillMaxWidth()
                 .clickable(
                     role = Role.Button,

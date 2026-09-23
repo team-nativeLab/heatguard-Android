@@ -4,8 +4,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.component.feedback.SavedRecordSummaryItem
+import com.nativelap.heartguard.view.screen.feedback.SaveConfirmationScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveFailureScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveSuccessScreen
+
+/** 저장 전 입력 내용 확인 화면의 촬영·저장 callback을 연결한다. */
+@Composable
+internal fun HeartGuardSaveConfirmationRoute(
+    onCaptureClick: () -> Unit,
+    onSaveClick: () -> Unit,
+) {
+    SaveConfirmationScreen(
+        onCaptureClick = onCaptureClick,
+        onSaveClick = onSaveClick,
+    )
+}
 
 /** 저장 성공 결과의 샘플 데이터와 완료 Navigation callback을 연결한다. */
 @Composable
@@ -16,8 +29,9 @@ internal fun HeartGuardSaveSuccessRoute(
         records = listOf(
             SavedRecordSummaryItem(
                 label = stringResource(R.string.save_temperature_summary),
-                value = "47.5°C",
+                value = "47.5 ℃",
                 hasDetails = true,
+                detail = "( 습도 55% 체감 40.5℃ )",
             ),
             SavedRecordSummaryItem(
                 label = stringResource(R.string.save_work_photo_summary),

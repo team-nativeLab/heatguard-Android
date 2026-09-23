@@ -21,7 +21,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.HeartGuardHeader
-import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
+import com.nativelap.heartguard.view.component.photo.PhotoCaptureRow
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.temperature.TemperatureRecordCard
 import com.nativelap.heartguard.view.component.temperature.TemperatureScreenIntro
@@ -79,14 +79,13 @@ fun TemperatureRecordScreen(
                 )
 
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(sectionSpacing),
                 ) {
                     TemperatureScreenIntro(
                         title = stringResource(R.string.temperature_screen_title),
                         description = stringResource(R.string.temperature_screen_description),
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
                     )
 
                     TemperatureSummaryCard(
@@ -128,6 +127,7 @@ fun TemperatureRecordScreen(
                         onManualInputChange = onManualInputChange,
                         checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
                         title = stringResource(R.string.temperature_installation_status),
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                     )
 
                     Column(
@@ -136,25 +136,24 @@ fun TemperatureRecordScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.home_field_photo),
+                            modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.titleMedium,
                         )
-                        PhotoSelectionCard(
-                            title = stringResource(R.string.photo_field_instruction),
-                            description = null,
+                        PhotoCaptureRow(
+                            label = null,
+                            instructionText = stringResource(R.string.photo_field_instruction),
                             cameraPainter = painterResource(R.drawable.record_camera),
                             cameraContentDescription = stringResource(R.string.photo_capture),
                             onClick = onFieldPhotoClick,
-                            // Figma 06/13 모두 온도계 데이터 직접 입력 토글 상태와 무관하게
-                            // 현장 사진 카드가 항상 활성 상태로 표시된다.
-                            isEnabled = true,
-                            minHeight = HeartGuardComponentSize.FieldPhotoSelectionHeight,
+                            modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                         )
                     }
 
                     RecordSaveButton(
                         title = stringResource(R.string.temperature_save),
                         onClick = onSaveClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                     )
                 }
             }

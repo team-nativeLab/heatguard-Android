@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.screen.photo
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
 import com.nativelap.heartguard.view.component.photo.PhotoUploadButton
 import com.nativelap.heartguard.view.component.photo.RestTimeCard
+import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 
 /** 휴식 시간·사진 선택·메모 입력을 Figma 휴식 사진 화면으로 조합한다. */
 @Composable
@@ -31,8 +33,10 @@ fun RestPhotoScreen(
     memo: String,
     selectedRestTime: String,
     selectedPhotoCount: Int,
+    selectedPhotoUris: List<Uri> = emptyList(),
     onRestTimeClick: () -> Unit,
     onCaptureClick: () -> Unit,
+    onRemovePhoto: (Uri) -> Unit = {},
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
     onUploadClick: () -> Unit,
@@ -60,14 +64,13 @@ fun RestPhotoScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = HeartGuardSpacing.ScreenHorizontal),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
                 PhotoScreenIntro(
                     title = stringResource(R.string.photo_rest_screen_title),
                     description = stringResource(R.string.photo_rest_screen_description),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
                 )
 
                 // Figma 12_휴식 사진 촬영: 사진 선택 카드가 휴식 시간 카드보다 먼저 온다.
@@ -81,6 +84,14 @@ fun RestPhotoScreen(
                     cameraPainter = painterResource(R.drawable.record_camera),
                     cameraContentDescription = stringResource(R.string.photo_capture),
                     onClick = onCaptureClick,
+                    isEnabled = selectedPhotoCount < 2,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
+                )
+
+                SelectedPhotoGrid(
+                    photoUris = selectedPhotoUris,
+                    onRemovePhoto = onRemovePhoto,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
                 )
 
                 if (selectedPhotoCount > 0) {
@@ -94,6 +105,8 @@ fun RestPhotoScreen(
                     title = stringResource(R.string.photo_rest_time),
                     selectedTime = selectedRestTime,
                     onClick = onRestTimeClick,
+                    contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
 
                 PhotoMemoField(
@@ -102,11 +115,14 @@ fun RestPhotoScreen(
                     onTextChange = onMemoChange,
                     placeholder = stringResource(R.string.photo_rest_memo_hint),
                     isOptional = true,
+                    contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
 
                 PhotoUploadButton(
                     title = stringResource(R.string.photo_upload),
                     onClick = onUploadClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                 )
             }
         }
@@ -121,6 +137,7 @@ private fun RestPhotoScreenPreview() {
             memo = "",
             selectedRestTime = stringResource(R.string.photo_rest_selected_time),
             selectedPhotoCount = 0,
+            selectedPhotoUris = emptyList(),
             onRestTimeClick = {},
             onCaptureClick = {},
             onRetakeClick = {},

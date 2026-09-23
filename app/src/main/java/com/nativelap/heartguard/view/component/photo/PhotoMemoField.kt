@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
@@ -27,6 +29,7 @@ fun PhotoMemoField(
     placeholder: String,
     modifier: Modifier = Modifier,
     isOptional: Boolean = false,
+    contentHorizontalPadding: Dp = 0.dp,
 ) {
     androidx.compose.foundation.layout.Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -44,6 +47,7 @@ fun PhotoMemoField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.Compact)
+                .padding(horizontal = contentHorizontalPadding)
                 .heightIn(min = HeartGuardComponentSize.PhotoMemoMinHeight),
             placeholder = { Text(text = placeholder) },
             minLines = 3,
