@@ -4,12 +4,16 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -31,6 +35,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
@@ -116,6 +121,22 @@ private fun HeartGuardAuthNavDisplay(
 @Composable
 private fun HeartGuardMainNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
+
+    // 기록유형선택→온도기록/사진촬영→저장전확인까지 여러 NavKey가 RecordDraftViewModel 하나를
+    // 공유해야 하므로, android-navigation SKILL의 '화면 간 ViewModel 공유' 패턴대로 이 흐름 전체를
+    // 감싸는 이 Composable에서 수동 ViewModelStoreOwner를 만든다. 로그아웃 등으로 이 Composable
+    // 자체가 사라질 때만 clear()하고, 기록을 다시 시작할 때(RecordTypeSelection 진입)는 Route가
+    // 명시적으로 recordDraftViewModel.reset()을 호출한다.
+    val recordDraftViewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose { recordDraftViewModelStoreOwner.viewModelStore.clear() }
+    }
+    val recordDraftViewModel: RecordDraftViewModel =
+        hiltViewModel(viewModelStoreOwner = recordDraftViewModelStoreOwner)
 
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
@@ -219,6 +240,7 @@ private fun HeartGuardMainNavDisplay() {
                 metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
             ) {
                 HeartGuardRecordTypeSelectionRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onConfirm = { recordType ->
                         // RecordType이 enum이라 when이 모든 분기를 강제하므로 else/null 분기가 필요 없다.
                         val nextDestination = when (recordType) {
@@ -234,6 +256,7 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.TemperatureRecord> {
                 HeartGuardTemperatureRecordRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onFieldPhotoClick = {
                         backStack.add(HeartGuardDestination.FieldPhoto)
                     },
@@ -242,21 +265,25 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.FieldPhoto> {
                 HeartGuardFieldPhotoRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onSaveClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.WorkPhoto> {
                 HeartGuardWorkPhotoRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onUploadClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.RestPhoto> {
                 HeartGuardRestPhotoRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onUploadClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.SaveConfirmation> {
                 HeartGuardSaveConfirmationRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onCaptureClick = ::goBack,
                     onSaveClick = ::goToSaveResult,
                 )
