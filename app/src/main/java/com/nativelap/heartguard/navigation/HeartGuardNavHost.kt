@@ -7,9 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -139,32 +136,13 @@ private fun HeartGuardMainNavDisplay() {
         onDispose { recordDraftViewModel.reset() }
     }
 
-    // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 한다(android-navigation SKILL
-    // '화면 간 ViewModel 공유' 참고). 위와 같은 이유로 수동 ViewModelStoreOwner 없이 인자 없는
-    // hiltViewModel()을 쓰고, 흐름 종료 시 정리는 Route가 명시적으로 호출하는
-    // emergencyViewModel.reset()으로 대체한다.
+    // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
+    // 없이 인자 없는 hiltViewModel()을 쓴다. 흐름 종료 시 정리는 emergencyViewModel.reset()으로 한다.
     val emergencyViewModel: EmergencyViewModel = hiltViewModel()
 
     // emergencyViewModel도 같은 이유로, 로그아웃·세션 만료 시 3초 폴링이 남지 않도록 정리한다.
     DisposableEffect(Unit) {
         onDispose { emergencyViewModel.reset() }
-    }
-
-    // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
-    // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
-    // 성공/실패를 번갈아 시뮬레이션하는 임시 상태다. 서버 연동 이슈에서 실제 결과값으로 교체해야 한다.
-    var isNextSaveAttemptSuccessful by rememberSaveable {
-        mutableStateOf(true)
-    }
-
-    fun goToSaveResult() {
-        val resultDestination = if (isNextSaveAttemptSuccessful) {
-            HeartGuardDestination.SaveSuccess
-        } else {
-            HeartGuardDestination.SaveFailure
-        }
-        isNextSaveAttemptSuccessful = !isNextSaveAttemptSuccessful
-        backStack.add(resultDestination)
     }
 
     fun goToSaveConfirmation() {
@@ -311,17 +289,29 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardSaveConfirmationRoute(
                     recordDraftViewModel = recordDraftViewModel,
                     onCaptureClick = ::goBack,
-                    onSaveClick = ::goToSaveResult,
+                    onSaveSuccess = {
+                        backStack.add(HeartGuardDestination.SaveSuccess)
+                    },
+                    onSaveFailure = {
+                        backStack.add(HeartGuardDestination.SaveFailure)
+                    },
                 )
             }
             entry<HeartGuardDestination.SaveSuccess> {
                 HeartGuardSaveSuccessRoute(
-                    onCompleteClick = ::goHome,
+                    recordDraftViewModel = recordDraftViewModel,
+                    onCompleteClick = {
+                        recordDraftViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.SaveFailure> {
                 HeartGuardSaveFailureRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onRetryClick = ::goBack,
+                    // "임시저장 후 나가기"는 draft를 보존한 채 홈으로 돌아가는 동작을 의도하므로,
+                    // SaveSuccess와 달리 여기서는 recordDraftViewModel.reset()을 호출하지 않는다.
                     onSaveDraftAndExitClick = ::goHome,
                 )
             }

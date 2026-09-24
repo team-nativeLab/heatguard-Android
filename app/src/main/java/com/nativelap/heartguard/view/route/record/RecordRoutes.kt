@@ -38,7 +38,10 @@ internal fun HeartGuardRecordTypeSelectionRoute(
         onOptionSelected = { selectedRecordType = it },
         confirmTitle = stringResource(R.string.common_confirm),
         onConfirm = {
-            selectedRecordType?.let(onConfirm)
+            selectedRecordType?.let { recordType ->
+                recordDraftViewModel.selectRecordType(recordType)
+                onConfirm(recordType)
+            }
         },
     )
 }

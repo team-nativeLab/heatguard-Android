@@ -126,6 +126,9 @@
     <string name="save_record_summary">저장한 기록 요약</string>
     <string name="save_error_title">오류 내용</string>
     <string name="save_error_network">서버와 연결할 수 없습니다</string>
+    <string name="save_error_http">서버 오류가 발생했습니다 (코드 %1$d)</string>
+    <string name="save_error_serialization">서버 응답을 처리하지 못했습니다</string>
+    <string name="save_error_unknown">알 수 없는 오류가 발생했습니다</string>
     <string name="save_error_retry">잠시 후 다시 시도해 주세요</string>
     <string name="save_draft_exit">임시저장 후 나가기</string>
     <string name="save_temperature_summary">온도계 기록</string>
