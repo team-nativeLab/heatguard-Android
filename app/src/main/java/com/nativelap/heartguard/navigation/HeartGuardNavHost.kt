@@ -4,6 +4,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -129,6 +130,13 @@ private fun HeartGuardMainNavDisplay() {
     // 흐름별 초기화는 ViewModelStore를 새로 만드는 대신 Route가 명시적으로 호출하는
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
+
+    // recordDraftViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
+    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도(기록 도중이었더라도) 임시
+    // 사진 파일이 남지 않도록 여기서 한 번 더 reset()을 보장한다.
+    DisposableEffect(Unit) {
+        onDispose { recordDraftViewModel.reset() }
+    }
 
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
