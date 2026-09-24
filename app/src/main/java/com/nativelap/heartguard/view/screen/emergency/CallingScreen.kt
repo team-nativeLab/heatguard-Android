@@ -34,6 +34,7 @@ fun CallingScreen(
     phoneNumber: String,
     onCancelClick: () -> Unit,
     onEndClick: () -> Unit,
+    onContactClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -86,7 +87,7 @@ fun CallingScreen(
                 contactTitle = stringResource(R.string.emergency_contact_title),
                 contactName = contactName,
                 phoneNumber = phoneNumber,
-                onCallClick = {},
+                onCallClick = onContactClick,
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
             )
 
@@ -119,6 +120,7 @@ private fun CallingScreenPreview() {
             phoneNumber = stringResource(R.string.emergency_contact_phone),
             onCancelClick = {},
             onEndClick = {},
+            onContactClick = {},
         )
     }
 }
@@ -133,6 +135,7 @@ private fun CallingScreenConnectedPreview() {
             phoneNumber = stringResource(R.string.emergency_contact_phone),
             onCancelClick = {},
             onEndClick = {},
+            onContactClick = {},
         )
     }
 }
