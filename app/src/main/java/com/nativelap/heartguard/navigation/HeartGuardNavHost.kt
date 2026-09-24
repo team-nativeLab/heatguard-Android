@@ -7,10 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -151,23 +148,6 @@ private fun HeartGuardMainNavDisplay() {
     val emergencyViewModel: EmergencyViewModel =
         hiltViewModel(viewModelStoreOwner = emergencyViewModelStoreOwner)
 
-    // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
-    // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
-    // 성공/실패를 번갈아 시뮬레이션하는 임시 상태다. 서버 연동 이슈에서 실제 결과값으로 교체해야 한다.
-    var isNextSaveAttemptSuccessful by rememberSaveable {
-        mutableStateOf(true)
-    }
-
-    fun goToSaveResult() {
-        val resultDestination = if (isNextSaveAttemptSuccessful) {
-            HeartGuardDestination.SaveSuccess
-        } else {
-            HeartGuardDestination.SaveFailure
-        }
-        isNextSaveAttemptSuccessful = !isNextSaveAttemptSuccessful
-        backStack.add(resultDestination)
-    }
-
     fun goToSaveConfirmation() {
         backStack.add(HeartGuardDestination.SaveConfirmation)
     }
@@ -306,17 +286,29 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardSaveConfirmationRoute(
                     recordDraftViewModel = recordDraftViewModel,
                     onCaptureClick = ::goBack,
-                    onSaveClick = ::goToSaveResult,
+                    onSaveSuccess = {
+                        backStack.add(HeartGuardDestination.SaveSuccess)
+                    },
+                    onSaveFailure = {
+                        backStack.add(HeartGuardDestination.SaveFailure)
+                    },
                 )
             }
             entry<HeartGuardDestination.SaveSuccess> {
                 HeartGuardSaveSuccessRoute(
-                    onCompleteClick = ::goHome,
+                    recordDraftViewModel = recordDraftViewModel,
+                    onCompleteClick = {
+                        recordDraftViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.SaveFailure> {
                 HeartGuardSaveFailureRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onRetryClick = ::goBack,
+                    // "임시저장 후 나가기"는 draft를 보존한 채 홈으로 돌아가는 동작을 의도하므로,
+                    // SaveSuccess와 달리 여기서는 recordDraftViewModel.reset()을 호출하지 않는다.
                     onSaveDraftAndExitClick = ::goHome,
                 )
             }
