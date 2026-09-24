@@ -4,12 +4,16 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -31,6 +35,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
@@ -117,6 +122,21 @@ private fun HeartGuardAuthNavDisplay(
 private fun HeartGuardMainNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
 
+    // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 하므로, android-navigation SKILL의
+    // '화면 간 ViewModel 공유' 패턴대로 이 흐름을 감싸는 상위 Composable에서 수동
+    // ViewModelStoreOwner를 만든다. 로그아웃 등으로 이 Composable 자체가 사라질 때 clear()하고,
+    // 긴급호출 흐름을 벗어날 때(goHome)는 Route가 명시적으로 emergencyViewModel.reset()을 호출한다.
+    val emergencyViewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose { emergencyViewModelStoreOwner.viewModelStore.clear() }
+    }
+    val emergencyViewModel: EmergencyViewModel =
+        hiltViewModel(viewModelStoreOwner = emergencyViewModelStoreOwner)
+
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
     // 성공/실패를 번갈아 시뮬레이션하는 임시 상태다. 서버 연동 이슈에서 실제 결과값으로 교체해야 한다.
@@ -200,19 +220,27 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(
+                    emergencyViewModel = emergencyViewModel,
                     // Figma 03_긴급상황 화면은 이미 관리자 호출 알림이 진행 중인 상태를 전제로 하며,
                     // "호출 취소" 버튼은 이 알림을 취소하고 이전 화면(Home)으로 돌아가는 동작이다.
                     // (04_호출중 화면으로 진행하는 것이 아니다 — 그 화면은 Emergency 진입 전 별도 트리거로 도달한다.)
                     onCallClick = {
                         backStack.add(HeartGuardDestination.Calling)
                     },
-                    onCancelClick = ::goHome,
+                    onCancelClick = {
+                        emergencyViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.Calling> {
                 HeartGuardCallingRoute(
+                    emergencyViewModel = emergencyViewModel,
                     onCancelClick = ::goBack,
-                    onEndClick = ::goHome,
+                    onEndClick = {
+                        emergencyViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.RecordTypeSelection>(
