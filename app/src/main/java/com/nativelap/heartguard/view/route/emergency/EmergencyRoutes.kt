@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.view.screen.emergency.CallingScreen
 import com.nativelap.heartguard.view.screen.emergency.EmergencyScreen
@@ -23,12 +24,15 @@ internal fun HeartGuardEmergencyRoute(
         emergencyViewModel.registerEmergencyCallIfNeeded()
     }
 
+    val dialPhoneNumber = rememberPhoneDialLauncher()
+    val phoneNumber = stringResource(R.string.emergency_contact_phone)
+
     EmergencyScreen(
         contactName = stringResource(R.string.emergency_contact_name),
-        phoneNumber = stringResource(R.string.emergency_contact_phone),
+        phoneNumber = phoneNumber,
         onCallClick = onCallClick,
         onCancelClick = onCancelClick,
-        onContactClick = {},
+        onContactClick = { dialPhoneNumber(phoneNumber) },
     )
 }
 
@@ -41,12 +45,15 @@ internal fun HeartGuardCallingRoute(
     onEndClick: () -> Unit,
 ) {
     val uiState by emergencyViewModel.uiState.collectAsState()
+    val dialPhoneNumber = rememberPhoneDialLauncher()
+    val phoneNumber = stringResource(R.string.emergency_contact_phone)
 
     CallingScreen(
         isConnected = uiState.status.state == EmergencyCallState.ACKNOWLEDGED,
         contactName = stringResource(R.string.emergency_contact_name),
-        phoneNumber = stringResource(R.string.emergency_contact_phone),
+        phoneNumber = phoneNumber,
         onCancelClick = onCancelClick,
         onEndClick = onEndClick,
+        onContactClick = { dialPhoneNumber(phoneNumber) },
     )
 }

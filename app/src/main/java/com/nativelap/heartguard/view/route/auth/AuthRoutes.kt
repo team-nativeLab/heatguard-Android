@@ -53,6 +53,20 @@ internal fun HeartGuardSignUpRoute(
         mutableStateOf("")
     }
 
+    // 비밀번호 확인란이 비밀번호보다 짧은 동안은(아직 입력 중일 가능성이 높다) 오류를 보류하고,
+    // 최소한 비밀번호만큼 입력했는데도 다를 때만 오류로 표시한다 — 그렇지 않으면 사용자가 입력을
+    // 끝내기도 전에 매 글자마다 오류가 깜빡인다.
+    val isPasswordMismatch = passwordConfirmation.isNotEmpty() &&
+        passwordConfirmation.length >= password.length &&
+        password != passwordConfirmation
+    // 비밀번호 일치뿐 아니라 회사명·이름·이메일도 비어 있지 않아야 가입 버튼을 활성화한다.
+    val isSignUpEnabled = companyName.isNotBlank() &&
+        name.isNotBlank() &&
+        email.isNotBlank() &&
+        password.isNotBlank() &&
+        passwordConfirmation.isNotBlank() &&
+        password == passwordConfirmation
+
     AuthSignUpScreen(
         companyName = companyName,
         name = name,
@@ -66,5 +80,7 @@ internal fun HeartGuardSignUpRoute(
         onPasswordConfirmationChange = { passwordConfirmation = it },
         onSignUpClick = onSignUpClick,
         onLoginClick = onLoginClick,
+        isSignUpEnabled = isSignUpEnabled,
+        isPasswordMismatch = isPasswordMismatch,
     )
 }

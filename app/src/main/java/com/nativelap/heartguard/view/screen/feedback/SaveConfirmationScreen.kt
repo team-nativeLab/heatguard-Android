@@ -62,9 +62,21 @@ fun SaveConfirmationScreen(
                 onNotificationClick = {},
             )
 
+            // save_confirmation_*는 이 화면 전용으로 정의돼 있었지만 그동안 photo_field_screen_*
+            // (현장 사진 화면 문구)를 대신 재사용하고 있었다. 온도계 기록이 이미 저장된 상태(다시
+            // 확인만 하면 되는 경우)와 아직 저장되지 않은 상태(먼저 저장부터 해야 하는 경우)의
+            // 문구가 서로 다르게 준비되어 있어, 기존 isTemperatureSaved 분기에 맞춰 연결한다.
             PhotoScreenIntro(
-                title = stringResource(R.string.photo_field_screen_title),
-                description = stringResource(R.string.photo_field_screen_description),
+                title = if (isTemperatureSaved) {
+                    stringResource(R.string.save_confirmation_title)
+                } else {
+                    stringResource(R.string.save_confirmation_unsaved_title)
+                },
+                description = if (isTemperatureSaved) {
+                    stringResource(R.string.save_confirmation_message)
+                } else {
+                    stringResource(R.string.save_confirmation_unsaved_description)
+                },
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
             )
 
