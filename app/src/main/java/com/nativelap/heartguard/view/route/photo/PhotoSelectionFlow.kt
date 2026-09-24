@@ -8,6 +8,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -18,13 +19,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.compose.ui.platform.LocalContext
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.core.util.PHOTO_CACHE_DIRECTORY
+import com.nativelap.heartguard.core.util.PHOTO_CAPTURE_FILE_PREFIX
+import com.nativelap.heartguard.core.util.deleteCaptureFile
+import com.nativelap.heartguard.core.util.releasePhoto
 import com.nativelap.heartguard.view.component.photo.PhotoSourceBottomSheet
 import java.io.File
 import java.util.UUID
 
-/** Photo Route에 시스템 사진 획득·선택 상태와 2장 상한을 제공한다. */
+/** Photo Route에 시스템 사진 획득·선택 상태와 2장 상한을 제공한다.
+ * [initialPhotoUris]로 상위(대개 [com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel])가
+ * 갖고 있던 값을 이어받고, 목록이 바뀔 때마다 [onPhotosChanged]로 그 값을 다시 올려보내
+ * 화면을 벗어났다 돌아와도(예: 현장 사진 → 저장 전 확인) 선택한 사진이 유지되게 한다. */
 @Composable
 internal fun PhotoSelectionFlow(
+    initialPhotoUris: List<Uri>,
+    onPhotosChanged: (List<Uri>) -> Unit,
     content: @Composable (
         selectedPhotoUris: List<Uri>,
         onAddPhotoClick: () -> Unit,
@@ -39,7 +49,7 @@ internal fun PhotoSelectionFlow(
         restore = { restoredUris -> mutableStateOf(restoredUris.map(Uri::parse)) },
     )
     val selectedPhotoUrisState = rememberSaveable(saver = selectedPhotoUrisStateSaver) {
-        mutableStateOf(emptyList())
+        mutableStateOf(initialPhotoUris)
     }
     var selectedPhotoUris by selectedPhotoUrisState
     var pendingCaptureUriString by rememberSaveable {
@@ -50,6 +60,10 @@ internal fun PhotoSelectionFlow(
     }
     var sourceErrorMessage by rememberSaveable {
         mutableStateOf<String?>(null)
+    }
+
+    LaunchedEffect(selectedPhotoUris) {
+        onPhotosChanged(selectedPhotoUris)
     }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
@@ -81,13 +95,12 @@ internal fun PhotoSelectionFlow(
         }
     }
 
-    val latestPhotoUris by rememberUpdatedState(selectedPhotoUris)
+    // 확정된 selectedPhotoUris는 더 이상 여기서 정리하지 않는다 — 소유권이 RecordDraftViewModel로
+    // 넘어가 기록 흐름 전체가 끝날 때(reset()/onCleared()) 한 번만 정리된다. 이 Route가 떠 있는 동안
+    // 아직 결과를 받지 못한 채 남아있는 "진행 중인 촬영" 파일만 여기서 정리한다.
     val latestPendingCaptureUriString by rememberUpdatedState(pendingCaptureUriString)
     DisposableEffect(context) {
         onDispose {
-            latestPhotoUris.forEach { uri ->
-                releasePhoto(context, uri)
-            }
             latestPendingCaptureUriString
                 ?.let(Uri::parse)
                 ?.let { uri -> deleteCaptureFile(context, uri) }
@@ -150,7 +163,7 @@ private fun createCaptureUri(context: Context): Uri? {
         return null
     }
 
-    val captureFile = File(photoDirectory, "$CAMERA_FILE_PREFIX${UUID.randomUUID()}.jpg")
+    val captureFile = File(photoDirectory, "$PHOTO_CAPTURE_FILE_PREFIX${UUID.randomUUID()}.jpg")
     return try {
         if (!captureFile.createNewFile()) {
             return null
@@ -166,38 +179,4 @@ private fun createCaptureUri(context: Context): Uri? {
     }
 }
 
-private fun releasePhoto(context: Context, uri: Uri) {
-    if (isCameraCaptureUri(context, uri)) {
-        deleteCaptureFile(context, uri)
-        return
-    }
-
-    try {
-        context.contentResolver.releasePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION,
-        )
-    } catch (_: SecurityException) {
-        // 임시 권한만 받은 선택 항목은 해제 가능한 영속 권한이 없다.
-    }
-}
-
-private fun deleteCaptureFile(context: Context, uri: Uri) {
-    if (!isCameraCaptureUri(context, uri)) {
-        return
-    }
-
-    val fileName = uri.lastPathSegment ?: return
-    if (!fileName.startsWith(CAMERA_FILE_PREFIX)) {
-        return
-    }
-
-    File(File(context.cacheDir, PHOTO_CACHE_DIRECTORY), fileName).delete()
-}
-
-private fun isCameraCaptureUri(context: Context, uri: Uri): Boolean =
-    uri.authority == "${context.packageName}.fileprovider"
-
-private const val CAMERA_FILE_PREFIX = "heartguard_capture_"
 private const val MAX_SELECTED_PHOTOS = 2
-private const val PHOTO_CACHE_DIRECTORY = "photos"
