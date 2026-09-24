@@ -66,6 +66,15 @@ internal fun PhotoSelectionFlow(
         onPhotosChanged(selectedPhotoUris)
     }
 
+    // rememberSaveable은 initialPhotoUris를 최초 진입 시에만 시드한다. Navigation3는 뒤에 깔린
+    // NavEntry의 저장 상태를 pop될 때만 지우므로(goBack이 다른 화면만 pop해도 이 화면의 상태는
+    // 그대로 남는다), 다른 화면(저장 전 확인 등)에서 recordDraftViewModel을 직접 바꾼 뒤 이
+    // 화면으로 돌아오면 여기 남아있던 값이 최신 값을 덮어쓸 수 있다. 상위 값이 바뀔 때마다 다시
+    // 동기화해 항상 ViewModel을 최종 출처로 따르게 한다.
+    LaunchedEffect(initialPhotoUris) {
+        selectedPhotoUris = initialPhotoUris
+    }
+
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
     ) { wasSaved ->

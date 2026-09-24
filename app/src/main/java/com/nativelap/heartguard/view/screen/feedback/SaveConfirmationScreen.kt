@@ -68,18 +68,20 @@ fun SaveConfirmationScreen(
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
             )
 
-            // FieldPhotoScreen과 같은 3단 분기: 촬영된 사진이 있으면 그리드로, 없고 온도계가
-            // 아직 저장되지 않았으면 경고 placeholder를, 그 외에는 빈 촬영 유도 placeholder를 보여준다.
-            if (fieldPhotoUris.isNotEmpty()) {
-                SelectedPhotoGrid(
-                    photoUris = fieldPhotoUris,
-                    onRemovePhoto = onRemoveFieldPhoto,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
-                )
-            } else if (!isTemperatureSaved) {
+            // 온도계 저장 여부를 먼저 확인한다 — 이 화면은 "온도계를 먼저 저장하라"는 게이트가
+            // 핵심이므로, 사진이 이미 있더라도 온도계가 아직 저장되지 않았다면 경고를 우선 보여준다.
+            // (사진만 먼저 찍고 TemperatureRecord의 "저장"은 누르지 않은 채 FieldPhoto에서 바로
+            // 저장을 시도하는 경로가 있어, 사진 유무만으로 분기하면 이 경고가 가려질 수 있었다.)
+            if (!isTemperatureSaved) {
                 PhotoPreviewPlaceholder(
                     message = stringResource(R.string.photo_temperature_not_saved),
                     onClick = onCaptureClick,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                )
+            } else if (fieldPhotoUris.isNotEmpty()) {
+                SelectedPhotoGrid(
+                    photoUris = fieldPhotoUris,
+                    onRemovePhoto = onRemoveFieldPhoto,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                 )
             } else {
