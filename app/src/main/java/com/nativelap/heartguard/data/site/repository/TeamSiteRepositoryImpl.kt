@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.data.site.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.data.site.mapper.toDomain
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSource
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
@@ -12,8 +13,5 @@ class TeamSiteRepositoryImpl @Inject constructor(
 ) : TeamSiteRepository {
 
     override suspend fun getTeamSiteOverview(): ApiResult<TeamSiteOverview> =
-        when (val result = teamSiteRemoteDataSource.getTeamSite()) {
-            is ApiResult.Success -> ApiResult.Success(result.value.toDomain())
-            is ApiResult.Failure -> result
-        }
+        teamSiteRemoteDataSource.getTeamSite().map { it.toDomain() }
 }

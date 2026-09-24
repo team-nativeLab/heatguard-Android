@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.data.emergency.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.data.emergency.mapper.toDomain
 import com.nativelap.heartguard.data.emergency.remote.EmergencyCallRemoteDataSource
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
@@ -12,14 +13,8 @@ class EmergencyCallRepositoryImpl @Inject constructor(
 ) : EmergencyCallRepository {
 
     override suspend fun registerEmergencyCall(message: String?): ApiResult<EmergencyCallStatus> =
-        when (val result = emergencyCallRemoteDataSource.registerEmergencyCall(message)) {
-            is ApiResult.Success -> ApiResult.Success(result.value.toDomain())
-            is ApiResult.Failure -> result
-        }
+        emergencyCallRemoteDataSource.registerEmergencyCall(message).map { it.toDomain() }
 
     override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
-        when (val result = emergencyCallRemoteDataSource.getCurrentEmergencyCall()) {
-            is ApiResult.Success -> ApiResult.Success(result.value.toDomain())
-            is ApiResult.Failure -> result
-        }
+        emergencyCallRemoteDataSource.getCurrentEmergencyCall().map { it.toDomain() }
 }
