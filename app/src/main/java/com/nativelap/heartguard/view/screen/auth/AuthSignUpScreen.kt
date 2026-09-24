@@ -48,6 +48,7 @@ fun AuthSignUpScreen(
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
     isSignUpEnabled: Boolean = true,
+    isPasswordMismatch: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
@@ -120,11 +121,17 @@ fun AuthSignUpScreen(
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
 
                 AuthTextField(
-                    label = stringResource(R.string.auth_password),
+                    label = stringResource(R.string.auth_password_confirm),
                     text = passwordConfirmation,
                     onTextChange = onPasswordConfirmationChange,
                     placeholder = stringResource(R.string.auth_password_confirm_hint),
                     visualTransformation = PasswordVisualTransformation(),
+                    isError = isPasswordMismatch,
+                    supportingText = if (isPasswordMismatch) {
+                        stringResource(R.string.auth_password_mismatch_error)
+                    } else {
+                        null
+                    },
                 )
             }
 

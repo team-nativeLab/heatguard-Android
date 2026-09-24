@@ -53,6 +53,14 @@ internal fun HeartGuardSignUpRoute(
         mutableStateOf("")
     }
 
+    // 비밀번호 확인란이 비어 있는 동안은(아직 입력을 시작하지 않았거나 지우는 중) 오류를 보류하고,
+    // 값이 있는데 비밀번호와 다를 때만 오류로 표시한다. 두 값이 모두 비어 있으면 불일치는 아니지만
+    // 가입 버튼도 활성화하지 않는다.
+    val isPasswordMismatch = passwordConfirmation.isNotEmpty() && password != passwordConfirmation
+    val isSignUpEnabled = password.isNotBlank() &&
+        passwordConfirmation.isNotBlank() &&
+        password == passwordConfirmation
+
     AuthSignUpScreen(
         companyName = companyName,
         name = name,
@@ -66,5 +74,7 @@ internal fun HeartGuardSignUpRoute(
         onPasswordConfirmationChange = { passwordConfirmation = it },
         onSignUpClick = onSignUpClick,
         onLoginClick = onLoginClick,
+        isSignUpEnabled = isSignUpEnabled,
+        isPasswordMismatch = isPasswordMismatch,
     )
 }
