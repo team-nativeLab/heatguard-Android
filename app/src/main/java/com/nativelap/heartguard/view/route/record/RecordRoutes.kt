@@ -59,27 +59,9 @@ internal fun HeartGuardTemperatureRecordRoute(
         temperatureText = draftState.temperatureText,
         humidityText = draftState.humidityText,
         isManualInputEnabled = draftState.isManualInputEnabled,
-        onTemperatureChange = { newValue ->
-            recordDraftViewModel.updateTemperatureInput(
-                temperatureText = newValue,
-                humidityText = draftState.humidityText,
-                isManualInputEnabled = draftState.isManualInputEnabled,
-            )
-        },
-        onHumidityChange = { newValue ->
-            recordDraftViewModel.updateTemperatureInput(
-                temperatureText = draftState.temperatureText,
-                humidityText = newValue,
-                isManualInputEnabled = draftState.isManualInputEnabled,
-            )
-        },
-        onManualInputChange = { newValue ->
-            recordDraftViewModel.updateTemperatureInput(
-                temperatureText = draftState.temperatureText,
-                humidityText = draftState.humidityText,
-                isManualInputEnabled = newValue,
-            )
-        },
+        onTemperatureChange = recordDraftViewModel::updateTemperatureText,
+        onHumidityChange = recordDraftViewModel::updateHumidityText,
+        onManualInputChange = recordDraftViewModel::updateManualInputEnabled,
         onFieldPhotoClick = onFieldPhotoClick,
         onSaveClick = {
             recordDraftViewModel.markTemperatureSaved()
