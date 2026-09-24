@@ -20,15 +20,26 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // TODO: 실제 서버 주소가 정해지면 이 값을 교체한다. 지금은 TEAM_TOKEN 기반 API 연동
+        // 골격을 검증하기 위한 placeholder다.
+        buildConfigField("String", "BASE_URL", "\"https://api.heartguard.example.com/\"")
     }
 
     buildTypes {
+        debug {
+            // TODO: 백엔드팀이 발급한 테스트 팀 토큰이 확보되면 이 값을 교체한다. QR 스캔으로 팀
+            // 토큰을 받는 흐름이 아직 없어, 개발 중 TEAM_TOKEN 기반 API를 호출하기 위한 임시
+            // placeholder다(core/session/DevTeamTokenProvider.kt 참고).
+            buildConfigField("String", "DEV_TEAM_TOKEN", "\"DEV_TEAM_TOKEN_NOT_SET\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "DEV_TEAM_TOKEN", "\"DEV_TEAM_TOKEN_NOT_SET\"")
         }
     }
     compileOptions {
@@ -37,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
