@@ -33,6 +33,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
+import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
@@ -119,20 +120,32 @@ private fun HeartGuardAuthNavDisplay(
 private fun HeartGuardMainNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
 
+    // 기록유형선택→온도기록/사진촬영→저장전확인까지 여러 NavKey가 RecordDraftViewModel 하나를
+    // 공유해야 한다(android-navigation SKILL '화면 간 ViewModel 공유' 참고). android-navigation
+    // SKILL이 예시로 든 "수동 ViewModelStoreOwner"는 이 프로젝트가 쓰는 androidx.hilt-navigation-compose
+    // 1.2.0에서 실제로 동작하지 않는다 — createHiltViewModelFactory()는 대상 owner가
+    // NavBackStackEntry일 때만 Hilt 팩토리를 만들고, 그 외의 일반 ViewModelStoreOwner는
+    // HasDefaultViewModelProviderFactory를 구현하지 않는 한 NewInstanceFactory(no-arg 리플렉션)로
+    // 폴백해 생성자 의존성이 있는 ViewModel 생성 시 크래시한다. 대신 인자 없는 hiltViewModel()을 써서
+    // 컴포지션 상위의 기본 ViewModelStoreOwner(Activity, @AndroidEntryPoint 필요)를 그대로 따르고,
+    // 흐름별 초기화는 ViewModelStore를 새로 만드는 대신 Route가 명시적으로 호출하는
+    // recordDraftViewModel.reset()으로 대체한다.
+    val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
+
+    // recordDraftViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
+    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도(기록 도중이었더라도) 임시
+    // 사진 파일이 남지 않도록 여기서 한 번 더 reset()을 보장한다.
+    DisposableEffect(Unit) {
+        onDispose { recordDraftViewModel.reset() }
+    }
+
     // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 한다(android-navigation SKILL
-    // '화면 간 ViewModel 공유' 참고). 그 스킬이 예시로 든 "수동 ViewModelStoreOwner"는 이 프로젝트가
-    // 쓰는 androidx.hilt-navigation-compose 1.2.0에서 실제로 동작하지 않는다 —
-    // createHiltViewModelFactory()는 대상 owner가 NavBackStackEntry일 때만 Hilt 팩토리를 만들고,
-    // 그 외의 일반 ViewModelStoreOwner는 HasDefaultViewModelProviderFactory를 구현하지 않는 한
-    // NewInstanceFactory(no-arg 리플렉션)로 폴백해 생성자 의존성이 있는 ViewModel 생성 시
-    // 크래시한다. 대신 인자 없는 hiltViewModel()을 써서 컴포지션 상위의 기본 ViewModelStoreOwner
-    // (Activity, @AndroidEntryPoint 필요)를 그대로 따르고, 흐름별 초기화는 ViewModelStore를 새로
-    // 만드는 대신 Route가 명시적으로 호출하는 emergencyViewModel.reset()으로 대체한다.
+    // '화면 간 ViewModel 공유' 참고). 위와 같은 이유로 수동 ViewModelStoreOwner 없이 인자 없는
+    // hiltViewModel()을 쓰고, 흐름 종료 시 정리는 Route가 명시적으로 호출하는
+    // emergencyViewModel.reset()으로 대체한다.
     val emergencyViewModel: EmergencyViewModel = hiltViewModel()
 
-    // emergencyViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
-    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도 3초 폴링이 계속 남아있지
-    // 않도록 여기서 한 번 더 reset()을 보장한다.
+    // emergencyViewModel도 같은 이유로, 로그아웃·세션 만료 시 3초 폴링이 남지 않도록 정리한다.
     DisposableEffect(Unit) {
         onDispose { emergencyViewModel.reset() }
     }
@@ -253,6 +266,7 @@ private fun HeartGuardMainNavDisplay() {
                 metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
             ) {
                 HeartGuardRecordTypeSelectionRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onConfirm = { recordType ->
                         // RecordType이 enum이라 when이 모든 분기를 강제하므로 else/null 분기가 필요 없다.
                         val nextDestination = when (recordType) {
@@ -268,6 +282,7 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.TemperatureRecord> {
                 HeartGuardTemperatureRecordRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onFieldPhotoClick = {
                         backStack.add(HeartGuardDestination.FieldPhoto)
                     },
@@ -276,21 +291,25 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.FieldPhoto> {
                 HeartGuardFieldPhotoRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onSaveClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.WorkPhoto> {
                 HeartGuardWorkPhotoRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onUploadClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.RestPhoto> {
                 HeartGuardRestPhotoRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onUploadClick = ::goToSaveConfirmation,
                 )
             }
             entry<HeartGuardDestination.SaveConfirmation> {
                 HeartGuardSaveConfirmationRoute(
+                    recordDraftViewModel = recordDraftViewModel,
                     onCaptureClick = ::goBack,
                     onSaveClick = ::goToSaveResult,
                 )
