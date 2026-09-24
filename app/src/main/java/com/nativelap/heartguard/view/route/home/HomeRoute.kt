@@ -27,12 +27,21 @@ internal fun HeartGuardHomeRoute(
     val uiState by homeViewModel.uiState.collectAsState()
     val overview = (uiState as? HomeUiState.Success)?.overview
 
+    // 기상청 폭염특보 4단계(관심/주의/경고/위험)에 맞춘 라벨이다. 서버 값이 아직 없으면(로딩·실패)
+    // 기존 화면과 동일하게 "주의" 단계를 기본값으로 보여준다.
+    val riskLabel = when (overview?.heatLevel) {
+        0 -> stringResource(R.string.home_heat_level_interest)
+        2 -> stringResource(R.string.home_heat_level_warning)
+        3 -> stringResource(R.string.home_heat_level_danger)
+        else -> stringResource(R.string.home_heat_caution)
+    }
+
     HomeScreen(
         currentTemperature = overview?.let { "${it.currentTemperature}°C" } ?: "47.5°C",
         feelsLikeTemperature = overview?.let { "${it.apparentTemperature}°C" } ?: "40.5°C",
         humidity = overview?.let { "${it.humidity}%" } ?: "55%",
         temperatureDelta = "+3.2°C",
-        riskLabel = stringResource(R.string.home_heat_caution),
+        riskLabel = riskLabel,
         // 메뉴·알림 기능은 Figma/API 명세서 어디에도 정의되어 있지 않아 의도적으로 비워둔다.
         onMenuClick = {},
         onNotificationClick = {},
