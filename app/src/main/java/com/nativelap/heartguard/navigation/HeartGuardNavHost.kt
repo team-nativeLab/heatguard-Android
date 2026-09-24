@@ -4,6 +4,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -129,6 +130,13 @@ private fun HeartGuardMainNavDisplay() {
     // 만드는 대신 Route가 명시적으로 호출하는 emergencyViewModel.reset()으로 대체한다.
     val emergencyViewModel: EmergencyViewModel = hiltViewModel()
 
+    // emergencyViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
+    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도 3초 폴링이 계속 남아있지
+    // 않도록 여기서 한 번 더 reset()을 보장한다.
+    DisposableEffect(Unit) {
+        onDispose { emergencyViewModel.reset() }
+    }
+
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
     // 성공/실패를 번갈아 시뮬레이션하는 임시 상태다. 서버 연동 이슈에서 실제 결과값으로 교체해야 한다.
@@ -152,7 +160,14 @@ private fun HeartGuardMainNavDisplay() {
 
     fun goBack() {
         if (backStack.size > 1) {
-            backStack.removeLastOrNull()
+            val poppedDestination = backStack.removeLastOrNull()
+            // 화면 안의 "취소"/"종료" 버튼 콜백뿐 아니라 시스템/제스처 뒤로가기로 Emergency·Calling을
+            // 벗어날 때도 폴링을 멈춰야 한다 — onBack은 이 함수 하나로 모아져 있어 여기서만 처리하면 된다.
+            if (poppedDestination is HeartGuardDestination.Emergency ||
+                poppedDestination is HeartGuardDestination.Calling
+            ) {
+                emergencyViewModel.reset()
+            }
         }
     }
 
