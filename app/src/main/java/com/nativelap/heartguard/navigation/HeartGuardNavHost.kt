@@ -4,16 +4,12 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -122,20 +118,16 @@ private fun HeartGuardAuthNavDisplay(
 private fun HeartGuardMainNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
 
-    // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 하므로, android-navigation SKILL의
-    // '화면 간 ViewModel 공유' 패턴대로 이 흐름을 감싸는 상위 Composable에서 수동
-    // ViewModelStoreOwner를 만든다. 로그아웃 등으로 이 Composable 자체가 사라질 때 clear()하고,
-    // 긴급호출 흐름을 벗어날 때(goHome)는 Route가 명시적으로 emergencyViewModel.reset()을 호출한다.
-    val emergencyViewModelStoreOwner = remember {
-        object : ViewModelStoreOwner {
-            override val viewModelStore = ViewModelStore()
-        }
-    }
-    DisposableEffect(Unit) {
-        onDispose { emergencyViewModelStoreOwner.viewModelStore.clear() }
-    }
-    val emergencyViewModel: EmergencyViewModel =
-        hiltViewModel(viewModelStoreOwner = emergencyViewModelStoreOwner)
+    // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 한다(android-navigation SKILL
+    // '화면 간 ViewModel 공유' 참고). 그 스킬이 예시로 든 "수동 ViewModelStoreOwner"는 이 프로젝트가
+    // 쓰는 androidx.hilt-navigation-compose 1.2.0에서 실제로 동작하지 않는다 —
+    // createHiltViewModelFactory()는 대상 owner가 NavBackStackEntry일 때만 Hilt 팩토리를 만들고,
+    // 그 외의 일반 ViewModelStoreOwner는 HasDefaultViewModelProviderFactory를 구현하지 않는 한
+    // NewInstanceFactory(no-arg 리플렉션)로 폴백해 생성자 의존성이 있는 ViewModel 생성 시
+    // 크래시한다. 대신 인자 없는 hiltViewModel()을 써서 컴포지션 상위의 기본 ViewModelStoreOwner
+    // (Activity, @AndroidEntryPoint 필요)를 그대로 따르고, 흐름별 초기화는 ViewModelStore를 새로
+    // 만드는 대신 Route가 명시적으로 호출하는 emergencyViewModel.reset()으로 대체한다.
+    val emergencyViewModel: EmergencyViewModel = hiltViewModel()
 
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
