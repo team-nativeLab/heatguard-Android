@@ -29,7 +29,7 @@ class ExternalUploadService @Inject constructor(
             val requestBuilder = Request.Builder()
                 .url(uploadUrl)
                 .put(requestBody)
-            requiredHeaders.forEach { (name, value) -> requestBuilder.header(name, value) }
+            requiredHeaders.forEach { (headerName, headerValue) -> requestBuilder.header(headerName, headerValue) }
 
             externalUploadClient.newCall(requestBuilder.build()).execute().use { response ->
                 if (!response.isSuccessful) {
