@@ -32,6 +32,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
@@ -138,6 +139,17 @@ private fun HeartGuardMainNavDisplay() {
         onDispose { recordDraftViewModel.reset() }
     }
 
+    // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 한다(android-navigation SKILL
+    // '화면 간 ViewModel 공유' 참고). 위와 같은 이유로 수동 ViewModelStoreOwner 없이 인자 없는
+    // hiltViewModel()을 쓰고, 흐름 종료 시 정리는 Route가 명시적으로 호출하는
+    // emergencyViewModel.reset()으로 대체한다.
+    val emergencyViewModel: EmergencyViewModel = hiltViewModel()
+
+    // emergencyViewModel도 같은 이유로, 로그아웃·세션 만료 시 3초 폴링이 남지 않도록 정리한다.
+    DisposableEffect(Unit) {
+        onDispose { emergencyViewModel.reset() }
+    }
+
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
     // 성공/실패를 번갈아 시뮬레이션하는 임시 상태다. 서버 연동 이슈에서 실제 결과값으로 교체해야 한다.
@@ -161,7 +173,14 @@ private fun HeartGuardMainNavDisplay() {
 
     fun goBack() {
         if (backStack.size > 1) {
-            backStack.removeLastOrNull()
+            val poppedDestination = backStack.removeLastOrNull()
+            // 화면 안의 "취소"/"종료" 버튼 콜백뿐 아니라 시스템/제스처 뒤로가기로 Emergency·Calling을
+            // 벗어날 때도 폴링을 멈춰야 한다 — onBack은 이 함수 하나로 모아져 있어 여기서만 처리하면 된다.
+            if (poppedDestination is HeartGuardDestination.Emergency ||
+                poppedDestination is HeartGuardDestination.Calling
+            ) {
+                emergencyViewModel.reset()
+            }
         }
     }
 
@@ -204,9 +223,8 @@ private fun HeartGuardMainNavDisplay() {
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Home> {
                 HeartGuardHomeRoute(
-                    onManagerCallClick = {
-                        backStack.add(HeartGuardDestination.Emergency)
-                    },
+                    // 관리자 전화는 HeartGuardHomeRoute 내부에서 바로 다이얼러로 연결하므로
+                    // 여기서는 긴급호출 흐름으로 이동하는 콜백만 전달한다.
                     onEmergencyClick = {
                         backStack.add(HeartGuardDestination.Emergency)
                     },
@@ -221,19 +239,27 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(
+                    emergencyViewModel = emergencyViewModel,
                     // Figma 03_긴급상황 화면은 이미 관리자 호출 알림이 진행 중인 상태를 전제로 하며,
                     // "호출 취소" 버튼은 이 알림을 취소하고 이전 화면(Home)으로 돌아가는 동작이다.
                     // (04_호출중 화면으로 진행하는 것이 아니다 — 그 화면은 Emergency 진입 전 별도 트리거로 도달한다.)
                     onCallClick = {
                         backStack.add(HeartGuardDestination.Calling)
                     },
-                    onCancelClick = ::goHome,
+                    onCancelClick = {
+                        emergencyViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.Calling> {
                 HeartGuardCallingRoute(
+                    emergencyViewModel = emergencyViewModel,
                     onCancelClick = ::goBack,
-                    onEndClick = ::goHome,
+                    onEndClick = {
+                        emergencyViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.RecordTypeSelection>(

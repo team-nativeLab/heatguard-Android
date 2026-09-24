@@ -34,7 +34,7 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 | SaveConfirmation | 저장 전 확인 다이얼로그 |
 | SaveSuccess / SaveFailure | 저장 성공/실패 결과 |
 
-`HeartGuardNavHost.kt`에는 실제 서버 연동 전까지 저장 성공/실패를 번갈아 시뮬레이션하는 임시 로직이 `TODO` 주석과 함께 남아 있습니다. 로그인 상태(`isAuthenticated`)도 아직 로컬 `rememberSaveable` 값으로만 관리되며 실제 인증 연동은 되어 있지 않습니다.
+`HeartGuardNavHost.kt`에는 실제 서버 연동 전까지 저장 성공/실패를 번갈아 시뮬레이션하는 임시 로직이 `TODO` 주석과 함께 남아 있습니다. 로그인 상태는 `core/session/SessionManager`가 Keystore 기반 토큰 저장소(`TokenStorage`)를 통해 관리하며, `HeartGuardNavHost`가 이 상태(`SessionState`)를 구독해 인증/비인증 화면을 전환합니다. 다만 로그인 성공 시 저장하는 값은 실제 로그인 API가 아직 없어 placeholder 토큰이며(`HeartGuardSessionViewModel.onLoginSucceeded()`의 TODO 참고), 실제 서버 인증 연동은 되어 있지 않습니다.
 
 ## 기술 스택
 `gradle/libs.versions.toml`, `app/build.gradle.kts` 기준으로 확인한 값입니다.
@@ -44,11 +44,13 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 | 언어 | Kotlin 2.2.10 |
 | UI | Jetpack Compose (BOM 2026.02.01), Material 3 |
 | Navigation | AndroidX Navigation3 (`navigation3-runtime`, `navigation3-ui` 1.1.6), `NavDisplay` |
+| DI | Hilt |
+| 네트워크 | Retrofit, OkHttp, kotlinx.serialization 컨버터 |
 | 직렬화 | kotlinx.serialization.json 1.8.1 |
 | 빌드 | Gradle (Kotlin DSL), Version Catalog, AGP 9.2.1 |
 | minSdk / targetSdk / compileSdk | 34 / 37 / 37 |
 
-DI(Hilt), 네트워크(Retrofit/OkHttp), 로컬 저장소(Room 등) 관련 의존성은 현재 `app/build.gradle.kts`에 없습니다. Domain/Data 계층, Repository, UseCase, ViewModel 클래스도 아직 코드베이스에 존재하지 않으며, 현재는 Presentation(Compose UI) 계층 위주로 구현된 상태입니다.
+DI(Hilt)와 네트워크(Retrofit/OkHttp) 의존성은 `app/build.gradle.kts`에 이미 추가되어 있고, `core/di`·`core/network`·`core/session`에 Hilt 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리 골격이 구성되어 있습니다. 다만 이 하부 구조 위에 얹는 화면별 Repository·UseCase·ViewModel은 아직 없으며(세션 상태 구독용 `HeartGuardSessionViewModel` 1개 제외), 로컬 저장소(Room 등)도 아직 도입되지 않았습니다. 현재는 Presentation(Compose UI) 계층과 네트워크 하부 구조는 갖춰졌지만 그 둘을 잇는 Domain/Data 계층이 비어 있는 상태입니다.
 
 ## 아키텍처
 `AGENTS.md`는 이 저장소 계열(hopes, BookOn, HeartGuard, moil)의 공통 계약으로 MVVM + Presentation/Domain/Data/Core 계층 분리, ViewModel + StateFlow 단방향 데이터 흐름을 기본값으로 명시합니다. 다만 현재 HeartGuard 코드베이스는 이 계약을 아직 전면적으로 구현하지 않았으며, 다음과 같이 화면(View) 계층만 계층화되어 있습니다.
@@ -74,7 +76,7 @@ HeartGuard/
 │       │   ├── MainActivity.kt
 │       │   ├── navigation/   # Navigation3 목적지·NavHost·SceneStrategy
 │       │   ├── ui/theme/     # 디자인 토큰(Theme, Shapes, Type, Dimension)
-│       │   ├── core/component/ # 공통 오버레이 컴포넌트
+│       │   ├── core/         # di / network(Retrofit·OkHttp 설정) / session(인증 상태) / component(공통 오버레이)
 │       │   └── view/         # route / screen / component
 │       ├── assets/licenses/pretendard/  # 폰트 라이선스
 │       └── res/
