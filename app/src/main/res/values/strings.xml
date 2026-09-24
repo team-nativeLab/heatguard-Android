@@ -33,6 +33,7 @@
     <string name="auth_name_hint">가입자명을 입력해주세요</string>
     <string name="auth_password_confirm">비밀번호 확인</string>
     <string name="auth_password_confirm_hint">비밀번호를 한 번 더 입력해주세요</string>
+    <string name="auth_password_mismatch_error">비밀번호가 일치하지 않아요</string>
     <string name="home_weather_status">현재 온도</string>
     <string name="weather_sunny_description">맑음</string>
     <string name="home_weather_label">날씨</string>
@@ -68,6 +69,9 @@
     <string name="home_next_check_description">다음 체크까지 57분 · 22:00 예정</string>
     <string name="home_manager_call">관리자 전화</string>
     <string name="home_manager_call_description">현장 관리자에게 연락</string>
+    <!-- emergency_contact_phone과 현재 값은 같지만, 관리자 전화(홈)와 긴급 전화(관리자 연락 카드)는
+         의미가 다른 별도 연락처이므로 문자열을 분리한다. 실제 서버 연동 시 각각 다른 값으로 교체될 수 있다. -->
+    <string name="home_manager_contact_phone">010 - 1234 - 5678</string>
     <string name="home_emergency_call">긴급 전화</string>
     <string name="home_emergency_call_description">본사와 즉시 연결</string>
     <string name="home_record_action">기록하기</string>

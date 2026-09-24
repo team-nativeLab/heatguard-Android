@@ -210,9 +210,8 @@ private fun HeartGuardMainNavDisplay() {
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Home> {
                 HeartGuardHomeRoute(
-                    onManagerCallClick = {
-                        backStack.add(HeartGuardDestination.Emergency)
-                    },
+                    // 관리자 전화는 HeartGuardHomeRoute 내부에서 바로 다이얼러로 연결하므로
+                    // 여기서는 긴급호출 흐름으로 이동하는 콜백만 전달한다.
                     onEmergencyClick = {
                         backStack.add(HeartGuardDestination.Emergency)
                     },
