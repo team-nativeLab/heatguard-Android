@@ -151,7 +151,14 @@ private fun HeartGuardMainNavDisplay() {
 
     fun goBack() {
         if (backStack.size > 1) {
-            backStack.removeLastOrNull()
+            val poppedDestination = backStack.removeLastOrNull()
+            // 화면 안의 "취소"/"종료" 버튼 콜백뿐 아니라 시스템/제스처 뒤로가기로 Emergency·Calling을
+            // 벗어날 때도 폴링을 멈춰야 한다 — onBack은 이 함수 하나로 모아져 있어 여기서만 처리하면 된다.
+            if (poppedDestination is HeartGuardDestination.Emergency ||
+                poppedDestination is HeartGuardDestination.Calling
+            ) {
+                emergencyViewModel.reset()
+            }
         }
     }
 

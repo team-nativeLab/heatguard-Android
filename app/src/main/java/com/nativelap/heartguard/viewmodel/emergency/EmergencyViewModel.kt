@@ -31,13 +31,19 @@ class EmergencyViewModel @Inject constructor(
 
     private var pollingJob: Job? = null
 
+    // registerEmergencyCallUseCase()가 끝난 뒤에야 pollingJob이 채워지므로, 그 전에 이 함수가
+    // 다시 호출되면 pollingJob만 보고 하는 가드는 통과해버려 등록이 중복될 수 있다. 이 플래그는
+    // 호출 즉시(suspend 지점 이전에) true로 바뀌어 그 틈을 막는다.
+    private var hasStartedRegistration = false
+
     /** Emergency 화면 진입 시 1회 호출한다. 이미 ACTIVE 호출이 있으면 서버가
      * 409 ACTIVE_CALL_ALREADY_EXISTS로 응답하는데, 그 경우도 "이미 호출 중"인 정상 상태이므로
      * 등록 성공 여부와 무관하게 상태 폴링은 항상 시작한다. */
     fun registerEmergencyCallIfNeeded() {
-        if (pollingJob != null) {
+        if (hasStartedRegistration) {
             return
         }
+        hasStartedRegistration = true
         viewModelScope.launch {
             registerEmergencyCallUseCase()
             startObservingStatus()
@@ -59,6 +65,7 @@ class EmergencyViewModel @Inject constructor(
     fun reset() {
         pollingJob?.cancel()
         pollingJob = null
+        hasStartedRegistration = false
         mutableUiState.value = EmergencyUiState()
     }
 
