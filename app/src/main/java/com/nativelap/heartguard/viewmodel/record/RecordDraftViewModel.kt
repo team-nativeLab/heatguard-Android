@@ -155,22 +155,26 @@ class RecordDraftViewModel @Inject constructor(
         RecordType.REST -> FieldRecordType.REST
     }
 
-    /** 기록 유형을 새로 선택하기 시작할 때(RecordTypeSelection 진입) 호출한다.
-     * 이전 시도의 입력값과, 아직 서버에 올리지 않아 로컬에만 남아 있던 임시 사진 파일을 모두 정리한다. */
+    /** 기록 유형을 새로 선택하기 시작할 때(RecordTypeSelection 진입) 또는 이 흐름을 완전히 벗어날 때
+     * (로그아웃·세션 만료로 HeartGuardMainNavDisplay가 컴포지션에서 사라질 때) 호출한다. 이전 시도의
+     * 입력값과, 아직 서버에 올리지 않아 로컬에만 남아 있던 임시 사진 파일을 모두 정리한다.
+     * UI 상태는 즉시 초기화하고, 파일 I/O는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
     fun reset() {
-        releaseAllPhotos()
+        val photoUrisToRelease = currentPhotoUris()
         mutableUiState.value = RecordDraftUiState()
         mutableSubmissionState.value = RecordSubmissionState.Idle
+        viewModelScope.launch(ioDispatcher) {
+            photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
+        }
     }
 
     override fun onCleared() {
-        releaseAllPhotos()
+        // viewModelScope는 이 시점에 이미 취소되므로 여기서는 동기적으로 정리한다.
+        currentPhotoUris().forEach { uri -> releasePhoto(context, uri) }
     }
 
-    private fun releaseAllPhotos() {
+    private fun currentPhotoUris(): List<Uri> {
         val state = mutableUiState.value
-        (state.fieldPhotoUris + state.workPhotoUris + state.restPhotoUris)
-            .distinct()
-            .forEach { uri -> releasePhoto(context, uri) }
+        return (state.fieldPhotoUris + state.workPhotoUris + state.restPhotoUris).distinct()
     }
 }

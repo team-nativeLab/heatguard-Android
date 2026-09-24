@@ -4,6 +4,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -128,9 +129,21 @@ private fun HeartGuardMainNavDisplay() {
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
 
+    // recordDraftViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
+    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도(기록 도중이었더라도) 임시
+    // 사진 파일이 남지 않도록 여기서 한 번 더 reset()을 보장한다.
+    DisposableEffect(Unit) {
+        onDispose { recordDraftViewModel.reset() }
+    }
+
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
     // 없이 인자 없는 hiltViewModel()을 쓴다. 흐름 종료 시 정리는 emergencyViewModel.reset()으로 한다.
     val emergencyViewModel: EmergencyViewModel = hiltViewModel()
+
+    // emergencyViewModel도 같은 이유로, 로그아웃·세션 만료 시 3초 폴링이 남지 않도록 정리한다.
+    DisposableEffect(Unit) {
+        onDispose { emergencyViewModel.reset() }
+    }
 
     fun goToSaveConfirmation() {
         backStack.add(HeartGuardDestination.SaveConfirmation)
