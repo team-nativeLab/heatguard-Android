@@ -121,7 +121,7 @@
     <string name="save_success_title">기록이 저장됐어요</string>
     <string name="save_record_title">기록 저장</string>
     <string name="save_success_description">현장관리자에게 실시간으로 전송됩니다.</string>
-    <string name="save_failure_title">기록이 저장하지 못했어요</string>
+    <string name="save_failure_title">기록을 저장하지 못했어요</string>
     <string name="save_failure_description">네트워크 연결을 확인한 후 다시시도 해주세요</string>
     <string name="save_record_summary">저장한 기록 요약</string>
     <string name="save_error_title">오류 내용</string>
