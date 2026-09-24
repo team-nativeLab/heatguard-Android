@@ -1,20 +1,35 @@
 package com.nativelap.heartguard.view.route.feedback
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.component.feedback.SavedRecordSummaryItem
 import com.nativelap.heartguard.view.screen.feedback.SaveConfirmationScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveFailureScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveSuccessScreen
+import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
-/** 저장 전 입력 내용 확인 화면의 촬영·저장 callback을 연결한다. */
+/** 저장 전 입력 내용 확인 화면에 [recordDraftViewModel]이 들고 있는 실제 온도·사진 값을 전달한다. */
 @Composable
 internal fun HeartGuardSaveConfirmationRoute(
+    recordDraftViewModel: RecordDraftViewModel,
     onCaptureClick: () -> Unit,
     onSaveClick: () -> Unit,
 ) {
+    val draftState by recordDraftViewModel.uiState.collectAsState()
+
     SaveConfirmationScreen(
+        isTemperatureSaved = draftState.isTemperatureSaved,
+        temperatureText = draftState.temperatureText,
+        humidityText = draftState.humidityText,
+        // 체감온도는 TemperatureRecord/FieldPhoto 화면과 마찬가지로 사용자가 직접 입력하는 값이
+        // 아니라 서버가 계산해 내려주는 값이므로, 실제 API 연동 전까지는 다른 화면과 동일한
+        // 고정 표시값을 그대로 사용한다.
+        feelsLikeText = "40.5",
+        fieldPhotoUris = draftState.fieldPhotoUris,
+        onRemoveFieldPhoto = recordDraftViewModel::removeFieldPhoto,
         onCaptureClick = onCaptureClick,
         onSaveClick = onSaveClick,
     )
