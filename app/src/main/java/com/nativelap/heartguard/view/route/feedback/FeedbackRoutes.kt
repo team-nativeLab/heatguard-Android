@@ -28,6 +28,7 @@ internal fun HeartGuardSaveConfirmationRoute(
     onSaveFailure: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsState()
+    val submissionState by recordDraftViewModel.submissionState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     SaveConfirmationScreen(
@@ -42,12 +43,15 @@ internal fun HeartGuardSaveConfirmationRoute(
         onRemoveFieldPhoto = recordDraftViewModel::removeFieldPhoto,
         onCaptureClick = onCaptureClick,
         onSaveClick = {
-            coroutineScope.launch {
-                val result = recordDraftViewModel.submit()
-                if (result is ApiResult.Success) {
-                    onSaveSuccess()
-                } else {
-                    onSaveFailure()
+            // 이미 제출이 진행 중이면 연타로 두 번째 submit()이 겹쳐 시작되지 않도록 막는다.
+            if (submissionState !is RecordSubmissionState.Submitting) {
+                coroutineScope.launch {
+                    val submitResult = recordDraftViewModel.submit()
+                    if (submitResult is ApiResult.Success) {
+                        onSaveSuccess()
+                    } else {
+                        onSaveFailure()
+                    }
                 }
             }
         },
