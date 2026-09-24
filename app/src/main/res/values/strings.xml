@@ -42,6 +42,11 @@
     <string name="home_humidity">습도</string>
     <string name="home_temperature_change">온도 변화</string>
     <string name="home_heat_caution">폭염 주의 단계</string>
+    <!-- 기상청 폭염특보 4단계 표기를 따른다. 서버가 GET /api/v1/t/{teamToken} 응답의 heatLevel(0~3)로
+         현재 단계를 내려주면 HomeRoute가 이 값으로 배지 문구를 고른다. -->
+    <string name="home_heat_level_interest">폭염 관심 단계</string>
+    <string name="home_heat_level_warning">폭염 경고 단계</string>
+    <string name="home_heat_level_danger">폭염 위험 단계</string>
     <string name="home_temperature_unit">°C</string>
     <string name="home_percent_unit">%</string>
     <string name="home_emergency_action">긴급 호출</string>

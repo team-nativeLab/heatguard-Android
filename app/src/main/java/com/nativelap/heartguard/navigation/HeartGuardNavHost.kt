@@ -4,6 +4,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
@@ -117,6 +119,24 @@ private fun HeartGuardAuthNavDisplay(
 private fun HeartGuardMainNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
 
+    // Emergency·Calling 화면이 긴급호출 등록/폴링 상태를 공유해야 한다(android-navigation SKILL
+    // '화면 간 ViewModel 공유' 참고). 그 스킬이 예시로 든 "수동 ViewModelStoreOwner"는 이 프로젝트가
+    // 쓰는 androidx.hilt-navigation-compose 1.2.0에서 실제로 동작하지 않는다 —
+    // createHiltViewModelFactory()는 대상 owner가 NavBackStackEntry일 때만 Hilt 팩토리를 만들고,
+    // 그 외의 일반 ViewModelStoreOwner는 HasDefaultViewModelProviderFactory를 구현하지 않는 한
+    // NewInstanceFactory(no-arg 리플렉션)로 폴백해 생성자 의존성이 있는 ViewModel 생성 시
+    // 크래시한다. 대신 인자 없는 hiltViewModel()을 써서 컴포지션 상위의 기본 ViewModelStoreOwner
+    // (Activity, @AndroidEntryPoint 필요)를 그대로 따르고, 흐름별 초기화는 ViewModelStore를 새로
+    // 만드는 대신 Route가 명시적으로 호출하는 emergencyViewModel.reset()으로 대체한다.
+    val emergencyViewModel: EmergencyViewModel = hiltViewModel()
+
+    // emergencyViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
+    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도 3초 폴링이 계속 남아있지
+    // 않도록 여기서 한 번 더 reset()을 보장한다.
+    DisposableEffect(Unit) {
+        onDispose { emergencyViewModel.reset() }
+    }
+
     // TODO: ViewModel·Repository 연동 전까지 저장 성공/실패를 구분할 실제 로직이 없다.
     // 실패 화면(SaveFailure)이 실제로 도달 가능함을 보장하기 위해, 매 저장 시도마다
     // 성공/실패를 번갈아 시뮬레이션하는 임시 상태다. 서버 연동 이슈에서 실제 결과값으로 교체해야 한다.
@@ -140,7 +160,14 @@ private fun HeartGuardMainNavDisplay() {
 
     fun goBack() {
         if (backStack.size > 1) {
-            backStack.removeLastOrNull()
+            val poppedDestination = backStack.removeLastOrNull()
+            // 화면 안의 "취소"/"종료" 버튼 콜백뿐 아니라 시스템/제스처 뒤로가기로 Emergency·Calling을
+            // 벗어날 때도 폴링을 멈춰야 한다 — onBack은 이 함수 하나로 모아져 있어 여기서만 처리하면 된다.
+            if (poppedDestination is HeartGuardDestination.Emergency ||
+                poppedDestination is HeartGuardDestination.Calling
+            ) {
+                emergencyViewModel.reset()
+            }
         }
     }
 
@@ -199,19 +226,27 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(
+                    emergencyViewModel = emergencyViewModel,
                     // Figma 03_긴급상황 화면은 이미 관리자 호출 알림이 진행 중인 상태를 전제로 하며,
                     // "호출 취소" 버튼은 이 알림을 취소하고 이전 화면(Home)으로 돌아가는 동작이다.
                     // (04_호출중 화면으로 진행하는 것이 아니다 — 그 화면은 Emergency 진입 전 별도 트리거로 도달한다.)
                     onCallClick = {
                         backStack.add(HeartGuardDestination.Calling)
                     },
-                    onCancelClick = ::goHome,
+                    onCancelClick = {
+                        emergencyViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.Calling> {
                 HeartGuardCallingRoute(
+                    emergencyViewModel = emergencyViewModel,
                     onCancelClick = ::goBack,
-                    onEndClick = ::goHome,
+                    onEndClick = {
+                        emergencyViewModel.reset()
+                        goHome()
+                    },
                 )
             }
             entry<HeartGuardDestination.RecordTypeSelection>(
