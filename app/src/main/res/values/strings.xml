@@ -80,6 +80,11 @@
     <string name="home_record_history">기록 내역</string>
     <string name="home_record_history_description">지금까지의 기록을 확인하세요</string>
     <string name="home_weather_summary_format">%1$s %2$s · %3$s %4$s</string>
+    <string name="home_humidity_value_format">%1$s%%</string>
+    <string name="home_temperature_rise_format">▲ %1$s</string>
+    <string name="home_temperature_fall_format">▼ %1$s</string>
+    <!-- 카드 오른쪽의 이동 표시 기호이며 번역 대상이 아니다. -->
+    <string name="common_chevron_right" translatable="false">›</string>
     <string name="emergency_status">긴급상황</string>
     <string name="emergency_call">호출하기</string>
     <string name="emergency_call_cancel">호출 취소</string>
@@ -188,4 +193,13 @@
     <string name="save_confirmation_message">입력한 기록은 저장 후 수정할 수 있습니다.</string>
     <string name="save_confirmation_unsaved_title">저장 전 기록</string>
     <string name="save_confirmation_unsaved_description">입력한 내용을 확인한 후 저장해 주세요.</string>
+    <!-- 메뉴 드로어 -->
+    <string name="menu_edit_profile">내 정보 수정</string>
+    <string name="menu_notification_settings">알림 설정</string>
+    <string name="menu_notices">공지사항</string>
+    <string name="menu_customer_center">고객센터</string>
+    <string name="menu_logout">로그아웃</string>
+    <string name="menu_withdraw">회원탈퇴</string>
+    <string name="menu_close_description">메뉴 닫기</string>
+    <string name="menu_profile_affiliation_format">%1$s · %2$s</string>
 </resources>
