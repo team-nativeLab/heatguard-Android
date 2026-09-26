@@ -80,6 +80,11 @@
     <string name="home_record_history">기록 내역</string>
     <string name="home_record_history_description">지금까지의 기록을 확인하세요</string>
     <string name="home_weather_summary_format">%1$s %2$s · %3$s %4$s</string>
+    <string name="home_humidity_value_format">%1$s%%</string>
+    <string name="home_temperature_rise_format">▲ %1$s</string>
+    <string name="home_temperature_fall_format">▼ %1$s</string>
+    <!-- 카드 오른쪽의 이동 표시 기호이며 번역 대상이 아니다. -->
+    <string name="common_chevron_right" translatable="false">›</string>
     <string name="emergency_status">긴급상황</string>
     <string name="emergency_call">호출하기</string>
     <string name="emergency_call_cancel">호출 취소</string>
@@ -188,4 +193,37 @@
     <string name="save_confirmation_message">입력한 기록은 저장 후 수정할 수 있습니다.</string>
     <string name="save_confirmation_unsaved_title">저장 전 기록</string>
     <string name="save_confirmation_unsaved_description">입력한 내용을 확인한 후 저장해 주세요.</string>
+    <!-- 메뉴 드로어 -->
+    <string name="menu_edit_profile">내 정보 수정</string>
+    <string name="menu_notification_settings">알림 설정</string>
+    <string name="menu_notices">공지사항</string>
+    <string name="menu_customer_center">고객센터</string>
+    <string name="menu_logout">로그아웃</string>
+    <string name="menu_withdraw">회원탈퇴</string>
+    <string name="menu_close_description">메뉴 닫기</string>
+    <string name="menu_profile_affiliation_format">%1$s · %2$s</string>
+    <!-- 회원탈퇴 -->
+    <string name="withdraw_title">회원탈퇴</string>
+    <string name="withdraw_back_description">뒤로 가기</string>
+    <string name="withdraw_notice_headline">탈퇴하기 전에 꼭 확인해주세요</string>
+    <string name="withdraw_notice_subtitle">탈퇴 후에는 아래 내용이 적용돼요</string>
+    <string name="withdraw_notice_card_title">유의사항</string>
+    <string name="withdraw_notice_account_deleted">계정 정보(이름, 이메일, 회사명)는 즉시 삭제되며 복구할 수 없어요</string>
+    <string name="withdraw_notice_records_retained">온도계 기록·현장 사진 등 작업 기록은 관계 법령에 따라 회사에 일정 기간 보관될 수 있어요</string>
+    <string name="withdraw_notice_records_not_linked">탈퇴 후 같은 이메일로 다시 가입해도 이전 기록은 연결되지 않아요</string>
+    <string name="withdraw_reason_title">탈퇴 사유</string>
+    <string name="withdraw_reason_optional">(선택)</string>
+    <string name="withdraw_reason_field_work_ended">현장 작업이 종료되었어요</string>
+    <string name="withdraw_reason_changed_company">다른 회사로 이직했어요</string>
+    <string name="withdraw_reason_inconvenient">앱 사용이 불편해요</string>
+    <string name="withdraw_reason_other">기타</string>
+    <string name="withdraw_password_label">비밀번호 확인</string>
+    <string name="withdraw_password_placeholder">현재 비밀번호를 입력해주세요</string>
+    <string name="withdraw_agree">유의사항을 모두 확인했으며, 탈퇴에 동의해요</string>
+    <string name="withdraw_action">탈퇴하기</string>
+    <string name="withdraw_confirm_title">정말 탈퇴하시겠어요?</string>
+    <string name="withdraw_confirm_message">탈퇴하면 계정 정보가 즉시 삭제되며\n다시 되돌릴 수 없어요.</string>
+    <string name="withdraw_failure_message">탈퇴하지 못했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="withdraw_done_title">탈퇴가 완료되었어요</string>
+    <string name="withdraw_done_message">그동안 폭염가드를 이용해주셔서 감사해요</string>
 </resources>

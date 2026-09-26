@@ -44,4 +44,13 @@ internal sealed interface HeartGuardDestination : NavKey {
 
     @Serializable
     data object SaveFailure : HeartGuardDestination
+
+    @Serializable
+    data object WithdrawNotice : HeartGuardDestination
+
+    @Serializable
+    data object WithdrawConfirm : HeartGuardDestination
+
+    @Serializable
+    data object WithdrawDone : HeartGuardDestination
 }

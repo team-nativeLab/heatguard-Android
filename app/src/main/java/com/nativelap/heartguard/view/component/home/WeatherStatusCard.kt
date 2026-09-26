@@ -10,10 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,17 +21,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
-import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
-import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 홈 상단의 현재 온도 Hero와 습도·체감온도·날씨 지표 카드를 Figma와 같이 구성한다. */
+/** 홈 상단의 폭염 단계 배지·현재 온도 Hero와 그 아래 날씨 지표 카드를 Figma 홈 리디자인 순서로 구성한다.
+ * 화면 좌우 여백은 이 컴포넌트가 직접 가지므로 호출부는 가로 padding을 주지 않는다. */
 @Composable
 fun WeatherStatusCard(
     weatherPainter: Painter,
@@ -59,7 +54,10 @@ fun WeatherStatusCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = HeartGuardSpacing.HomeHeroHorizontal),
+                .padding(
+                    start = HeartGuardSpacing.HomeHeroHorizontal,
+                    end = HeartGuardSpacing.HomeHeroIllustrationEnd,
+                ),
         ) {
             // 실제 폰트 지표에서는 "47.5°C" + 변화량 배지 폭이 Figma 실측치보다 커질 수 있어
             // 오른쪽 날씨 일러스트와 폭이 겹칠 수 있다. Box는 겹치는 자식을 clip하지 않고
@@ -71,7 +69,10 @@ fun WeatherStatusCard(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(width = 159.dp, height = 121.dp),
+                    .size(
+                        width = HeartGuardComponentSize.HomeWeatherIllustrationWidth,
+                        height = HeartGuardComponentSize.HomeWeatherIllustrationHeight,
+                    ),
             )
 
             Column(
@@ -121,7 +122,7 @@ fun WeatherStatusCard(
             }
         }
 
-        Spacer(modifier = Modifier.height(HeartGuardSpacing.Section))
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.LargeSection))
 
         HomeWeatherMetricsCard(
             humidityLabel = humidityLabel,
@@ -130,105 +131,9 @@ fun WeatherStatusCard(
             feelsLikeTemperature = feelsLikeTemperature,
             weatherLabel = weatherLabel,
             weatherValue = weatherValue,
+            modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeMetricCardHorizontal),
         )
     }
-}
-
-/** 홈 날씨 지표를 Figma의 아이콘 배지·세로 구분선·값 구조로 표시한다. */
-@Composable
-private fun HomeWeatherMetricsCard(
-    humidityLabel: String,
-    humidity: String,
-    feelsLikeTemperatureLabel: String,
-    feelsLikeTemperature: String,
-    weatherLabel: String,
-    weatherValue: String,
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(HeartGuardComponentSize.HomeWeatherMetricHeight),
-        shape = RoundedCornerShape(HeartGuardRadius.HomeMetric),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = HeartGuardSpacing.HomeMetricHorizontal),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-        ) {
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_humidity),
-                label = humidityLabel,
-                value = humidity,
-                modifier = Modifier.weight(1f),
-            )
-            HomeWeatherDivider()
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_feels_like),
-                label = feelsLikeTemperatureLabel,
-                value = feelsLikeTemperature,
-                modifier = Modifier.weight(1.25f),
-            )
-            HomeWeatherDivider()
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_weather),
-                label = weatherLabel,
-                value = weatherValue,
-                modifier = Modifier.weight(0.95f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun HomeWeatherMetric(
-    iconPainter: Painter,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
-    ) {
-        Surface(
-            modifier = Modifier.size(HeartGuardIconSize.HomeMetric),
-            shape = RoundedCornerShape(HeartGuardRadius.Pill),
-            color = MaterialTheme.extraColors.homeMetricContainer,
-        ) {
-            Image(
-                painter = iconPainter,
-                contentDescription = null,
-                modifier = Modifier.padding(HeartGuardSpacing.Compact),
-            )
-        }
-        Column {
-            Text(
-                text = label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-            )
-            Text(
-                text = value,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-            )
-        }
-    }
-}
-
-@Composable
-private fun HomeWeatherDivider() {
-    Surface(
-        modifier = Modifier
-            .width(1.dp)
-            .height(24.dp),
-        color = MaterialTheme.colorScheme.outlineVariant,
-    ) {}
 }
 
 @Preview(showBackground = true, widthDp = 402)
