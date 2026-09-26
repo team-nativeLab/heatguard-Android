@@ -113,6 +113,12 @@ fun WithdrawNoticeScreen(
                         imeAction = ImeAction.Done,
                     ),
                     visualTransformation = PasswordVisualTransformation(),
+                    isError = uiState.submissionState == WithdrawSubmissionState.InvalidPassword,
+                    supportingText = if (uiState.submissionState == WithdrawSubmissionState.InvalidPassword) {
+                        stringResource(R.string.auth_password_error)
+                    } else {
+                        null
+                    },
                 )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))

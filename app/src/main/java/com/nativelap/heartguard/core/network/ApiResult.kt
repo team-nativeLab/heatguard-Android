@@ -9,7 +9,11 @@ sealed interface ApiResult<out Value> {
 
 /** HTTP 응답, 연결, 변환 과정에서 발생한 앱 내부 공통 오류다. */
 sealed interface ApiError {
-    data class Http(val statusCode: Int) : ApiError
+    // errorCode는 서버 공통 오류 본문의 error.code다(예: INVALID_CREDENTIALS). 본문이 없거나 JSON이 아니면 null이다.
+    data class Http(
+        val statusCode: Int,
+        val errorCode: String? = null,
+    ) : ApiError
 
     data object Network : ApiError
 
