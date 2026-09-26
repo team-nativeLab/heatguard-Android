@@ -80,6 +80,11 @@
     <string name="home_record_history">기록 내역</string>
     <string name="home_record_history_description">지금까지의 기록을 확인하세요</string>
     <string name="home_weather_summary_format">%1$s %2$s · %3$s %4$s</string>
+    <string name="home_humidity_value_format">%1$s%%</string>
+    <string name="home_temperature_rise_format">▲ %1$s</string>
+    <string name="home_temperature_fall_format">▼ %1$s</string>
+    <!-- 카드 오른쪽의 이동 표시 기호이며 번역 대상이 아니다. -->
+    <string name="common_chevron_right" translatable="false">›</string>
     <string name="emergency_status">긴급상황</string>
     <string name="emergency_call">호출하기</string>
     <string name="emergency_call_cancel">호출 취소</string>

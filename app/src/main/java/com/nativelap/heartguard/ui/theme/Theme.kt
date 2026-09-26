@@ -35,7 +35,12 @@ data class HeartGuardExtraColors(
     val homeTimelineTrack: Color,
     val homeTimelineActive: Color,
     val homeTimelineInactive: Color,
+    val homeTimelineDotBorder: Color,
+    val homeTimelineCurrentRing: Color,
     val homeContactAlertContainer: Color,
+    val pageBackground: Color,
+    val temperatureRiseContainer: Color,
+    val onTemperatureRiseContainer: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -95,7 +100,14 @@ private val homeMutedTextColor = Color(0xFF54596B)
 private val homeTimelineTrackColor = Color(0xFFE8EBF2)
 private val homeTimelineActiveColor = Color(0xFF4470ED)
 private val homeTimelineInactiveColor = Color(0xFFA6A8B2)
+private val homeTimelineDotBorderColor = Color(0xFFBFC2CC)
+// 현재 체크 시점 링은 활성 파랑(#4470ED)의 16% 투명도다.
+private val homeTimelineCurrentRingColor = Color(0x294470ED)
 private val homeContactAlertContainerColor = Color(0xFFFEE2E2)
+// 흰 카드가 배경과 구분되도록 Figma 홈 리디자인·회원탈퇴 화면에서 쓰는 옅은 회청색 페이지 배경이다.
+private val pageBackgroundColor = Color(0xFFF6F9FC)
+private val temperatureRiseContainerColor = Color(0xFFFFDDE2)
+private val onTemperatureRiseContainerColor = Color(0xFFFF6172)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -149,7 +161,12 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     homeTimelineTrack = homeTimelineTrackColor,
     homeTimelineActive = homeTimelineActiveColor,
     homeTimelineInactive = homeTimelineInactiveColor,
+    homeTimelineDotBorder = homeTimelineDotBorderColor,
+    homeTimelineCurrentRing = homeTimelineCurrentRingColor,
     homeContactAlertContainer = homeContactAlertContainerColor,
+    pageBackground = pageBackgroundColor,
+    temperatureRiseContainer = temperatureRiseContainerColor,
+    onTemperatureRiseContainer = onTemperatureRiseContainerColor,
 )
 
 /**

@@ -48,7 +48,12 @@ internal fun HeartGuardHomeRoute(
     HomeScreen(
         currentTemperature = overview?.let { "${it.currentTemperature}°C" } ?: "47.5°C",
         feelsLikeTemperature = overview?.let { "${it.apparentTemperature}°C" } ?: "40.5°C",
-        humidity = overview?.let { "${it.humidity}%" } ?: "55%",
+        humidity = overview?.let {
+            stringResource(
+                R.string.home_humidity_value_format,
+                it.humidity.toDisplayNumber(),
+            )
+        } ?: "55%",
         temperatureDelta = "+3.2°C",
         riskLabel = riskLabel,
         // 메뉴·알림 아이콘 기능은 Figma/API 명세서 어디에도 정의되어 있지 않아 의도적으로 비워둔다.
@@ -60,4 +65,13 @@ internal fun HeartGuardHomeRoute(
         onRecordHistoryClick = onRecordHistoryClick,
         onRecordClick = onRecordClick,
     )
+}
+
+// 서버 수치를 화면에 표시할 문자열로 바꾼다. 55.0처럼 소수부가 0이면 "55"로, 55.5는 그대로 "55.5"로 보여준다.
+private fun Double.toDisplayNumber(): String {
+    return if (this % 1.0 == 0.0) {
+        toLong().toString()
+    } else {
+        toString()
+    }
 }
