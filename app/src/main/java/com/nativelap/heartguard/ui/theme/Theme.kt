@@ -41,6 +41,11 @@ data class HeartGuardExtraColors(
     val pageBackground: Color,
     val temperatureRiseContainer: Color,
     val onTemperatureRiseContainer: Color,
+    val strongText: Color,
+    val secondaryText: Color,
+    val tertiaryText: Color,
+    val subtleDivider: Color,
+    val overlayScrim: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -108,6 +113,13 @@ private val homeContactAlertContainerColor = Color(0xFFFEE2E2)
 private val pageBackgroundColor = Color(0xFFF6F9FC)
 private val temperatureRiseContainerColor = Color(0xFFFFDDE2)
 private val onTemperatureRiseContainerColor = Color(0xFFFF6172)
+// 메뉴 드로어·회원탈퇴 화면에서 공통으로 쓰는 본문 강조/보조/3차 텍스트 색이다.
+private val strongTextColor = Color(0xFF1F2633)
+private val secondaryTextColor = Color(0xFF788294)
+private val tertiaryTextColor = Color(0xFFAEB3C4)
+private val subtleDividerColor = Color(0xFFE5EBF2)
+// 드로어 뒤 화면을 가리는 딤으로, Figma의 검정 40% 투명도다.
+private val overlayScrimColor = Color(0x66000000)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -167,6 +179,11 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     pageBackground = pageBackgroundColor,
     temperatureRiseContainer = temperatureRiseContainerColor,
     onTemperatureRiseContainer = onTemperatureRiseContainerColor,
+    strongText = strongTextColor,
+    secondaryText = secondaryTextColor,
+    tertiaryText = tertiaryTextColor,
+    subtleDivider = subtleDividerColor,
+    overlayScrim = overlayScrimColor,
 )
 
 /**

@@ -213,6 +213,8 @@ private fun HeartGuardMainNavDisplay() {
                     onRecordClick = {
                         backStack.add(HeartGuardDestination.RecordTypeSelection)
                     },
+                    // TODO: 회원탈퇴 화면(Figma 17~19)이 추가되면 해당 목적지로 이동하도록 연결한다.
+                    onWithdrawClick = {},
                 )
             }
             entry<HeartGuardDestination.Emergency> {
