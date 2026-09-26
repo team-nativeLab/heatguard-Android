@@ -24,6 +24,7 @@ import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveConfirmationRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
+import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
@@ -224,20 +225,14 @@ private fun HeartGuardMainNavDisplay() {
                     onCallClick = {
                         backStack.add(HeartGuardDestination.Calling)
                     },
-                    onCancelClick = {
-                        emergencyViewModel.reset()
-                        goHome()
-                    },
+                    onCancelClick = ::goHome,
                 )
             }
             entry<HeartGuardDestination.Calling> {
                 HeartGuardCallingRoute(
                     emergencyViewModel = emergencyViewModel,
                     onCancelClick = ::goBack,
-                    onEndClick = {
-                        emergencyViewModel.reset()
-                        goHome()
-                    },
+                    onEndClick = ::goHome,
                 )
             }
             entry<HeartGuardDestination.RecordTypeSelection>(
@@ -271,18 +266,34 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardFieldPhotoRoute(
                     recordDraftViewModel = recordDraftViewModel,
                     onSaveClick = ::goToSaveConfirmation,
+                    onCameraClick = { recordType ->
+                        backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                    },
                 )
             }
             entry<HeartGuardDestination.WorkPhoto> {
                 HeartGuardWorkPhotoRoute(
                     recordDraftViewModel = recordDraftViewModel,
                     onUploadClick = ::goToSaveConfirmation,
+                    onCameraClick = { recordType ->
+                        backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                    },
                 )
             }
             entry<HeartGuardDestination.RestPhoto> {
                 HeartGuardRestPhotoRoute(
                     recordDraftViewModel = recordDraftViewModel,
                     onUploadClick = ::goToSaveConfirmation,
+                    onCameraClick = { recordType ->
+                        backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                    },
+                )
+            }
+            entry<HeartGuardDestination.PhotoCamera> { key ->
+                HeartGuardPhotoCameraRoute(
+                    recordDraftViewModel = recordDraftViewModel,
+                    recordType = key.recordType,
+                    onBackClick = ::goBack,
                 )
             }
             entry<HeartGuardDestination.SaveConfirmation> {
@@ -300,10 +311,7 @@ private fun HeartGuardMainNavDisplay() {
             entry<HeartGuardDestination.SaveSuccess> {
                 HeartGuardSaveSuccessRoute(
                     recordDraftViewModel = recordDraftViewModel,
-                    onCompleteClick = {
-                        recordDraftViewModel.reset()
-                        goHome()
-                    },
+                    onCompleteClick = ::goHome,
                 )
             }
             entry<HeartGuardDestination.SaveFailure> {
