@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -29,10 +30,11 @@ fun HeatRiskBadge(
         Text(
             text = riskLabel,
             modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.Item,
-                vertical = HeartGuardSpacing.Tight,
+                horizontal = HeartGuardSpacing.BadgeHorizontal,
+                vertical = HeartGuardSpacing.BadgeVertical,
             ),
-            style = MaterialTheme.typography.labelMedium.copy(
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = HeartGuardFontSize.Badge,
                 fontWeight = FontWeight.Bold,
             ),
         )

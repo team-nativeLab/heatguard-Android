@@ -35,7 +35,18 @@ data class HeartGuardExtraColors(
     val homeTimelineTrack: Color,
     val homeTimelineActive: Color,
     val homeTimelineInactive: Color,
+    val homeTimelineDotBorder: Color,
+    val homeTimelineCurrentRing: Color,
     val homeContactAlertContainer: Color,
+    val pageBackground: Color,
+    val temperatureRiseContainer: Color,
+    val onTemperatureRiseContainer: Color,
+    val strongText: Color,
+    val secondaryText: Color,
+    val tertiaryText: Color,
+    val subtleDivider: Color,
+    val overlayScrim: Color,
+    val dangerContainer: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -95,7 +106,23 @@ private val homeMutedTextColor = Color(0xFF54596B)
 private val homeTimelineTrackColor = Color(0xFFE8EBF2)
 private val homeTimelineActiveColor = Color(0xFF4470ED)
 private val homeTimelineInactiveColor = Color(0xFFA6A8B2)
+private val homeTimelineDotBorderColor = Color(0xFFBFC2CC)
+// 현재 체크 시점 링은 활성 파랑(#4470ED)의 16% 투명도다.
+private val homeTimelineCurrentRingColor = Color(0x294470ED)
 private val homeContactAlertContainerColor = Color(0xFFFEE2E2)
+// 흰 카드가 배경과 구분되도록 Figma 홈 리디자인·회원탈퇴 화면에서 쓰는 옅은 회청색 페이지 배경이다.
+private val pageBackgroundColor = Color(0xFFF6F9FC)
+private val temperatureRiseContainerColor = Color(0xFFFFDDE2)
+private val onTemperatureRiseContainerColor = Color(0xFFFF6172)
+// 메뉴 드로어·회원탈퇴 화면에서 공통으로 쓰는 본문 강조/보조/3차 텍스트 색이다.
+private val strongTextColor = Color(0xFF1F2633)
+private val secondaryTextColor = Color(0xFF788294)
+private val tertiaryTextColor = Color(0xFFAEB3C4)
+private val subtleDividerColor = Color(0xFFE5EBF2)
+// 드로어 뒤 화면을 가리는 딤으로, Figma의 검정 40% 투명도다.
+private val overlayScrimColor = Color(0x66000000)
+// 회원탈퇴 경고 아이콘 배지처럼 되돌릴 수 없는 동작을 알리는 옅은 빨강 배경이다.
+private val dangerContainerColor = Color(0xFFFDEBEB)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -149,7 +176,18 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     homeTimelineTrack = homeTimelineTrackColor,
     homeTimelineActive = homeTimelineActiveColor,
     homeTimelineInactive = homeTimelineInactiveColor,
+    homeTimelineDotBorder = homeTimelineDotBorderColor,
+    homeTimelineCurrentRing = homeTimelineCurrentRingColor,
     homeContactAlertContainer = homeContactAlertContainerColor,
+    pageBackground = pageBackgroundColor,
+    temperatureRiseContainer = temperatureRiseContainerColor,
+    onTemperatureRiseContainer = onTemperatureRiseContainerColor,
+    strongText = strongTextColor,
+    secondaryText = secondaryTextColor,
+    tertiaryText = tertiaryTextColor,
+    subtleDivider = subtleDividerColor,
+    overlayScrim = overlayScrimColor,
+    dangerContainer = dangerContainerColor,
 )
 
 /**

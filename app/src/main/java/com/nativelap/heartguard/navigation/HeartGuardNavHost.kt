@@ -7,15 +7,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.view.component.RecordType
+import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRoute
+import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
+import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
@@ -29,6 +34,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
@@ -145,6 +151,14 @@ private fun HeartGuardMainNavDisplay() {
         onDispose { emergencyViewModel.reset() }
     }
 
+    // 회원탈퇴 안내·최종 확인·완료 화면이 입력값(비밀번호 포함)과 요청 상태를 공유한다. 같은 이유로 Activity 스코프이며,
+    // 로그아웃·세션 만료로 이 Composable이 사라질 때 비밀번호가 메모리에 남지 않도록 여기서도 reset()한다.
+    val withdrawViewModel: WithdrawViewModel = hiltViewModel()
+
+    DisposableEffect(Unit) {
+        onDispose { withdrawViewModel.reset() }
+    }
+
     fun goToSaveConfirmation() {
         backStack.add(HeartGuardDestination.SaveConfirmation)
     }
@@ -159,7 +173,23 @@ private fun HeartGuardMainNavDisplay() {
             ) {
                 emergencyViewModel.reset()
             }
+            // 안내 화면에서 뒤로 나가면 회원탈퇴 흐름을 벗어난 것이므로 입력한 비밀번호와 진행 중인 요청을 정리한다.
+            if (poppedDestination is HeartGuardDestination.WithdrawNotice) {
+                withdrawViewModel.reset()
+            }
         }
+    }
+
+    // 탈퇴에 성공하면 확인 다이얼로그와 안내 화면을 back stack에서 걷어내고 완료 화면으로 교체한다.
+    // 그래야 완료 화면에서 탈퇴 전 화면으로 되돌아갈 수 없다.
+    fun goToWithdrawDone() {
+        while (
+            backStack.lastOrNull() is HeartGuardDestination.WithdrawConfirm ||
+            backStack.lastOrNull() is HeartGuardDestination.WithdrawNotice
+        ) {
+            backStack.removeLastOrNull()
+        }
+        backStack.add(HeartGuardDestination.WithdrawDone)
     }
 
     fun goHome() {
@@ -169,6 +199,7 @@ private fun HeartGuardMainNavDisplay() {
     }
 
     val sceneStrategies: List<SceneStrategy<NavKey>> = listOf(
+        DialogSceneStrategy(),
         HeartGuardBottomSheetSceneStrategy(),
         SinglePaneSceneStrategy(),
     )
@@ -212,6 +243,9 @@ private fun HeartGuardMainNavDisplay() {
                     onRecordHistoryClick = {},
                     onRecordClick = {
                         backStack.add(HeartGuardDestination.RecordTypeSelection)
+                    },
+                    onWithdrawClick = {
+                        backStack.add(HeartGuardDestination.WithdrawNotice)
                     },
                 )
             }
@@ -304,6 +338,31 @@ private fun HeartGuardMainNavDisplay() {
                         recordDraftViewModel.reset()
                         goHome()
                     },
+                )
+            }
+            entry<HeartGuardDestination.WithdrawNotice> {
+                HeartGuardWithdrawNoticeRoute(
+                    withdrawViewModel = withdrawViewModel,
+                    onBackClick = ::goBack,
+                    onWithdrawClick = {
+                        backStack.add(HeartGuardDestination.WithdrawConfirm)
+                    },
+                    onWithdrawSucceeded = ::goToWithdrawDone,
+                )
+            }
+            entry<HeartGuardDestination.WithdrawConfirm>(
+                metadata = DialogSceneStrategy.dialog(
+                    DialogProperties(usePlatformDefaultWidth = false),
+                ),
+            ) {
+                HeartGuardWithdrawConfirmRoute(
+                    withdrawViewModel = withdrawViewModel,
+                    onDismiss = ::goBack,
+                )
+            }
+            entry<HeartGuardDestination.WithdrawDone> {
+                HeartGuardWithdrawDoneRoute(
+                    withdrawViewModel = withdrawViewModel,
                 )
             }
             entry<HeartGuardDestination.SaveFailure> {

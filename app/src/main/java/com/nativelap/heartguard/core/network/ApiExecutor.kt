@@ -13,12 +13,33 @@ class ApiExecutor @Inject constructor() {
     } catch (cancellationException: CancellationException) {
         throw cancellationException
     } catch (httpException: HttpException) {
-        ApiResult.Failure(ApiError.Http(httpException.code()))
+        ApiResult.Failure(
+            ApiError.Http(
+                statusCode = httpException.code(),
+                errorCode = httpException.readErrorCode(),
+            ),
+        )
     } catch (_: IOException) {
         ApiResult.Failure(ApiError.Network)
     } catch (_: SerializationException) {
         ApiResult.Failure(ApiError.Serialization)
     } catch (_: Exception) {
         ApiResult.Failure(ApiError.Unknown)
+    }
+
+    // 오류 본문은 Retrofit이 이미 메모리에 버퍼링해 두었으므로 한 번 읽어도 안전하다.
+    // 읽기·파싱에 실패해도 원래 HTTP 오류 변환을 막지 않도록 모든 실패를 null로 처리한다.
+    private fun HttpException.readErrorCode(): String? {
+        val errorBody = response()?.errorBody() ?: return null
+
+        if (errorBody.contentLength() > ApiErrorCodeReader.MAX_ERROR_BODY_BYTES) {
+            return null
+        }
+
+        return try {
+            ApiErrorCodeReader.read(errorBody.string())
+        } catch (_: IOException) {
+            null
+        }
     }
 }
