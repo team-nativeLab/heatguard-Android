@@ -91,7 +91,11 @@ internal fun HeartGuardSaveSuccessRoute(
                 value = stringResource(R.string.save_time_value),
             ),
         ),
-        onCompleteClick = onCompleteClick,
+        // 기록 완료 후 홈으로 돌아가기 전에 draft(임시 사진 파일 포함)를 정리한다.
+        onCompleteClick = {
+            recordDraftViewModel.reset()
+            onCompleteClick()
+        },
     )
 }
 

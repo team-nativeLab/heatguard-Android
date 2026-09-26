@@ -1,10 +1,11 @@
 package com.nativelap.heartguard.view.route.photo
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.screen.photo.FieldPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.RestPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.WorkPhotoScreen
@@ -15,13 +16,20 @@ import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 internal fun HeartGuardFieldPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onSaveClick: () -> Unit,
+    onCameraClick: (RecordType) -> Unit,
 ) {
-    // TODO: androidx.lifecycle:lifecycle-runtime-compose 도입이 확정되면 collectAsStateWithLifecycle로 교체한다.
-    val draftState by recordDraftViewModel.uiState.collectAsState()
+    val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
 
     PhotoSelectionFlow(
-        initialPhotoUris = draftState.fieldPhotoUris,
-        onPhotosChanged = recordDraftViewModel::updateFieldPhotos,
+        selectedPhotoUris = draftState.fieldPhotoUris,
+        onPhotoAdded = { photoUri ->
+            recordDraftViewModel.addPhoto(RecordType.TEMPERATURE, photoUri)
+        },
+        onRemovePhoto = { photoUri ->
+            recordDraftViewModel.removePhoto(RecordType.TEMPERATURE, photoUri)
+        },
+        onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.TEMPERATURE) },
+        onCameraClick = { onCameraClick(RecordType.TEMPERATURE) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
         FieldPhotoScreen(
             currentTemperature = "47.5°C",
@@ -42,12 +50,20 @@ internal fun HeartGuardFieldPhotoRoute(
 internal fun HeartGuardWorkPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onUploadClick: () -> Unit,
+    onCameraClick: (RecordType) -> Unit,
 ) {
-    val draftState by recordDraftViewModel.uiState.collectAsState()
+    val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
 
     PhotoSelectionFlow(
-        initialPhotoUris = draftState.workPhotoUris,
-        onPhotosChanged = recordDraftViewModel::updateWorkPhotos,
+        selectedPhotoUris = draftState.workPhotoUris,
+        onPhotoAdded = { photoUri ->
+            recordDraftViewModel.addPhoto(RecordType.WORK, photoUri)
+        },
+        onRemovePhoto = { photoUri ->
+            recordDraftViewModel.removePhoto(RecordType.WORK, photoUri)
+        },
+        onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.WORK) },
+        onCameraClick = { onCameraClick(RecordType.WORK) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         WorkPhotoScreen(
             memo = draftState.workMemo,
@@ -67,12 +83,20 @@ internal fun HeartGuardWorkPhotoRoute(
 internal fun HeartGuardRestPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onUploadClick: () -> Unit,
+    onCameraClick: (RecordType) -> Unit,
 ) {
-    val draftState by recordDraftViewModel.uiState.collectAsState()
+    val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
 
     PhotoSelectionFlow(
-        initialPhotoUris = draftState.restPhotoUris,
-        onPhotosChanged = recordDraftViewModel::updateRestPhotos,
+        selectedPhotoUris = draftState.restPhotoUris,
+        onPhotoAdded = { photoUri ->
+            recordDraftViewModel.addPhoto(RecordType.REST, photoUri)
+        },
+        onRemovePhoto = { photoUri ->
+            recordDraftViewModel.removePhoto(RecordType.REST, photoUri)
+        },
+        onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.REST) },
+        onCameraClick = { onCameraClick(RecordType.REST) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         RestPhotoScreen(
             memo = draftState.restMemo,
