@@ -7,7 +7,7 @@
     <string name="common_cancel">취소</string>
     <string name="common_close">닫기</string>
     <string name="common_details">상세 보기</string>
-    <string name="common_optional">선택</string>
+    <string name="common_optional_parenthesized">(선택)</string>
     <string name="common_call">전화 걸기</string>
     <string name="common_remove">삭제</string>
     <string name="common_retry">재시도</string>
@@ -21,10 +21,11 @@
     <string name="auth_login">로그인</string>
     <string name="auth_special_action">다른 방법으로 로그인</string>
     <string name="auth_signup_prompt">아직 회원이 아니신가요?</string>
-    <string name="auth_login_prompt">이미 회원이신가요?</string>
+    <string name="auth_login_prompt">이미 계정이 있으신가요?</string>
     <string name="auth_signup">회원가입</string>
     <string name="auth_login_title">안전한 현장을 위해\n로그인해주세요</string>
-    <string name="auth_login_description">현장작업자 계정으로 로그인할 수 있어요</string>
+    <string name="auth_login_description">팀 계정 이메일과 비밀번호로 로그인할 수 있어요</string>
+    <string name="auth_login_password_hint">비밀번호를 입력해주세요</string>
     <string name="auth_signup_title">현장작업자 회원가입</string>
     <string name="auth_signup_description">현장 정보를 등록하고 안전 관리를 시작해보세요</string>
     <string name="auth_company">회사명</string>
@@ -112,7 +113,7 @@
     <string name="photo_rest_memo_hint">휴식 관련 메모를 입력해주세요</string>
     <string name="photo_memo">메모</string>
     <string name="photo_memo_hint">메모를 입력해 주세요</string>
-    <string name="photo_selection_action_title">사진 촬영 또는 앨범에서 선택</string>
+    <string name="photo_selection_action_title">사진 촬영 또는\n앨범에서 선택</string>
     <string name="photo_selection_empty">1 ~ 2장 선택 가능</string>
     <string name="photo_work_memo_hint">작업 전 · 중 특이사항이 있다면 입력해주세요</string>
     <string name="photo_rest_time">휴식 시간</string>
@@ -146,7 +147,7 @@
     <string name="emergency_contact_name">현장 관리자</string>
     <string name="emergency_calling_description">잠시만 기다려 주세요</string>
     <string name="auth_password_error">비밀번호가 올바르지 않아요</string>
-    <string name="auth_signup_submit">가입하기</string>
+    <string name="auth_signup_submit">회원가입</string>
     <string name="home_check_morning">아침 온도 기록</string>
     <string name="home_check_afternoon">오후 온도 기록</string>
     <string name="emergency_alert_title">긴급 상황이에요</string>

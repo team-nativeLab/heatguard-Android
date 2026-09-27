@@ -104,7 +104,7 @@ fun AuthLoginScreen(
                         label = stringResource(R.string.auth_password),
                         text = password,
                         onTextChange = onPasswordChange,
-                        placeholder = stringResource(R.string.auth_password_hint),
+                        placeholder = stringResource(R.string.auth_login_password_hint),
                         isError = isPasswordError,
                         supportingText = passwordErrorMessage,
                         visualTransformation = PasswordVisualTransformation(),

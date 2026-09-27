@@ -34,14 +34,14 @@ import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 fun WorkPhotoScreen(
     memo: String,
     selectedPhotoCount: Int,
-    selectedPhotoUris: List<Uri> = emptyList(),
+    selectedPhotoUris: List<Uri>,
     onCaptureClick: () -> Unit,
-    onRemovePhoto: (Uri) -> Unit = {},
+    onRemovePhoto: (Uri) -> Unit,
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
     onUploadClick: () -> Unit,
+    isSaveEnabled: Boolean,
     modifier: Modifier = Modifier,
-    isSaveEnabled: Boolean = true,
 ) {
     Scaffold(
         modifier = modifier,
@@ -134,9 +134,11 @@ private fun WorkPhotoScreenPreview() {
             selectedPhotoCount = 0,
             selectedPhotoUris = emptyList(),
             onCaptureClick = {},
+            onRemovePhoto = {},
             onRetakeClick = {},
             onMemoChange = {},
             onUploadClick = {},
+            isSaveEnabled = true,
         )
     }
 }

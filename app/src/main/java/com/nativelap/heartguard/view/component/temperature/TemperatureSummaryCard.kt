@@ -99,7 +99,7 @@ private fun TemperatureSummaryCardPreview() {
             humidityLabel = "습도",
             feelsLikeLabel = "체감온도",
             title = stringResource(R.string.temperature_current_measurement),
-            thermometerPainter = androidx.compose.ui.res.painterResource(R.drawable.record_temperature),
+            thermometerPainter = androidx.compose.ui.res.painterResource(R.drawable.record_thermometer_illustration),
         )
     }
 }

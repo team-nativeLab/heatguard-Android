@@ -35,8 +35,6 @@ object HeartGuardSpacing {
     val ResultTitleMessageGap = 35.dp
     val ResultCardGap = 26.dp
     val ResultSuccessButtonGap = 16.dp
-    val ResultFailureRetryGap = 92.dp
-    val ResultFailureButtonGap = 14.dp
     val ResultMessageTopBottom = 26.dp
     val ResultMessageTitleGap = 23.dp
     val ResultMessageDescriptionGap = 13.dp
@@ -60,6 +58,7 @@ object HeartGuardSpacing {
     val AccountContentHorizontal = 24.dp
     val BottomActionHorizontal = 28.dp
     val DialogTop = 28.dp
+    val PhotoSelectionDescriptionTop = 40.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
     val CompactSection = 8.dp
@@ -149,7 +148,7 @@ object HeartGuardComponentSize {
     val PhotoCaptureTextMaxWidth = 220.dp
     // 온도 기록 화면의 현장 사진 선택 영역은 작업·휴식 사진 카드보다 낮은 Figma 컴포넌트다.
     val FieldPhotoSelectionHeight = 104.dp
-    val PhotoMemoMinHeight = 96.dp
+    val PhotoMemoMinHeight = 114.dp
     val TemperatureSummaryHeight = 138.dp
     val FieldPhotoCaptureRowHeight = 79.dp
     val EmergencyAlertHeight = 73.dp
