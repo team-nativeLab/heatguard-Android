@@ -2,8 +2,8 @@ package com.nativelap.heartguard.viewmodel.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.domain.account.model.WithdrawAccountResult
 import com.nativelap.heartguard.domain.account.model.WithdrawReason
 import com.nativelap.heartguard.domain.account.usecase.WithdrawAccountUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,11 +34,13 @@ class WithdrawViewModel @Inject constructor(
     private var withdrawJob: Job? = null
     private var isFinishing = false
 
+    // TODO: API 명세(DELETE /api/v1/site/profile)에 탈퇴 사유 필드가 없어 선택값은 화면에만 두고 서버로 보내지 않는다.
+    //  서버에 사유 필드가 추가되면 withdraw()에서 함께 전달한다.
     fun selectReason(reason: WithdrawReason?) {
         _uiState.update { it.copy(selectedReason = reason) }
     }
 
-    /** 비밀번호 입력이 바뀔 때 호출한다. 직전 요청이 실패했다면 다시 입력하는 시점에 오류 안내를 지운다. */
+    /** 비밀번호 입력이 바뀔 때 호출한다. 직전 요청이 실패했다면(비밀번호 오류 포함) 다시 입력하는 시점에 오류 안내를 지운다. */
     fun updatePassword(password: String) {
         _password.value = password
         _uiState.update { state ->
@@ -54,7 +56,7 @@ class WithdrawViewModel @Inject constructor(
     }
 
     /** 최종 확인 다이얼로그에서 "탈퇴하기"를 눌렀을 때 호출한다. 입력 조건을 만족하지 않거나 이미 요청 중이면 무시한다.
-     * 결과는 [WithdrawUiState.submissionState]의 Succeeded/Failed로 알린다. */
+     * 결과는 [WithdrawUiState.submissionState]의 Succeeded/InvalidPassword/Failed로 알린다. */
     fun withdraw() {
         if (!_uiState.value.canSubmit) {
             return
@@ -63,12 +65,12 @@ class WithdrawViewModel @Inject constructor(
         _uiState.update { it.copy(submissionState = WithdrawSubmissionState.Submitting) }
         withdrawJob = viewModelScope.launch {
             val withdrawResult = withdrawAccountUseCase(
-                password = _password.value,
-                reason = _uiState.value.selectedReason,
+                currentPassword = _password.value,
             )
             val nextSubmissionState = when (withdrawResult) {
-                is ApiResult.Success -> WithdrawSubmissionState.Succeeded
-                is ApiResult.Failure -> WithdrawSubmissionState.Failed
+                WithdrawAccountResult.Success -> WithdrawSubmissionState.Succeeded
+                WithdrawAccountResult.InvalidPassword -> WithdrawSubmissionState.InvalidPassword
+                WithdrawAccountResult.Failure -> WithdrawSubmissionState.Failed
             }
             _uiState.update { it.copy(submissionState = nextSubmissionState) }
         }
@@ -101,10 +103,12 @@ class WithdrawViewModel @Inject constructor(
     }
 
     private fun WithdrawSubmissionState.clearedFailure(): WithdrawSubmissionState {
-        return if (this == WithdrawSubmissionState.Failed) {
-            WithdrawSubmissionState.Idle
-        } else {
-            this
+        return when (this) {
+            WithdrawSubmissionState.Failed,
+            WithdrawSubmissionState.InvalidPassword,
+            -> WithdrawSubmissionState.Idle
+
+            else -> this
         }
     }
 }

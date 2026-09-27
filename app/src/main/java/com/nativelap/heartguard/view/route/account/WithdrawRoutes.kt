@@ -67,7 +67,7 @@ internal fun HeartGuardWithdrawNoticeRoute(
     )
 }
 
-/** 회원탈퇴 최종 확인 다이얼로그 Route이다. 요청이 실패하면 스스로 닫혀 안내 화면의 오류 문구가 보이게 한다. */
+/** 회원탈퇴 최종 확인 다이얼로그 Route이다. 요청이 실패하면(비밀번호 오류 포함) 스스로 닫혀 안내 화면의 오류 문구가 보이게 한다. */
 @Composable
 internal fun HeartGuardWithdrawConfirmRoute(
     withdrawViewModel: WithdrawViewModel,
@@ -77,7 +77,10 @@ internal fun HeartGuardWithdrawConfirmRoute(
     val latestOnDismiss by rememberUpdatedState(onDismiss)
 
     LaunchedEffect(uiState.submissionState) {
-        if (uiState.submissionState == WithdrawSubmissionState.Failed) {
+        val isFailed = uiState.submissionState == WithdrawSubmissionState.Failed ||
+            uiState.submissionState == WithdrawSubmissionState.InvalidPassword
+
+        if (isFailed) {
             latestOnDismiss()
         }
     }

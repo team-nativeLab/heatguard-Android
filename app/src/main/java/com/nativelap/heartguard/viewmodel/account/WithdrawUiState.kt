@@ -28,5 +28,9 @@ sealed interface WithdrawSubmissionState {
 
     data object Succeeded : WithdrawSubmissionState
 
+    // 현재 비밀번호가 일치하지 않아 실패했다. 비밀번호 입력란에 오류를 표시한다.
+    data object InvalidPassword : WithdrawSubmissionState
+
+    // 비밀번호 외의 이유(네트워크·서버 오류 등)로 실패했다.
     data object Failed : WithdrawSubmissionState
 }
