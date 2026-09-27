@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.nativelap.heartguard.view.component.RecordType
 import kotlinx.serialization.Serializable
 
 /** 폭염가드에서 사용하는 모든 화면과 오버레이를 타입 안전한 Navigation 3 목적지로 정의한다. */
@@ -35,6 +36,9 @@ internal sealed interface HeartGuardDestination : NavKey {
 
     @Serializable
     data object RestPhoto : HeartGuardDestination
+
+    @Serializable
+    data class PhotoCamera(val recordType: RecordType) : HeartGuardDestination
 
     @Serializable
     data object SaveConfirmation : HeartGuardDestination

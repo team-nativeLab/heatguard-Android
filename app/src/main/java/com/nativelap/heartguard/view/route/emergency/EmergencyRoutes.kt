@@ -31,7 +31,11 @@ internal fun HeartGuardEmergencyRoute(
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = phoneNumber,
         onCallClick = onCallClick,
-        onCancelClick = onCancelClick,
+        // 호출 취소는 진행 중인 알림·폴링을 정리한 뒤에만 이전 화면으로 돌아간다.
+        onCancelClick = {
+            emergencyViewModel.reset()
+            onCancelClick()
+        },
         onContactClick = { dialPhoneNumber(phoneNumber) },
     )
 }
@@ -53,7 +57,11 @@ internal fun HeartGuardCallingRoute(
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = phoneNumber,
         onCancelClick = onCancelClick,
-        onEndClick = onEndClick,
+        // 통화 종료는 폴링을 정리한 뒤에만 홈으로 돌아간다.
+        onEndClick = {
+            emergencyViewModel.reset()
+            onEndClick()
+        },
         onContactClick = { dialPhoneNumber(phoneNumber) },
     )
 }

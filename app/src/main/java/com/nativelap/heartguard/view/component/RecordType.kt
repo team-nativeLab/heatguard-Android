@@ -4,12 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
+import kotlinx.serialization.Serializable
 
 /**
  * 기록 유형 선택 화면(07/08_기록유형선택)에서 사용하는 기록 유형.
  * 이전에는 "temperature"/"work"/"rest" 문자열 리터럴이 여러 파일에 중복 하드코딩되어 있었는데,
  * enum으로 정리해 오타로 인한 분기 누락을 컴파일 타임에 방지한다.
  */
+@Serializable
 enum class RecordType {
     TEMPERATURE,
     WORK,

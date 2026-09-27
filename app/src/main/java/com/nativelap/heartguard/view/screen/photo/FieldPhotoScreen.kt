@@ -16,6 +16,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.HeartGuardHeader
@@ -114,7 +115,7 @@ fun FieldPhotoScreen(
                     cameraPainter = painterResource(R.drawable.record_camera),
                     cameraContentDescription = stringResource(R.string.photo_capture),
                     onClick = onCaptureClick,
-                    isEnabled = selectedPhotoCount < 2,
+                    isEnabled = selectedPhotoCount < MAX_RECORD_PHOTO_COUNT,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                 )
 

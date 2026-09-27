@@ -10,6 +10,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.util.releasePhoto
 import com.nativelap.heartguard.domain.record.model.FieldRecord
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
+import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.domain.record.usecase.SubmitFieldRecordUseCase
 import com.nativelap.heartguard.domain.record.usecase.UploadFieldPhotosUseCase
 import com.nativelap.heartguard.view.component.RecordType
@@ -65,29 +66,52 @@ class RecordDraftViewModel @Inject constructor(
         mutableUiState.update { it.copy(isTemperatureSaved = true) }
     }
 
-    fun updateFieldPhotos(photoUris: List<Uri>) {
-        mutableUiState.update { it.copy(fieldPhotoUris = photoUris) }
+    /** 카메라 촬영이나 앨범 선택 결과를 해당 기록의 사진 목록에 추가한다. */
+    fun addPhoto(recordType: RecordType, photoUri: Uri): Boolean {
+        var wasAdded = false
+        mutableUiState.update { state ->
+            val currentPhotoUris = state.photoUrisFor(recordType)
+            if (currentPhotoUris.size >= MAX_RECORD_PHOTO_COUNT || photoUri in currentPhotoUris) {
+                state
+            } else {
+                wasAdded = true
+                state.withPhotoUris(recordType, currentPhotoUris + photoUri)
+            }
+        }
+        return wasAdded
     }
 
     /** 저장 전 확인 화면에서 현장 사진을 다시 찍기 전에 개별 삭제할 때 쓴다. 목록 갱신은 즉시 반영하고,
      * 파일 I/O(ContentResolver 권한 해제·캐시 파일 삭제)는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
     fun removeFieldPhoto(uri: Uri) {
-        mutableUiState.update { it.copy(fieldPhotoUris = it.fieldPhotoUris - uri) }
+        removePhoto(RecordType.TEMPERATURE, uri)
+    }
+
+    /** 사진 목록에서 URI를 제거하고 연결된 캐시 파일 또는 앨범 권한을 백그라운드에서 정리한다. */
+    fun removePhoto(recordType: RecordType, uri: Uri) {
+        mutableUiState.update { state ->
+            state.withPhotoUris(recordType, state.photoUrisFor(recordType) - uri)
+        }
         viewModelScope.launch(ioDispatcher) {
             releasePhoto(context, uri)
         }
     }
 
-    fun updateWorkPhotos(photoUris: List<Uri>) {
-        mutableUiState.update { it.copy(workPhotoUris = photoUris) }
+    /** 다시 촬영을 시작할 때 현재 사진 목록과 로컬 자원을 함께 정리한다. */
+    fun clearPhotos(recordType: RecordType) {
+        val photoUrisToRelease = mutableUiState.value.photoUrisFor(recordType)
+        mutableUiState.update { state ->
+            state.withPhotoUris(recordType, emptyList())
+        }
+        viewModelScope.launch(ioDispatcher) {
+            photoUrisToRelease.forEach { photoUri ->
+                releasePhoto(context, photoUri)
+            }
+        }
     }
 
     fun updateWorkMemo(memo: String) {
         mutableUiState.update { it.copy(workMemo = memo) }
-    }
-
-    fun updateRestPhotos(photoUris: List<Uri>) {
-        mutableUiState.update { it.copy(restPhotoUris = photoUris) }
     }
 
     fun updateRestMemo(memo: String) {
@@ -141,6 +165,15 @@ class RecordDraftViewModel @Inject constructor(
         RecordType.TEMPERATURE -> fieldPhotoUris
         RecordType.WORK -> workPhotoUris
         RecordType.REST -> restPhotoUris
+    }
+
+    private fun RecordDraftUiState.withPhotoUris(
+        recordType: RecordType,
+        photoUris: List<Uri>,
+    ): RecordDraftUiState = when (recordType) {
+        RecordType.TEMPERATURE -> copy(fieldPhotoUris = photoUris)
+        RecordType.WORK -> copy(workPhotoUris = photoUris)
+        RecordType.REST -> copy(restPhotoUris = photoUris)
     }
 
     private fun RecordDraftUiState.memoFor(recordType: RecordType): String? = when (recordType) {

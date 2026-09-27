@@ -30,11 +30,15 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 | Emergency / Calling | 관리자 긴급 호출, 호출 중 상태 |
 | RecordTypeSelection | 온도계 기록 / 작업 사진 / 휴식 사진 중 기록 유형 선택 (바텀시트) |
 | TemperatureRecord | 온도계 측정값 입력 |
-| FieldPhoto / WorkPhoto / RestPhoto | 현장·작업·휴식 사진 촬영 |
+| FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 CameraX 전체 화면 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장) |
 | SaveConfirmation | 저장 전 확인 다이얼로그 |
 | SaveSuccess / SaveFailure | 저장 성공/실패 결과 |
 
-`HeartGuardNavHost.kt`에는 실제 서버 연동 전까지 저장 성공/실패를 번갈아 시뮬레이션하는 임시 로직이 `TODO` 주석과 함께 남아 있습니다. 로그인 상태는 `core/session/SessionManager`가 Keystore 기반 토큰 저장소(`TokenStorage`)를 통해 관리하며, `HeartGuardNavHost`가 이 상태(`SessionState`)를 구독해 인증/비인증 화면을 전환합니다. 다만 로그인 성공 시 저장하는 값은 실제 로그인 API가 아직 없어 placeholder 토큰이며(`HeartGuardSessionViewModel.onLoginSucceeded()`의 TODO 참고), 실제 서버 인증 연동은 되어 있지 않습니다.
+로그인·회원가입은 실제 인증 API가 아직 연결되지 않은 임시 흐름이며, 로그인 성공 시 placeholder 토큰을 저장합니다(`HeartGuardSessionViewModel.onLoginSucceeded()` 참고). 세션 상태는 `core/session/SessionManager`와 Keystore 기반 토큰 저장소(`TokenStorage`)가 관리하고, `HeartGuardNavHost`가 `SessionState`를 구독해 인증/비인증 화면을 전환합니다. 서버 통신 계층은 구성되어 있지만 `app/build.gradle.kts`의 기본 API 주소는 placeholder이므로 실제 백엔드 환경 설정은 확인이 필요합니다.
+
+사진 흐름은 사진 종류 선택 → CameraX 전체 화면 촬영 또는 Android Photo Picker(`PickVisualMedia`) 앨범 선택 → 공유 `RecordDraftViewModel` 목록 반영 → 저장 확인 및 업로드 순서입니다. 현장·작업·휴식 사진은 종류별 최대 2장까지 담습니다. CameraX 화면은 Manifest의 `CAMERA` 권한을 선언하고 런타임 권한도 요청합니다. 촬영 JPEG은 앱 캐시의 `photos/` 임시 파일로 만들고 `FileProvider` URI를 목록·미리보기·업로드에 사용합니다. 기록 흐름이 끝나거나 사진을 삭제하면 촬영 캐시 파일을 정리합니다.
+
+기록 저장은 선택한 사진을 presigned URL로 업로드한 뒤 해당 키와 기록 정보를 서버에 제출합니다. 성공·실패 화면은 제출 결과를 표시합니다. 서버 주소와 테스트 팀 토큰 설정이 placeholder인 상태라 실제 서버 환경에서의 동작은 확인이 필요합니다.
 
 ## 기술 스택
 `gradle/libs.versions.toml`, `app/build.gradle.kts` 기준으로 확인한 값입니다.
@@ -44,28 +48,34 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 | 언어 | Kotlin 2.2.10 |
 | UI | Jetpack Compose (BOM 2026.02.01), Material 3 |
 | Navigation | AndroidX Navigation3 (`navigation3-runtime`, `navigation3-ui` 1.1.6), `NavDisplay` |
+| 사진 | CameraX 1.6.2, Android Photo Picker |
 | DI | Hilt |
 | 네트워크 | Retrofit, OkHttp, kotlinx.serialization 컨버터 |
 | 직렬화 | kotlinx.serialization.json 1.8.1 |
 | 빌드 | Gradle (Kotlin DSL), Version Catalog, AGP 9.2.1 |
 | minSdk / targetSdk / compileSdk | 34 / 37 / 37 |
 
-DI(Hilt)와 네트워크(Retrofit/OkHttp) 의존성은 `app/build.gradle.kts`에 이미 추가되어 있고, `core/di`·`core/network`·`core/session`에 Hilt 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리 골격이 구성되어 있습니다. 다만 이 하부 구조 위에 얹는 화면별 Repository·UseCase·ViewModel은 아직 없으며(세션 상태 구독용 `HeartGuardSessionViewModel` 1개 제외), 로컬 저장소(Room 등)도 아직 도입되지 않았습니다. 현재는 Presentation(Compose UI) 계층과 네트워크 하부 구조는 갖춰졌지만 그 둘을 잇는 Domain/Data 계층이 비어 있는 상태입니다.
+Hilt와 Retrofit/OkHttp를 사용합니다. `core/di`, `core/network`, `core/session`에는 DI 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리가 있습니다. `domain`과 `data`에는 현장 기록 사진 업로드·기록 제출, 긴급 호출, 현장 개요 기능의 UseCase·Repository·RemoteDataSource 흐름이 구현되어 있고, 화면 상태는 `viewmodel`에 있습니다. 로그인은 아직 임시 흐름이며 로컬 데이터베이스(Room 등)는 없습니다.
 
 ## 아키텍처
-`AGENTS.md`는 이 저장소 계열(hopes, BookOn, HeartGuard, moil)의 공통 계약으로 MVVM + Presentation/Domain/Data/Core 계층 분리, ViewModel + StateFlow 단방향 데이터 흐름을 기본값으로 명시합니다. 다만 현재 HeartGuard 코드베이스는 이 계약을 아직 전면적으로 구현하지 않았으며, 다음과 같이 화면(View) 계층만 계층화되어 있습니다.
+`AGENTS.md`가 안내하는 Presentation/Domain/Data/Core 구분을 단일 `app` 모듈 안에서 패키지로 나누어 사용합니다. Compose Route/Screen이 ViewModel의 상태와 이벤트를 연결하고, ViewModel은 UseCase를 호출합니다. Repository 구현은 RemoteDataSource를 통해 Retrofit API와 사진 파일 업로드를 처리합니다.
 
 ```
 view/
 ├── route/       # 화면별 진입점(Route) — 콜백을 받아 Screen을 조립
 ├── screen/      # 화면 단위 Composable(Scaffold 포함)
 └── component/   # 화면별 재사용 Composable (auth, home, emergency, photo, temperature, feedback 등)
+viewmodel/       # 화면 상태 및 사용자 이벤트 처리 (home, emergency, record)
+domain/          # 현장 기록·긴급 호출·현장 개요 모델, Repository 계약, UseCase
+data/            # DTO·Mapper·RemoteDataSource·Repository 구현
 navigation/      # HeartGuardDestination(Navigation3 목적지), HeartGuardNavHost, 커스텀 SceneStrategy
 core/component/  # 다이얼로그 배경 블러 등 공통 UI 유틸
+core/network/    # Retrofit·OkHttp, API 결과 및 인증 처리
+core/session/    # 세션 상태와 Keystore 기반 토큰 저장
 ui/theme/        # Theme, Shapes, Type, Dimension
 ```
 
-ViewModel, UseCase, Repository, DataSource 계층의 도입 여부와 시점은 `확인 필요`입니다.
+사진 Route에서 카메라 또는 앨범 출처를 선택합니다. CameraX 촬영 결과와 Photo Picker URI는 기록 종류별 목록을 보유한 공유 `RecordDraftViewModel`에 추가되며, 저장 확인 화면에서 사진을 업로드한 뒤 기록 정보를 제출합니다. 실제 백엔드 연결 환경은 확인이 필요합니다.
 
 ## 프로젝트 구조
 ```
@@ -77,6 +87,9 @@ HeartGuard/
 │       │   ├── navigation/   # Navigation3 목적지·NavHost·SceneStrategy
 │       │   ├── ui/theme/     # 디자인 토큰(Theme, Shapes, Type, Dimension)
 │       │   ├── core/         # di / network(Retrofit·OkHttp 설정) / session(인증 상태) / component(공통 오버레이)
+│       │   ├── data/         # record / emergency / site 원격 데이터와 Repository 구현
+│       │   ├── domain/       # 모델, Repository 계약, UseCase
+│       │   ├── viewmodel/    # home / emergency / record 상태와 이벤트
 │       │   └── view/         # route / screen / component
 │       ├── assets/licenses/pretendard/  # 폰트 라이선스
 │       └── res/
