@@ -41,9 +41,6 @@ internal sealed interface HeartGuardDestination : NavKey {
     data class PhotoCamera(val recordType: RecordType) : HeartGuardDestination
 
     @Serializable
-    data object SaveConfirmation : HeartGuardDestination
-
-    @Serializable
     data object SaveSuccess : HeartGuardDestination
 
     @Serializable

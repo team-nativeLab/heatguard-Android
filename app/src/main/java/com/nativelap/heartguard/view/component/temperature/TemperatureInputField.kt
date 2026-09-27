@@ -66,14 +66,14 @@ fun TemperatureInputField(
             } else {
                 null
             },
-            shape = RoundedCornerShape(HeartGuardRadius.Button),
+            shape = RoundedCornerShape(HeartGuardRadius.InputBox),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
-                focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
-                disabledContainerColor = MaterialTheme.extraColors.authInputBackground,
-                unfocusedBorderColor = MaterialTheme.extraColors.authInputBackground,
+                unfocusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
+                focusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
+                disabledContainerColor = MaterialTheme.extraColors.inputFieldBackground,
+                unfocusedBorderColor = MaterialTheme.extraColors.inputFieldBackground,
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                disabledBorderColor = MaterialTheme.extraColors.authInputBackground,
+                disabledBorderColor = MaterialTheme.extraColors.inputFieldBackground,
             ),
         )
     }

@@ -13,6 +13,7 @@ object HeartGuardSpacing {
     val RecordFieldHorizontal = 32.dp
     val RecordFieldInset = 6.dp
     val EmergencyAlertHorizontal = 19.dp
+    val EmergencyContactIndent = 7.dp
     val AuthHorizontal = 40.dp
     val AuthTop = 142.dp
     val AuthSignUpTop = 147.dp
@@ -83,6 +84,7 @@ object HeartGuardRadius {
     val Small = 4.dp
     val Pill = 100.dp
     val NoticeCard = 20.dp
+    val InputBox = 10.dp
     val Dialog = 20.dp
 }
 
@@ -110,12 +112,14 @@ object HeartGuardIconSize {
     val HomeRecord = 44.dp
     val MenuAvatar = 48.dp
     val WarningBadge = 24.dp
+    val RecordThermometerIllustration = 120.dp
     val DialogIcon = 64.dp
     val DialogGlyph = 40.dp
     val Bullet = 4.dp
     val ResultGlyph = 40.dp
     val EmergencyCall = 138.dp
     val EmergencyCallInner = 110.dp
+    val EmergencyCallGlyph = 42.dp
     val PhotoError = 68.dp
 }
 
@@ -221,4 +225,6 @@ object HeartGuardFontSize {
     val CardTitle = 15.sp
     val DialogTitle = 20.sp
     val BodyLineHeight = 20.sp
+    val EmergencyDescription = 15.sp
+    val EmergencyContactTitle = 15.sp
 }

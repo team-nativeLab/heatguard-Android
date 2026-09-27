@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.component.temperature
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,10 +21,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 온도계 데이터 직접 입력 Switch와 세 개의 입력 박스를 Figma 카드 구조로 제공한다. */
 @Composable
@@ -49,9 +55,19 @@ fun TemperatureRecordCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .alpha(if (isCardEnabled) 1f else 0.5f),
+            .alpha(
+                if (isCardEnabled) {
+                    ENABLED_ALPHA
+                } else {
+                    DISABLED_ALPHA
+                },
+            ),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            width = HeartGuardBorderWidth.Divider,
+            color = MaterialTheme.extraColors.cardBorder,
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -67,7 +83,10 @@ fun TemperatureRecordCard(
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontSize = HeartGuardFontSize.CardTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 )
                 Switch(
                     checked = isManualInputEnabled,
@@ -93,7 +112,7 @@ fun TemperatureRecordCard(
                     unitLabel = temperatureUnit,
                     onTemperatureChange = onTemperatureChange,
                     isEnabled = isCardEnabled && isManualInputEnabled,
-                    placeholderText = "예: 47.5",
+                    placeholderText = stringResource(R.string.temperature_input_placeholder),
                     modifier = Modifier.weight(1f),
                 )
                 TemperatureInputField(
@@ -102,7 +121,7 @@ fun TemperatureRecordCard(
                     unitLabel = humidityUnit,
                     onTemperatureChange = onHumidityChange,
                     isEnabled = isCardEnabled && isManualInputEnabled,
-                    placeholderText = "예: 55",
+                    placeholderText = stringResource(R.string.humidity_input_placeholder),
                     modifier = Modifier.weight(1f),
                 )
                 TemperatureInputField(
@@ -111,7 +130,7 @@ fun TemperatureRecordCard(
                     unitLabel = "",
                     onTemperatureChange = {},
                     isEnabled = false,
-                    placeholderText = "자동 계산",
+                    placeholderText = stringResource(R.string.temperature_auto_calculated),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -158,3 +177,8 @@ private fun TemperatureRecordCardPreview() {
         )
     }
 }
+
+private const val ENABLED_ALPHA = 1f
+
+// Figma 15_저장전_확인알림의 비활성 카드(opacity 50%)와 같은 투명도다.
+private const val DISABLED_ALPHA = 0.5f

@@ -22,12 +22,12 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 
-/** 휴식 사진 기록에서 휴식 시간을 선택하는 라벨과 값 박스다. */
+/** 휴식 사진 기록에서 휴식 시간을 보여주는 라벨과 값 박스다. [onClick]이 null이면 선택할 수 없는 표시 전용이다. */
 @Composable
 fun RestTimeCard(
     title: String,
     selectedTime: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     contentHorizontalPadding: Dp = 0.dp,
 ) {
@@ -44,8 +44,11 @@ fun RestTimeCard(
                 .padding(horizontal = contentHorizontalPadding)
                 .fillMaxWidth()
                 .clickable(
+                    enabled = onClick != null,
                     role = Role.Button,
-                    onClick = onClick,
+                    onClick = {
+                        onClick?.invoke()
+                    },
                 ),
             shape = RoundedCornerShape(HeartGuardRadius.Card),
             color = MaterialTheme.colorScheme.surface,

@@ -19,12 +19,15 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.emptyValueText
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.photo.PhotoMemoField
 import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
 import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
-import com.nativelap.heartguard.view.component.photo.PhotoUploadButton
 import com.nativelap.heartguard.view.component.photo.RestTimeCard
 import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 
@@ -32,28 +35,36 @@ import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 @Composable
 fun RestPhotoScreen(
     memo: String,
-    selectedRestTime: String,
     selectedPhotoCount: Int,
     selectedPhotoUris: List<Uri> = emptyList(),
-    onRestTimeClick: () -> Unit,
     onCaptureClick: () -> Unit,
     onRemovePhoto: (Uri) -> Unit = {},
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
     onUploadClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSaveEnabled: Boolean = true,
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            BottomActionBar {
+                RecordSaveButton(
+                    title = stringResource(R.string.photo_upload),
+                    onClick = onUploadClick,
+                    enabled = isSaveEnabled,
+                )
+            }
+        },
     ) { innerPadding ->
         // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
         // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             HeartGuardHeader(
@@ -103,10 +114,11 @@ fun RestPhotoScreen(
                     )
                 }
 
+                // TODO: 휴식 시간은 API 명세(기록 등록·현장페이지)에 필드가 없어 "--"로 표시한다. 필드가 생기면 연결한다.
                 RestTimeCard(
                     title = stringResource(R.string.photo_rest_time),
-                    selectedTime = selectedRestTime,
-                    onClick = onRestTimeClick,
+                    selectedTime = emptyValueText(),
+                    onClick = null,
                     contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
@@ -120,12 +132,6 @@ fun RestPhotoScreen(
                     contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
-
-                PhotoUploadButton(
-                    title = stringResource(R.string.photo_upload),
-                    onClick = onUploadClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
-                )
             }
         }
     }
@@ -137,10 +143,8 @@ private fun RestPhotoScreenPreview() {
     HeartGuardTheme {
         RestPhotoScreen(
             memo = "",
-            selectedRestTime = stringResource(R.string.photo_rest_selected_time),
             selectedPhotoCount = 0,
             selectedPhotoUris = emptyList(),
-            onRestTimeClick = {},
             onCaptureClick = {},
             onRetakeClick = {},
             onMemoChange = {},

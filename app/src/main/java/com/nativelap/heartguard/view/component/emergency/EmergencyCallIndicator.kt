@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ReportProblem
@@ -21,8 +20,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -63,9 +61,9 @@ fun EmergencyCallIndicator(
                     .size(HeartGuardIconSize.EmergencyCall)
                     .background(
                         color = if (isCalling) {
-                            MaterialTheme.colorScheme.errorContainer
+                            MaterialTheme.extraColors.emergencyCallContainer
                         } else {
-                            MaterialTheme.extraColors.warningContainer
+                            MaterialTheme.extraColors.emergencyCallingContainer
                         },
                         shape = CircleShape,
                     ),
@@ -75,9 +73,9 @@ fun EmergencyCallIndicator(
                     .size(HeartGuardIconSize.EmergencyCallInner)
                     .background(
                         color = if (isCalling) {
-                            MaterialTheme.colorScheme.error
+                            MaterialTheme.extraColors.emergencyCall
                         } else {
-                            MaterialTheme.colorScheme.tertiary
+                            MaterialTheme.extraColors.emergencyCalling
                         },
                         shape = CircleShape,
                     ),
@@ -85,25 +83,27 @@ fun EmergencyCallIndicator(
             Icon(
                 imageVector = Icons.Filled.ReportProblem,
                 contentDescription = null,
-                modifier = Modifier.size(42.dp),
+                modifier = Modifier.size(HeartGuardIconSize.EmergencyCallGlyph),
                 tint = Color.White,
             )
         }
         Text(
             text = title,
             color = if (isCalling) {
-                MaterialTheme.colorScheme.error
+                MaterialTheme.extraColors.emergencyCall
             } else {
-                MaterialTheme.colorScheme.tertiary
+                MaterialTheme.extraColors.emergencyCalling
             },
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
         Text(
             text = description,
-            modifier = Modifier.widthIn(max = HeartGuardComponentSize.EmergencyDescriptionMaxWidth),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.extraColors.tertiaryText,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontSize = HeartGuardFontSize.EmergencyDescription,
+                fontWeight = FontWeight.SemiBold,
+            ),
         )
     }
 }

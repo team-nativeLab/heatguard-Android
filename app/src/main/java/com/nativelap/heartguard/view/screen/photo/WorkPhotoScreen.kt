@@ -19,12 +19,14 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.photo.PhotoMemoField
 import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
 import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
-import com.nativelap.heartguard.view.component.photo.PhotoUploadButton
 import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 
 /** 작업 전·중 사진 선택과 메모 입력을 Figma 화면 흐름으로 조합한다. */
@@ -39,18 +41,28 @@ fun WorkPhotoScreen(
     onMemoChange: (String) -> Unit,
     onUploadClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSaveEnabled: Boolean = true,
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            BottomActionBar {
+                RecordSaveButton(
+                    title = stringResource(R.string.photo_upload),
+                    onClick = onUploadClick,
+                    enabled = isSaveEnabled,
+                )
+            }
+        },
     ) { innerPadding ->
         // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
         // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             HeartGuardHeader(
@@ -107,12 +119,6 @@ fun WorkPhotoScreen(
                     isOptional = true,
                     contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
-                )
-
-                PhotoUploadButton(
-                    title = stringResource(R.string.photo_upload),
-                    onClick = onUploadClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                 )
             }
         }

@@ -47,7 +47,7 @@ fun TemperatureSummaryCard(
             Image(
                 painter = thermometerPainter,
                 contentDescription = null,
-                modifier = Modifier.size(HeartGuardIconSize.WeatherStatus),
+                modifier = Modifier.size(HeartGuardIconSize.RecordThermometerIllustration),
             )
         }
         Column(
@@ -55,8 +55,11 @@ fun TemperatureSummaryCard(
         ) {
             Text(
                 text = currentTemperatureLabel,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.extraColors.homeMutedText,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = HeartGuardFontSize.SmallLabel,
+                    fontWeight = FontWeight.SemiBold,
+                ),
             )
             Text(
                 text = currentTemperature,
@@ -75,7 +78,10 @@ fun TemperatureSummaryCard(
                     feelsLikeTemperature,
                 ),
                 color = MaterialTheme.extraColors.homeMutedText,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = HeartGuardFontSize.SmallLabel,
+                    fontWeight = FontWeight.SemiBold,
+                ),
             )
         }
     }
