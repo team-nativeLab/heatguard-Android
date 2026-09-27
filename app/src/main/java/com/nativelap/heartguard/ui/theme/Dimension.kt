@@ -56,6 +56,9 @@ object HeartGuardSpacing {
     val MenuDrawerHorizontal = 24.dp
     val MenuDrawerVertical = 24.dp
     val MenuItemVertical = 15.dp
+    val AccountContentHorizontal = 24.dp
+    val BottomActionHorizontal = 28.dp
+    val DialogTop = 28.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
     val CompactSection = 8.dp
@@ -79,6 +82,8 @@ object HeartGuardRadius {
     val Checkbox = 8.dp
     val Small = 4.dp
     val Pill = 100.dp
+    val NoticeCard = 20.dp
+    val Dialog = 20.dp
 }
 
 object HeartGuardIconSize {
@@ -104,6 +109,11 @@ object HeartGuardIconSize {
     val HomeMetric = 36.dp
     val HomeRecord = 44.dp
     val MenuAvatar = 48.dp
+    val WarningBadge = 24.dp
+    val DialogIcon = 64.dp
+    val DialogGlyph = 40.dp
+    val Bullet = 4.dp
+    val ResultGlyph = 40.dp
     val EmergencyCall = 138.dp
     val EmergencyCallInner = 110.dp
     val PhotoError = 68.dp
@@ -146,6 +156,7 @@ object HeartGuardComponentSize {
     val HomeWeatherIllustrationHeight = 121.dp
     val HomeMetricDividerHeight = 24.dp
     val MenuDrawerWidth = 300.dp
+    val DialogMaxWidth = 322.dp
     val HomeTimelineMinHeight = 136.dp
     val HomeContactHeight = 130.dp
     val EmergencyContactHeight = 143.dp
@@ -206,4 +217,8 @@ object HeartGuardFontSize {
     val MenuProfileName = 18.sp
     val MenuItem = 15.sp
     val MenuProfileEmail = 12.sp
+    val WithdrawTitle = 22.sp
+    val CardTitle = 15.sp
+    val DialogTitle = 20.sp
+    val BodyLineHeight = 20.sp
 }

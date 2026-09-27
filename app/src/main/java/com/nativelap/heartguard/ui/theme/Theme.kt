@@ -46,6 +46,7 @@ data class HeartGuardExtraColors(
     val tertiaryText: Color,
     val subtleDivider: Color,
     val overlayScrim: Color,
+    val dangerContainer: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -120,6 +121,8 @@ private val tertiaryTextColor = Color(0xFFAEB3C4)
 private val subtleDividerColor = Color(0xFFE5EBF2)
 // 드로어 뒤 화면을 가리는 딤으로, Figma의 검정 40% 투명도다.
 private val overlayScrimColor = Color(0x66000000)
+// 회원탈퇴 경고 아이콘 배지처럼 되돌릴 수 없는 동작을 알리는 옅은 빨강 배경이다.
+private val dangerContainerColor = Color(0xFFFDEBEB)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -184,6 +187,7 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     tertiaryText = tertiaryTextColor,
     subtleDivider = subtleDividerColor,
     overlayScrim = overlayScrimColor,
+    dangerContainer = dangerContainerColor,
 )
 
 /**
