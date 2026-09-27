@@ -3,6 +3,7 @@ package com.nativelap.heartguard.view.component.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,11 +17,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardElevation
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -43,6 +47,7 @@ fun HomeAdditionalRecordCard(
             .clickable(role = Role.Button, onClick = onClick),
         shape = RoundedCornerShape(HeartGuardRadius.HomeAction),
         color = MaterialTheme.colorScheme.surface,
+        shadowElevation = HeartGuardElevation.HomeRecordCard,
     ) {
         Row(
             modifier = Modifier
@@ -62,7 +67,7 @@ fun HomeAdditionalRecordCard(
                     modifier = Modifier.padding(HeartGuardSpacing.Item),
                 )
             }
-            androidx.compose.foundation.layout.Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -75,7 +80,7 @@ fun HomeAdditionalRecordCard(
                 )
             }
             Text(
-                text = "›",
+                text = stringResource(R.string.common_chevron_right),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.titleMedium,
             )
@@ -90,7 +95,7 @@ private fun HomeAdditionalRecordCardPreview() {
         HomeAdditionalRecordCard(
             title = "현장 사진",
             description = "사진 촬영 또는 앨범에서 선택",
-            iconPainter = androidx.compose.ui.res.painterResource(R.drawable.home_photo),
+            iconPainter = painterResource(R.drawable.home_photo),
             onClick = {},
         )
     }

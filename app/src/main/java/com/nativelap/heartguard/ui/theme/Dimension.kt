@@ -49,6 +49,10 @@ object HeartGuardSpacing {
     val HomeContentHorizontal = 27.dp
     val HomeHeroHorizontal = 35.dp
     val HomeMetricHorizontal = 18.dp
+    val HomeMetricCardHorizontal = 41.dp
+    val HomeHeroIllustrationEnd = 15.dp
+    val BadgeHorizontal = 10.dp
+    val BadgeVertical = 5.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
     val CompactSection = 8.dp
@@ -84,7 +88,9 @@ object HeartGuardIconSize {
     val BrandMark = 80.dp
     val Weather = 72.dp
     val WeatherIllustrationMax = 150.dp
-    val TimelineMarker = 12.dp
+    val TimelineDot = 8.dp
+    val TimelineCurrentDot = 10.dp
+    val TimelineCurrentRing = 20.dp
     val EmergencyIndicatorMax = 112.dp
     val Result = 84.dp
     val ResultSuccessGlyph = 53.dp
@@ -132,7 +138,10 @@ object HeartGuardComponentSize {
     val EmergencyDescriptionMaxWidth = 180.dp
     val HomeActionCardHeight = 148.dp
     val HomeWeatherMetricHeight = 78.dp
-    val HomeTimelineHeight = 136.dp
+    val HomeWeatherIllustrationWidth = 159.dp
+    val HomeWeatherIllustrationHeight = 121.dp
+    val HomeMetricDividerHeight = 24.dp
+    val HomeTimelineMinHeight = 136.dp
     val HomeContactHeight = 130.dp
     val EmergencyContactHeight = 143.dp
     val HomeAdditionalRecordHeight = 69.dp
@@ -150,7 +159,14 @@ object HeartGuardBorderWidth {
     val Checkbox = 2.dp
     val RecordTypeSelection = 2.dp
     val EmergencyIndicator = 8.dp
-    val TimelineRail = 1.dp
+    val TimelineRail = 2.dp
+    val TimelineDot = 1.5.dp
+    val Divider = 1.dp
+}
+
+object HeartGuardElevation {
+    val HomeMetricCard = 2.dp
+    val HomeRecordCard = 1.dp
 }
 
 object HeartGuardFontSize {
@@ -179,4 +195,7 @@ object HeartGuardFontSize {
     val RecordOptionDescription = 14.sp
     val Caption = 11.sp
     val SmallLabel = 13.sp
+    val Badge = 10.sp
+    val TemperatureDelta = 9.sp
+    val TimelineLabel = 9.5.sp
 }

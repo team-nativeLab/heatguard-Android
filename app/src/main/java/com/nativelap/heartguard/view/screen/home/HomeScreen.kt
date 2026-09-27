@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.HeartGuardHeader
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
 import com.nativelap.heartguard.view.component.home.HomeAdditionalRecordCard
@@ -44,7 +45,7 @@ fun HomeScreen(
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -69,9 +70,7 @@ fun HomeScreen(
             item {
                 WeatherStatusCard(
                     modifier = Modifier.padding(
-                        start = HeartGuardSpacing.HomeContentHorizontal,
                         top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                        end = HeartGuardSpacing.HomeContentHorizontal,
                     ),
                     weatherPainter = painterResource(R.drawable.heartguard_home_weather),
                     weatherContentDescription = stringResource(R.string.weather_sunny_description),
@@ -96,9 +95,9 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            start = HeartGuardSpacing.HomeContentHorizontal,
+                            start = HeartGuardSpacing.SectionTitleHorizontal,
                             top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                            end = HeartGuardSpacing.HomeContentHorizontal,
+                            end = HeartGuardSpacing.SectionTitleHorizontal,
                         ),
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.labelMedium,
@@ -136,9 +135,9 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            start = HeartGuardSpacing.HomeContentHorizontal,
+                            start = HeartGuardSpacing.SectionTitleHorizontal,
                             top = HeartGuardSpacing.Compact,
-                            end = HeartGuardSpacing.HomeContentHorizontal,
+                            end = HeartGuardSpacing.SectionTitleHorizontal,
                         ),
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.labelMedium,

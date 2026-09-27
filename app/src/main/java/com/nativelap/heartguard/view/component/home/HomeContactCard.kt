@@ -17,7 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +53,7 @@ fun HomeContactCard(
                 title = managerTitle,
                 description = managerDescription,
                 iconPainter = painterResource(R.drawable.home_manager_phone),
+                iconContainerColor = MaterialTheme.extraColors.homeMetricContainer,
                 onClick = onManagerClick,
             )
             HorizontalDivider(
@@ -60,6 +64,7 @@ fun HomeContactCard(
                 title = emergencyTitle,
                 description = emergencyDescription,
                 iconPainter = painterResource(R.drawable.home_emergency_phone),
+                iconContainerColor = MaterialTheme.extraColors.homeContactAlertContainer,
                 onClick = onEmergencyClick,
             )
         }
@@ -71,7 +76,8 @@ fun HomeContactCard(
 private fun HomeContactRow(
     title: String,
     description: String,
-    iconPainter: androidx.compose.ui.graphics.painter.Painter,
+    iconPainter: Painter,
+    iconContainerColor: Color,
     onClick: () -> Unit,
 ) {
     Row(
@@ -86,7 +92,7 @@ private fun HomeContactRow(
         Surface(
             modifier = Modifier.size(HeartGuardIconSize.HomeRecord),
             shape = RoundedCornerShape(HeartGuardRadius.HomeAction),
-            color = MaterialTheme.extraColors.homeMetricContainer,
+            color = iconContainerColor,
         ) {
             Image(
                 painter = iconPainter,
@@ -107,7 +113,7 @@ private fun HomeContactRow(
             )
         }
         Text(
-            text = "›",
+            text = stringResource(R.string.common_chevron_right),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.titleMedium,
         )
