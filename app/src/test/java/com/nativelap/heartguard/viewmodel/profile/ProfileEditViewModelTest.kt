@@ -4,6 +4,7 @@ import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.TokenStorage
+import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
@@ -163,6 +164,11 @@ class ProfileEditViewModelTest {
                 ),
             )
         }
+
+        override suspend fun changePassword(
+            currentPassword: String,
+            newPassword: String,
+        ): PasswordChangeResult = PasswordChangeResult.Failure
     }
 
     private class FakeTokenStorage(

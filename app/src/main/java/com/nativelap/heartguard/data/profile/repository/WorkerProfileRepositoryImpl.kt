@@ -1,9 +1,11 @@
 package com.nativelap.heartguard.data.profile.repository
 
+import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.data.profile.mapper.toDomain
 import com.nativelap.heartguard.data.profile.remote.WorkerProfileRemoteDataSource
+import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
 import javax.inject.Inject
@@ -18,4 +20,45 @@ class WorkerProfileRepositoryImpl @Inject constructor(
     override suspend fun updateWorkerName(name: String): ApiResult<WorkerProfile> = workerProfileRemoteDataSource
         .updateWorkerName(name)
         .map { profileResponse -> profileResponse.toDomain() }
+
+    /** 서버 오류 코드를 화면이 분기할 비밀번호 변경 결과로 바꾼다. */
+    override suspend fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+    ): PasswordChangeResult {
+        val changeResult = workerProfileRemoteDataSource.changePassword(
+            currentPassword = currentPassword,
+            newPassword = newPassword,
+        )
+        return when (changeResult) {
+            is ApiResult.Success -> PasswordChangeResult.Success
+            is ApiResult.Failure -> changeResult.error.toPasswordChangeFailure()
+        }
+    }
+
+    private fun ApiError.toPasswordChangeFailure(): PasswordChangeResult = when (this) {
+        is ApiError.Http -> when {
+            statusCode == HTTP_UNAUTHORIZED && errorCode == INVALID_CREDENTIALS_CODE -> {
+                PasswordChangeResult.InvalidCurrentPassword
+            }
+
+            statusCode == HTTP_BAD_REQUEST && errorCode == VALIDATION_ERROR_CODE -> {
+                PasswordChangeResult.InvalidNewPassword
+            }
+
+            else -> PasswordChangeResult.Failure
+        }
+
+        ApiError.Network,
+        ApiError.Serialization,
+        ApiError.Unknown,
+        -> PasswordChangeResult.Failure
+    }
+
+    private companion object {
+        const val HTTP_BAD_REQUEST = 400
+        const val HTTP_UNAUTHORIZED = 401
+        const val INVALID_CREDENTIALS_CODE = "INVALID_CREDENTIALS"
+        const val VALIDATION_ERROR_CODE = "VALIDATION_ERROR"
+    }
 }

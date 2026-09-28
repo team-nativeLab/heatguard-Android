@@ -28,6 +28,7 @@ import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.profile.ProfileAvatarHeader
+import com.nativelap.heartguard.view.component.profile.ProfilePasswordChangeRow
 import com.nativelap.heartguard.view.component.profile.ProfileReadOnlyField
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditScreenEvent
@@ -35,7 +36,7 @@ import com.nativelap.heartguard.viewmodel.profile.ProfileEditUiState
 import com.nativelap.heartguard.viewmodel.profile.ProfileLoadState
 
 /** Figma 24_내정보수정 화면이다. 이름·이메일은 작업자 정보 조회(GET /auth/team/me) 값이고 이름만 수정할 수 있다.
- * 회사명은 서버가 제공하지 않아 "--"로 표시한다. 비밀번호 변경은 이번 범위에서 제외해 진입점을 두지 않는다. */
+ * 회사명은 서버가 제공하지 않아 "--"로 표시한다. "비밀번호 변경" 행은 비밀번호 변경 화면(Figma 26)으로 이동한다. */
 @Composable
 fun ProfileEditScreen(
     uiState: ProfileEditUiState,
@@ -135,6 +136,10 @@ fun ProfileEditScreen(
                         value = loadedProfile?.email,
                         trailingText = stringResource(R.string.profile_email_uneditable),
                         supportingText = stringResource(R.string.profile_email_note),
+                    )
+
+                    ProfilePasswordChangeRow(
+                        onClick = { onEvent(ProfileEditScreenEvent.PasswordChangeClicked) },
                     )
                 }
             }

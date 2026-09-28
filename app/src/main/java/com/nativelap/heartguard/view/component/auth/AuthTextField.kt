@@ -41,6 +41,8 @@ fun AuthTextField(
     supportingText: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    // 비밀번호 보기 토글처럼 입력칸 오른쪽에 두는 아이콘이다. 없으면 표시하지 않는다.
+    trailingIcon: (@Composable () -> Unit)? = null,
 ) {
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
 
@@ -109,6 +111,7 @@ fun AuthTextField(
                     visualTransformation = visualTransformation,
                     interactionSource = textFieldInteractionSource,
                     isError = isError,
+                    trailingIcon = trailingIcon,
                     placeholder = {
                         Text(
                             text = placeholder,

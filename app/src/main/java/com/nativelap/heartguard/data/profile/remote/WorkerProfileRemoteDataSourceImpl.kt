@@ -2,6 +2,9 @@ package com.nativelap.heartguard.data.profile.remote
 
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.PasswordConfirmationRequest
+import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordRequestDto
+import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordResponseDto
 import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
 import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
 import javax.inject.Inject
@@ -26,5 +29,20 @@ class WorkerProfileRemoteDataSourceImpl @Inject constructor(
             ),
         )
         envelope.data ?: error("작업자 정보 수정 응답에 data가 없습니다.")
+    }
+
+    /** 현재 비밀번호를 확인한 뒤 새 비밀번호로 바꾼다. 비밀번호 확인 요청 태그를 붙여 401이 세션 만료로 처리되지 않게 한다. */
+    override suspend fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+    ): ApiResult<ChangeWorkerPasswordResponseDto> = apiExecutor.execute {
+        val envelope = workerProfileApiService.changePassword(
+            request = ChangeWorkerPasswordRequestDto(
+                currentPassword = currentPassword,
+                newPassword = newPassword,
+            ),
+            passwordConfirmationRequest = PasswordConfirmationRequest,
+        )
+        envelope.data ?: ChangeWorkerPasswordResponseDto()
     }
 }
