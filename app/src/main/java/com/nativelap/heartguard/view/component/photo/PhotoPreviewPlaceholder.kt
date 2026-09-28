@@ -2,17 +2,16 @@ package com.nativelap.heartguard.view.component.photo
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
@@ -54,28 +52,20 @@ fun PhotoPreviewPlaceholder(
         if (message != null) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(HeartGuardSpacing.Section),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                verticalArrangement = Arrangement.spacedBy(
+                    space = HeartGuardSpacing.Item,
+                    alignment = Alignment.CenterVertically,
+                ),
             ) {
-                Surface(
+                Icon(
+                    imageVector = Icons.Outlined.Cancel,
+                    contentDescription = null,
                     modifier = Modifier.size(HeartGuardIconSize.PhotoError),
-                    shape = CircleShape,
-                    color = androidx.compose.ui.graphics.Color.Transparent,
-                    border = androidx.compose.foundation.BorderStroke(
-                        HeartGuardBorderWidth.Checkbox,
-                        MaterialTheme.colorScheme.primary,
-                    ),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+                    tint = MaterialTheme.colorScheme.primary,
+                )
                 Text(
                     text = message,
                     modifier = Modifier.widthIn(

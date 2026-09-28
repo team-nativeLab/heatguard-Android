@@ -13,20 +13,14 @@ object HeartGuardSpacing {
     val RecordFieldHorizontal = 32.dp
     val RecordFieldInset = 6.dp
     val EmergencyAlertHorizontal = 19.dp
-    val AuthHorizontal = 40.dp
+    val EmergencyContactIndent = 7.dp
+    val AuthHorizontal = 12.dp
     val AuthTop = 142.dp
-    val AuthSignUpTop = 147.dp
     val AuthLogoTitle = 20.dp
     val AuthTitleForm = 31.dp
-    val AuthSignUpTitleForm = 39.dp
-    val AuthSignUpFormButton = 72.dp
-    val AuthFormButton = 19.dp
-    val AuthButtonPrompt = 0.dp
     val AuthFieldLabelInput = 6.dp
     val AuthFieldGroup = 26.dp
-    val AuthSignUpFieldGroup = 19.dp
     val AuthTitleDescription = 4.dp
-    val AuthSignUpTitleDescription = 9.dp
     val PageContentTop = 12.dp
     val ResultHorizontal = 25.dp
     val ResultTitleTop = 18.dp
@@ -34,8 +28,6 @@ object HeartGuardSpacing {
     val ResultTitleMessageGap = 35.dp
     val ResultCardGap = 26.dp
     val ResultSuccessButtonGap = 16.dp
-    val ResultFailureRetryGap = 92.dp
-    val ResultFailureButtonGap = 14.dp
     val ResultMessageTopBottom = 26.dp
     val ResultMessageTitleGap = 23.dp
     val ResultMessageDescriptionGap = 13.dp
@@ -59,6 +51,7 @@ object HeartGuardSpacing {
     val AccountContentHorizontal = 24.dp
     val BottomActionHorizontal = 28.dp
     val DialogTop = 28.dp
+    val PhotoSelectionDescriptionTop = 40.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
     val CompactSection = 8.dp
@@ -83,6 +76,7 @@ object HeartGuardRadius {
     val Small = 4.dp
     val Pill = 100.dp
     val NoticeCard = 20.dp
+    val InputBox = 10.dp
     val Dialog = 20.dp
 }
 
@@ -110,12 +104,14 @@ object HeartGuardIconSize {
     val HomeRecord = 44.dp
     val MenuAvatar = 48.dp
     val WarningBadge = 24.dp
+    val RecordThermometerIllustration = 120.dp
     val DialogIcon = 64.dp
     val DialogGlyph = 40.dp
     val Bullet = 4.dp
     val ResultGlyph = 40.dp
     val EmergencyCall = 138.dp
     val EmergencyCallInner = 110.dp
+    val EmergencyCallGlyph = 42.dp
     val PhotoError = 68.dp
 }
 
@@ -123,7 +119,6 @@ object HeartGuardComponentSize {
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
     val AuthContentMaxWidth = 280.dp
-    val AuthSignUpContentMaxWidth = 306.dp
     val AuthActionMaxWidth = 318.dp
     val AuthTextFieldHeight = 45.dp
     val TextFieldHeight = 48.dp
@@ -145,12 +140,14 @@ object HeartGuardComponentSize {
     val PhotoCaptureTextMaxWidth = 220.dp
     // 온도 기록 화면의 현장 사진 선택 영역은 작업·휴식 사진 카드보다 낮은 Figma 컴포넌트다.
     val FieldPhotoSelectionHeight = 104.dp
-    val PhotoMemoMinHeight = 96.dp
+    val PhotoMemoMinHeight = 114.dp
     val TemperatureSummaryHeight = 138.dp
     val FieldPhotoCaptureRowHeight = 79.dp
     val EmergencyAlertHeight = 73.dp
     val EmergencyDescriptionMaxWidth = 180.dp
     val HomeActionCardHeight = 148.dp
+    val ProfileAvatar = 72.dp
+    val InquiryBodyFieldHeight = 140.dp
     val HomeWeatherMetricHeight = 78.dp
     val HomeWeatherIllustrationWidth = 159.dp
     val HomeWeatherIllustrationHeight = 121.dp
@@ -189,12 +186,9 @@ object HeartGuardFontSize {
     val PageTitle = 20.sp
     val AuthTitle = 26.5.sp
     val AuthTitleLineHeight = 34.sp
-    val AuthSignUpTitle = 25.sp
-    val AuthSignUpTitleLineHeight = 30.sp
     val AuthDescription = 14.5.sp
     val AuthInput = 14.sp
     val AuthLabel = 13.25.sp
-    val AuthPrompt = 14.5.sp
     val AuthTitleLetterSpacing = (-0.25).sp
     val ResultTitle = 20.sp
     val ResultTitleLineHeight = 24.sp
@@ -215,10 +209,13 @@ object HeartGuardFontSize {
     val TemperatureDelta = 9.sp
     val TimelineLabel = 9.5.sp
     val MenuProfileName = 18.sp
+    val ProfileAvatar = 26.sp
     val MenuItem = 15.sp
     val MenuProfileEmail = 12.sp
     val WithdrawTitle = 22.sp
     val CardTitle = 15.sp
     val DialogTitle = 20.sp
     val BodyLineHeight = 20.sp
+    val EmergencyDescription = 15.sp
+    val EmergencyContactTitle = 15.sp
 }

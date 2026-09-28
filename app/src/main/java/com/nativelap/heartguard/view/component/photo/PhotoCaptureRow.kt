@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,16 +19,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 현장 사진 화면의 "다시하기" 영역처럼 상단 라벨과 한 줄짜리 촬영 안내 박스를 함께 보여주는 컴포넌트다. */
+/** Figma 06/14/15의 "현장 사진"·"다시하기" 영역처럼 굵은 라벨과 카메라 아이콘·두 줄 안내가 있는 촬영 진입 카드다.
+ * [isEnabled]가 false면(사진 2장을 이미 골랐거나 온도계 미설치로 사진이 필요 없을 때) 회색으로 바뀌고 누를 수 없다.
+ * [labelHorizontalOffset]은 Figma처럼 라벨을 카드보다 안쪽에서 시작할 때 쓴다. */
 @Composable
 fun PhotoCaptureRow(
     label: String?,
@@ -39,25 +48,32 @@ fun PhotoCaptureRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
+    labelHorizontalOffset: Dp = 0.dp,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        label?.let {
+    val contentColor = if (isEnabled) {
+        MaterialTheme.extraColors.homeMutedText
+    } else {
+        MaterialTheme.extraColors.disabledContent
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+    ) {
+        label?.let { labelText ->
             Text(
-                text = it,
+                text = labelText,
+                modifier = Modifier.padding(start = labelHorizontalOffset),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = HeartGuardFontSize.PageTitle,
+                    fontWeight = FontWeight.Bold,
+                ),
             )
         }
 
         Surface(
             modifier = Modifier
-                .padding(
-                    top = if (label == null) {
-                        HeartGuardSpacing.Tight
-                    } else {
-                        HeartGuardSpacing.Compact
-                    },
-                )
                 .fillMaxWidth()
                 .heightIn(min = HeartGuardComponentSize.FieldPhotoCaptureRowHeight)
                 .clickable(
@@ -65,40 +81,40 @@ fun PhotoCaptureRow(
                     role = Role.Button,
                     onClick = onClick,
                 ),
-            shape = RoundedCornerShape(HeartGuardRadius.Card),
+            shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(HeartGuardSpacing.Hairline, MaterialTheme.colorScheme.outlineVariant),
+            border = BorderStroke(HeartGuardBorderWidth.Divider, MaterialTheme.extraColors.cardBorder),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = HeartGuardSpacing.Section),
+                    .padding(
+                        horizontal = HeartGuardSpacing.Section,
+                        vertical = HeartGuardSpacing.Item,
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
                 Image(
                     painter = cameraPainter,
                     contentDescription = cameraContentDescription,
-                    modifier = Modifier.size(HeartGuardIconSize.Small),
+                    modifier = Modifier.size(HeartGuardIconSize.CameraAction),
                     colorFilter = ColorFilter.tint(
                         if (isEnabled) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            MaterialTheme.extraColors.disabledContent
                         },
                     ),
                 )
                 Text(
                     text = instructionText,
-                    modifier = Modifier
-                        .weight(1f)
-                        .widthIn(max = HeartGuardComponentSize.PhotoCaptureTextMaxWidth),
-                    color = if (isEnabled) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                    color = contentColor,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = HeartGuardFontSize.SmallLabel,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
                 )
             }
         }
@@ -111,8 +127,8 @@ private fun PhotoCaptureRowPreview() {
     HeartGuardTheme {
         PhotoCaptureRow(
             label = "다시하기",
-            instructionText = "사진 촬영 또는 앨범에서 선택",
-            cameraPainter = androidx.compose.ui.res.painterResource(R.drawable.record_camera),
+            instructionText = "사진 촬영 또는\n앨범에서 선택",
+            cameraPainter = painterResource(R.drawable.record_camera),
             cameraContentDescription = "사진 촬영",
             onClick = {},
         )

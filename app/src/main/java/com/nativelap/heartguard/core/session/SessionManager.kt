@@ -30,7 +30,11 @@ class SessionManager @Inject constructor(
 
     suspend fun initialize() {
         mutableSessionState.value = withContext(ioDispatcher) {
-            if (tokenStorage.readAccessToken().isNullOrBlank()) {
+            val accessToken = tokenStorage.readAccessToken()
+            if (accessToken.isNullOrBlank() || accessToken == LEGACY_PLACEHOLDER_ACCESS_TOKEN) {
+                if (accessToken == LEGACY_PLACEHOLDER_ACCESS_TOKEN) {
+                    tokenStorage.clear()
+                }
                 SessionState.Unauthenticated
             } else {
                 SessionState.Authenticated
@@ -45,6 +49,14 @@ class SessionManager @Inject constructor(
         mutableSessionState.value = SessionState.Authenticated
     }
 
+    /** 원격 탈퇴가 성공한 뒤 완료 화면을 보여주는 동안 토큰만 먼저 삭제한다.
+     * 완료 화면을 닫을 때 [expireSession]이 인증 상태를 로그인 화면으로 전환한다. */
+    suspend fun clearAccessTokenAfterWithdrawal() {
+        withContext(ioDispatcher) {
+            tokenStorage.clear()
+        }
+    }
+
     /** 사용자가 명시적으로 로그아웃하거나(ViewModel), 인증 API가 세션을 복구하지 못했을 때(Authenticator) 호출한다.
      * 저장된 토큰을 지우고 상태를 Unauthenticated로 되돌린 뒤, 화면이 즉시 로그인으로 돌아가도록
      * SessionEvent.Expired를 한 번 알린다. */
@@ -54,5 +66,9 @@ class SessionManager @Inject constructor(
         }
         mutableSessionState.value = SessionState.Unauthenticated
         mutableSessionEvents.emit(SessionEvent.Expired)
+    }
+
+    private companion object {
+        const val LEGACY_PLACEHOLDER_ACCESS_TOKEN = "placeholder-access-token"
     }
 }

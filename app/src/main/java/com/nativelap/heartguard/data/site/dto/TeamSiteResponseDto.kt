@@ -2,7 +2,7 @@ package com.nativelap.heartguard.data.site.dto
 
 import kotlinx.serialization.Serializable
 
-/** GET /api/v1/t/{teamToken} 응답의 data 필드다.
+/** GET /api/v1/team 응답의 data 필드다.
  * 예: {"team":{"teamId":"team_01","name":"철근팀"},"site":{"siteId":"site_01","name":"서울현장",
  * "managerPhone":"010-1234-5678"},"weather":{"temperature":33.5,"humidity":62,"apparentTemperature":36.1},
  * "heatLevel":2,"checkTimes":["09:00","11:00"],"activeEmergencyCall":null} */
@@ -34,9 +34,9 @@ data class SiteDto(
 
 @Serializable
 data class WeatherDto(
-    val temperature: Double,
-    val humidity: Double,
-    val apparentTemperature: Double,
+    val temperature: Double? = null,
+    val humidity: Double? = null,
+    val apparentTemperature: Double? = null,
 )
 
 @Serializable

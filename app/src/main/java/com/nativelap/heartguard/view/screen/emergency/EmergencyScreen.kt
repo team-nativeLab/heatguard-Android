@@ -1,10 +1,12 @@
 package com.nativelap.heartguard.view.screen.emergency
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -12,14 +14,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
 import com.nativelap.heartguard.view.component.emergency.EmergencyAlertBanner
 import com.nativelap.heartguard.view.component.emergency.EmergencyCallIndicator
@@ -38,18 +43,27 @@ fun EmergencyScreen(
     onCancelClick: () -> Unit,
     onContactClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isContactCallEnabled: Boolean = true,
+    isUpdatingStatus: Boolean = false,
+    statusUpdateError: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            contentAlignment = Alignment.TopCenter,
         ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            ) {
             Text(
                 text = stringResource(R.string.emergency_screen_title),
                 modifier = Modifier
@@ -78,23 +92,35 @@ fun EmergencyScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            if (statusUpdateError) {
+                Text(
+                    text = stringResource(R.string.emergency_status_update_error),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
             EmergencyContactCard(
                 contactTitle = stringResource(R.string.emergency_contact_title),
                 contactName = contactName,
                 phoneNumber = phoneNumber,
                 onCallClick = onContactClick,
+                isCallEnabled = isContactCallEnabled,
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
             )
 
             CallCancelButton(
                 title = stringResource(R.string.emergency_call_cancel),
                 onClick = onCancelClick,
+                enabled = !isUpdatingStatus,
                 modifier = Modifier
                     .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
                     .padding(top = HeartGuardSpacing.RecordFieldInset),
             )
+            }
+            }
         }
-    }
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 683)

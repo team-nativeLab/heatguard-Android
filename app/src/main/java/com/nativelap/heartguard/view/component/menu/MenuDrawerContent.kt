@@ -50,16 +50,8 @@ fun MenuDrawerContent(
             onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
         )
         MenuDrawerItem(
-            title = stringResource(R.string.menu_notification_settings),
-            onClick = { onEvent(MenuDrawerEvent.NotificationSettingsClicked) },
-        )
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_notices),
-            onClick = { onEvent(MenuDrawerEvent.NoticesClicked) },
-        )
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_customer_center),
-            onClick = { onEvent(MenuDrawerEvent.CustomerCenterClicked) },
+            title = stringResource(R.string.menu_inquiry),
+            onClick = { onEvent(MenuDrawerEvent.InquiryClicked) },
         )
 
         Spacer(modifier = Modifier.weight(1f))

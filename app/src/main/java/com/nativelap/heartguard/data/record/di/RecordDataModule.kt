@@ -40,7 +40,7 @@ abstract class RecordDataModule {
         ): UploadApiService = apiRetrofitFactory.createService(
             baseUrl = BuildConfig.BASE_URL,
             serviceClass = UploadApiService::class.java,
-            authentication = ApiAuthentication.NONE,
+            authentication = ApiAuthentication.BEARER,
         )
 
         @Provides
@@ -50,7 +50,7 @@ abstract class RecordDataModule {
         ): RecordApiService = apiRetrofitFactory.createService(
             baseUrl = BuildConfig.BASE_URL,
             serviceClass = RecordApiService::class.java,
-            authentication = ApiAuthentication.NONE,
+            authentication = ApiAuthentication.BEARER,
         )
     }
 }

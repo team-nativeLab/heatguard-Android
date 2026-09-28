@@ -2,29 +2,36 @@ package com.nativelap.heartguard.view.screen.photo
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.emptyValueText
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.photo.PhotoMemoField
 import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
 import com.nativelap.heartguard.view.component.photo.PhotoSelectionCard
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
-import com.nativelap.heartguard.view.component.photo.PhotoUploadButton
 import com.nativelap.heartguard.view.component.photo.RestTimeCard
 import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 
@@ -32,30 +39,44 @@ import com.nativelap.heartguard.view.component.photo.SelectedPhotoGrid
 @Composable
 fun RestPhotoScreen(
     memo: String,
-    selectedRestTime: String,
     selectedPhotoCount: Int,
-    selectedPhotoUris: List<Uri> = emptyList(),
-    onRestTimeClick: () -> Unit,
+    selectedPhotoUris: List<Uri>,
     onCaptureClick: () -> Unit,
-    onRemovePhoto: (Uri) -> Unit = {},
+    onRemovePhoto: (Uri) -> Unit,
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
     onUploadClick: () -> Unit,
+    isSaveEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            BottomActionBar {
+                RecordSaveButton(
+                    title = stringResource(R.string.photo_upload),
+                    onClick = onUploadClick,
+                    enabled = isSaveEnabled,
+                )
+            }
+        },
     ) { innerPadding ->
         // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
         // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            contentAlignment = Alignment.TopCenter,
         ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+            ) {
             HeartGuardHeader(
                 title = stringResource(R.string.brand_name),
                 menuPainter = painterResource(R.drawable.menu_hamburger),
@@ -103,10 +124,11 @@ fun RestPhotoScreen(
                     )
                 }
 
+                // TODO: 휴식 시간은 API 명세(기록 등록·현장페이지)에 필드가 없어 "--"로 표시한다. 필드가 생기면 연결한다.
                 RestTimeCard(
                     title = stringResource(R.string.photo_rest_time),
-                    selectedTime = selectedRestTime,
-                    onClick = onRestTimeClick,
+                    selectedTime = emptyValueText(),
+                    onClick = null,
                     contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
@@ -120,12 +142,7 @@ fun RestPhotoScreen(
                     contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
-
-                PhotoUploadButton(
-                    title = stringResource(R.string.photo_upload),
-                    onClick = onUploadClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
-                )
+            }
             }
         }
     }
@@ -137,14 +154,14 @@ private fun RestPhotoScreenPreview() {
     HeartGuardTheme {
         RestPhotoScreen(
             memo = "",
-            selectedRestTime = stringResource(R.string.photo_rest_selected_time),
             selectedPhotoCount = 0,
             selectedPhotoUris = emptyList(),
-            onRestTimeClick = {},
             onCaptureClick = {},
+            onRemovePhoto = {},
             onRetakeClick = {},
             onMemoChange = {},
             onUploadClick = {},
+            isSaveEnabled = true,
         )
     }
 }

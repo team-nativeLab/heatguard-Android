@@ -4,6 +4,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.record.model.FieldRecord
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.repository.RecordRepository
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 class SubmitFieldRecordUseCase @Inject constructor(
@@ -12,16 +13,16 @@ class SubmitFieldRecordUseCase @Inject constructor(
     suspend operator fun invoke(
         type: FieldRecordType,
         photoKeys: List<String>,
+        measuredAt: OffsetDateTime,
         temperature: Double?,
         humidity: Double?,
-        noThermometer: Boolean,
         memo: String?,
     ): ApiResult<FieldRecord> = recordRepository.submitFieldRecord(
         type = type,
         photoKeys = photoKeys,
+        measuredAt = measuredAt,
         temperature = temperature,
         humidity = humidity,
-        noThermometer = noThermometer,
         memo = memo,
     )
 }

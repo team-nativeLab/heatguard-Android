@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -15,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,12 +26,11 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
-import com.nativelap.heartguard.view.component.auth.AuthPrompt
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.brand.BrandMark
-import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 이메일 로그인 화면을 기존 인증 Component 조합으로 구성한다. */
 @Composable
@@ -41,10 +40,11 @@ fun AuthLoginScreen(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
-    onSignUpClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPasswordError: Boolean = false,
     passwordErrorMessage: String? = null,
+    statusMessage: String? = null,
+    isSubmitting: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
@@ -56,10 +56,8 @@ fun AuthLoginScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
-                .imePadding()
                 .navigationBarsPadding(),
-            // 로그인 버튼·회원가입 안내가 Figma처럼 화면 하단에 밀착되도록 첫 자식(폼)과
-            // 마지막 자식(액션 영역) 사이 여백을 SpaceBetween으로 강제한다.
+            // 입력 폼과 로그인 동작을 화면 위아래로 분리해 키보드가 열려도 입력 흐름을 유지한다.
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -104,7 +102,7 @@ fun AuthLoginScreen(
                         label = stringResource(R.string.auth_password),
                         text = password,
                         onTextChange = onPasswordChange,
-                        placeholder = stringResource(R.string.auth_password_hint),
+                        placeholder = stringResource(R.string.auth_login_password_hint),
                         isError = isPasswordError,
                         supportingText = passwordErrorMessage,
                         visualTransformation = PasswordVisualTransformation(),
@@ -121,15 +119,17 @@ fun AuthLoginScreen(
                 AuthPrimaryButton(
                     title = stringResource(R.string.auth_login),
                     onClick = onLoginClick,
+                    isEnabled = !isSubmitting,
                 )
 
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthButtonPrompt))
-
-                AuthPrompt(
-                    message = stringResource(R.string.auth_signup_prompt),
-                    actionTitle = stringResource(R.string.auth_signup),
-                    onActionClick = onSignUpClick,
-                )
+                if (statusMessage != null) {
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                    Text(
+                        text = statusMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }
@@ -145,7 +145,6 @@ private fun AuthLoginScreenPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
-            onSignUpClick = {},
         )
     }
 }
@@ -160,7 +159,6 @@ private fun AuthLoginScreenErrorPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
-            onSignUpClick = {},
             isPasswordError = true,
             passwordErrorMessage = stringResource(R.string.auth_password_error),
         )

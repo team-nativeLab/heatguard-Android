@@ -17,7 +17,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 로그인·회원가입 화면의 큰 제목과 보조 설명을 하나의 수직 블록으로 제공한다. */
+/** 로그인 화면의 제목과 보조 설명을 하나의 수직 블록으로 제공한다. */
 @Composable
 fun AuthTitleBlock(
     title: String,
@@ -30,7 +30,7 @@ fun AuthTitleBlock(
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
-        // Figma 01_로그인·회원가입: 브랜드 로고는 중앙, 제목/설명은 왼쪽 정렬로 배치된다.
+        // Figma 로그인 화면 규칙에 따라 제목과 설명을 왼쪽 정렬로 배치한다.
         Text(
             text = title,
             modifier = Modifier.fillMaxWidth(),

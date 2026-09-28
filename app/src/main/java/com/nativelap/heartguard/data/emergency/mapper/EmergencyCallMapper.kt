@@ -9,7 +9,10 @@ internal fun EmergencyCallResponseDto.toDomain(): EmergencyCallStatus = Emergenc
     state = when (status) {
         "ACTIVE" -> EmergencyCallState.ACTIVE
         "ACKNOWLEDGED" -> EmergencyCallState.ACKNOWLEDGED
-        else -> EmergencyCallState.NONE
+        "CANCELLED" -> EmergencyCallState.CANCELLED
+        "COMPLETED" -> EmergencyCallState.COMPLETED
+        "NONE" -> EmergencyCallState.NONE
+        else -> EmergencyCallState.UNKNOWN
     },
     acknowledgedAt = acknowledgedAt,
 )

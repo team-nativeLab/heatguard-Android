@@ -3,11 +3,13 @@
     <string name="brand_name">폭염가드</string>
     <string name="common_menu">메뉴</string>
     <string name="common_notifications">알림</string>
+    <string name="common_back_description">뒤로 가기</string>
+    <string name="common_chevron_down">⌄</string>
     <string name="common_confirm">확인</string>
     <string name="common_cancel">취소</string>
     <string name="common_close">닫기</string>
     <string name="common_details">상세 보기</string>
-    <string name="common_optional">선택</string>
+    <string name="common_optional_parenthesized">(선택)</string>
     <string name="common_call">전화 걸기</string>
     <string name="common_remove">삭제</string>
     <string name="common_retry">재시도</string>
@@ -20,29 +22,21 @@
     <string name="auth_password_hint">8자 이상 입력해주세요</string>
     <string name="auth_login">로그인</string>
     <string name="auth_special_action">다른 방법으로 로그인</string>
-    <string name="auth_signup_prompt">아직 회원이 아니신가요?</string>
-    <string name="auth_login_prompt">이미 회원이신가요?</string>
-    <string name="auth_signup">회원가입</string>
     <string name="auth_login_title">안전한 현장을 위해\n로그인해주세요</string>
-    <string name="auth_login_description">현장작업자 계정으로 로그인할 수 있어요</string>
-    <string name="auth_signup_title">현장작업자 회원가입</string>
-    <string name="auth_signup_description">현장 정보를 등록하고 안전 관리를 시작해보세요</string>
-    <string name="auth_company">회사명</string>
-    <string name="auth_company_hint">회사명을 입력해주세요</string>
-    <string name="auth_name">이름</string>
-    <string name="auth_name_hint">가입자명을 입력해주세요</string>
-    <string name="auth_password_confirm">비밀번호 확인</string>
-    <string name="auth_password_confirm_hint">비밀번호를 한 번 더 입력해주세요</string>
-    <string name="auth_password_mismatch_error">비밀번호가 일치하지 않아요</string>
+    <string name="auth_login_description">팀 계정 이메일과 비밀번호로 로그인할 수 있어요</string>
+    <string name="auth_login_password_hint">비밀번호를 입력해주세요</string>
+    <string name="auth_login_invalid_credentials">이메일 또는 비밀번호를 확인해주세요</string>
+    <string name="auth_login_account_disabled">사용할 수 없는 계정입니다. 관리자에게 문의해주세요</string>
+    <string name="auth_login_rate_limited">로그인 시도가 많습니다. 잠시 후 다시 시도해주세요</string>
+    <string name="auth_login_generic_error">로그인에 실패했습니다. 잠시 후 다시 시도해주세요</string>
     <string name="home_weather_status">현재 온도</string>
-    <string name="weather_sunny_description">맑음</string>
     <string name="home_weather_label">날씨</string>
     <string name="home_current_temperature">현재 온도</string>
     <string name="home_feels_like">체감온도</string>
     <string name="home_humidity">습도</string>
     <string name="home_temperature_change">온도 변화</string>
     <string name="home_heat_caution">폭염 주의 단계</string>
-    <!-- 기상청 폭염특보 4단계 표기를 따른다. 서버가 GET /api/v1/t/{teamToken} 응답의 heatLevel(0~3)로
+    <!-- 기상청 폭염특보 4단계 표기를 따른다. 서버가 GET /api/v1/team 응답의 heatLevel(0~3)로
          현재 단계를 내려주면 HomeRoute가 이 값으로 배지 문구를 고른다. -->
     <string name="home_heat_level_interest">폭염 관심 단계</string>
     <string name="home_heat_level_warning">폭염 경고 단계</string>
@@ -66,12 +60,8 @@
     <string name="home_additional_records">추가 기록</string>
     <string name="home_data_records">데이터 기록</string>
     <string name="home_today_check_title">오늘 체크 시간</string>
-    <string name="home_next_check_description">다음 체크까지 57분 · 22:00 예정</string>
     <string name="home_manager_call">관리자 전화</string>
     <string name="home_manager_call_description">현장 관리자에게 연락</string>
-    <!-- emergency_contact_phone과 현재 값은 같지만, 관리자 전화(홈)와 긴급 전화(관리자 연락 카드)는
-         의미가 다른 별도 연락처이므로 문자열을 분리한다. 실제 서버 연동 시 각각 다른 값으로 교체될 수 있다. -->
-    <string name="home_manager_contact_phone">010 - 1234 - 5678</string>
     <string name="home_emergency_call">긴급 전화</string>
     <string name="home_emergency_call_description">본사와 즉시 연결</string>
     <string name="home_record_action">기록하기</string>
@@ -79,6 +69,8 @@
     <string name="home_field_photo_description">사진 촬영 또는 앨범에서 선택</string>
     <string name="home_record_history">기록 내역</string>
     <string name="home_record_history_description">지금까지의 기록을 확인하세요</string>
+    <string name="home_record_history_api_unavailable">기록 목록 응답 항목 스키마 확인 후 연결할 예정입니다.</string>
+    <string name="home_notifications_unavailable">알림 화면과 알림 API가 준비되지 않았습니다.</string>
     <string name="home_weather_summary_format">%1$s %2$s · %3$s %4$s</string>
     <string name="home_humidity_value_format">%1$s%%</string>
     <string name="home_temperature_rise_format">▲ %1$s</string>
@@ -89,6 +81,7 @@
     <string name="emergency_call">호출하기</string>
     <string name="emergency_call_cancel">호출 취소</string>
     <string name="emergency_call_end">통화 종료</string>
+    <string name="emergency_status_update_error">호출 상태를 변경하지 못했습니다. 다시 시도해 주세요.</string>
     <string name="emergency_calling">호출 중입니다</string>
     <string name="emergency_connected">연결되었습니다</string>
     <string name="temperature_input_label">현재 온도</string>
@@ -115,11 +108,9 @@
     <string name="photo_work_screen_description">작업 현장과 보호조치를 확인 할 수 있는 사진을 촬영해 주세요</string>
     <string name="photo_rest_photo_label">휴식 사진</string>
     <string name="photo_rest_memo_hint">휴식 관련 메모를 입력해주세요</string>
-    <string name="photo_rest_selected_time">13 : 00 ~ 13 : 30 (중간 휴식)</string>
-    <string name="photo_rest_selected_time_alternate">15 : 00 ~ 15 : 30 (오후 휴식)</string>
     <string name="photo_memo">메모</string>
     <string name="photo_memo_hint">메모를 입력해 주세요</string>
-    <string name="photo_selection_action_title">사진 촬영 또는 앨범에서 선택</string>
+    <string name="photo_selection_action_title">사진 촬영 또는\n앨범에서 선택</string>
     <string name="photo_selection_empty">1 ~ 2장 선택 가능</string>
     <string name="photo_work_memo_hint">작업 전 · 중 특이사항이 있다면 입력해주세요</string>
     <string name="photo_rest_time">휴식 시간</string>
@@ -140,7 +131,6 @@
     <string name="save_work_photo_summary">작업 사진</string>
     <string name="save_rest_photo_summary">휴식 사진</string>
     <string name="save_time_summary">저장 시간</string>
-    <string name="save_time_value">2026.07.18 10 : 30</string>
     <string name="record_type_selection_title">기록 유형을 선택하세요</string>
     <string name="record_temperature_title">온도계 사진</string>
     <string name="record_temperature_description">온도/습도 입력 후 체감온도 계산</string>
@@ -152,15 +142,13 @@
     <string name="emergency_alert_description">현장관리자에게 즉시 도움을 요청합니다</string>
     <string name="emergency_contact_title">연락 대상</string>
     <string name="emergency_contact_name">현장 관리자</string>
-    <string name="emergency_contact_phone">010 - 1234 - 5678</string>
     <string name="emergency_calling_description">잠시만 기다려 주세요</string>
     <string name="auth_password_error">비밀번호가 올바르지 않아요</string>
-    <string name="auth_signup_submit">가입하기</string>
     <string name="home_check_morning">아침 온도 기록</string>
     <string name="home_check_afternoon">오후 온도 기록</string>
     <string name="emergency_alert_title">긴급 상황이에요</string>
     <string name="emergency_indicator_title">긴급 호출하기</string>
-    <string name="emergency_indicator_description">버튼을 누르면 즉시 관리자에게 전화가 연결됩니다</string>
+    <string name="emergency_indicator_description">버튼을 누르면 즉시\n관리자에게 전화가 연결됩니다</string>
     <string name="emergency_screen_title">긴급 호출</string>
     <string name="emergency_calling_indicator_title">긴급 호출 중...</string>
     <string name="emergency_calling_indicator_description">버튼을 누르면 즉시 관리자에게 전화가 연결됩니다</string>
@@ -174,7 +162,6 @@
     <string name="temperature_save">기록 저장</string>
     <string name="photo_field_screen_title">현장 사진</string>
     <string name="photo_field_screen_description">온도계 데이터를 입력하고 현장 사진을 촬영해 주세요.</string>
-    <string name="photo_field_instruction">사진 촬영 또는 앨범에서 선택</string>
     <string name="photo_field_retry">다시하기</string>
     <string name="photo_temperature_not_saved">온도계가 아직 저장이 안되었어요</string>
     <string name="photo_selected_count">%1$d장 선택됨</string>
@@ -203,15 +190,9 @@
     <string name="photo_selected_accessibility">선택한 사진 %1$d</string>
     <string name="photo_remove_accessibility">사진 %1$d 삭제</string>
     <string name="save_complete">확인</string>
-    <string name="save_confirmation_title">기록을 저장할까요?</string>
-    <string name="save_confirmation_message">입력한 기록은 저장 후 수정할 수 있습니다.</string>
-    <string name="save_confirmation_unsaved_title">저장 전 기록</string>
-    <string name="save_confirmation_unsaved_description">입력한 내용을 확인한 후 저장해 주세요.</string>
     <!-- 메뉴 드로어 -->
     <string name="menu_edit_profile">내 정보 수정</string>
-    <string name="menu_notification_settings">알림 설정</string>
-    <string name="menu_notices">공지사항</string>
-    <string name="menu_customer_center">고객센터</string>
+    <string name="menu_inquiry">문의하기</string>
     <string name="menu_logout">로그아웃</string>
     <string name="menu_withdraw">회원탈퇴</string>
     <string name="menu_close_description">메뉴 닫기</string>
@@ -222,9 +203,9 @@
     <string name="withdraw_notice_headline">탈퇴하기 전에 꼭 확인해주세요</string>
     <string name="withdraw_notice_subtitle">탈퇴 후에는 아래 내용이 적용돼요</string>
     <string name="withdraw_notice_card_title">유의사항</string>
-    <string name="withdraw_notice_account_deleted">계정 정보(이름, 이메일, 회사명)는 즉시 삭제되며 복구할 수 없어요</string>
-    <string name="withdraw_notice_records_retained">온도계 기록·현장 사진 등 작업 기록은 관계 법령에 따라 회사에 일정 기간 보관될 수 있어요</string>
-    <string name="withdraw_notice_records_not_linked">탈퇴 후 같은 이메일로 다시 가입해도 이전 기록은 연결되지 않아요</string>
+    <string name="withdraw_notice_account_deleted">탈퇴하면 소속 팀의 모든 작업자 계정과 로그인 세션이 비활성화돼요</string>
+    <string name="withdraw_notice_records_retained">현장과 기존 기록·사진은 유지되며, 기록·사진은 생성일부터 365일 뒤 삭제돼요</string>
+    <string name="withdraw_notice_records_not_linked">탈퇴가 완료되면 소속 팀의 작업자 계정은 로그인할 수 없어요</string>
     <string name="withdraw_reason_title">탈퇴 사유</string>
     <string name="withdraw_reason_optional">(선택)</string>
     <string name="withdraw_reason_field_work_ended">현장 작업이 종료되었어요</string>
@@ -236,8 +217,63 @@
     <string name="withdraw_agree">유의사항을 모두 확인했으며, 탈퇴에 동의해요</string>
     <string name="withdraw_action">탈퇴하기</string>
     <string name="withdraw_confirm_title">정말 탈퇴하시겠어요?</string>
-    <string name="withdraw_confirm_message">탈퇴하면 계정 정보가 즉시 삭제되며\n다시 되돌릴 수 없어요.</string>
+    <string name="withdraw_confirm_message">소속 팀의 모든 작업자 계정과 세션이 비활성화돼요.\n기존 기록과 사진은 생성일부터 365일 뒤 삭제돼요.</string>
     <string name="withdraw_failure_message">탈퇴하지 못했어요. 잠시 후 다시 시도해주세요.</string>
     <string name="withdraw_done_title">탈퇴가 완료되었어요</string>
     <string name="withdraw_done_message">그동안 폭염가드를 이용해주셔서 감사해요</string>
+    <!-- 서버 값 표시 -->
+    <!-- 서버에서 값을 아직 받지 못했거나 해당 API가 없을 때 표시하는 빈 값이며 번역 대상이 아니다. -->
+    <string name="common_empty_value" translatable="false">--</string>
+    <string name="profile_title">내 정보 수정</string>
+    <string name="profile_worker_role">현장작업자</string>
+    <string name="profile_company">회사명</string>
+    <string name="profile_name">이름</string>
+    <string name="profile_email">이메일</string>
+    <string name="profile_email_uneditable">변경 불가</string>
+    <string name="profile_email_note">로그인에 쓰는 이메일은 변경할 수 없어요</string>
+    <string name="profile_password_change">비밀번호 변경</string>
+    <string name="profile_save">저장하기</string>
+    <string name="profile_api_unavailable_title">프로필 필드 명세 확인 필요</string>
+    <string name="profile_api_unavailable_description">조회·수정 경로는 있지만 요청·응답 필드가 명세에 없어 저장을 연결할 수 없습니다.</string>
+    <string name="profile_password_api_unavailable">비밀번호 변경 요청·응답 필드를 확인해야 합니다.</string>
+    <string name="inquiry_title">문의하기</string>
+    <string name="inquiry_subject">제목</string>
+    <string name="inquiry_subject_placeholder">제목을 입력해주세요</string>
+    <string name="inquiry_content">내용</string>
+    <string name="inquiry_content_placeholder">궁금한 점이나 불편한 점을 자세히 적어주세요</string>
+    <string name="inquiry_reply_note">답변은 등록한 이메일과 문의 목록에서 확인할 수 있어요</string>
+    <string name="inquiry_submit">문의 등록</string>
+    <string name="inquiry_submitting">문의를 등록하고 있습니다.</string>
+    <string name="inquiry_submit_success">문의가 접수되었습니다.</string>
+    <string name="inquiry_submit_receipt">접수 번호: %1$s</string>
+    <string name="inquiry_submit_error">등록하지 못했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="inquiry_my_list">내 문의 목록</string>
+    <string name="inquiry_api_unavailable_title">문의 등록</string>
+    <string name="inquiry_api_unavailable_description">문의 등록 API가 연결되어 있습니다.</string>
+    <string name="inquiry_list_unavailable_title">문의 목록 스키마 확인 필요</string>
+    <string name="inquiry_list_unavailable_description">목록 응답 항목 필드가 명세에 없어 목록 표시를 연결할 수 없습니다.</string>
+    <string name="history_title">기록 내역</string>
+    <string name="history_date_range_unavailable">--  ~  --</string>
+    <string name="history_filter_all">전체</string>
+    <string name="history_filter_temperature">온도계</string>
+    <string name="history_filter_work_photo">작업 사진</string>
+    <string name="history_filter_rest_photo">휴식 사진</string>
+    <string name="history_api_unavailable_title">기록 목록 스키마 확인 필요</string>
+    <string name="common_temperature_value_format">%1$s°C</string>
+    <string name="home_heat_level_unknown">폭염 단계 --</string>
+    <string name="home_next_check_minutes_format">다음 체크까지 %1$d분 · %2$s 예정</string>
+    <string name="home_next_check_hours_format">다음 체크까지 %1$d시간 %2$d분 · %3$s 예정</string>
+    <string name="home_check_finished">오늘 남은 체크가 없어요</string>
+    <string name="home_check_time_hour_format">%1$02d시</string>
+    <!-- 기록 흐름 (Figma 06·13·14·15) -->
+    <string name="temperature_manual_input_title">온도계 데이터 직접 입력</string>
+    <string name="temperature_input_placeholder">예: 47.5</string>
+    <string name="humidity_input_placeholder">예: 55</string>
+    <string name="temperature_auto_calculated">자동 계산</string>
+    <string name="temperature_feels_like_short">체감</string>
+    <string name="temperature_save_locked_note">저장이 확정되면 수정할 수 없습니다.</string>
+    <string name="record_save_short">저장</string>
+    <string name="save_photo_count_format">%1$d장</string>
+    <string name="save_temperature_detail_format">( 습도 %1$s 체감 %2$s )</string>
+    <string name="photo_field_instruction_two_line">사진 촬영 또는\n앨범에서 선택</string>
 </resources>
