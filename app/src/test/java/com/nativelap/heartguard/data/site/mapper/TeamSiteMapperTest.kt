@@ -7,6 +7,7 @@ import com.nativelap.heartguard.data.site.dto.TeamSiteResponseDto
 import com.nativelap.heartguard.data.site.dto.WeatherDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -39,6 +40,7 @@ class TeamSiteMapperTest {
         val overview = dto.toDomain()
 
         assertEquals("철근팀", overview.teamName)
+        assertEquals("3층 외벽", overview.workplace)
         assertEquals("서울현장", overview.siteName)
         assertEquals("010-1234-5678", overview.managerPhoneNumber)
         assertEquals(33.5, overview.currentTemperature ?: error("temperature missing"), 0.0)
@@ -59,14 +61,39 @@ class TeamSiteMapperTest {
         assertEquals(null, overview.apparentTemperature)
     }
 
+    @Test
+    fun `서버가 빈 문자열로 준 관리자 연락처와 작업 위치는 null로 정규화된다`() {
+        val overview = teamSiteResponseDto(
+            team = TeamDto(teamId = "team_01", name = "철근팀", workplace = ""),
+            site = SiteDto(siteId = "site_01", name = "서울현장", managerPhone = ""),
+        ).toDomain()
+
+        assertNull(overview.managerPhoneNumber)
+        assertNull(overview.workplace)
+    }
+
+    @Test
+    fun `heatLevel과 weather가 null이어도 매핑된다`() {
+        val overview = teamSiteResponseDto(
+            weather = null,
+            heatLevel = null,
+        ).toDomain()
+
+        assertNull(overview.heatLevel)
+        assertNull(overview.currentTemperature)
+    }
+
     private fun teamSiteResponseDto(
         activeEmergencyCall: ActiveEmergencyCallDto? = null,
-        weather: WeatherDto = WeatherDto(temperature = 33.5, humidity = 62.0, apparentTemperature = 36.1),
+        weather: WeatherDto? = WeatherDto(temperature = 33.5, humidity = 62.0, apparentTemperature = 36.1),
+        heatLevel: Int? = 2,
+        team: TeamDto = TeamDto(teamId = "team_01", name = "철근팀", workplace = "3층 외벽"),
+        site: SiteDto = SiteDto(siteId = "site_01", name = "서울현장", managerPhone = "010-1234-5678"),
     ) = TeamSiteResponseDto(
-        team = TeamDto(teamId = "team_01", name = "철근팀"),
-        site = SiteDto(siteId = "site_01", name = "서울현장", managerPhone = "010-1234-5678"),
+        team = team,
+        site = site,
         weather = weather,
-        heatLevel = 2,
+        heatLevel = heatLevel,
         checkTimes = listOf("09:00", "11:00"),
         activeEmergencyCall = activeEmergencyCall,
     )

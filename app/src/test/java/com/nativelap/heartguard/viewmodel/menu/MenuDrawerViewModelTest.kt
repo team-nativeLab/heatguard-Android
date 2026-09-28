@@ -1,12 +1,17 @@
 package com.nativelap.heartguard.viewmodel.menu
 
 import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.network.ApiError
+import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.auth.model.TeamLoginResult
 import com.nativelap.heartguard.domain.auth.repository.TeamAuthRepository
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
+import com.nativelap.heartguard.domain.profile.model.WorkerProfile
+import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
+import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +50,7 @@ class MenuDrawerViewModelTest {
                 continueRemoteLogout.await()
             }
             val viewModel = MenuDrawerViewModel(
+                getWorkerProfileUseCase = GetWorkerProfileUseCase(FakeWorkerProfileRepository()),
                 teamLogoutUseCase = TeamLogoutUseCase(repository),
                 sessionManager = sessionManager,
             )
@@ -85,6 +91,7 @@ class MenuDrawerViewModelTest {
                 CompletableDeferred<Unit>().await()
             }
             val viewModel = MenuDrawerViewModel(
+                getWorkerProfileUseCase = GetWorkerProfileUseCase(FakeWorkerProfileRepository()),
                 teamLogoutUseCase = TeamLogoutUseCase(repository),
                 sessionManager = sessionManager,
             )
@@ -101,6 +108,50 @@ class MenuDrawerViewModelTest {
         } finally {
             Dispatchers.resetMain()
         }
+    }
+
+    @Test
+    fun loadedProfileIsClearedWhenSessionEnds() = runTest {
+        val mainDispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(mainDispatcher)
+        try {
+            val sessionManager = SessionManager(
+                tokenStorage = FakeTokenStorage(accessToken = "access-token"),
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
+            sessionManager.initialize()
+            val viewModel = MenuDrawerViewModel(
+                getWorkerProfileUseCase = GetWorkerProfileUseCase(FakeWorkerProfileRepository()),
+                teamLogoutUseCase = TeamLogoutUseCase(FakeTeamAuthRepository {}),
+                sessionManager = sessionManager,
+            )
+
+            viewModel.loadProfile()
+            advanceUntilIdle()
+
+            assertEquals("홍길동", viewModel.profile.value.userName)
+            assertEquals("worker01", viewModel.profile.value.email)
+
+            sessionManager.expireSession()
+            advanceUntilIdle()
+
+            assertEquals(MenuDrawerProfileUiModel(), viewModel.profile.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    private class FakeWorkerProfileRepository : WorkerProfileRepository {
+        override suspend fun getWorkerProfile(): ApiResult<WorkerProfile> = ApiResult.Success(
+            WorkerProfile(
+                userId = "usr_01",
+                name = "홍길동",
+                email = "worker01",
+            ),
+        )
+
+        override suspend fun updateWorkerName(name: String): ApiResult<WorkerProfile> =
+            ApiResult.Failure(ApiError.Unknown)
     }
 
     private class FakeTokenStorage(

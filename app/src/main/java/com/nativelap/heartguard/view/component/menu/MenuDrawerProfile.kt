@@ -26,7 +26,7 @@ import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 
-/** 메뉴 드로어 상단에 이름 첫 글자 아바타와 이름·소속·이메일을 보여준다. */
+/** 메뉴 드로어 상단에 이름 첫 글자 아바타와 이름·팀명·작업 위치·이메일을 보여준다. */
 @Composable
 fun MenuDrawerProfile(
     profile: MenuDrawerProfileUiModel,
@@ -70,8 +70,8 @@ fun MenuDrawerProfile(
             Text(
                 text = stringResource(
                     R.string.menu_profile_affiliation_format,
-                    valueOrEmptyText(profile.companyName),
-                    valueOrEmptyText(profile.jobTitle),
+                    valueOrEmptyText(profile.teamName),
+                    valueOrEmptyText(profile.workplace),
                 ),
                 color = MaterialTheme.extraColors.secondaryText,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -100,8 +100,8 @@ private fun MenuDrawerProfilePreview() {
         MenuDrawerProfile(
             profile = MenuDrawerProfileUiModel(
                 userName = "김현장",
-                companyName = "이음산업건설",
-                jobTitle = "현장작업자",
+                teamName = "철근팀",
+                workplace = "3층 외벽",
                 email = "worker@ieum.co.kr",
             ),
         )
