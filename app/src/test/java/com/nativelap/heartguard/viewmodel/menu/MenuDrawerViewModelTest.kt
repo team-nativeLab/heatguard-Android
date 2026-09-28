@@ -9,6 +9,7 @@ import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.auth.model.TeamLoginResult
 import com.nativelap.heartguard.domain.auth.repository.TeamAuthRepository
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
+import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
@@ -152,6 +153,11 @@ class MenuDrawerViewModelTest {
 
         override suspend fun updateWorkerName(name: String): ApiResult<WorkerProfile> =
             ApiResult.Failure(ApiError.Unknown)
+
+        override suspend fun changePassword(
+            currentPassword: String,
+            newPassword: String,
+        ): PasswordChangeResult = PasswordChangeResult.Failure
     }
 
     private class FakeTokenStorage(

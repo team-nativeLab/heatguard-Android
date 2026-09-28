@@ -22,6 +22,7 @@ import com.nativelap.heartguard.viewmodel.profile.ProfileEditViewModel
 @Composable
 internal fun HeartGuardProfileEditRoute(
     onBackClick: () -> Unit,
+    onPasswordChangeClick: () -> Unit,
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,6 +59,7 @@ internal fun HeartGuardProfileEditRoute(
                 is ProfileEditScreenEvent.NameChanged -> viewModel.updateName(event.name)
                 ProfileEditScreenEvent.SaveClicked -> viewModel.saveProfile()
                 ProfileEditScreenEvent.RetryClicked -> viewModel.loadProfile()
+                ProfileEditScreenEvent.PasswordChangeClicked -> onPasswordChangeClick()
             }
         },
     )

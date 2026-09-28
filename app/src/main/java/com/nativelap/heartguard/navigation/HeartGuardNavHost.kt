@@ -30,6 +30,7 @@ import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordDetailRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
+import com.nativelap.heartguard.view.route.password.HeartGuardPasswordChangeRoute
 import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
@@ -258,7 +259,15 @@ private fun HeartGuardMainNavDisplay() {
                 )
             }
             entry<HeartGuardDestination.ProfileEdit> {
-                HeartGuardProfileEditRoute(onBackClick = ::goBack)
+                HeartGuardProfileEditRoute(
+                    onBackClick = ::goBack,
+                    onPasswordChangeClick = {
+                        backStack.add(HeartGuardDestination.PasswordChange)
+                    },
+                )
+            }
+            entry<HeartGuardDestination.PasswordChange> {
+                HeartGuardPasswordChangeRoute(onBackClick = ::goBack)
             }
             entry<HeartGuardDestination.Inquiry> {
                 HeartGuardInquiryRoute(onBackClick = ::goBack)

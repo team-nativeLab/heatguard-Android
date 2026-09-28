@@ -2,6 +2,8 @@ package com.nativelap.heartguard.data.profile.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.core.network.PasswordConfirmationRequest
+import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordRequestDto
 import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -64,6 +66,39 @@ class WorkerProfileApiServiceTest {
             assertEquals("PATCH", request.method)
             assertEquals("/api/v1/auth/team/me", request.url.encodedPath)
             assertEquals("""{"name":"홍길동"}""", request.body?.string(Charsets.UTF_8))
+        } finally {
+            server.close()
+        }
+    }
+
+    @Test
+    fun `비밀번호 변경은 PUT 본문과 비밀번호 확인 태그를 보낸다`() = runBlocking {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(
+                MockResponse.Builder()
+                    .code(200)
+                    .body("""{"success":true,"data":{"changedAt":"2026-09-28T14:35:53+00:00"},"error":null,"meta":null}""")
+                    .build(),
+            )
+
+            val response = createService(server).changePassword(
+                request = ChangeWorkerPasswordRequestDto(
+                    currentPassword = "current1",
+                    newPassword = "abcd1234",
+                ),
+                passwordConfirmationRequest = PasswordConfirmationRequest,
+            )
+
+            val request = server.takeRequest()
+            assertEquals("PUT", request.method)
+            assertEquals("/api/v1/auth/team/password", request.url.encodedPath)
+            assertEquals(
+                """{"currentPassword":"current1","newPassword":"abcd1234"}""",
+                request.body?.string(Charsets.UTF_8),
+            )
+            assertEquals("2026-09-28T14:35:53+00:00", response.data?.changedAt)
         } finally {
             server.close()
         }
