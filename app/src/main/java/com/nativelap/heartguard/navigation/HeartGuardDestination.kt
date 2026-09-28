@@ -27,6 +27,9 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object RecordHistory : HeartGuardDestination
 
     @Serializable
+    data class RecordHistoryDetail(val recordId: String) : HeartGuardDestination
+
+    @Serializable
     data object Emergency : HeartGuardDestination
 
     @Serializable

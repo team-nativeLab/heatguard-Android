@@ -27,6 +27,7 @@ import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
+import com.nativelap.heartguard.view.route.history.HeartGuardRecordDetailRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
 import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
@@ -263,7 +264,24 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardInquiryRoute(onBackClick = ::goBack)
             }
             entry<HeartGuardDestination.RecordHistory> {
-                HeartGuardRecordHistoryRoute(onBackClick = ::goBack)
+                HeartGuardRecordHistoryRoute(
+                    homeViewModel = homeViewModel,
+                    onBackClick = ::goBack,
+                    onRecordClick = { recordId ->
+                        backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
+                    },
+                    // Figma 23 빈 상태의 "기록하기"는 07 기록유형선택 시트를 연다.
+                    onCreateRecordClick = {
+                        backStack.add(HeartGuardDestination.RecordTypeSelection)
+                    },
+                )
+            }
+            entry<HeartGuardDestination.RecordHistoryDetail> { destination ->
+                HeartGuardRecordDetailRoute(
+                    recordId = destination.recordId,
+                    homeViewModel = homeViewModel,
+                    onBackClick = ::goBack,
+                )
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(
