@@ -5,12 +5,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
@@ -47,6 +50,8 @@ fun RecordTypeSelectionScreen(
                 onConfirm = onConfirm,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .widthIn(max = 600.dp)
+                    .fillMaxWidth()
                     .fillMaxHeight(RECORD_TYPE_SHEET_HEIGHT_FRACTION),
             )
         }

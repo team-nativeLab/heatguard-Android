@@ -29,7 +29,7 @@ fun recordTypeOptions(): List<RecordTypeOptionUiModel> {
             key = RecordType.TEMPERATURE,
             title = stringResource(R.string.record_temperature_title),
             description = stringResource(R.string.record_temperature_description),
-            iconPainter = painterResource(R.drawable.record_temperature),
+            iconPainter = painterResource(R.drawable.record_type_thermometer),
         ),
         RecordTypeOptionUiModel(
             key = RecordType.WORK,

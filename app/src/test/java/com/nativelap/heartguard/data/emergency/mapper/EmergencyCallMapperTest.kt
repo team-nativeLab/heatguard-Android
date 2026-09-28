@@ -34,11 +34,23 @@ class EmergencyCallMapperTest {
     }
 
     @Test
-    fun `알 수 없는 status 문자열은 NONE으로 매핑된다`() {
+    fun `취소 및 종료 상태를 보존한다`() {
+        assertEquals(
+            EmergencyCallState.CANCELLED,
+            EmergencyCallResponseDto(status = "CANCELLED").toDomain().state,
+        )
+        assertEquals(
+            EmergencyCallState.COMPLETED,
+            EmergencyCallResponseDto(status = "COMPLETED").toDomain().state,
+        )
+    }
+
+    @Test
+    fun `알 수 없는 status 문자열은 UNKNOWN으로 매핑된다`() {
         val dto = EmergencyCallResponseDto(status = "UNKNOWN_STATUS")
 
         val status = dto.toDomain()
 
-        assertEquals(EmergencyCallState.NONE, status.state)
+        assertEquals(EmergencyCallState.UNKNOWN, status.state)
     }
 }

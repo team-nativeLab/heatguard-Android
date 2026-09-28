@@ -3,10 +3,10 @@ package com.nativelap.heartguard.data.account.di
 import com.nativelap.heartguard.BuildConfig
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.data.account.repository.AccountRepositoryImpl
 import com.nativelap.heartguard.data.account.remote.AccountApiService
 import com.nativelap.heartguard.data.account.remote.AccountRemoteDataSource
 import com.nativelap.heartguard.data.account.remote.AccountRemoteDataSourceImpl
-import com.nativelap.heartguard.data.account.repository.AccountRepositoryImpl
 import com.nativelap.heartguard.domain.account.repository.AccountRepository
 import dagger.Binds
 import dagger.Module
@@ -32,7 +32,6 @@ abstract class AccountDataModule {
     ): AccountRepository
 
     companion object {
-        // 회원탈퇴는 로그인 세션이 필요한 API라 Bearer 토큰을 붙이는 인증 클라이언트로 만든다.
         @Provides
         @Singleton
         fun provideAccountApiService(

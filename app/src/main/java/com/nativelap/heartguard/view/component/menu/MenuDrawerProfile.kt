@@ -23,6 +23,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 
 /** 메뉴 드로어 상단에 이름 첫 글자 아바타와 이름·소속·이메일을 보여준다. */
@@ -46,7 +47,7 @@ fun MenuDrawerProfile(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = profile.avatarInitial,
+                text = valueOrEmptyText(profile.avatarInitial),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = HeartGuardFontSize.MenuProfileName,
@@ -57,7 +58,7 @@ fun MenuDrawerProfile(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = profile.userName,
+                text = valueOrEmptyText(profile.userName),
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = HeartGuardFontSize.MenuProfileName,
@@ -69,8 +70,8 @@ fun MenuDrawerProfile(
             Text(
                 text = stringResource(
                     R.string.menu_profile_affiliation_format,
-                    profile.companyName,
-                    profile.jobTitle,
+                    valueOrEmptyText(profile.companyName),
+                    valueOrEmptyText(profile.jobTitle),
                 ),
                 color = MaterialTheme.extraColors.secondaryText,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -80,7 +81,7 @@ fun MenuDrawerProfile(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = profile.email,
+                text = valueOrEmptyText(profile.email),
                 color = MaterialTheme.extraColors.tertiaryText,
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = HeartGuardFontSize.MenuProfileEmail,

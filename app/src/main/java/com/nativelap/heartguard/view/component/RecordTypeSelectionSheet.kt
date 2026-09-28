@@ -3,6 +3,7 @@ package com.nativelap.heartguard.view.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -42,11 +43,12 @@ fun RecordTypeSelectionSheet(
             topStart = HeartGuardRadius.Sheet,
             topEnd = HeartGuardRadius.Sheet,
         ),
-        color = MaterialTheme.extraColors.sheetBackground,
+        color = MaterialTheme.extraColors.pageBackground,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(
                     horizontal = HeartGuardSpacing.Section,

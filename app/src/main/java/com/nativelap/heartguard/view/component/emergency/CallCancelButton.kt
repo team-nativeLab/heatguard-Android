@@ -18,9 +18,11 @@ fun CallCancelButton(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),

@@ -41,19 +41,31 @@ class TeamSiteMapperTest {
         assertEquals("철근팀", overview.teamName)
         assertEquals("서울현장", overview.siteName)
         assertEquals("010-1234-5678", overview.managerPhoneNumber)
-        assertEquals(33.5, overview.currentTemperature, 0.0)
-        assertEquals(62.0, overview.humidity, 0.0)
-        assertEquals(36.1, overview.apparentTemperature, 0.0)
+        assertEquals(33.5, overview.currentTemperature ?: error("temperature missing"), 0.0)
+        assertEquals(62.0, overview.humidity ?: error("humidity missing"), 0.0)
+        assertEquals(36.1, overview.apparentTemperature ?: error("apparent temperature missing"), 0.0)
         assertEquals(2, overview.heatLevel)
         assertEquals(listOf("09:00", "11:00"), overview.checkTimes)
     }
 
+    @Test
+    fun `기상 미입력 시 측정값 null이 도메인 모델에 유지된다`() {
+        val overview = teamSiteResponseDto(
+            weather = WeatherDto(),
+        ).toDomain()
+
+        assertEquals(null, overview.currentTemperature)
+        assertEquals(null, overview.humidity)
+        assertEquals(null, overview.apparentTemperature)
+    }
+
     private fun teamSiteResponseDto(
         activeEmergencyCall: ActiveEmergencyCallDto? = null,
+        weather: WeatherDto = WeatherDto(temperature = 33.5, humidity = 62.0, apparentTemperature = 36.1),
     ) = TeamSiteResponseDto(
         team = TeamDto(teamId = "team_01", name = "철근팀"),
         site = SiteDto(siteId = "site_01", name = "서울현장", managerPhone = "010-1234-5678"),
-        weather = WeatherDto(temperature = 33.5, humidity = 62.0, apparentTemperature = 36.1),
+        weather = weather,
         heatLevel = 2,
         checkTimes = listOf("09:00", "11:00"),
         activeEmergencyCall = activeEmergencyCall,

@@ -47,6 +47,12 @@ data class HeartGuardExtraColors(
     val subtleDivider: Color,
     val overlayScrim: Color,
     val dangerContainer: Color,
+    val emergencyCall: Color,
+    val emergencyCallContainer: Color,
+    val emergencyCalling: Color,
+    val emergencyCallingContainer: Color,
+    val emergencyContactPhone: Color,
+    val inputFieldBackground: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -123,6 +129,14 @@ private val subtleDividerColor = Color(0xFFE5EBF2)
 private val overlayScrimColor = Color(0x66000000)
 // 회원탈퇴 경고 아이콘 배지처럼 되돌릴 수 없는 동작을 알리는 옅은 빨강 배경이다.
 private val dangerContainerColor = Color(0xFFFDEBEB)
+// Figma 03_긴급상황(호출 전)·04_호출중의 원형 호출 버튼과 바깥 링, 연락처 전화번호 색이다.
+private val emergencyCallColor = Color(0xFFFA463F)
+private val emergencyCallContainerColor = Color(0xFFF9D7D7)
+private val emergencyCallingColor = Color(0xFFFAA33F)
+private val emergencyCallingContainerColor = Color(0xFFF9EBD7)
+private val emergencyContactPhoneColor = Color(0xFF1169FA)
+// Figma 온도계 데이터 직접 입력 카드의 입력칸 배경(중립 회색)이다.
+private val inputFieldBackgroundColor = Color(0xFFF6F6F7)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -188,6 +202,12 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     subtleDivider = subtleDividerColor,
     overlayScrim = overlayScrimColor,
     dangerContainer = dangerContainerColor,
+    emergencyCall = emergencyCallColor,
+    emergencyCallContainer = emergencyCallContainerColor,
+    emergencyCalling = emergencyCallingColor,
+    emergencyCallingContainer = emergencyCallingContainerColor,
+    emergencyContactPhone = emergencyContactPhoneColor,
+    inputFieldBackground = inputFieldBackgroundColor,
 )
 
 /**

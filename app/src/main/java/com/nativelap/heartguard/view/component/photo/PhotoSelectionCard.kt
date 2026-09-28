@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -85,22 +86,30 @@ fun PhotoSelectionCard(
                     .padding(top = HeartGuardSpacing.Item)
                     .widthIn(max = HeartGuardComponentSize.PhotoSelectionTitleMaxWidth),
                 color = if (isEnabled) {
-                    MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.extraColors.homeMutedText
                 } else {
                     MaterialTheme.extraColors.disabledText
                 },
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = HeartGuardFontSize.CardTitle,
+                    fontWeight = FontWeight.Bold,
+                ),
             )
             description?.let { descriptionText ->
                 Text(
                     text = descriptionText,
+                    modifier = Modifier.padding(top = HeartGuardSpacing.PhotoSelectionDescriptionTop),
                     color = if (isEnabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        MaterialTheme.extraColors.strongText
                     } else {
                         MaterialTheme.extraColors.disabledText
                     },
-                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = HeartGuardFontSize.CardTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 )
             }
             selectedPhotoCountLabel?.let { countLabel ->

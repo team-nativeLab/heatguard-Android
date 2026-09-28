@@ -39,7 +39,7 @@ abstract class EmergencyCallDataModule {
         ): EmergencyCallApiService = apiRetrofitFactory.createService(
             baseUrl = BuildConfig.BASE_URL,
             serviceClass = EmergencyCallApiService::class.java,
-            authentication = ApiAuthentication.NONE,
+            authentication = ApiAuthentication.BEARER,
         )
     }
 }

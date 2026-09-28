@@ -3,8 +3,11 @@ package com.nativelap.heartguard.viewmodel.emergency
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.usecase.ObserveEmergencyCallStatusUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.RegisterEmergencyCallUseCase
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
+import com.nativelap.heartguard.domain.emergency.usecase.UpdateEmergencyCallStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -24,6 +27,7 @@ import kotlinx.coroutines.launch
 class EmergencyViewModel @Inject constructor(
     private val registerEmergencyCallUseCase: RegisterEmergencyCallUseCase,
     private val observeEmergencyCallStatusUseCase: ObserveEmergencyCallStatusUseCase,
+    private val updateEmergencyCallStatusUseCase: UpdateEmergencyCallStatusUseCase,
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(EmergencyUiState())
@@ -35,6 +39,8 @@ class EmergencyViewModel @Inject constructor(
     // 다시 호출되면 pollingJob만 보고 하는 가드는 통과해버려 등록이 중복될 수 있다. 이 플래그는
     // 호출 즉시(suspend 지점 이전에) true로 바뀌어 그 틈을 막는다.
     private var hasStartedRegistration = false
+
+    private var isStatusUpdateInProgress = false
 
     /** Emergency 화면 진입 시 1회 호출한다. 이미 ACTIVE 호출이 있으면 서버가
      * 409 ACTIVE_CALL_ALREADY_EXISTS로 응답하는데, 그 경우도 "이미 호출 중"인 정상 상태이므로
@@ -60,6 +66,56 @@ class EmergencyViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    /** 취소 또는 종료 버튼에서 호출하며, 서버가 상태 변경을 승인한 뒤에만 화면 종료 상태를 알린다. */
+    fun updateCallStatus(status: EmergencyCallUpdateStatus) {
+        val currentStatus = mutableUiState.value.status
+        val currentCallId = currentStatus.callId ?: return
+        if (isStatusUpdateInProgress) {
+            return
+        }
+
+        val isAllowedTransition = when (currentStatus.state) {
+            EmergencyCallState.ACTIVE -> true
+            EmergencyCallState.ACKNOWLEDGED -> status == EmergencyCallUpdateStatus.COMPLETED
+            else -> false
+        }
+        if (!isAllowedTransition) {
+            return
+        }
+
+        isStatusUpdateInProgress = true
+        mutableUiState.value = mutableUiState.value.copy(
+            isUpdatingStatus = true,
+            statusUpdateFailed = false,
+        )
+        viewModelScope.launch {
+            when (
+                val result = updateEmergencyCallStatusUseCase(
+                    callId = currentCallId,
+                    status = status,
+                )
+            ) {
+                is ApiResult.Success -> {
+                    pollingJob?.cancel()
+                    pollingJob = null
+                    mutableUiState.value = mutableUiState.value.copy(
+                        status = result.value,
+                        isUpdatingStatus = false,
+                        shouldExitCallFlow = true,
+                    )
+                }
+
+                is ApiResult.Failure -> {
+                    mutableUiState.value = mutableUiState.value.copy(
+                        isUpdatingStatus = false,
+                        statusUpdateFailed = true,
+                    )
+                }
+            }
+            isStatusUpdateInProgress = false
+        }
+    }
+
     /** 긴급호출 흐름을 완전히 벗어날 때(홈으로 돌아갈 때) 호출해 폴링을 멈추고 상태를 초기화한다.
      * 그러지 않으면 다음에 다시 Emergency에 진입했을 때 이전 폴링 상태가 남아 있게 된다. */
     fun reset() {
@@ -67,6 +123,7 @@ class EmergencyViewModel @Inject constructor(
         pollingJob = null
         hasStartedRegistration = false
         mutableUiState.value = EmergencyUiState()
+        isStatusUpdateInProgress = false
     }
 
     override fun onCleared() {

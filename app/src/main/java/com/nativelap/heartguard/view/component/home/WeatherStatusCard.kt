@@ -33,7 +33,7 @@ import com.nativelap.heartguard.ui.theme.extraColors
 @Composable
 fun WeatherStatusCard(
     weatherPainter: Painter,
-    weatherContentDescription: String,
+    weatherContentDescription: String?,
     statusTitle: String,
     currentTemperature: String,
     feelsLikeTemperature: String,
@@ -45,7 +45,7 @@ fun WeatherStatusCard(
     temperatureDeltaLabel: String,
     temperatureDelta: String,
     riskLabel: String,
-    isTemperatureIncreasing: Boolean,
+    isTemperatureIncreasing: Boolean?,
     modifier: Modifier = Modifier,
 ) {
     Column(
