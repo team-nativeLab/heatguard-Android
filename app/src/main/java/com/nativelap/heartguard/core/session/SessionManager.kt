@@ -45,6 +45,13 @@ class SessionManager @Inject constructor(
         mutableSessionState.value = SessionState.Authenticated
     }
 
+    /** 탈퇴 성공 뒤 완료 화면을 표시하는 동안 저장된 인증 토큰을 먼저 제거한다. */
+    suspend fun clearAccessTokenAfterWithdrawal() {
+        withContext(ioDispatcher) {
+            tokenStorage.clear()
+        }
+    }
+
     /** 사용자가 명시적으로 로그아웃하거나(ViewModel), 인증 API가 세션을 복구하지 못했을 때(Authenticator) 호출한다.
      * 저장된 토큰을 지우고 상태를 Unauthenticated로 되돌린 뒤, 화면이 즉시 로그인으로 돌아가도록
      * SessionEvent.Expired를 한 번 알린다. */

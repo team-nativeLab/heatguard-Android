@@ -34,7 +34,7 @@ class WithdrawViewModel @Inject constructor(
     private var withdrawJob: Job? = null
     private var isFinishing = false
 
-    // TODO: API 명세(DELETE /api/v1/site/profile)에 탈퇴 사유 필드가 없어 선택값은 화면에만 두고 서버로 보내지 않는다.
+    // TODO: API 명세(DELETE /api/v1/team/profile)에 탈퇴 사유 필드가 없어 선택값은 화면에만 두고 서버로 보내지 않는다.
     //  서버에 사유 필드가 추가되면 withdraw()에서 함께 전달한다.
     fun selectReason(reason: WithdrawReason?) {
         _uiState.update { it.copy(selectedReason = reason) }
@@ -71,6 +71,9 @@ class WithdrawViewModel @Inject constructor(
                 WithdrawAccountResult.Success -> WithdrawSubmissionState.Succeeded
                 WithdrawAccountResult.InvalidPassword -> WithdrawSubmissionState.InvalidPassword
                 WithdrawAccountResult.Failure -> WithdrawSubmissionState.Failed
+            }
+            if (withdrawResult == WithdrawAccountResult.Success) {
+                sessionManager.clearAccessTokenAfterWithdrawal()
             }
             _uiState.update { it.copy(submissionState = nextSubmissionState) }
         }

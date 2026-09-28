@@ -17,7 +17,7 @@ import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** 회원탈퇴 API(DELETE /api/v1/site/profile)의 실제 HTTP 왕복을 MockWebServer로 확인한다. */
+/** 회원탈퇴 API(DELETE /api/v1/team/profile)의 실제 HTTP 왕복을 MockWebServer로 확인한다. */
 class AccountRemoteDataSourceTest {
     @Test
     fun sendsDeleteWithCurrentPasswordAndTreatsNoContentAsSuccess() = runTest {
@@ -31,7 +31,7 @@ class AccountRemoteDataSourceTest {
 
             val recordedRequest = mockWebServer.takeRequest()
             assertEquals("DELETE", recordedRequest.method)
-            assertEquals("/api/v1/site/profile", recordedRequest.url.encodedPath)
+            assertEquals("/api/v1/team/profile", recordedRequest.url.encodedPath)
             assertEquals("""{"currentPassword":"pw1234"}""", recordedRequest.body?.utf8())
         }
     }
