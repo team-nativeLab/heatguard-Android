@@ -19,6 +19,10 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,13 +35,15 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.ResponsivePageContent
-import com.nativelap.heartguard.view.component.UnavailableFeatureCard
+import com.nativelap.heartguard.view.component.LoadErrorCard
+import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
 
-/** Figma 문의 화면의 입력·등록 흐름을 표시한다. 문의 목록은 응답 항목 계약 확인 전까지 안내를 유지한다. */
+/** Figma 25_문의하기 화면이다. 문의 입력·등록과 내 문의 목록(서버 조회, 최신순)을 보여준다. 문의 상세는 범위 밖이라 목록 항목은 눌리지 않는다. */
 @Composable
 fun InquiryScreen(
     uiState: InquiryUiState,
@@ -141,17 +147,60 @@ fun InquiryScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.inquiry_my_list),
+                        modifier = Modifier.weight(1f),
                         color = MaterialTheme.extraColors.strongText,
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     )
+                    val listState = uiState.listState
+                    if (listState is InquiryListState.Loaded) {
+                        Text(
+                            text = stringResource(R.string.inquiry_list_count_format, listState.inquiries.size),
+                            color = MaterialTheme.extraColors.secondaryText,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
-                UnavailableFeatureCard(
-                    title = stringResource(R.string.inquiry_list_unavailable_title),
-                    description = stringResource(R.string.inquiry_list_unavailable_description),
-                )
+
+                when (val listState = uiState.listState) {
+                    InquiryListState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = HeartGuardSpacing.Section),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    InquiryListState.Failed -> {
+                        LoadErrorCard(
+                            title = stringResource(R.string.inquiry_list_load_failure_title),
+                            description = stringResource(R.string.inquiry_list_load_failure_description),
+                            onRetryClick = { onEvent(InquiryScreenEvent.RetryListClicked) },
+                        )
+                    }
+
+                    is InquiryListState.Loaded -> {
+                        if (listState.inquiries.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.inquiry_list_empty),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = HeartGuardSpacing.Section),
+                                color = MaterialTheme.extraColors.secondaryText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center,
+                            )
+                        } else {
+                            InquiryListCard(inquiries = listState.inquiries)
+                        }
+                    }
+                }
             }
         }
     }
@@ -205,7 +254,7 @@ private fun InquiryInputField(
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable
-private fun InquiryScreenUnavailablePreview() {
+private fun InquiryScreenLoadingPreview() {
     HeartGuardTheme {
         InquiryScreen(uiState = InquiryUiState(), onEvent = {})
     }

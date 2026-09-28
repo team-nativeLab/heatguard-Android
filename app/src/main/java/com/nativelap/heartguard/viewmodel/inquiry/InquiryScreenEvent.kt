@@ -6,4 +6,6 @@ sealed interface InquiryScreenEvent {
     data class TitleChanged(val title: String) : InquiryScreenEvent
     data class ContentChanged(val content: String) : InquiryScreenEvent
     data object SubmitClicked : InquiryScreenEvent
+
+    data object RetryListClicked : InquiryScreenEvent
 }
