@@ -5,10 +5,11 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -26,19 +27,20 @@ import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
-import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordDetailRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
+import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
-import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
-import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
+import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
+import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
+import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
@@ -49,9 +51,7 @@ import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 internal fun HeartGuardNavHost(
     sessionViewModel: HeartGuardSessionViewModel = hiltViewModel(),
 ) {
-    // TODO: androidx.lifecycle:lifecycle-runtime-compose를 새 dependency로 추가하는 것에 대한
-    // 사용자 확인을 받으면 collectAsState를 collectAsStateWithLifecycle로 교체한다.
-    val sessionState by sessionViewModel.sessionState.collectAsState()
+    val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
 
     when (sessionState) {
         // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 어느 화면도 그리지 않는다.
@@ -143,6 +143,17 @@ private fun HeartGuardMainNavDisplay() {
         onDispose { emergencyViewModel.reset() }
     }
 
+    // 앱을 다시 열었을 때 서버에 진행 중인 긴급호출이 있으면 이어받아, 홈의 "긴급 전화"가 새 호출 대신 그 호출로 이어지게 한다.
+    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val hasServerActiveEmergencyCall = (homeUiState as? HomeUiState.Success)
+        ?.overview
+        ?.hasActiveEmergencyCall == true
+    LaunchedEffect(hasServerActiveEmergencyCall) {
+        if (hasServerActiveEmergencyCall) {
+            emergencyViewModel.resumeActiveCall()
+        }
+    }
+
     // 회원탈퇴 안내·최종 확인·완료 화면이 입력값(비밀번호 포함)과 요청 상태를 공유한다. 같은 이유로 Activity 스코프이며,
     // 로그아웃·세션 만료로 이 Composable이 사라질 때 비밀번호가 메모리에 남지 않도록 여기서도 reset()한다.
     val withdrawViewModel: WithdrawViewModel = hiltViewModel()
@@ -162,13 +173,8 @@ private fun HeartGuardMainNavDisplay() {
     fun goBack() {
         if (backStack.size > 1) {
             val poppedDestination = backStack.removeLastOrNull()
-            // 화면 안의 "취소"/"종료" 버튼 콜백뿐 아니라 시스템/제스처 뒤로가기로 Emergency·Calling을
-            // 벗어날 때도 폴링을 멈춰야 한다 — onBack은 이 함수 하나로 모아져 있어 여기서만 처리하면 된다.
-            if (poppedDestination is HeartGuardDestination.Emergency ||
-                poppedDestination is HeartGuardDestination.Calling
-            ) {
-                emergencyViewModel.reset()
-            }
+            // 호출 중 화면에서 뒤로 가도 서버의 긴급호출은 계속 진행 중이므로 상태·폴링을 지우지 않는다.
+            // 홈의 "긴급 전화"로 다시 들어오면 같은 호출의 호출 중 화면으로 돌아간다.
             // 안내 화면에서 뒤로 나가면 회원탈퇴 흐름을 벗어난 것이므로 입력한 비밀번호와 진행 중인 요청을 정리한다.
             if (poppedDestination is HeartGuardDestination.WithdrawNotice) {
                 withdrawViewModel.reset()
@@ -231,8 +237,14 @@ private fun HeartGuardMainNavDisplay() {
                     homeViewModel = homeViewModel,
                     // 관리자 전화는 HeartGuardHomeRoute 내부에서 바로 다이얼러로 연결하므로
                     // 여기서는 긴급호출 흐름으로 이동하는 콜백만 전달한다.
+                    // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
                     onEmergencyClick = {
-                        backStack.add(HeartGuardDestination.Emergency)
+                        val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
+                        if (hasActiveEmergencyCall) {
+                            backStack.add(HeartGuardDestination.Calling)
+                        } else {
+                            backStack.add(HeartGuardDestination.Emergency)
+                        }
                     },
                     // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
                     // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
@@ -287,10 +299,9 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardEmergencyRoute(
                     emergencyViewModel = emergencyViewModel,
                     homeViewModel = homeViewModel,
-                    // Figma 03_긴급상황 화면은 이미 관리자 호출 알림이 진행 중인 상태를 전제로 하며,
-                    // "호출 취소" 버튼은 이 알림을 취소하고 이전 화면(Home)으로 돌아가는 동작이다.
-                    // (04_호출중 화면으로 진행하는 것이 아니다 — 그 화면은 Emergency 진입 전 별도 트리거로 도달한다.)
-                    onCallClick = {
+                    // 호출이 등록되면 03을 04로 바꿔, 04에서 뒤로 가도 호출 전 화면(03)이 다시 보이지 않게 한다.
+                    onCallStarted = {
+                        backStack.removeLastOrNull()
                         backStack.add(HeartGuardDestination.Calling)
                     },
                     onCancelClick = ::goHome,
@@ -300,8 +311,7 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardCallingRoute(
                     emergencyViewModel = emergencyViewModel,
                     homeViewModel = homeViewModel,
-                    onCancelClick = ::goHome,
-                    onEndClick = ::goHome,
+                    onCallClosed = ::goHome,
                 )
             }
             entry<HeartGuardDestination.RecordTypeSelection>(

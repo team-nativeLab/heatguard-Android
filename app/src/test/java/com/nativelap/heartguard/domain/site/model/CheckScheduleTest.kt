@@ -52,4 +52,22 @@ class CheckScheduleTest {
 
         assertEquals(listOf(LocalTime.of(9, 0)), checkSchedule.checkTimes)
     }
+
+    @Test
+    fun `체크 시각부터 다음 체크 전까지 기록이 있으면 완료로 본다`() {
+        val checkSchedule = buildCheckSchedule(
+            rawCheckTimes = listOf("09:00", "11:00", "13:00"),
+            now = LocalTime.of(14, 0),
+            todayRecordTimes = listOf(
+                LocalTime.of(8, 30),
+                LocalTime.of(9, 10),
+                LocalTime.of(13, 40),
+            ),
+        )
+
+        assertEquals(
+            setOf(LocalTime.of(9, 0), LocalTime.of(13, 0)),
+            checkSchedule.completedCheckTimes,
+        )
+    }
 }

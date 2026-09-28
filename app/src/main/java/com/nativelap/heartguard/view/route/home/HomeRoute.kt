@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
@@ -32,6 +36,7 @@ import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.menu.MenuDrawerOverlay
 import com.nativelap.heartguard.view.component.temperatureValueText
 import com.nativelap.heartguard.view.screen.home.HomeScreen
+import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
@@ -61,12 +66,35 @@ internal fun HeartGuardHomeRoute(
     onWithdrawClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
+    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val unavailableNotificationMessage = stringResource(R.string.home_notifications_unavailable)
+    val loadFailureMessage = stringResource(R.string.home_load_failure)
+    val retryActionLabel = stringResource(R.string.common_retry)
+
+    // 기록 저장 뒤나 앱을 다시 열었을 때 날씨·체크 완료가 갱신되도록 홈이 다시 보일 때마다 새로 조회한다.
+    LifecycleResumeEffect(homeViewModel) {
+        homeViewModel.refresh()
+        onPauseOrDispose {}
+    }
+
+    // 홈 조회에 실패하면 모든 값이 "--"로 남으므로, 빈 값과 구분되도록 실패를 알리고 재시도할 수 있게 한다.
+    LaunchedEffect(homeUiState) {
+        if (homeUiState is HomeUiState.Error) {
+            val snackbarResult = snackbarHostState.showSnackbar(
+                message = loadFailureMessage,
+                actionLabel = retryActionLabel,
+                duration = SnackbarDuration.Indefinite,
+            )
+            if (snackbarResult == SnackbarResult.ActionPerformed) {
+                homeViewModel.loadTeamSiteOverview()
+            }
+        }
+    }
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
@@ -198,7 +226,7 @@ private fun nextCheckDescriptionText(checkSchedule: CheckSchedule?): String {
     }
 }
 
-// 서버 체크 시각으로 타임라인 항목을 만든다. 체크 완료 여부는 API에 없어 모두 미완료로 두고, 다음 체크만 강조한다.
+// 서버 체크 시각으로 타임라인 항목을 만든다. 완료 여부는 오늘 기록 측정 시각으로 판정한 값이며, 다음 체크를 강조한다.
 @Composable
 @ReadOnlyComposable
 private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelineItem> {
@@ -209,7 +237,7 @@ private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelin
     return checkSchedule.checkTimes.map { checkTime ->
         CheckTimelineItem(
             timeLabel = checkTimeLabelText(checkTime),
-            isCompleted = false,
+            isCompleted = checkTime in checkSchedule.completedCheckTimes,
             isCurrent = checkTime == checkSchedule.nextCheckTime,
         )
     }

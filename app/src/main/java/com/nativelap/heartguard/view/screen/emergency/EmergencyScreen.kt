@@ -32,8 +32,8 @@ import com.nativelap.heartguard.view.component.emergency.EmergencyContactCard
 
 /**
  * 긴급상황 안내와 관리자 연락 동작을 하나의 정적 화면으로 구성한다.
- * Figma "03_긴급상황" 프레임은 이미 호출이 대기 중인 경고 상태를 보여주며,
- * 별도의 "호출하기" primary 버튼 없이 [CallCancelButton]으로 호출을 취소하는 동작만 제공한다.
+ * Figma "03_긴급상황" 화면이다. 큰 "긴급 호출하기" 버튼을 눌러야 긴급호출이 등록되고 04_호출중으로 이동한다
+ * (화면에 들어오는 것만으로는 호출하지 않는다). "호출 취소"는 호출 전이므로 홈으로 돌아간다.
  */
 @Composable
 fun EmergencyScreen(
@@ -44,8 +44,8 @@ fun EmergencyScreen(
     onContactClick: () -> Unit,
     modifier: Modifier = Modifier,
     isContactCallEnabled: Boolean = true,
-    isUpdatingStatus: Boolean = false,
-    statusUpdateError: Boolean = false,
+    isRegistering: Boolean = false,
+    hasRegistrationFailed: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
@@ -88,13 +88,18 @@ fun EmergencyScreen(
                 title = stringResource(R.string.emergency_indicator_title),
                 description = stringResource(R.string.emergency_indicator_description),
                 isCalling = true,
-                onClick = onCallClick,
+                // 등록 요청 중에는 중복 호출을 막기 위해 버튼을 누를 수 없게 한다.
+                onClick = if (isRegistering) {
+                    null
+                } else {
+                    onCallClick
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            if (statusUpdateError) {
+            if (hasRegistrationFailed) {
                 Text(
-                    text = stringResource(R.string.emergency_status_update_error),
+                    text = stringResource(R.string.emergency_register_error),
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
@@ -113,7 +118,7 @@ fun EmergencyScreen(
             CallCancelButton(
                 title = stringResource(R.string.emergency_call_cancel),
                 onClick = onCancelClick,
-                enabled = !isUpdatingStatus,
+                enabled = !isRegistering,
                 modifier = Modifier
                     .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
                     .padding(top = HeartGuardSpacing.RecordFieldInset),

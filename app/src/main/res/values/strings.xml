@@ -81,6 +81,8 @@
     <string name="emergency_call_cancel">호출 취소</string>
     <string name="emergency_call_end">통화 종료</string>
     <string name="emergency_status_update_error">호출 상태를 변경하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="emergency_register_error">긴급 호출을 보내지 못했어요. 버튼을 다시 눌러 주세요. 급하면 관리자에게 바로 전화하세요.</string>
+    <string name="emergency_connection_unstable">연결이 불안정해 관리자 확인 여부를 받아오지 못하고 있어요. 호출은 유지됩니다.</string>
     <string name="emergency_calling">호출 중입니다</string>
     <string name="emergency_connected">연결되었습니다</string>
     <string name="temperature_input_label">현재 온도</string>
@@ -190,6 +192,7 @@
     <string name="photo_remove_accessibility">사진 %1$d 삭제</string>
     <string name="save_complete">확인</string>
     <!-- 메뉴 드로어 -->
+    <string name="home_load_failure">홈 정보를 불러오지 못했어요</string>
     <string name="menu_edit_profile">내 정보 수정</string>
     <string name="menu_inquiry">문의하기</string>
     <string name="menu_logout">로그아웃</string>

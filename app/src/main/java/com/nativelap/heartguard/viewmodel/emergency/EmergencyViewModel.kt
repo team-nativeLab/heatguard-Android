@@ -2,131 +2,280 @@ package com.nativelap.heartguard.viewmodel.emergency
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
+import com.nativelap.heartguard.domain.emergency.usecase.GetCurrentEmergencyCallUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.ObserveEmergencyCallStatusUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.RegisterEmergencyCallUseCase
-import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.domain.emergency.usecase.UpdateEmergencyCallStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Clock
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-/** Emergency 화면과 Calling 화면이 함께 공유하는 ViewModel이다(android-navigation SKILL
- * '화면 간 ViewModel 공유' 패턴, [com.nativelap.heartguard.navigation.HeartGuardNavHost]에서
- * 수동 ViewModelStoreOwner로 인스턴스를 하나만 만들어 두 Route에 명시적으로 전달한다).
- * 긴급호출을 등록한 뒤 3초 간격으로 상태를 폴링해, 관리자가 확인(ACKNOWLEDGED)하면 Calling
- * 화면이 "연결됨" 상태를 보여줄 수 있게 한다. */
+/** 긴급 화면(03)과 호출 중 화면(04)이 공유하는 ViewModel이다. HeartGuardNavHost에서 한 번 만들어 두 Route에 넘긴다.
+ * 흐름: "긴급 호출하기" → 등록(재시도해도 같은 Idempotency-Key) → 3초 폴링으로 관리자 확인(ACKNOWLEDGED) 반영
+ * → 작업자 취소·종료 또는 관리자 종료(CANCELLED/COMPLETED) 시 폴링을 멈추고 [EmergencyEffect.CallClosed]를 보낸다.
+ * 실서버의 현재 호출 조회는 종료된 이전 호출도 돌려주므로, 폴링은 이 기기가 시작·이어받은 [EmergencyUiState.callId]만 반영한다. */
 @HiltViewModel
 class EmergencyViewModel @Inject constructor(
     private val registerEmergencyCallUseCase: RegisterEmergencyCallUseCase,
     private val observeEmergencyCallStatusUseCase: ObserveEmergencyCallStatusUseCase,
     private val updateEmergencyCallStatusUseCase: UpdateEmergencyCallStatusUseCase,
+    private val getCurrentEmergencyCallUseCase: GetCurrentEmergencyCallUseCase,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(EmergencyUiState())
     val uiState: StateFlow<EmergencyUiState> = mutableUiState.asStateFlow()
 
+    private val effectChannel = Channel<EmergencyEffect>(Channel.BUFFERED)
+    val effects: Flow<EmergencyEffect> = effectChannel.receiveAsFlow()
+
     private var pollingJob: Job? = null
+    private var requestJob: Job? = null
 
-    // registerEmergencyCallUseCase()가 끝난 뒤에야 pollingJob이 채워지므로, 그 전에 이 함수가
-    // 다시 호출되면 pollingJob만 보고 하는 가드는 통과해버려 등록이 중복될 수 있다. 이 플래그는
-    // 호출 즉시(suspend 지점 이전에) true로 바뀌어 그 틈을 막는다.
-    private var hasStartedRegistration = false
+    // 호출 의도 1회에 하나다. 등록이 실패해 다시 누르면 같은 키를 보내 서버에 호출이 중복 생성되지 않게 한다.
+    private var pendingIdempotencyKey: String? = null
+    private var consecutivePollingFailureCount = 0
 
-    private var isStatusUpdateInProgress = false
-
-    /** Emergency 화면 진입 시 1회 호출한다. 이미 ACTIVE 호출이 있으면 서버가
-     * 409 ACTIVE_CALL_ALREADY_EXISTS로 응답하는데, 그 경우도 "이미 호출 중"인 정상 상태이므로
-     * 등록 성공 여부와 무관하게 상태 폴링은 항상 시작한다. */
-    fun registerEmergencyCallIfNeeded() {
-        if (hasStartedRegistration) {
+    /** "긴급 호출하기" 버튼에서 호출한다. 이미 진행 중인 호출이 있으면 새로 등록하지 않고 호출 중 화면으로 보낸다. */
+    fun startEmergencyCall() {
+        val currentState = mutableUiState.value
+        if (currentState.isRegistering) {
             return
         }
-        hasStartedRegistration = true
-        viewModelScope.launch {
-            registerEmergencyCallUseCase()
-            startObservingStatus()
+        if (currentState.callId != null) {
+            effectChannel.trySend(EmergencyEffect.CallStarted)
+            return
+        }
+
+        val idempotencyKey = pendingIdempotencyKey ?: UUID.randomUUID().toString()
+        pendingIdempotencyKey = idempotencyKey
+        mutableUiState.value = currentState.copy(
+            isRegistering = true,
+            hasRegistrationFailed = false,
+        )
+        requestJob = viewModelScope.launch {
+            val registerResult = registerEmergencyCallUseCase(
+                idempotencyKey = idempotencyKey,
+                clientOccurredAt = clock.instant(),
+            )
+            when (registerResult) {
+                is ApiResult.Success -> {
+                    adoptCall(
+                        callStatus = registerResult.value,
+                        shouldOpenCallScreen = true,
+                    )
+                }
+
+                is ApiResult.Failure -> {
+                    if (registerResult.error.isActiveCallAlreadyExists()) {
+                        resumeCurrentCall(
+                            shouldOpenCallScreen = true,
+                            onNoActiveCall = ::showRegistrationFailure,
+                        )
+                    } else {
+                        showRegistrationFailure()
+                    }
+                }
+            }
         }
     }
 
-    private fun startObservingStatus() {
+    /** 앱을 다시 열었을 때 홈 조회에 진행 중인 긴급호출이 있으면 호출한다. 서버의 현재 호출이 진행 중이면 이어받는다. */
+    fun resumeActiveCall() {
+        val currentState = mutableUiState.value
+        if (currentState.callId != null || currentState.isRegistering) {
+            return
+        }
+
+        requestJob = viewModelScope.launch {
+            resumeCurrentCall(
+                shouldOpenCallScreen = false,
+                onNoActiveCall = {},
+            )
+        }
+    }
+
+    /** 취소 또는 종료 버튼에서 호출한다. 서버가 승인한 뒤에만 흐름을 끝낸다. 관리자가 확인한 호출은 취소할 수 없어 종료만 보낸다. */
+    fun updateCallStatus(requestedStatus: EmergencyCallUpdateStatus) {
+        val currentState = mutableUiState.value
+        val currentCallId = currentState.callId ?: return
+        if (currentState.isUpdatingStatus) {
+            return
+        }
+
+        val allowedStatus = if (currentState.callState == EmergencyCallState.ACKNOWLEDGED) {
+            EmergencyCallUpdateStatus.COMPLETED
+        } else {
+            requestedStatus
+        }
+        mutableUiState.value = currentState.copy(
+            isUpdatingStatus = true,
+            statusUpdateFailed = false,
+        )
+        viewModelScope.launch {
+            val updateResult = updateEmergencyCallStatusUseCase(
+                callId = currentCallId,
+                status = allowedStatus,
+            )
+            when (updateResult) {
+                is ApiResult.Success -> {
+                    closeCallFlow()
+                }
+
+                is ApiResult.Failure -> {
+                    // 이미 관리자 쪽에서 끝난 호출이면(409) 사용자가 할 일은 없으므로 흐름을 끝낸다.
+                    if (updateResult.error.isCallAlreadyClosed()) {
+                        closeCallFlow()
+                    } else {
+                        mutableUiState.value = mutableUiState.value.copy(
+                            isUpdatingStatus = false,
+                            statusUpdateFailed = true,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /** 세션이 끝나 메인 흐름을 벗어날 때 폴링과 진행 중인 요청을 멈추고 상태를 비운다. 서버 호출 상태는 바꾸지 않는다. */
+    fun reset() {
+        pollingJob?.cancel()
+        pollingJob = null
+        requestJob?.cancel()
+        requestJob = null
+        pendingIdempotencyKey = null
+        consecutivePollingFailureCount = 0
+        mutableUiState.value = EmergencyUiState()
+    }
+
+    // 현재 호출을 조회해 진행 중(ACTIVE·ACKNOWLEDGED)이면 이어받고, 아니면 [onNoActiveCall]을 실행한다.
+    // [shouldOpenCallScreen]이 false면(앱 시작 시 복원) 화면 이동 없이 상태만 이어받는다.
+    private suspend fun resumeCurrentCall(
+        shouldOpenCallScreen: Boolean,
+        onNoActiveCall: () -> Unit,
+    ) {
+        val currentCallResult = getCurrentEmergencyCallUseCase()
+        val currentCall = (currentCallResult as? ApiResult.Success)?.value
+        if (currentCall != null && currentCall.callId != null && currentCall.state.isInProgress()) {
+            adoptCall(
+                callStatus = currentCall,
+                shouldOpenCallScreen = shouldOpenCallScreen,
+            )
+        } else {
+            onNoActiveCall()
+        }
+    }
+
+    private fun adoptCall(
+        callStatus: EmergencyCallStatus,
+        shouldOpenCallScreen: Boolean,
+    ) {
+        pendingIdempotencyKey = null
+        mutableUiState.value = mutableUiState.value.copy(
+            callId = callStatus.callId,
+            callState = callStatus.state,
+            isRegistering = false,
+            hasRegistrationFailed = false,
+        )
+        startPolling()
+        if (shouldOpenCallScreen) {
+            effectChannel.trySend(EmergencyEffect.CallStarted)
+        }
+    }
+
+    private fun showRegistrationFailure() {
+        mutableUiState.value = mutableUiState.value.copy(
+            isRegistering = false,
+            hasRegistrationFailed = true,
+        )
+    }
+
+    private fun startPolling() {
+        pollingJob?.cancel()
+        consecutivePollingFailureCount = 0
         pollingJob = observeEmergencyCallStatusUseCase()
-            .onEach { result ->
-                if (result is ApiResult.Success) {
-                    mutableUiState.value = EmergencyUiState(status = result.value)
+            .onEach { statusResult ->
+                when (statusResult) {
+                    is ApiResult.Success -> applyPolledStatus(statusResult.value)
+                    is ApiResult.Failure -> countPollingFailure()
                 }
             }
             .launchIn(viewModelScope)
     }
 
-    /** 취소 또는 종료 버튼에서 호출하며, 서버가 상태 변경을 승인한 뒤에만 화면 종료 상태를 알린다. */
-    fun updateCallStatus(status: EmergencyCallUpdateStatus) {
-        val currentStatus = mutableUiState.value.status
-        val currentCallId = currentStatus.callId ?: return
-        if (isStatusUpdateInProgress) {
+    private fun applyPolledStatus(polledStatus: EmergencyCallStatus) {
+        consecutivePollingFailureCount = 0
+        val currentState = mutableUiState.value
+        // 서버는 가장 최근 호출을 돌려준다. 이 기기의 호출과 다른 호출이면 반영하지 않는다.
+        if (polledStatus.callId != currentState.callId) {
+            mutableUiState.value = currentState.copy(isConnectionUnstable = false)
             return
         }
 
-        val isAllowedTransition = when (currentStatus.state) {
-            EmergencyCallState.ACTIVE -> true
-            EmergencyCallState.ACKNOWLEDGED -> status == EmergencyCallUpdateStatus.COMPLETED
-            else -> false
-        }
-        if (!isAllowedTransition) {
+        if (polledStatus.state.isClosed()) {
+            closeCallFlow()
             return
         }
 
-        isStatusUpdateInProgress = true
-        mutableUiState.value = mutableUiState.value.copy(
-            isUpdatingStatus = true,
-            statusUpdateFailed = false,
+        mutableUiState.value = currentState.copy(
+            callState = polledStatus.state,
+            isConnectionUnstable = false,
         )
-        viewModelScope.launch {
-            when (
-                val result = updateEmergencyCallStatusUseCase(
-                    callId = currentCallId,
-                    status = status,
-                )
-            ) {
-                is ApiResult.Success -> {
-                    pollingJob?.cancel()
-                    pollingJob = null
-                    mutableUiState.value = mutableUiState.value.copy(
-                        status = result.value,
-                        isUpdatingStatus = false,
-                        shouldExitCallFlow = true,
-                    )
-                }
+    }
 
-                is ApiResult.Failure -> {
-                    mutableUiState.value = mutableUiState.value.copy(
-                        isUpdatingStatus = false,
-                        statusUpdateFailed = true,
-                    )
-                }
-            }
-            isStatusUpdateInProgress = false
+    private fun countPollingFailure() {
+        consecutivePollingFailureCount += 1
+        if (consecutivePollingFailureCount >= UNSTABLE_FAILURE_COUNT) {
+            mutableUiState.value = mutableUiState.value.copy(isConnectionUnstable = true)
         }
     }
 
-    /** 긴급호출 흐름을 완전히 벗어날 때(홈으로 돌아갈 때) 호출해 폴링을 멈추고 상태를 초기화한다.
-     * 그러지 않으면 다음에 다시 Emergency에 진입했을 때 이전 폴링 상태가 남아 있게 된다. */
-    fun reset() {
+    private fun closeCallFlow() {
         pollingJob?.cancel()
         pollingJob = null
-        hasStartedRegistration = false
+        pendingIdempotencyKey = null
         mutableUiState.value = EmergencyUiState()
-        isStatusUpdateInProgress = false
+        effectChannel.trySend(EmergencyEffect.CallClosed)
     }
+
+    private fun EmergencyCallState.isInProgress(): Boolean =
+        this == EmergencyCallState.ACTIVE || this == EmergencyCallState.ACKNOWLEDGED
+
+    private fun EmergencyCallState.isClosed(): Boolean =
+        this == EmergencyCallState.CANCELLED || this == EmergencyCallState.COMPLETED
+
+    private fun ApiError.isActiveCallAlreadyExists(): Boolean =
+        this is ApiError.Http && statusCode == HTTP_CONFLICT && errorCode == ACTIVE_CALL_ALREADY_EXISTS_CODE
+
+    private fun ApiError.isCallAlreadyClosed(): Boolean =
+        this is ApiError.Http && statusCode == HTTP_CONFLICT && errorCode == EMERGENCY_CALL_CLOSED_CODE
 
     override fun onCleared() {
         pollingJob?.cancel()
+    }
+
+    private companion object {
+        const val HTTP_CONFLICT = 409
+        const val ACTIVE_CALL_ALREADY_EXISTS_CODE = "ACTIVE_CALL_ALREADY_EXISTS"
+        const val EMERGENCY_CALL_CLOSED_CODE = "EMERGENCY_CALL_CLOSED"
+
+        // 3초 폴링이 세 번(약 9초) 연속 실패하면 연결이 불안정하다고 알린다.
+        const val UNSTABLE_FAILURE_COUNT = 3
     }
 }
