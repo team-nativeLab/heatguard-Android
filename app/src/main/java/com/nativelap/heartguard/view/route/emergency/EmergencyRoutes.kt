@@ -10,6 +10,7 @@ import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.view.screen.emergency.CallingScreen
 import com.nativelap.heartguard.view.screen.emergency.EmergencyScreen
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
@@ -24,8 +25,17 @@ internal fun HeartGuardEmergencyRoute(
     onCallClick: () -> Unit,
     onCancelClick: () -> Unit,
 ) {
+    val uiState by emergencyViewModel.uiState.collectAsStateWithLifecycle()
+
     LaunchedEffect(Unit) {
         emergencyViewModel.registerEmergencyCallIfNeeded()
+    }
+
+    LaunchedEffect(uiState.shouldExitCallFlow) {
+        if (uiState.shouldExitCallFlow) {
+            emergencyViewModel.reset()
+            onCancelClick()
+        }
     }
 
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
@@ -36,11 +46,16 @@ internal fun HeartGuardEmergencyRoute(
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = valueOrEmptyText(managerPhoneNumber),
         isContactCallEnabled = managerPhoneNumber != null,
+        isUpdatingStatus = uiState.isUpdatingStatus,
+        statusUpdateError = uiState.statusUpdateFailed,
         onCallClick = onCallClick,
-        // 호출 취소는 진행 중인 알림·폴링을 정리한 뒤에만 이전 화면으로 돌아간다.
         onCancelClick = {
-            emergencyViewModel.reset()
-            onCancelClick()
+            val requestedStatus = when (uiState.status.state) {
+                EmergencyCallState.ACTIVE -> EmergencyCallUpdateStatus.CANCELLED
+                EmergencyCallState.ACKNOWLEDGED -> EmergencyCallUpdateStatus.COMPLETED
+                else -> null
+            }
+            requestedStatus?.let(emergencyViewModel::updateCallStatus)
         },
         onContactClick = {
             managerPhoneNumber?.let(dialPhoneNumber)
@@ -62,16 +77,30 @@ internal fun HeartGuardCallingRoute(
     val dialPhoneNumber = rememberPhoneDialLauncher()
     val managerPhoneNumber = siteStatus.managerPhoneNumber
 
+    LaunchedEffect(uiState.shouldExitCallFlow) {
+        if (uiState.shouldExitCallFlow) {
+            val wasCancelled = uiState.status.state == EmergencyCallState.CANCELLED
+            emergencyViewModel.reset()
+            if (wasCancelled) {
+                onCancelClick()
+            } else {
+                onEndClick()
+            }
+        }
+    }
+
     CallingScreen(
         isConnected = uiState.status.state == EmergencyCallState.ACKNOWLEDGED,
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = valueOrEmptyText(managerPhoneNumber),
         isContactCallEnabled = managerPhoneNumber != null,
-        onCancelClick = onCancelClick,
-        // 통화 종료는 폴링을 정리한 뒤에만 홈으로 돌아간다.
+        isUpdatingStatus = uiState.isUpdatingStatus,
+        statusUpdateError = uiState.statusUpdateFailed,
+        onCancelClick = {
+            emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        },
         onEndClick = {
-            emergencyViewModel.reset()
-            onEndClick()
+            emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.COMPLETED)
         },
         onContactClick = {
             managerPhoneNumber?.let(dialPhoneNumber)

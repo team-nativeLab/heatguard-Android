@@ -47,7 +47,7 @@ fun MenuDrawerProfile(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = profile.avatarInitial,
+                text = valueOrEmptyText(profile.avatarInitial),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = HeartGuardFontSize.MenuProfileName,

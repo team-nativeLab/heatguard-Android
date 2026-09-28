@@ -3,12 +3,19 @@ package com.nativelap.heartguard.view.route.home
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -16,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.heatLevelLabelText
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
@@ -29,10 +37,12 @@ import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 /** 홈에 팀 현장페이지 API 결과와 사용자 이벤트를 HomeScreen에 전달하는 Route이다.
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
- * 온도 변화량·날씨 상태·체크 완료 여부처럼 API에 아직 없는 값도 "--"로 두고, API가 생기면 연결한다.
+ * 온도 변화량·날씨 상태는 overview API 필드에 없어 "--"로 둔다. 체크 완료 여부는 별도 체크리스트 API의
+ * 응답과 홈 시간표 사이에 매핑 규칙이 없어 현재 연결하지 않는다.
  * "관리자 전화"는 Emergency 화면으로 이동하지 않고 이 Route에서 바로 다이얼러를 여는 반면,
  * "긴급 전화"([onEmergencyClick])는 긴급호출 흐름(Emergency 화면)으로 이동한다 — 두 버튼의
  * 목적이 다르므로(즉시 통화 vs 긴급호출 절차 시작) 의도적으로 다른 방식으로 동작한다.
@@ -44,14 +54,19 @@ internal fun HeartGuardHomeRoute(
     homeViewModel: HomeViewModel,
     onEmergencyClick: () -> Unit,
     onFieldPhotoClick: () -> Unit,
-    onRecordHistoryClick: () -> Unit,
     onRecordClick: () -> Unit,
+    onProfileEditClick: () -> Unit,
+    onInquiryClick: () -> Unit,
+    onRecordHistoryClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val unavailableNotificationMessage = stringResource(R.string.home_notifications_unavailable)
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
@@ -80,8 +95,11 @@ internal fun HeartGuardHomeRoute(
             onMenuClick = {
                 isMenuDrawerOpen = true
             },
-            // 알림 아이콘 기능은 Figma/API 명세서 어디에도 정의되어 있지 않아 의도적으로 비워둔다.
-            onNotificationClick = {},
+            onNotificationClick = {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(unavailableNotificationMessage)
+                }
+            },
             onManagerCallClick = {
                 managerPhoneNumber?.let(dialPhoneNumber)
             },
@@ -101,13 +119,15 @@ internal fun HeartGuardHomeRoute(
                 profile = menuDrawerProfile,
                 onEvent = { event ->
                     when (event) {
-                        // 내 정보 수정·알림 설정·공지사항·고객센터는 Figma에 이동할 화면이 정의되어 있지 않아
-                        // 화면이 추가될 때까지 의도적으로 아무 동작도 하지 않는다.
-                        MenuDrawerEvent.EditProfileClicked,
-                        MenuDrawerEvent.NotificationSettingsClicked,
-                        MenuDrawerEvent.NoticesClicked,
-                        MenuDrawerEvent.CustomerCenterClicked,
-                        -> Unit
+                        MenuDrawerEvent.EditProfileClicked -> {
+                            isMenuDrawerOpen = false
+                            onProfileEditClick()
+                        }
+
+                        MenuDrawerEvent.InquiryClicked -> {
+                            isMenuDrawerOpen = false
+                            onInquiryClick()
+                        }
 
                         MenuDrawerEvent.LogoutClicked -> {
                             isMenuDrawerOpen = false
@@ -122,6 +142,14 @@ internal fun HeartGuardHomeRoute(
                 },
             )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+        )
     }
 }
 

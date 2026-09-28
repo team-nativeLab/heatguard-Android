@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import java.time.LocalTime
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,18 +67,24 @@ class HomeViewModel @Inject constructor(
         initialValue = null,
     )
 
-    init {
-        loadTeamSiteOverview()
-    }
+    private var loadJob: Job? = null
 
     fun loadTeamSiteOverview() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             mutableUiState.value = HomeUiState.Loading
             mutableUiState.value = when (val result = getTeamSiteOverviewUseCase()) {
                 is ApiResult.Success -> HomeUiState.Success(result.value)
                 is ApiResult.Failure -> HomeUiState.Error(result.error)
             }
         }
+    }
+
+    /** 세션이 바뀌거나 메인 흐름을 벗어날 때 이전 팀의 응답과 진행 중인 요청을 제거한다. */
+    fun reset() {
+        loadJob?.cancel()
+        loadJob = null
+        mutableUiState.value = HomeUiState.Loading
     }
 
     private companion object {

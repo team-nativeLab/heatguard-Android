@@ -74,7 +74,7 @@ class BearerTokenAuthenticatorPasswordConfirmationTest {
                 .authenticator(BearerTokenAuthenticator(sessionManager))
                 .build()
             val requestBuilder = Request.Builder()
-                .url(mockWebServer.url("/api/v1/site/profile"))
+                .url(mockWebServer.url("/api/v1/team/profile"))
 
             if (isPasswordConfirmation) {
                 requestBuilder.tag(PasswordConfirmationRequest::class.java, PasswordConfirmationRequest)

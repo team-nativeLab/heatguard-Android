@@ -22,12 +22,14 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
-import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
+import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
+import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
+import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
@@ -55,17 +57,13 @@ internal fun HeartGuardNavHost(
         // TODO: 스플래시 화면이 추가되면 빈 화면 대신 그 화면을 보여준다.
         SessionState.Initializing -> Unit
         SessionState.Authenticated -> HeartGuardMainNavDisplay()
-        SessionState.Unauthenticated -> HeartGuardAuthNavDisplay(
-            onAuthenticated = sessionViewModel::onLoginSucceeded,
-        )
+        SessionState.Unauthenticated -> HeartGuardAuthNavDisplay()
     }
 }
 
-/** 서버 인증이 연결되기 전까지 로그인·회원가입 화면 전환을 담당하는 임시 인증 흐름이다. */
+/** 사전 발급 계정 로그인과 인증 전 Navigation 3 back stack을 담당한다. */
 @Composable
-private fun HeartGuardAuthNavDisplay(
-    onAuthenticated: () -> Unit,
-) {
+private fun HeartGuardAuthNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Login)
 
     NavDisplay(
@@ -98,22 +96,11 @@ private fun HeartGuardAuthNavDisplay(
         },
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Login> {
-                HeartGuardLoginRoute(
-                    onLoginClick = onAuthenticated,
-                    onSignUpClick = {
-                        backStack.add(HeartGuardDestination.SignUp)
-                    },
-                )
+                HeartGuardLoginRoute()
             }
             entry<HeartGuardDestination.SignUp> {
-                HeartGuardSignUpRoute(
-                    onSignUpClick = {
-                        backStack.removeLastOrNull()
-                    },
-                    onLoginClick = {
-                        backStack.removeLastOrNull()
-                    },
-                )
+                // 이전 버전에서 저장된 가입 NavKey가 복원돼도 가입 화면은 다시 노출하지 않는다.
+                HeartGuardLoginRoute()
             }
         },
     )
@@ -128,6 +115,11 @@ private fun HeartGuardMainNavDisplay() {
     // 긴급 호출 화면도 함께 보여준다. 아래 공유 ViewModel들과 같은 이유로 여기서 한 번 만들어 필요한 Route에 명시적으로 넘긴다.
     val homeViewModel: HomeViewModel = hiltViewModel()
 
+    DisposableEffect(homeViewModel) {
+        homeViewModel.loadTeamSiteOverview()
+        onDispose { homeViewModel.reset() }
+    }
+
     // 기록유형선택→온도기록/사진촬영→저장까지 여러 NavKey가 RecordDraftViewModel 하나를
     // 공유해야 한다(android-navigation SKILL '화면 간 ViewModel 공유' 참고). android-navigation
     // SKILL이 예시로 든 "수동 ViewModelStoreOwner"는 이 프로젝트가 쓰는 androidx.hilt-navigation-compose
@@ -140,13 +132,7 @@ private fun HeartGuardMainNavDisplay() {
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
 
-    // recordDraftViewModel은 이제 Activity 스코프라 화면 흐름을 벗어나는 것만으로는 정리되지 않는다.
-    // 로그아웃·세션 만료로 이 Composable 자체가 컴포지션에서 사라질 때도(기록 도중이었더라도) 임시
-    // 사진 파일이 남지 않도록 여기서 한 번 더 reset()을 보장한다.
-    DisposableEffect(Unit) {
-        onDispose { recordDraftViewModel.reset() }
-    }
-
+    // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
     // 없이 인자 없는 hiltViewModel()을 쓴다. 흐름 종료 시 정리는 emergencyViewModel.reset()으로 한다.
     val emergencyViewModel: EmergencyViewModel = hiltViewModel()
@@ -253,14 +239,31 @@ private fun HeartGuardMainNavDisplay() {
                         recordDraftViewModel.startRecord(RecordType.TEMPERATURE)
                         backStack.add(HeartGuardDestination.FieldPhoto)
                     },
-                    onRecordHistoryClick = {},
                     onRecordClick = {
                         backStack.add(HeartGuardDestination.RecordTypeSelection)
+                    },
+                    onProfileEditClick = {
+                        backStack.add(HeartGuardDestination.ProfileEdit)
+                    },
+                    onInquiryClick = {
+                        backStack.add(HeartGuardDestination.Inquiry)
+                    },
+                    onRecordHistoryClick = {
+                        backStack.add(HeartGuardDestination.RecordHistory)
                     },
                     onWithdrawClick = {
                         backStack.add(HeartGuardDestination.WithdrawNotice)
                     },
                 )
+            }
+            entry<HeartGuardDestination.ProfileEdit> {
+                HeartGuardProfileEditRoute(onBackClick = ::goBack)
+            }
+            entry<HeartGuardDestination.Inquiry> {
+                HeartGuardInquiryRoute(onBackClick = ::goBack)
+            }
+            entry<HeartGuardDestination.RecordHistory> {
+                HeartGuardRecordHistoryRoute(onBackClick = ::goBack)
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(
@@ -279,7 +282,7 @@ private fun HeartGuardMainNavDisplay() {
                 HeartGuardCallingRoute(
                     emergencyViewModel = emergencyViewModel,
                     homeViewModel = homeViewModel,
-                    onCancelClick = ::goBack,
+                    onCancelClick = ::goHome,
                     onEndClick = ::goHome,
                 )
             }

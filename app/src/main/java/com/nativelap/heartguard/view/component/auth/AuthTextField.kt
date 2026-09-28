@@ -29,7 +29,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 로그인과 회원가입에서 사용하는 라벨-입력-오류 메시지 묶음이다. */
+/** 로그인 화면에서 라벨·입력값·오류 안내를 함께 표시하는 입력 Component다. */
 @Composable
 fun AuthTextField(
     label: String,

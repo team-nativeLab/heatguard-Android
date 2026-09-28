@@ -19,9 +19,11 @@ fun CallEndButton(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),

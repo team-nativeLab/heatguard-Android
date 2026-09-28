@@ -2,11 +2,14 @@ package com.nativelap.heartguard.viewmodel.record
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.di.IoDispatcher
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.core.util.releasePhoto
 import com.nativelap.heartguard.domain.record.model.FieldRecord
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
@@ -21,6 +24,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -33,20 +37,36 @@ import kotlinx.coroutines.launch
 class RecordDraftViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val savedStateHandle: SavedStateHandle,
+    private val sessionManager: SessionManager,
     private val uploadFieldPhotosUseCase: UploadFieldPhotosUseCase,
     private val submitFieldRecordUseCase: SubmitFieldRecordUseCase,
 ) : ViewModel() {
 
-    private val mutableUiState = MutableStateFlow(RecordDraftUiState())
+    private val mutableUiState = MutableStateFlow(savedStateHandle.restoreRecordDraft())
     val uiState: StateFlow<RecordDraftUiState> = mutableUiState.asStateFlow()
 
     private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
     val submissionState: StateFlow<RecordSubmissionState> = mutableSubmissionState.asStateFlow()
 
+    // 부분 업로드 성공을 기록해 재시도 시 성공한 사진의 URL 발급과 업로드를 건너뛴다.
+    // 업로드 계약이 확정될 때까지 키는 메모리에만 둔다.
+    private val uploadedPhotoKeysByUri = mutableMapOf<Uri, String>()
+
+    init {
+        viewModelScope.launch {
+            sessionManager.sessionState.collect { currentSessionState ->
+                if (currentSessionState == SessionState.Unauthenticated) {
+                    reset()
+                }
+            }
+        }
+    }
+
     /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. [submit]이 어떤 종류의
      * 기록(THERMOMETER/WORK/REST)을 서버에 보낼지 이 값으로 판단한다. */
     fun selectRecordType(recordType: RecordType) {
-        mutableUiState.update { it.copy(selectedRecordType = recordType) }
+        updateDraft { it.copy(selectedRecordType = recordType) }
     }
 
     /** 홈의 "현장 사진"처럼 기록유형 선택 없이 특정 기록을 새로 시작할 때 호출한다.
@@ -57,15 +77,15 @@ class RecordDraftViewModel @Inject constructor(
     }
 
     fun updateTemperatureText(temperatureText: String) {
-        mutableUiState.update { it.copy(temperatureText = temperatureText) }
+        updateDraft { it.copy(temperatureText = temperatureText) }
     }
 
     fun updateHumidityText(humidityText: String) {
-        mutableUiState.update { it.copy(humidityText = humidityText) }
+        updateDraft { it.copy(humidityText = humidityText) }
     }
 
     fun updateManualInputEnabled(isManualInputEnabled: Boolean) {
-        mutableUiState.update { it.copy(isManualInputEnabled = isManualInputEnabled) }
+        updateDraft { it.copy(isManualInputEnabled = isManualInputEnabled) }
     }
 
     /** 카메라 촬영이나 앨범 선택 결과를 해당 기록의 사진 목록에 추가한다. */
@@ -85,6 +105,7 @@ class RecordDraftViewModel @Inject constructor(
 
     /** 사진 목록에서 URI를 제거하고 연결된 캐시 파일 또는 앨범 권한을 백그라운드에서 정리한다. */
     fun removePhoto(recordType: RecordType, uri: Uri) {
+        uploadedPhotoKeysByUri.remove(uri)
         mutableUiState.update { state ->
             state.withPhotoUris(recordType, state.photoUrisFor(recordType) - uri)
         }
@@ -96,6 +117,7 @@ class RecordDraftViewModel @Inject constructor(
     /** 다시 촬영을 시작할 때 현재 사진 목록과 로컬 자원을 함께 정리한다. */
     fun clearPhotos(recordType: RecordType) {
         val photoUrisToRelease = mutableUiState.value.photoUrisFor(recordType)
+        photoUrisToRelease.forEach(uploadedPhotoKeysByUri::remove)
         mutableUiState.update { state ->
             state.withPhotoUris(recordType, emptyList())
         }
@@ -107,11 +129,11 @@ class RecordDraftViewModel @Inject constructor(
     }
 
     fun updateWorkMemo(memo: String) {
-        mutableUiState.update { it.copy(workMemo = memo) }
+        updateDraft { it.copy(workMemo = memo) }
     }
 
     fun updateRestMemo(memo: String) {
-        mutableUiState.update { it.copy(restMemo = memo) }
+        updateDraft { it.copy(restMemo = memo) }
     }
 
     /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형에 맞는 사진을 먼저
@@ -133,7 +155,15 @@ class RecordDraftViewModel @Inject constructor(
         mutableSubmissionState.value = RecordSubmissionState.Submitting
 
         val photoUris = state.photoUrisFor(recordType)
-        val uploadResult = uploadFieldPhotosUseCase(photoUris)
+        val uploadResult = uploadFieldPhotosUseCase(
+            photoUris = photoUris,
+            alreadyUploadedPhotoKeys = uploadedPhotoKeysByUri.toMap(),
+            onPhotoUploaded = { photoUri, objectKey ->
+                if (photoUri in mutableUiState.value.photoUrisFor(recordType)) {
+                    uploadedPhotoKeysByUri[photoUri] = objectKey
+                }
+            },
+        )
         val photoKeys = when (uploadResult) {
             is ApiResult.Success -> uploadResult.value
             is ApiResult.Failure -> {
@@ -152,7 +182,10 @@ class RecordDraftViewModel @Inject constructor(
             memo = state.memoFor(recordType),
         )
         mutableSubmissionState.value = when (submitResult) {
-            is ApiResult.Success -> RecordSubmissionState.Success(submitResult.value)
+            is ApiResult.Success -> {
+                clearSavedDraft()
+                RecordSubmissionState.Success(submitResult.value)
+            }
             is ApiResult.Failure -> RecordSubmissionState.Failure(submitResult.error)
         }
         return submitResult
@@ -199,6 +232,8 @@ class RecordDraftViewModel @Inject constructor(
     fun reset() {
         val photoUrisToRelease = currentPhotoUris()
         mutableUiState.value = RecordDraftUiState()
+        uploadedPhotoKeysByUri.clear()
+        clearSavedDraft()
         mutableSubmissionState.value = RecordSubmissionState.Idle
         viewModelScope.launch(ioDispatcher) {
             photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
@@ -213,5 +248,50 @@ class RecordDraftViewModel @Inject constructor(
     private fun currentPhotoUris(): List<Uri> {
         val state = mutableUiState.value
         return (state.fieldPhotoUris + state.workPhotoUris + state.restPhotoUris).distinct()
+    }
+
+    private fun updateDraft(transform: (RecordDraftUiState) -> RecordDraftUiState) {
+        mutableUiState.update(transform)
+        saveDraft(mutableUiState.value)
+    }
+
+    private fun saveDraft(state: RecordDraftUiState) {
+        savedStateHandle[KEY_SELECTED_RECORD_TYPE] = state.selectedRecordType?.name
+        savedStateHandle[KEY_TEMPERATURE_TEXT] = state.temperatureText
+        savedStateHandle[KEY_HUMIDITY_TEXT] = state.humidityText
+        savedStateHandle[KEY_MANUAL_INPUT_ENABLED] = state.isManualInputEnabled
+        savedStateHandle[KEY_WORK_MEMO] = state.workMemo
+        savedStateHandle[KEY_REST_MEMO] = state.restMemo
+    }
+
+    private fun clearSavedDraft() {
+        savedStateHandle.remove<String>(KEY_SELECTED_RECORD_TYPE)
+        savedStateHandle.remove<String>(KEY_TEMPERATURE_TEXT)
+        savedStateHandle.remove<String>(KEY_HUMIDITY_TEXT)
+        savedStateHandle.remove<Boolean>(KEY_MANUAL_INPUT_ENABLED)
+        savedStateHandle.remove<String>(KEY_WORK_MEMO)
+        savedStateHandle.remove<String>(KEY_REST_MEMO)
+    }
+
+    private fun SavedStateHandle.restoreRecordDraft(): RecordDraftUiState {
+        val selectedRecordType = get<String>(KEY_SELECTED_RECORD_TYPE)
+            ?.let { name -> runCatching { RecordType.valueOf(name) }.getOrNull() }
+        return RecordDraftUiState(
+            selectedRecordType = selectedRecordType,
+            temperatureText = get<String>(KEY_TEMPERATURE_TEXT).orEmpty(),
+            humidityText = get<String>(KEY_HUMIDITY_TEXT).orEmpty(),
+            isManualInputEnabled = get<Boolean>(KEY_MANUAL_INPUT_ENABLED) ?: false,
+            workMemo = get<String>(KEY_WORK_MEMO).orEmpty(),
+            restMemo = get<String>(KEY_REST_MEMO).orEmpty(),
+        )
+    }
+
+    private companion object {
+        const val KEY_SELECTED_RECORD_TYPE = "record_draft.selected_record_type"
+        const val KEY_TEMPERATURE_TEXT = "record_draft.temperature_text"
+        const val KEY_HUMIDITY_TEXT = "record_draft.humidity_text"
+        const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
+        const val KEY_WORK_MEMO = "record_draft.work_memo"
+        const val KEY_REST_MEMO = "record_draft.rest_memo"
     }
 }

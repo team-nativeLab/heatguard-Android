@@ -24,6 +24,22 @@ class SessionManagerTest {
     }
 
     @Test
+    fun initializeClearsLegacyPlaceholderTokenAndSetsUnauthenticatedState() = runTest {
+        val storage = FakeTokenStorage().apply {
+            accessToken = "placeholder-access-token"
+        }
+        val sessionManager = SessionManager(
+            tokenStorage = storage,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+
+        sessionManager.initialize()
+
+        assertEquals(null, storage.accessToken)
+        assertEquals(Unauthenticated, sessionManager.sessionState.value)
+    }
+
+    @Test
     fun loginAndExpireSessionUpdateStoredAccessTokenAndState() = runTest {
         val storage = FakeTokenStorage()
         val sessionManager = SessionManager(

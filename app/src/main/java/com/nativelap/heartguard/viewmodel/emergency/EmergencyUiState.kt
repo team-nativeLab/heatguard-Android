@@ -9,4 +9,7 @@ data class EmergencyUiState(
         state = EmergencyCallState.NONE,
         acknowledgedAt = null,
     ),
+    val isUpdatingStatus: Boolean = false,
+    val statusUpdateFailed: Boolean = false,
+    val shouldExitCallFlow: Boolean = false,
 )

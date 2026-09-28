@@ -21,7 +21,6 @@ class RecordRemoteDataSourceImpl @Inject constructor(
     override suspend fun issueUploadUrls(files: List<UploadFileRequestDto>): ApiResult<List<UploadSlotDto>> =
         apiExecutor.execute {
             val envelope = uploadApiService.issueUploadUrls(
-                teamToken = teamTokenProvider.currentTeamToken(),
                 request = UploadRequestDto(files),
             )
             envelope.data?.uploads ?: error("사진 업로드 URL 응답에 data가 없습니다.")

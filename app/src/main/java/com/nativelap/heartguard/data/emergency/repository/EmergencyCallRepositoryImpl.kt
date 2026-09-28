@@ -5,6 +5,7 @@ import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.data.emergency.mapper.toDomain
 import com.nativelap.heartguard.data.emergency.remote.EmergencyCallRemoteDataSource
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.domain.emergency.repository.EmergencyCallRepository
 import javax.inject.Inject
 
@@ -17,4 +18,11 @@ class EmergencyCallRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
         emergencyCallRemoteDataSource.getCurrentEmergencyCall().map { it.toDomain() }
+
+    override suspend fun updateEmergencyCallStatus(
+        callId: String,
+        status: EmergencyCallUpdateStatus,
+    ): ApiResult<EmergencyCallStatus> = emergencyCallRemoteDataSource
+        .updateEmergencyCallStatus(callId, status)
+        .map { it.toDomain() }
 }
