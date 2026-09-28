@@ -123,9 +123,20 @@ internal fun HeartGuardSaveFailureRoute(
     )
 }
 
+// 명세에 정의된 기록·업로드 오류 코드는 작업자가 할 수 있는 조치를 알려 주고, 그 밖의 HTTP 오류는 상태 코드를 보여준다.
 @Composable
 private fun ApiError.toDisplayMessage(): String = when (this) {
-    is ApiError.Http -> stringResource(R.string.save_error_http, statusCode)
+    is ApiError.Http -> when (errorCode) {
+        "WEATHER_BASELINE_REQUIRED" -> stringResource(R.string.save_error_weather_baseline_required)
+        "UPLOAD_NOT_FOUND",
+        "UPLOAD_ALREADY_USED",
+        -> stringResource(R.string.save_error_upload_expired)
+        "FILE_TOO_LARGE" -> stringResource(R.string.save_error_file_too_large)
+        "UNSUPPORTED_MEDIA_TYPE" -> stringResource(R.string.save_error_unsupported_media_type)
+        "RATE_LIMITED" -> stringResource(R.string.save_error_rate_limited)
+        else -> stringResource(R.string.save_error_http, statusCode)
+    }
+
     ApiError.Network -> stringResource(R.string.save_error_network)
     ApiError.Serialization -> stringResource(R.string.save_error_serialization)
     ApiError.Unknown -> stringResource(R.string.save_error_unknown)

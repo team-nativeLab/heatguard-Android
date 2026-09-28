@@ -23,10 +23,14 @@ import java.time.Clock
 import java.time.OffsetDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -52,8 +56,12 @@ class RecordDraftViewModel @Inject constructor(
     private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
     val submissionState: StateFlow<RecordSubmissionState> = mutableSubmissionState.asStateFlow()
 
-    // 부분 업로드 성공을 기록해 재시도 시 성공한 사진의 URL 발급과 업로드를 건너뛴다.
-    // 업로드 계약이 확정될 때까지 키는 메모리에만 둔다.
+    private val submissionEffectChannel = Channel<RecordSubmissionEffect>(Channel.BUFFERED)
+    val submissionEffects: Flow<RecordSubmissionEffect> = submissionEffectChannel.receiveAsFlow()
+
+    private var submitJob: Job? = null
+
+    // 부분 업로드 성공을 기록해 재시도 시 성공한 사진의 URL 발급과 업로드를 건너뛴다(메모리에만 둔다).
     private val uploadedPhotoKeysByUri = mutableMapOf<Uri, String>()
 
     init {
@@ -139,25 +147,58 @@ class RecordDraftViewModel @Inject constructor(
         updateDraft { it.copy(restMemo = memo) }
     }
 
-    /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형에 맞는 사진을 먼저
-     * presigned URL로 업로드하고, 그 objectKey로 현장 기록을 등록한다. 결과를 [submissionState]에도
-     * 반영해 SaveFailure 화면이 실제 오류를 읽을 수 있게 하고, 반환값으로도 돌려줘 Route가 즉시
-     * 다음 화면(성공/실패)을 결정할 수 있게 한다 — Route가 상태 변화를 구독해 내비게이션하는 대신
-     * 호출 결과를 직접 받는 방식이라, 재시도로 이 화면에 되돌아왔을 때 이전 결과로 다시 자동
-     * 내비게이션되는 문제가 없다. */
-    suspend fun submit(): ApiResult<FieldRecord> {
-        val measuredAt = OffsetDateTime.now(clock)
-        val state = mutableUiState.value
-        val recordType = state.selectedRecordType
-            ?: return ApiResult.Failure(ApiError.Unknown)
+    /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형의 사진을 먼저
+     * 업로드하고, 그 objectKey로 현장 기록을 저장한다. 결과는 [submissionState](SaveSuccess·SaveFailure 화면이 읽음)와
+     * [submissionEffects](저장 화면의 이동)로 알린다.
+     * 저장은 화면이 아니라 viewModelScope에서 돌아, 화면을 벗어나거나 회전해도 요청이 끊기지 않는다.
+     * 진행 중이면 연타를 무시하고(같은 프레임의 두 번 입력도 [submitJob]으로 막는다), 요청이 취소되면 저장 전 상태로 되돌린다. */
+    fun submit() {
+        if (submitJob?.isActive == true) {
+            return
+        }
 
+        val state = mutableUiState.value
+        val recordType = state.selectedRecordType ?: return
         // 버튼 활성 조건과 같은 규칙으로 한 번 더 막아, 필수 값 없이 서버에 요청하지 않게 한다.
         if (!state.canSubmit(recordType)) {
-            return ApiResult.Failure(ApiError.Unknown)
+            return
         }
 
         mutableSubmissionState.value = RecordSubmissionState.Submitting
+        submitJob = viewModelScope.launch {
+            try {
+                val submitResult = uploadAndSubmit(
+                    state = state,
+                    recordType = recordType,
+                )
+                mutableSubmissionState.value = when (submitResult) {
+                    is ApiResult.Success -> {
+                        clearSavedDraft()
+                        RecordSubmissionState.Success(submitResult.value)
+                    }
 
+                    is ApiResult.Failure -> RecordSubmissionState.Failure(submitResult.error)
+                }
+                submissionEffectChannel.send(
+                    if (submitResult is ApiResult.Success) {
+                        RecordSubmissionEffect.Succeeded
+                    } else {
+                        RecordSubmissionEffect.Failed
+                    },
+                )
+            } finally {
+                if (mutableSubmissionState.value == RecordSubmissionState.Submitting) {
+                    mutableSubmissionState.value = RecordSubmissionState.Idle
+                }
+            }
+        }
+    }
+
+    private suspend fun uploadAndSubmit(
+        state: RecordDraftUiState,
+        recordType: RecordType,
+    ): ApiResult<FieldRecord> {
+        val measuredAt = OffsetDateTime.now(clock)
         val photoUris = state.photoUrisFor(recordType)
         val uploadResult = uploadFieldPhotosUseCase(
             photoUris = photoUris,
@@ -170,10 +211,7 @@ class RecordDraftViewModel @Inject constructor(
         )
         val photoKeys = when (uploadResult) {
             is ApiResult.Success -> uploadResult.value
-            is ApiResult.Failure -> {
-                mutableSubmissionState.value = RecordSubmissionState.Failure(uploadResult.error)
-                return uploadResult
-            }
+            is ApiResult.Failure -> return uploadResult
         }
 
         val isManualTemperature = recordType == RecordType.TEMPERATURE && state.isManualInputEnabled
@@ -181,18 +219,28 @@ class RecordDraftViewModel @Inject constructor(
             type = recordType.toFieldRecordType(),
             photoKeys = photoKeys,
             measuredAt = measuredAt,
-            temperature = if (isManualTemperature) state.temperatureText.toDoubleOrNull() else null,
-            humidity = if (isManualTemperature) state.humidityText.toDoubleOrNull() else null,
+            temperature = if (isManualTemperature) {
+                state.temperatureText.toDoubleOrNull()
+            } else {
+                null
+            },
+            humidity = if (isManualTemperature) {
+                state.humidityText.toDoubleOrNull()
+            } else {
+                null
+            },
             memo = state.memoFor(recordType),
         )
-        mutableSubmissionState.value = when (submitResult) {
-            is ApiResult.Success -> {
-                clearSavedDraft()
-                RecordSubmissionState.Success(submitResult.value)
-            }
-            is ApiResult.Failure -> RecordSubmissionState.Failure(submitResult.error)
+        // 업로드 키를 서버가 찾지 못하거나(만료·정리) 이미 쓴 키라면, 재시도 때 같은 키를 다시 보내지 않도록 비워 새로 올린다.
+        if (submitResult is ApiResult.Failure && submitResult.error.isStaleUploadKey()) {
+            photoUris.forEach(uploadedPhotoKeysByUri::remove)
         }
         return submitResult
+    }
+
+    private fun ApiError.isStaleUploadKey(): Boolean {
+        val httpError = this as? ApiError.Http ?: return false
+        return httpError.errorCode == UPLOAD_NOT_FOUND_CODE || httpError.errorCode == UPLOAD_ALREADY_USED_CODE
     }
 
     // 모든 기록 유형은 사진 1~2장이 필요하며, 온도계 수기 입력 시에도 사진을 함께 첨부한다.
@@ -234,6 +282,8 @@ class RecordDraftViewModel @Inject constructor(
      * 입력값과, 아직 서버에 올리지 않아 로컬에만 남아 있던 임시 사진 파일을 모두 정리한다.
      * UI 상태는 즉시 초기화하고, 파일 I/O는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
     fun reset() {
+        submitJob?.cancel()
+        submitJob = null
         val photoUrisToRelease = currentPhotoUris()
         mutableUiState.value = RecordDraftUiState()
         uploadedPhotoKeysByUri.clear()
@@ -297,5 +347,7 @@ class RecordDraftViewModel @Inject constructor(
         const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
         const val KEY_WORK_MEMO = "record_draft.work_memo"
         const val KEY_REST_MEMO = "record_draft.rest_memo"
+        const val UPLOAD_NOT_FOUND_CODE = "UPLOAD_NOT_FOUND"
+        const val UPLOAD_ALREADY_USED_CODE = "UPLOAD_ALREADY_USED"
     }
 }
