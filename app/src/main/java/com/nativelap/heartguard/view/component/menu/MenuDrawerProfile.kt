@@ -31,6 +31,18 @@ fun MenuDrawerProfile(
     profile: MenuDrawerProfileUiModel,
     modifier: Modifier = Modifier,
 ) {
+    val unavailableProfileValue = stringResource(R.string.profile_data_unavailable)
+    val displayedUserName = profile.userName ?: stringResource(R.string.profile_name_unavailable)
+    val displayedAffiliation = if (profile.companyName != null && profile.jobTitle != null) {
+        stringResource(
+            R.string.menu_profile_affiliation_format,
+            profile.companyName,
+            profile.jobTitle,
+        )
+    } else {
+        unavailableProfileValue
+    }
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -57,7 +69,7 @@ fun MenuDrawerProfile(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = profile.userName,
+                text = displayedUserName,
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = HeartGuardFontSize.MenuProfileName,
@@ -67,11 +79,7 @@ fun MenuDrawerProfile(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = stringResource(
-                    R.string.menu_profile_affiliation_format,
-                    profile.companyName,
-                    profile.jobTitle,
-                ),
+                text = displayedAffiliation,
                 color = MaterialTheme.extraColors.secondaryText,
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = HeartGuardFontSize.SmallLabel,
@@ -80,7 +88,7 @@ fun MenuDrawerProfile(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = profile.email,
+                text = profile.email ?: unavailableProfileValue,
                 color = MaterialTheme.extraColors.tertiaryText,
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontSize = HeartGuardFontSize.MenuProfileEmail,

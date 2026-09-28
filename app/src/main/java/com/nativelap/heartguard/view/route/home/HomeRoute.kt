@@ -38,6 +38,7 @@ internal fun HeartGuardHomeRoute(
     onFieldPhotoClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
     onRecordClick: () -> Unit,
+    onProfileEditClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     homeViewModel: HomeViewModel = hiltViewModel(),
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
@@ -106,11 +107,15 @@ internal fun HeartGuardHomeRoute(
                     when (event) {
                         // 내 정보 수정·알림 설정·공지사항·고객센터는 Figma에 이동할 화면이 정의되어 있지 않아
                         // 화면이 추가될 때까지 의도적으로 아무 동작도 하지 않는다.
-                        MenuDrawerEvent.EditProfileClicked,
                         MenuDrawerEvent.NotificationSettingsClicked,
                         MenuDrawerEvent.NoticesClicked,
                         MenuDrawerEvent.CustomerCenterClicked,
                         -> Unit
+
+                        MenuDrawerEvent.EditProfileClicked -> {
+                            isMenuDrawerOpen = false
+                            onProfileEditClick()
+                        }
 
                         MenuDrawerEvent.LogoutClicked -> {
                             isMenuDrawerOpen = false

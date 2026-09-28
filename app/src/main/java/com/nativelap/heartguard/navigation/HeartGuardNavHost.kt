@@ -35,6 +35,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.view.screen.profile.ProfileEditScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
@@ -245,10 +246,16 @@ private fun HeartGuardMainNavDisplay() {
                     onRecordClick = {
                         backStack.add(HeartGuardDestination.RecordTypeSelection)
                     },
+                    onProfileEditClick = {
+                        backStack.add(HeartGuardDestination.ProfileEdit)
+                    },
                     onWithdrawClick = {
                         backStack.add(HeartGuardDestination.WithdrawNotice)
                     },
                 )
+            }
+            entry<HeartGuardDestination.ProfileEdit> {
+                ProfileEditScreen(onBackClick = ::goBack)
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(

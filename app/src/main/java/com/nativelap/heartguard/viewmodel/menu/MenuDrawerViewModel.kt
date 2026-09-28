@@ -15,16 +15,8 @@ import kotlinx.coroutines.launch
 class MenuDrawerViewModel @Inject constructor(
     private val sessionManager: SessionManager,
 ) : ViewModel() {
-    // TODO: 사용자 정보 조회 API가 생기면 서버 값으로 교체한다. 지금은 로그인 API도 placeholder라
-    // 사용자 정보를 받을 곳이 없어 Figma 16_메뉴_드로어의 예시 값을 임시로 보여준다.
-    private val _profile = MutableStateFlow(
-        MenuDrawerProfileUiModel(
-            userName = PLACEHOLDER_USER_NAME,
-            companyName = PLACEHOLDER_COMPANY_NAME,
-            jobTitle = PLACEHOLDER_JOB_TITLE,
-            email = PLACEHOLDER_EMAIL,
-        ),
-    )
+    // 프로필 조회 응답 계약이 보완되기 전까지는 Figma의 예시 계정값을 사용자 정보처럼 표시하지 않는다.
+    private val _profile = MutableStateFlow(MenuDrawerProfileUiModel())
     val profile: StateFlow<MenuDrawerProfileUiModel> = _profile.asStateFlow()
 
     private var isLoggingOut = false
@@ -44,12 +36,5 @@ class MenuDrawerViewModel @Inject constructor(
                 isLoggingOut = false
             }
         }
-    }
-
-    private companion object {
-        const val PLACEHOLDER_USER_NAME = "김현장"
-        const val PLACEHOLDER_COMPANY_NAME = "이음산업건설"
-        const val PLACEHOLDER_JOB_TITLE = "현장작업자"
-        const val PLACEHOLDER_EMAIL = "worker@ieum.co.kr"
     }
 }
