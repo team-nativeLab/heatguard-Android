@@ -9,6 +9,13 @@ import javax.inject.Inject
 class UploadFieldPhotosUseCase @Inject constructor(
     private val recordRepository: RecordRepository,
 ) {
-    suspend operator fun invoke(photoUris: List<Uri>): ApiResult<List<String>> =
-        recordRepository.uploadFieldPhotos(photoUris)
+    suspend operator fun invoke(
+        photoUris: List<Uri>,
+        alreadyUploadedPhotoKeys: Map<Uri, String> = emptyMap(),
+        onPhotoUploaded: (Uri, String) -> Unit = { _, _ -> },
+    ): ApiResult<List<String>> = recordRepository.uploadFieldPhotos(
+        photoUris = photoUris,
+        alreadyUploadedPhotoKeys = alreadyUploadedPhotoKeys,
+        onPhotoUploaded = onPhotoUploaded,
+    )
 }

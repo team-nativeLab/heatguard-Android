@@ -43,6 +43,9 @@ class RecordDraftViewModel @Inject constructor(
     private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
     val submissionState: StateFlow<RecordSubmissionState> = mutableSubmissionState.asStateFlow()
 
+    // Keep successful photo uploads so retrying a partially failed submission skips them.
+    private val uploadedPhotoKeysByUri = mutableMapOf<Uri, String>()
+
     /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. 저장 전 확인 화면의 [submit]이 어떤 종류의
      * 기록(THERMOMETER/WORK/REST)을 서버에 보낼지 이 값으로 판단한다. */
     fun selectRecordType(recordType: RecordType) {
@@ -89,6 +92,7 @@ class RecordDraftViewModel @Inject constructor(
 
     /** 사진 목록에서 URI를 제거하고 연결된 캐시 파일 또는 앨범 권한을 백그라운드에서 정리한다. */
     fun removePhoto(recordType: RecordType, uri: Uri) {
+        uploadedPhotoKeysByUri.remove(uri)
         mutableUiState.update { state ->
             state.withPhotoUris(recordType, state.photoUrisFor(recordType) - uri)
         }
@@ -100,6 +104,7 @@ class RecordDraftViewModel @Inject constructor(
     /** 다시 촬영을 시작할 때 현재 사진 목록과 로컬 자원을 함께 정리한다. */
     fun clearPhotos(recordType: RecordType) {
         val photoUrisToRelease = mutableUiState.value.photoUrisFor(recordType)
+        photoUrisToRelease.forEach(uploadedPhotoKeysByUri::remove)
         mutableUiState.update { state ->
             state.withPhotoUris(recordType, emptyList())
         }
@@ -136,7 +141,15 @@ class RecordDraftViewModel @Inject constructor(
         mutableSubmissionState.value = RecordSubmissionState.Submitting
 
         val photoUris = state.photoUrisFor(recordType)
-        val uploadResult = uploadFieldPhotosUseCase(photoUris)
+        val uploadResult = uploadFieldPhotosUseCase(
+            photoUris = photoUris,
+            alreadyUploadedPhotoKeys = uploadedPhotoKeysByUri.toMap(),
+            onPhotoUploaded = { photoUri, objectKey ->
+                if (photoUri in mutableUiState.value.photoUrisFor(recordType)) {
+                    uploadedPhotoKeysByUri[photoUri] = objectKey
+                }
+            },
+        )
         val photoKeys = when (uploadResult) {
             is ApiResult.Success -> uploadResult.value
             is ApiResult.Failure -> {
@@ -195,6 +208,7 @@ class RecordDraftViewModel @Inject constructor(
     fun reset() {
         val photoUrisToRelease = currentPhotoUris()
         mutableUiState.value = RecordDraftUiState()
+        uploadedPhotoKeysByUri.clear()
         mutableSubmissionState.value = RecordSubmissionState.Idle
         viewModelScope.launch(ioDispatcher) {
             photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
