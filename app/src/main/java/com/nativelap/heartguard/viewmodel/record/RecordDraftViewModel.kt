@@ -2,6 +2,7 @@ package com.nativelap.heartguard.viewmodel.record
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.di.IoDispatcher
@@ -33,11 +34,12 @@ import kotlinx.coroutines.launch
 class RecordDraftViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val savedStateHandle: SavedStateHandle,
     private val uploadFieldPhotosUseCase: UploadFieldPhotosUseCase,
     private val submitFieldRecordUseCase: SubmitFieldRecordUseCase,
 ) : ViewModel() {
 
-    private val mutableUiState = MutableStateFlow(RecordDraftUiState())
+    private val mutableUiState = MutableStateFlow(savedStateHandle.restoreRecordDraft())
     val uiState: StateFlow<RecordDraftUiState> = mutableUiState.asStateFlow()
 
     private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
@@ -46,19 +48,19 @@ class RecordDraftViewModel @Inject constructor(
     /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. 저장 전 확인 화면의 [submit]이 어떤 종류의
      * 기록(THERMOMETER/WORK/REST)을 서버에 보낼지 이 값으로 판단한다. */
     fun selectRecordType(recordType: RecordType) {
-        mutableUiState.update { it.copy(selectedRecordType = recordType) }
+        updateDraft { it.copy(selectedRecordType = recordType) }
     }
 
     fun updateTemperatureText(temperatureText: String) {
-        mutableUiState.update { it.copy(temperatureText = temperatureText) }
+        updateDraft { it.copy(temperatureText = temperatureText) }
     }
 
     fun updateHumidityText(humidityText: String) {
-        mutableUiState.update { it.copy(humidityText = humidityText) }
+        updateDraft { it.copy(humidityText = humidityText) }
     }
 
     fun updateManualInputEnabled(isManualInputEnabled: Boolean) {
-        mutableUiState.update { it.copy(isManualInputEnabled = isManualInputEnabled) }
+        updateDraft { it.copy(isManualInputEnabled = isManualInputEnabled) }
     }
 
     /** 온도계 기록 화면에서 "기록 저장"을 눌러 저장 전 확인 화면으로 넘어갈 때 호출한다. */
@@ -111,11 +113,11 @@ class RecordDraftViewModel @Inject constructor(
     }
 
     fun updateWorkMemo(memo: String) {
-        mutableUiState.update { it.copy(workMemo = memo) }
+        updateDraft { it.copy(workMemo = memo) }
     }
 
     fun updateRestMemo(memo: String) {
-        mutableUiState.update { it.copy(restMemo = memo) }
+        updateDraft { it.copy(restMemo = memo) }
     }
 
     fun toggleAlternateRestTime() {
@@ -155,7 +157,10 @@ class RecordDraftViewModel @Inject constructor(
             memo = state.memoFor(recordType),
         )
         mutableSubmissionState.value = when (submitResult) {
-            is ApiResult.Success -> RecordSubmissionState.Success(submitResult.value)
+            is ApiResult.Success -> {
+                clearSavedDraft()
+                RecordSubmissionState.Success(submitResult.value)
+            }
             is ApiResult.Failure -> RecordSubmissionState.Failure(submitResult.error)
         }
         return submitResult
@@ -195,6 +200,7 @@ class RecordDraftViewModel @Inject constructor(
     fun reset() {
         val photoUrisToRelease = currentPhotoUris()
         mutableUiState.value = RecordDraftUiState()
+        clearSavedDraft()
         mutableSubmissionState.value = RecordSubmissionState.Idle
         viewModelScope.launch(ioDispatcher) {
             photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
@@ -209,5 +215,52 @@ class RecordDraftViewModel @Inject constructor(
     private fun currentPhotoUris(): List<Uri> {
         val state = mutableUiState.value
         return (state.fieldPhotoUris + state.workPhotoUris + state.restPhotoUris).distinct()
+    }
+
+    private fun updateDraft(transform: (RecordDraftUiState) -> RecordDraftUiState) {
+        mutableUiState.update(transform)
+        saveDraft(mutableUiState.value)
+    }
+
+    private fun saveDraft(state: RecordDraftUiState) {
+        savedStateHandle[KEY_SELECTED_RECORD_TYPE] = state.selectedRecordType?.name
+        savedStateHandle[KEY_TEMPERATURE_TEXT] = state.temperatureText
+        savedStateHandle[KEY_HUMIDITY_TEXT] = state.humidityText
+        savedStateHandle[KEY_MANUAL_INPUT_ENABLED] = state.isManualInputEnabled
+        savedStateHandle[KEY_WORK_MEMO] = state.workMemo
+        savedStateHandle[KEY_REST_MEMO] = state.restMemo
+    }
+
+    private fun clearSavedDraft() {
+        savedStateHandle.remove<String>(KEY_SELECTED_RECORD_TYPE)
+        savedStateHandle.remove<String>(KEY_TEMPERATURE_TEXT)
+        savedStateHandle.remove<String>(KEY_HUMIDITY_TEXT)
+        savedStateHandle.remove<Boolean>(KEY_MANUAL_INPUT_ENABLED)
+        savedStateHandle.remove<String>(KEY_WORK_MEMO)
+        savedStateHandle.remove<String>(KEY_REST_MEMO)
+    }
+
+    private fun SavedStateHandle.restoreRecordDraft(): RecordDraftUiState {
+        val defaultState = RecordDraftUiState()
+        val selectedRecordType = get<String>(KEY_SELECTED_RECORD_TYPE)
+            ?.let { recordTypeName -> runCatching { RecordType.valueOf(recordTypeName) }.getOrNull() }
+
+        return defaultState.copy(
+            selectedRecordType = selectedRecordType,
+            temperatureText = get<String>(KEY_TEMPERATURE_TEXT) ?: defaultState.temperatureText,
+            humidityText = get<String>(KEY_HUMIDITY_TEXT) ?: defaultState.humidityText,
+            isManualInputEnabled = get<Boolean>(KEY_MANUAL_INPUT_ENABLED) ?: defaultState.isManualInputEnabled,
+            workMemo = get<String>(KEY_WORK_MEMO) ?: defaultState.workMemo,
+            restMemo = get<String>(KEY_REST_MEMO) ?: defaultState.restMemo,
+        )
+    }
+
+    private companion object {
+        const val KEY_SELECTED_RECORD_TYPE = "record_draft.selected_record_type"
+        const val KEY_TEMPERATURE_TEXT = "record_draft.temperature_text"
+        const val KEY_HUMIDITY_TEXT = "record_draft.humidity_text"
+        const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
+        const val KEY_WORK_MEMO = "record_draft.work_memo"
+        const val KEY_REST_MEMO = "record_draft.rest_memo"
     }
 }
