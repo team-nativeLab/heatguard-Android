@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.feedback
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +35,7 @@ fun SaveSuccessScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {

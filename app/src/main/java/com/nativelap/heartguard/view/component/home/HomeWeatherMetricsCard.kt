@@ -2,6 +2,7 @@ package com.nativelap.heartguard.view.component.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,9 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
@@ -42,48 +46,86 @@ fun HomeWeatherMetricsCard(
     weatherValue: String,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.HomeWeatherMetricHeight),
-        shape = RoundedCornerShape(HeartGuardRadius.HomeMetric),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = HeartGuardElevation.HomeMetricCard,
-    ) {
-        Row(
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val isCompact = maxWidth < COMPACT_METRIC_LAYOUT_WIDTH ||
+            LocalDensity.current.fontScale >= LARGE_FONT_SCALE_BREAKPOINT
+
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                    vertical = HeartGuardSpacing.Section,
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                .heightIn(min = HeartGuardComponentSize.HomeWeatherMetricHeight),
+            shape = RoundedCornerShape(HeartGuardRadius.HomeMetric),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = HeartGuardElevation.HomeMetricCard,
         ) {
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_humidity),
-                metricLabel = humidityLabel,
-                metricValue = humidity,
-                modifier = Modifier.weight(1f),
-            )
+            if (isCompact) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = HeartGuardSpacing.Item,
+                            vertical = HeartGuardSpacing.Compact,
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                ) {
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_humidity),
+                        metricLabel = humidityLabel,
+                        metricValue = humidity,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_feels_like),
+                        metricLabel = feelsLikeTemperatureLabel,
+                        metricValue = feelsLikeTemperature,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_weather),
+                        metricLabel = weatherLabel,
+                        metricValue = weatherValue,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                ) {
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_humidity),
+                        metricLabel = humidityLabel,
+                        metricValue = humidity,
+                        modifier = Modifier.weight(1f),
+                    )
 
-            HomeWeatherMetricDivider()
+                    HomeWeatherMetricDivider()
 
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_feels_like),
-                metricLabel = feelsLikeTemperatureLabel,
-                metricValue = feelsLikeTemperature,
-                modifier = Modifier.weight(1.25f),
-            )
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_feels_like),
+                        metricLabel = feelsLikeTemperatureLabel,
+                        metricValue = feelsLikeTemperature,
+                        modifier = Modifier.weight(1.25f),
+                    )
 
-            HomeWeatherMetricDivider()
+                    HomeWeatherMetricDivider()
 
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_weather),
-                metricLabel = weatherLabel,
-                metricValue = weatherValue,
-                modifier = Modifier.weight(0.95f),
-            )
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_weather),
+                        metricLabel = weatherLabel,
+                        metricValue = weatherValue,
+                        modifier = Modifier.weight(0.95f),
+                    )
+                }
+            }
         }
     }
 }
@@ -138,6 +180,9 @@ private fun HomeWeatherMetricDivider() {
         color = MaterialTheme.colorScheme.outlineVariant,
     ) {}
 }
+
+private val COMPACT_METRIC_LAYOUT_WIDTH = 300.dp
+private const val LARGE_FONT_SCALE_BREAKPOINT = 1.5f
 
 @Preview(showBackground = true, widthDp = 320)
 @Composable

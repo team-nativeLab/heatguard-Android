@@ -22,7 +22,6 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
-import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
@@ -100,20 +99,12 @@ private fun HeartGuardAuthNavDisplay(
             entry<HeartGuardDestination.Login> {
                 HeartGuardLoginRoute(
                     onLoginClick = onAuthenticated,
-                    onSignUpClick = {
-                        backStack.add(HeartGuardDestination.SignUp)
-                    },
                 )
             }
             entry<HeartGuardDestination.SignUp> {
-                HeartGuardSignUpRoute(
-                    onSignUpClick = {
-                        backStack.removeLastOrNull()
-                    },
-                    onLoginClick = {
-                        backStack.removeLastOrNull()
-                    },
-                )
+                // Older saved back stacks may still contain the signup key. Worker accounts are
+                // provisioned by an administrator, so restore those sessions to login.
+                HeartGuardLoginRoute(onLoginClick = onAuthenticated)
             }
         },
     )

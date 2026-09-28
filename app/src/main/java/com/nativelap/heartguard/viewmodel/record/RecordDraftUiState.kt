@@ -23,11 +23,11 @@ data class RecordDraftUiState(
         get() = temperatureText.toDoubleOrNull() != null &&
             humidityText.toDoubleOrNull() != null
 
-    // 온도계 기록은 직접 입력을 켰으면 온도·습도가, 껐으면 현장 사진이 1장 이상 있어야 저장할 수 있다.
+    // 온도계가 없는 직접 입력 경로는 값과 현장 사진을 모두 요구한다. 기기 측정 경로의 측정값 유무는 Route에서 확인한다.
     val canSubmitTemperatureRecord: Boolean
         get() = if (isManualInputEnabled) {
-            isManualTemperatureValid
+            isManualTemperatureValid && fieldPhotoUris.isNotEmpty()
         } else {
-            fieldPhotoUris.isNotEmpty()
+            true
         }
 }

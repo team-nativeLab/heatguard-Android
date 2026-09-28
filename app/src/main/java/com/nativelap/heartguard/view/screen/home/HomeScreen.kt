@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.home
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,7 +51,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         LazyColumn(
@@ -214,4 +216,16 @@ private fun HomeScreenPreview() {
             onRecordClick = {},
         )
     }
+}
+
+@Preview(name = "Compact phone · 200% text", showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
+@Composable
+private fun HomeScreenCompactPreview() {
+    HomeScreenPreview()
+}
+
+@Preview(name = "Wide tablet", showBackground = true, widthDp = 840, heightDp = 900)
+@Composable
+private fun HomeScreenWidePreview() {
+    HomeScreenPreview()
 }

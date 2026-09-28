@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.emergency
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,7 +42,7 @@ fun CallingScreen(
     isContactCallEnabled: Boolean = true,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         Column(

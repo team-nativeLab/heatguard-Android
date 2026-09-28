@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,7 +54,7 @@ fun SavedRecordSummaryCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(HeartGuardComponentSize.ResultSummaryHeight),
+            .heightIn(min = HeartGuardComponentSize.ResultSummaryHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(
@@ -63,7 +64,7 @@ fun SavedRecordSummaryCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(
                     start = HeartGuardSpacing.ResultSummaryHorizontal,
                     end = HeartGuardSpacing.ResultErrorDetailHorizontal,
@@ -87,7 +88,7 @@ fun SavedRecordSummaryCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(HeartGuardSpacing.ResultSummaryRowHeight)
+                        .heightIn(min = HeartGuardSpacing.ResultSummaryRowHeight)
                         .padding(start = HeartGuardSpacing.ResultSummaryRowIndent),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

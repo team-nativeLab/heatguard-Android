@@ -16,18 +16,11 @@ object HeartGuardSpacing {
     val EmergencyContactIndent = 7.dp
     val AuthHorizontal = 40.dp
     val AuthTop = 142.dp
-    val AuthSignUpTop = 147.dp
     val AuthLogoTitle = 20.dp
     val AuthTitleForm = 31.dp
-    val AuthSignUpTitleForm = 39.dp
-    val AuthSignUpFormButton = 72.dp
-    val AuthFormButton = 19.dp
-    val AuthButtonPrompt = 0.dp
     val AuthFieldLabelInput = 6.dp
     val AuthFieldGroup = 26.dp
-    val AuthSignUpFieldGroup = 19.dp
     val AuthTitleDescription = 4.dp
-    val AuthSignUpTitleDescription = 9.dp
     val PageContentTop = 12.dp
     val ResultHorizontal = 25.dp
     val ResultTitleTop = 18.dp
@@ -123,10 +116,10 @@ object HeartGuardIconSize {
 }
 
 object HeartGuardComponentSize {
+    val ResponsiveContentMaxWidth = 600.dp
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
     val AuthContentMaxWidth = 280.dp
-    val AuthSignUpContentMaxWidth = 306.dp
     val AuthActionMaxWidth = 318.dp
     val AuthTextFieldHeight = 45.dp
     val TextFieldHeight = 48.dp
@@ -192,12 +185,9 @@ object HeartGuardFontSize {
     val PageTitle = 20.sp
     val AuthTitle = 26.5.sp
     val AuthTitleLineHeight = 34.sp
-    val AuthSignUpTitle = 25.sp
-    val AuthSignUpTitleLineHeight = 30.sp
     val AuthDescription = 14.5.sp
     val AuthInput = 14.sp
     val AuthLabel = 13.25.sp
-    val AuthPrompt = 14.5.sp
     val AuthTitleLetterSpacing = (-0.25).sp
     val ResultTitle = 20.sp
     val ResultTitleLineHeight = 24.sp
@@ -209,6 +199,7 @@ object HeartGuardFontSize {
     val ResultSummaryLabel = 14.sp
     val ResultSummaryValue = 12.sp
     val HeroTemperature = 40.sp
+    val HeroTemperatureCompact = 32.sp
     val TemperatureSummary = 32.sp
     val RecordOptionTitle = 16.sp
     val RecordOptionDescription = 14.sp

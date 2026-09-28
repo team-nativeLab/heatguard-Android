@@ -3,13 +3,18 @@ package com.nativelap.heartguard.view.route.home
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,6 +32,7 @@ import com.nativelap.heartguard.view.screen.home.HomeScreen
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -55,6 +61,15 @@ internal fun HeartGuardHomeRoute(
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val unsupportedFeatureMessage = stringResource(R.string.home_feature_unavailable)
+    val showUnsupportedFeatureMessage: () -> Unit = {
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(message = unsupportedFeatureMessage)
+        }
+        Unit
+    }
 
     val dialPhoneNumber = rememberPhoneDialLauncher()
     val managerPhoneNumber = siteStatus.managerPhoneNumber
@@ -80,8 +95,7 @@ internal fun HeartGuardHomeRoute(
             onMenuClick = {
                 isMenuDrawerOpen = true
             },
-            // 알림 아이콘 기능은 Figma/API 명세서 어디에도 정의되어 있지 않아 의도적으로 비워둔다.
-            onNotificationClick = {},
+            onNotificationClick = showUnsupportedFeatureMessage,
             onManagerCallClick = {
                 managerPhoneNumber?.let(dialPhoneNumber)
             },
@@ -101,13 +115,14 @@ internal fun HeartGuardHomeRoute(
                 profile = menuDrawerProfile,
                 onEvent = { event ->
                     when (event) {
-                        // 내 정보 수정·알림 설정·공지사항·고객센터는 Figma에 이동할 화면이 정의되어 있지 않아
-                        // 화면이 추가될 때까지 의도적으로 아무 동작도 하지 않는다.
+                        // 관련 화면이 연결되지 않은 메뉴는 기능 안내를 표시한다.
                         MenuDrawerEvent.EditProfileClicked,
-                        MenuDrawerEvent.NotificationSettingsClicked,
-                        MenuDrawerEvent.NoticesClicked,
                         MenuDrawerEvent.CustomerCenterClicked,
                         -> Unit
+
+                        MenuDrawerEvent.NotificationSettingsClicked,
+                        MenuDrawerEvent.NoticesClicked,
+                        -> showUnsupportedFeatureMessage()
 
                         MenuDrawerEvent.LogoutClicked -> {
                             isMenuDrawerOpen = false
@@ -122,6 +137,11 @@ internal fun HeartGuardHomeRoute(
                 },
             )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

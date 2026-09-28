@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.photo
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,7 +46,7 @@ fun WorkPhotoScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
         bottomBar = {
             BottomActionBar {

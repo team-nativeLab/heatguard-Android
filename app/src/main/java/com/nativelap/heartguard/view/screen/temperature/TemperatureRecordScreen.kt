@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.temperature
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +31,7 @@ import com.nativelap.heartguard.view.component.temperature.TemperatureSummaryCar
 
 /** Figma 06_온도계 기록 입력 / 13_온도계미설치_체크됨 화면이다.
  * 상단에 현장 현재 온도를, 아래에 "온도계 데이터 직접 입력" 카드와 현장 사진 진입 행을 두고, 저장 버튼은 하단에 고정한다.
- * 직접 입력을 켜면(온도계 미설치) 현장 사진 행을 비활성화한다. */
+ * 온도계 미설치 상태에서도 필수 현장 사진을 첨부할 수 있다. */
 @Composable
 fun TemperatureRecordScreen(
     currentTemperature: String,
@@ -48,7 +50,7 @@ fun TemperatureRecordScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
         bottomBar = {
             BottomActionBar {
@@ -124,12 +126,18 @@ fun TemperatureRecordScreen(
             )
 
             PhotoCaptureRow(
-                label = stringResource(R.string.home_field_photo),
+                label = stringResource(
+                    if (isManualInputEnabled) {
+                        R.string.temperature_field_photo_required
+                    } else {
+                        R.string.home_field_photo
+                    },
+                ),
                 instructionText = stringResource(R.string.photo_field_instruction_two_line),
                 cameraPainter = painterResource(R.drawable.record_camera),
                 cameraContentDescription = stringResource(R.string.photo_capture),
                 onClick = onFieldPhotoClick,
-                isEnabled = !isManualInputEnabled && selectedFieldPhotoCount < MAX_RECORD_PHOTO_COUNT,
+                isEnabled = selectedFieldPhotoCount < MAX_RECORD_PHOTO_COUNT,
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
                 labelHorizontalOffset = HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.RecordCardHorizontal,
             )
@@ -179,4 +187,10 @@ private fun TemperatureRecordScreenCheckedPreview() {
             onSaveClick = {},
         )
     }
+}
+
+@Preview(name = "Compact phone · 200% text", showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
+@Composable
+private fun TemperatureRecordScreenCompactPreview() {
+    TemperatureRecordScreenCheckedPreview()
 }
