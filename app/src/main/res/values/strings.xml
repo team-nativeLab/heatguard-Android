@@ -231,11 +231,12 @@
     <string name="profile_email">이메일</string>
     <string name="profile_email_uneditable">변경 불가</string>
     <string name="profile_email_note">로그인에 쓰는 이메일은 변경할 수 없어요</string>
-    <string name="profile_password_change">비밀번호 변경</string>
+    <string name="profile_name_placeholder">이름을 입력해주세요</string>
     <string name="profile_save">저장하기</string>
-    <string name="profile_api_unavailable_title">프로필 필드 명세 확인 필요</string>
-    <string name="profile_api_unavailable_description">조회·수정 경로는 있지만 요청·응답 필드가 명세에 없어 저장을 연결할 수 없습니다.</string>
-    <string name="profile_password_api_unavailable">비밀번호 변경 요청·응답 필드를 확인해야 합니다.</string>
+    <string name="profile_saved">저장 완료</string>
+    <string name="profile_save_failure">저장하지 못했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="profile_load_failure_title">내 정보를 불러오지 못했어요</string>
+    <string name="profile_load_failure_description">네트워크 연결을 확인한 뒤 다시 시도해주세요.</string>
     <string name="inquiry_title">문의하기</string>
     <string name="inquiry_subject">제목</string>
     <string name="inquiry_subject_placeholder">제목을 입력해주세요</string>

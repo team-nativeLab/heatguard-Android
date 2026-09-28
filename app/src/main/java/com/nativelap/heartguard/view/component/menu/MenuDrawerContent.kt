@@ -80,8 +80,8 @@ private fun MenuDrawerContentPreview() {
         MenuDrawerContent(
             profile = MenuDrawerProfileUiModel(
                 userName = "김현장",
-                companyName = "이음산업건설",
-                jobTitle = "현장작업자",
+                teamName = "철근팀",
+                workplace = "3층 외벽",
                 email = "worker@ieum.co.kr",
             ),
             onEvent = {},

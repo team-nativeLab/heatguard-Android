@@ -71,6 +71,14 @@ internal fun HeartGuardHomeRoute(
         mutableStateOf(false)
     }
 
+    // 드로어의 이름·이메일은 작업자 정보 조회 값이고, 팀명·작업 위치는 홈 조회 값을 그대로 쓴다.
+    val drawerProfile = remember(menuDrawerProfile, siteStatus.teamName, siteStatus.workplace) {
+        menuDrawerProfile.copy(
+            teamName = siteStatus.teamName,
+            workplace = siteStatus.workplace,
+        )
+    }
+
     val dialPhoneNumber = rememberPhoneDialLauncher()
     val managerPhoneNumber = siteStatus.managerPhoneNumber
 
@@ -94,6 +102,7 @@ internal fun HeartGuardHomeRoute(
             isManagerCallEnabled = managerPhoneNumber != null,
             onMenuClick = {
                 isMenuDrawerOpen = true
+                menuDrawerViewModel.loadProfile()
             },
             onNotificationClick = {
                 coroutineScope.launch {
@@ -116,7 +125,7 @@ internal fun HeartGuardHomeRoute(
             },
         ) {
             MenuDrawerContent(
-                profile = menuDrawerProfile,
+                profile = drawerProfile,
                 onEvent = { event ->
                     when (event) {
                         MenuDrawerEvent.EditProfileClicked -> {
