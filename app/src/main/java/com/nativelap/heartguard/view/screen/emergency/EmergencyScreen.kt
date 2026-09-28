@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.emergency
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +22,7 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
 import com.nativelap.heartguard.view.component.emergency.EmergencyAlertBanner
 import com.nativelap.heartguard.view.component.emergency.EmergencyCallIndicator
@@ -38,10 +41,11 @@ fun EmergencyScreen(
     onCancelClick: () -> Unit,
     onContactClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isContactCallEnabled: Boolean = true,
 ) {
     Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
+        containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -83,6 +87,7 @@ fun EmergencyScreen(
                 contactName = contactName,
                 phoneNumber = phoneNumber,
                 onCallClick = onContactClick,
+                isCallEnabled = isContactCallEnabled,
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
             )
 

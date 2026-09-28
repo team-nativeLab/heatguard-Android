@@ -1,6 +1,8 @@
 package com.nativelap.heartguard.view.component.temperature
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,11 +21,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 온도계 데이터 직접 입력 Switch와 세 개의 입력 박스를 Figma 카드 구조로 제공한다. */
 @Composable
@@ -49,91 +58,169 @@ fun TemperatureRecordCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .alpha(if (isCardEnabled) 1f else 0.5f),
+            .alpha(
+                if (isCardEnabled) {
+                    ENABLED_ALPHA
+                } else {
+                    DISABLED_ALPHA
+                },
+            ),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(
+            width = HeartGuardBorderWidth.Divider,
+            color = MaterialTheme.extraColors.cardBorder,
+        ),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(HeartGuardSpacing.Section),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                )
-                Switch(
-                    checked = isManualInputEnabled,
-                    onCheckedChange = onManualInputChange,
-                    enabled = isCardEnabled,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        uncheckedThumbColor = MaterialTheme.colorScheme.surface,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.outline,
-                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
-                )
-            }
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val isCompact = maxWidth < COMPACT_TEMPERATURE_LAYOUT_WIDTH ||
+                LocalDensity.current.fontScale >= LARGE_FONT_SCALE_BREAKPOINT
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(HeartGuardSpacing.Section),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
             ) {
-                TemperatureInputField(
-                    label = temperatureLabel,
-                    temperatureText = temperatureText,
-                    unitLabel = temperatureUnit,
-                    onTemperatureChange = onTemperatureChange,
-                    isEnabled = isCardEnabled && isManualInputEnabled,
-                    placeholderText = "예: 47.5",
-                    modifier = Modifier.weight(1f),
-                )
-                TemperatureInputField(
-                    label = humidityLabel,
-                    temperatureText = humidityText,
-                    unitLabel = humidityUnit,
-                    onTemperatureChange = onHumidityChange,
-                    isEnabled = isCardEnabled && isManualInputEnabled,
-                    placeholderText = "예: 55",
-                    modifier = Modifier.weight(1f),
-                )
-                TemperatureInputField(
-                    label = feelsLikeLabel,
-                    temperatureText = feelsLikeText,
-                    unitLabel = "",
-                    onTemperatureChange = {},
-                    isEnabled = false,
-                    placeholderText = "자동 계산",
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                if (isCompact) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                    ) {
+                        Text(
+                            text = title,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontSize = HeartGuardFontSize.CardTitle,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        )
+                        Switch(
+                            checked = isManualInputEnabled,
+                            onCheckedChange = onManualInputChange,
+                            enabled = isCardEnabled,
+                            modifier = Modifier.align(Alignment.End),
+                            colors = temperatureSwitchColors(),
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = title,
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontSize = HeartGuardFontSize.CardTitle,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        )
+                        Switch(
+                            checked = isManualInputEnabled,
+                            onCheckedChange = onManualInputChange,
+                            enabled = isCardEnabled,
+                            colors = temperatureSwitchColors(),
+                        )
+                    }
+                }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = installationLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelSmall,
-                )
+                if (isCompact) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    ) {
+                        TemperatureInputField(
+                            label = temperatureLabel,
+                            temperatureText = temperatureText,
+                            unitLabel = temperatureUnit,
+                            onTemperatureChange = onTemperatureChange,
+                            isEnabled = isCardEnabled && isManualInputEnabled,
+                            placeholderText = stringResource(R.string.temperature_input_placeholder),
+                        )
+                        TemperatureInputField(
+                            label = humidityLabel,
+                            temperatureText = humidityText,
+                            unitLabel = humidityUnit,
+                            onTemperatureChange = onHumidityChange,
+                            isEnabled = isCardEnabled && isManualInputEnabled,
+                            placeholderText = stringResource(R.string.humidity_input_placeholder),
+                        )
+                        TemperatureInputField(
+                            label = feelsLikeLabel,
+                            temperatureText = feelsLikeText,
+                            unitLabel = "",
+                            onTemperatureChange = {},
+                            isEnabled = false,
+                            placeholderText = stringResource(R.string.temperature_auto_calculated),
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    ) {
+                        TemperatureInputField(
+                            label = temperatureLabel,
+                            temperatureText = temperatureText,
+                            unitLabel = temperatureUnit,
+                            onTemperatureChange = onTemperatureChange,
+                            isEnabled = isCardEnabled && isManualInputEnabled,
+                            placeholderText = stringResource(R.string.temperature_input_placeholder),
+                            modifier = Modifier.weight(1f),
+                        )
+                        TemperatureInputField(
+                            label = humidityLabel,
+                            temperatureText = humidityText,
+                            unitLabel = humidityUnit,
+                            onTemperatureChange = onHumidityChange,
+                            isEnabled = isCardEnabled && isManualInputEnabled,
+                            placeholderText = stringResource(R.string.humidity_input_placeholder),
+                            modifier = Modifier.weight(1f),
+                        )
+                        TemperatureInputField(
+                            label = feelsLikeLabel,
+                            temperatureText = feelsLikeText,
+                            unitLabel = "",
+                            onTemperatureChange = {},
+                            isEnabled = false,
+                            placeholderText = stringResource(R.string.temperature_auto_calculated),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = installationLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
         }
     }
 }
+
+@Composable
+private fun temperatureSwitchColors() = SwitchDefaults.colors(
+    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+    checkedTrackColor = MaterialTheme.colorScheme.primary,
+    uncheckedThumbColor = MaterialTheme.colorScheme.surface,
+    uncheckedTrackColor = MaterialTheme.colorScheme.outline,
+    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+)
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable
@@ -158,3 +245,10 @@ private fun TemperatureRecordCardPreview() {
         )
     }
 }
+
+private const val ENABLED_ALPHA = 1f
+private val COMPACT_TEMPERATURE_LAYOUT_WIDTH = 270.dp
+private const val LARGE_FONT_SCALE_BREAKPOINT = 1.5f
+
+// Figma 15_저장전_확인알림의 비활성 카드(opacity 50%)와 같은 투명도다.
+private const val DISABLED_ALPHA = 0.5f

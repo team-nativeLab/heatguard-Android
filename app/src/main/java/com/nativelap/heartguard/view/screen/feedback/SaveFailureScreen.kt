@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.feedback
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +19,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.feedback.RetryButton
 import com.nativelap.heartguard.view.component.feedback.SaveDraftExitButton
 import com.nativelap.heartguard.view.component.feedback.SaveErrorDetailCard
@@ -32,9 +36,21 @@ fun SaveFailureScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
+        containerColor = MaterialTheme.extraColors.pageBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            BottomActionBar {
+                RetryButton(
+                    title = stringResource(R.string.save_retry),
+                    onClick = onRetryClick,
+                )
+                SaveDraftExitButton(
+                    title = stringResource(R.string.save_draft_exit),
+                    onClick = onSaveDraftAndExitClick,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -60,18 +76,7 @@ fun SaveFailureScreen(
                 title = stringResource(R.string.save_error_title),
                 details = errorDetails,
             )
-            Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultFailureRetryGap))
-
-            RetryButton(
-                title = stringResource(R.string.save_retry),
-                onClick = onRetryClick,
-            )
-            Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultFailureButtonGap))
-
-            SaveDraftExitButton(
-                title = stringResource(R.string.save_draft_exit),
-                onClick = onSaveDraftAndExitClick,
-            )
+            Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
         }
     }
 }

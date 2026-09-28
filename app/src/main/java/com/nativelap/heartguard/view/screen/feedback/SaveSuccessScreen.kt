@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.feedback
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +19,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.feedback.SaveCompleteButton
 import com.nativelap.heartguard.view.component.feedback.SaveResultMessage
 import com.nativelap.heartguard.view.component.feedback.SaveResultTitle
@@ -31,9 +35,17 @@ fun SaveSuccessScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
+        containerColor = MaterialTheme.extraColors.pageBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            BottomActionBar {
+                SaveCompleteButton(
+                    title = stringResource(R.string.save_complete),
+                    onClick = onCompleteClick,
+                )
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -60,11 +72,6 @@ fun SaveSuccessScreen(
                 records = records,
             )
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultSuccessButtonGap))
-
-            SaveCompleteButton(
-                title = stringResource(R.string.save_complete),
-                onClick = onCompleteClick,
-            )
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.emergency
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +22,7 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
 import com.nativelap.heartguard.view.component.emergency.CallEndButton
 import com.nativelap.heartguard.view.component.emergency.EmergencyAlertBanner
@@ -36,10 +39,11 @@ fun CallingScreen(
     onEndClick: () -> Unit,
     onContactClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isContactCallEnabled: Boolean = true,
 ) {
     Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
+        containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -88,6 +92,7 @@ fun CallingScreen(
                 contactName = contactName,
                 phoneNumber = phoneNumber,
                 onCallClick = onContactClick,
+                isCallEnabled = isContactCallEnabled,
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
             )
 
@@ -117,7 +122,7 @@ private fun CallingScreenPreview() {
         CallingScreen(
             isConnected = false,
             contactName = stringResource(R.string.emergency_contact_name),
-            phoneNumber = stringResource(R.string.emergency_contact_phone),
+            phoneNumber = "010-1234-5678",
             onCancelClick = {},
             onEndClick = {},
             onContactClick = {},
@@ -132,7 +137,7 @@ private fun CallingScreenConnectedPreview() {
         CallingScreen(
             isConnected = true,
             contactName = stringResource(R.string.emergency_contact_name),
-            phoneNumber = stringResource(R.string.emergency_contact_phone),
+            phoneNumber = "010-1234-5678",
             onCancelClick = {},
             onEndClick = {},
             onContactClick = {},

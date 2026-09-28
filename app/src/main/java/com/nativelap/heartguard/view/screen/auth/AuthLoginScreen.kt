@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.auth
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +29,6 @@ import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
-import com.nativelap.heartguard.view.component.auth.AuthPrompt
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.brand.BrandMark
@@ -41,13 +42,12 @@ fun AuthLoginScreen(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
-    onSignUpClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPasswordError: Boolean = false,
     passwordErrorMessage: String? = null,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.authBackground),
         containerColor = MaterialTheme.extraColors.authBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
@@ -58,14 +58,14 @@ fun AuthLoginScreen(
                 .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
                 .imePadding()
                 .navigationBarsPadding(),
-            // 로그인 버튼·회원가입 안내가 Figma처럼 화면 하단에 밀착되도록 첫 자식(폼)과
-            // 마지막 자식(액션 영역) 사이 여백을 SpaceBetween으로 강제한다.
+            // 로그인 폼과 버튼 사이 여백을 확보하고, 키보드가 열리면 폼 영역만 스크롤한다.
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -104,7 +104,7 @@ fun AuthLoginScreen(
                         label = stringResource(R.string.auth_password),
                         text = password,
                         onTextChange = onPasswordChange,
-                        placeholder = stringResource(R.string.auth_password_hint),
+                        placeholder = stringResource(R.string.auth_login_password_hint),
                         isError = isPasswordError,
                         supportingText = passwordErrorMessage,
                         visualTransformation = PasswordVisualTransformation(),
@@ -122,14 +122,6 @@ fun AuthLoginScreen(
                     title = stringResource(R.string.auth_login),
                     onClick = onLoginClick,
                 )
-
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthButtonPrompt))
-
-                AuthPrompt(
-                    message = stringResource(R.string.auth_signup_prompt),
-                    actionTitle = stringResource(R.string.auth_signup),
-                    onActionClick = onSignUpClick,
-                )
             }
         }
     }
@@ -145,7 +137,6 @@ private fun AuthLoginScreenPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
-            onSignUpClick = {},
         )
     }
 }
@@ -160,9 +151,14 @@ private fun AuthLoginScreenErrorPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
-            onSignUpClick = {},
             isPasswordError = true,
             passwordErrorMessage = stringResource(R.string.auth_password_error),
         )
     }
+}
+
+@Preview(name = "Compact phone · 200% text", showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
+@Composable
+private fun AuthLoginScreenCompactPreview() {
+    AuthLoginScreenPreview()
 }

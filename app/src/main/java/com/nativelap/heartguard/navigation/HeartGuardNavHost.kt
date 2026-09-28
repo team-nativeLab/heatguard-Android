@@ -22,11 +22,9 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
-import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
-import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveConfirmationRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
@@ -37,6 +35,7 @@ import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionR
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
+import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
@@ -100,20 +99,12 @@ private fun HeartGuardAuthNavDisplay(
             entry<HeartGuardDestination.Login> {
                 HeartGuardLoginRoute(
                     onLoginClick = onAuthenticated,
-                    onSignUpClick = {
-                        backStack.add(HeartGuardDestination.SignUp)
-                    },
                 )
             }
             entry<HeartGuardDestination.SignUp> {
-                HeartGuardSignUpRoute(
-                    onSignUpClick = {
-                        backStack.removeLastOrNull()
-                    },
-                    onLoginClick = {
-                        backStack.removeLastOrNull()
-                    },
-                )
+                // Older saved back stacks may still contain the signup key. Worker accounts are
+                // provisioned by an administrator, so restore those sessions to login.
+                HeartGuardLoginRoute(onLoginClick = onAuthenticated)
             }
         },
     )
@@ -124,7 +115,11 @@ private fun HeartGuardAuthNavDisplay(
 private fun HeartGuardMainNavDisplay() {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
 
-    // 기록유형선택→온도기록/사진촬영→저장전확인까지 여러 NavKey가 RecordDraftViewModel 하나를
+    // 팀 현장페이지(현재 온도·습도·체감온도·폭염 단계·관리자 번호·체크 시각)는 홈뿐 아니라 온도계 기록·
+    // 긴급 호출 화면도 함께 보여준다. 아래 공유 ViewModel들과 같은 이유로 여기서 한 번 만들어 필요한 Route에 명시적으로 넘긴다.
+    val homeViewModel: HomeViewModel = hiltViewModel()
+
+    // 기록유형선택→온도기록/사진촬영→저장까지 여러 NavKey가 RecordDraftViewModel 하나를
     // 공유해야 한다(android-navigation SKILL '화면 간 ViewModel 공유' 참고). android-navigation
     // SKILL이 예시로 든 "수동 ViewModelStoreOwner"는 이 프로젝트가 쓰는 androidx.hilt-navigation-compose
     // 1.2.0에서 실제로 동작하지 않는다 — createHiltViewModelFactory()는 대상 owner가
@@ -160,8 +155,12 @@ private fun HeartGuardMainNavDisplay() {
         onDispose { withdrawViewModel.reset() }
     }
 
-    fun goToSaveConfirmation() {
-        backStack.add(HeartGuardDestination.SaveConfirmation)
+    fun goToSaveSuccess() {
+        backStack.add(HeartGuardDestination.SaveSuccess)
+    }
+
+    fun goToSaveFailure() {
+        backStack.add(HeartGuardDestination.SaveFailure)
     }
 
     fun goBack() {
@@ -233,12 +232,16 @@ private fun HeartGuardMainNavDisplay() {
         entryProvider = entryProvider {
             entry<HeartGuardDestination.Home> {
                 HeartGuardHomeRoute(
+                    homeViewModel = homeViewModel,
                     // 관리자 전화는 HeartGuardHomeRoute 내부에서 바로 다이얼러로 연결하므로
                     // 여기서는 긴급호출 흐름으로 이동하는 콜백만 전달한다.
                     onEmergencyClick = {
                         backStack.add(HeartGuardDestination.Emergency)
                     },
+                    // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
+                    // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
                     onFieldPhotoClick = {
+                        recordDraftViewModel.startRecord(RecordType.TEMPERATURE)
                         backStack.add(HeartGuardDestination.FieldPhoto)
                     },
                     onRecordHistoryClick = {},
@@ -253,6 +256,7 @@ private fun HeartGuardMainNavDisplay() {
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(
                     emergencyViewModel = emergencyViewModel,
+                    homeViewModel = homeViewModel,
                     // Figma 03_긴급상황 화면은 이미 관리자 호출 알림이 진행 중인 상태를 전제로 하며,
                     // "호출 취소" 버튼은 이 알림을 취소하고 이전 화면(Home)으로 돌아가는 동작이다.
                     // (04_호출중 화면으로 진행하는 것이 아니다 — 그 화면은 Emergency 진입 전 별도 트리거로 도달한다.)
@@ -265,6 +269,7 @@ private fun HeartGuardMainNavDisplay() {
             entry<HeartGuardDestination.Calling> {
                 HeartGuardCallingRoute(
                     emergencyViewModel = emergencyViewModel,
+                    homeViewModel = homeViewModel,
                     onCancelClick = ::goBack,
                     onEndClick = ::goHome,
                 )
@@ -290,37 +295,42 @@ private fun HeartGuardMainNavDisplay() {
             entry<HeartGuardDestination.TemperatureRecord> {
                 HeartGuardTemperatureRecordRoute(
                     recordDraftViewModel = recordDraftViewModel,
+                    homeViewModel = homeViewModel,
                     onFieldPhotoClick = {
                         backStack.add(HeartGuardDestination.FieldPhoto)
                     },
-                    onSaveClick = ::goToSaveConfirmation,
+                    onSaveSuccess = ::goToSaveSuccess,
+                    onSaveFailure = ::goToSaveFailure,
                 )
             }
             entry<HeartGuardDestination.FieldPhoto> {
                 HeartGuardFieldPhotoRoute(
                     recordDraftViewModel = recordDraftViewModel,
-                    onSaveClick = ::goToSaveConfirmation,
                     onCameraClick = { recordType ->
                         backStack.add(HeartGuardDestination.PhotoCamera(recordType))
                     },
+                    onSaveSuccess = ::goToSaveSuccess,
+                    onSaveFailure = ::goToSaveFailure,
                 )
             }
             entry<HeartGuardDestination.WorkPhoto> {
                 HeartGuardWorkPhotoRoute(
                     recordDraftViewModel = recordDraftViewModel,
-                    onUploadClick = ::goToSaveConfirmation,
                     onCameraClick = { recordType ->
                         backStack.add(HeartGuardDestination.PhotoCamera(recordType))
                     },
+                    onSaveSuccess = ::goToSaveSuccess,
+                    onSaveFailure = ::goToSaveFailure,
                 )
             }
             entry<HeartGuardDestination.RestPhoto> {
                 HeartGuardRestPhotoRoute(
                     recordDraftViewModel = recordDraftViewModel,
-                    onUploadClick = ::goToSaveConfirmation,
                     onCameraClick = { recordType ->
                         backStack.add(HeartGuardDestination.PhotoCamera(recordType))
                     },
+                    onSaveSuccess = ::goToSaveSuccess,
+                    onSaveFailure = ::goToSaveFailure,
                 )
             }
             entry<HeartGuardDestination.PhotoCamera> { key ->
@@ -328,18 +338,6 @@ private fun HeartGuardMainNavDisplay() {
                     recordDraftViewModel = recordDraftViewModel,
                     recordType = key.recordType,
                     onBackClick = ::goBack,
-                )
-            }
-            entry<HeartGuardDestination.SaveConfirmation> {
-                HeartGuardSaveConfirmationRoute(
-                    recordDraftViewModel = recordDraftViewModel,
-                    onCaptureClick = ::goBack,
-                    onSaveSuccess = {
-                        backStack.add(HeartGuardDestination.SaveSuccess)
-                    },
-                    onSaveFailure = {
-                        backStack.add(HeartGuardDestination.SaveFailure)
-                    },
                 )
             }
             entry<HeartGuardDestination.SaveSuccess> {

@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -18,6 +20,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.component.RecordTypeSelectionSheet
 import com.nativelap.heartguard.view.component.recordTypeOptions
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 
 /** 홈 위에 기록 유형 선택 Sheet를 정적인 디자인 상태로 조합한다. */
 @Composable
@@ -47,6 +50,8 @@ fun RecordTypeSelectionScreen(
                 onConfirm = onConfirm,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .widthIn(max = HeartGuardComponentSize.ResponsiveContentMaxWidth)
+                    .fillMaxWidth()
                     .fillMaxHeight(RECORD_TYPE_SHEET_HEIGHT_FRACTION),
             )
         }

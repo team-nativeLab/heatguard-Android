@@ -43,10 +43,17 @@ class RecordDraftViewModel @Inject constructor(
     private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
     val submissionState: StateFlow<RecordSubmissionState> = mutableSubmissionState.asStateFlow()
 
-    /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. 저장 전 확인 화면의 [submit]이 어떤 종류의
+    /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. [submit]이 어떤 종류의
      * 기록(THERMOMETER/WORK/REST)을 서버에 보낼지 이 값으로 판단한다. */
     fun selectRecordType(recordType: RecordType) {
         mutableUiState.update { it.copy(selectedRecordType = recordType) }
+    }
+
+    /** 홈의 "현장 사진"처럼 기록유형 선택 없이 특정 기록을 새로 시작할 때 호출한다.
+     * 이전 시도의 입력값·임시 사진을 정리한 뒤 [recordType]으로 기록 종류를 정한다. */
+    fun startRecord(recordType: RecordType) {
+        reset()
+        selectRecordType(recordType)
     }
 
     fun updateTemperatureText(temperatureText: String) {
@@ -59,11 +66,6 @@ class RecordDraftViewModel @Inject constructor(
 
     fun updateManualInputEnabled(isManualInputEnabled: Boolean) {
         mutableUiState.update { it.copy(isManualInputEnabled = isManualInputEnabled) }
-    }
-
-    /** 온도계 기록 화면에서 "기록 저장"을 눌러 저장 전 확인 화면으로 넘어갈 때 호출한다. */
-    fun markTemperatureSaved() {
-        mutableUiState.update { it.copy(isTemperatureSaved = true) }
     }
 
     /** 카메라 촬영이나 앨범 선택 결과를 해당 기록의 사진 목록에 추가한다. */
@@ -79,12 +81,6 @@ class RecordDraftViewModel @Inject constructor(
             }
         }
         return wasAdded
-    }
-
-    /** 저장 전 확인 화면에서 현장 사진을 다시 찍기 전에 개별 삭제할 때 쓴다. 목록 갱신은 즉시 반영하고,
-     * 파일 I/O(ContentResolver 권한 해제·캐시 파일 삭제)는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
-    fun removeFieldPhoto(uri: Uri) {
-        removePhoto(RecordType.TEMPERATURE, uri)
     }
 
     /** 사진 목록에서 URI를 제거하고 연결된 캐시 파일 또는 앨범 권한을 백그라운드에서 정리한다. */
@@ -118,11 +114,7 @@ class RecordDraftViewModel @Inject constructor(
         mutableUiState.update { it.copy(restMemo = memo) }
     }
 
-    fun toggleAlternateRestTime() {
-        mutableUiState.update { it.copy(isAlternateRestTimeSelected = !it.isAlternateRestTimeSelected) }
-    }
-
-    /** 저장 전 확인 화면의 "저장" 버튼을 누르면 호출한다. 선택된 기록 유형에 맞는 사진을 먼저
+    /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형에 맞는 사진을 먼저
      * presigned URL로 업로드하고, 그 objectKey로 현장 기록을 등록한다. 결과를 [submissionState]에도
      * 반영해 SaveFailure 화면이 실제 오류를 읽을 수 있게 하고, 반환값으로도 돌려줘 Route가 즉시
      * 다음 화면(성공/실패)을 결정할 수 있게 한다 — Route가 상태 변화를 구독해 내비게이션하는 대신
@@ -132,6 +124,11 @@ class RecordDraftViewModel @Inject constructor(
         val state = mutableUiState.value
         val recordType = state.selectedRecordType
             ?: return ApiResult.Failure(ApiError.Unknown)
+
+        // 버튼 활성 조건과 같은 규칙으로 한 번 더 막아, 필수 값 없이 서버에 요청하지 않게 한다.
+        if (!state.canSubmit(recordType)) {
+            return ApiResult.Failure(ApiError.Unknown)
+        }
 
         mutableSubmissionState.value = RecordSubmissionState.Submitting
 
@@ -159,6 +156,13 @@ class RecordDraftViewModel @Inject constructor(
             is ApiResult.Failure -> RecordSubmissionState.Failure(submitResult.error)
         }
         return submitResult
+    }
+
+    // 온도계 기록은 직접 입력 또는 현장 사진, 작업·휴식 기록은 사진이 1장 이상 있어야 한다(명세: 사진 1~2장).
+    private fun RecordDraftUiState.canSubmit(recordType: RecordType): Boolean = when (recordType) {
+        RecordType.TEMPERATURE -> canSubmitTemperatureRecord
+        RecordType.WORK -> workPhotoUris.isNotEmpty()
+        RecordType.REST -> restPhotoUris.isNotEmpty()
     }
 
     private fun RecordDraftUiState.photoUrisFor(recordType: RecordType): List<Uri> = when (recordType) {

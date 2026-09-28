@@ -4,8 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +32,7 @@ fun SaveErrorDetailCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(HeartGuardComponentSize.ResultErrorDetailHeight),
+            .heightIn(min = HeartGuardComponentSize.ResultErrorDetailHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
@@ -43,7 +42,7 @@ fun SaveErrorDetailCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(
                     start = HeartGuardSpacing.ResultErrorDetailHorizontal,
                     end = HeartGuardSpacing.ResultErrorDetailHorizontal,

@@ -9,12 +9,19 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -31,16 +38,29 @@ fun PhotoMemoField(
     isOptional: Boolean = false,
     contentHorizontalPadding: Dp = 0.dp,
 ) {
-    androidx.compose.foundation.layout.Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = if (isOptional) {
-                "$label (${stringResource(R.string.common_optional)})"
-            } else {
-                label
-            },
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleSmall,
-        )
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+        ) {
+            Text(
+                text = label,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            )
+            if (isOptional) {
+                Text(
+                    text = stringResource(R.string.common_optional_parenthesized),
+                    color = MaterialTheme.extraColors.homeMutedText,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = HeartGuardFontSize.SmallLabel,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                )
+            }
+        }
         OutlinedTextField(
             value = text,
             onValueChange = onTextChange,
@@ -49,14 +69,24 @@ fun PhotoMemoField(
                 .padding(top = HeartGuardSpacing.Compact)
                 .padding(horizontal = contentHorizontalPadding)
                 .heightIn(min = HeartGuardComponentSize.PhotoMemoMinHeight),
-            placeholder = { Text(text = placeholder) },
+            placeholder = {
+                Text(
+                    text = placeholder,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = HeartGuardFontSize.SmallLabel,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                )
+            },
             minLines = 3,
-            shape = RoundedCornerShape(HeartGuardRadius.Button),
+            shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                unfocusedBorderColor = MaterialTheme.extraColors.cardBorder,
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedPlaceholderColor = MaterialTheme.extraColors.tertiaryText,
+                focusedPlaceholderColor = MaterialTheme.extraColors.tertiaryText,
             ),
         )
     }

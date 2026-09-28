@@ -1,5 +1,7 @@
 package com.nativelap.heartguard.view.screen.home
 
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +35,12 @@ fun HomeScreen(
     feelsLikeTemperature: String,
     humidity: String,
     temperatureDelta: String,
+    isTemperatureIncreasing: Boolean?,
+    weatherValue: String,
     riskLabel: String,
+    nextCheckDescription: String,
+    checkTimelineItems: List<CheckTimelineItem>,
+    isManagerCallEnabled: Boolean,
     onMenuClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onManagerCallClick: () -> Unit,
@@ -44,7 +51,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         LazyColumn(
@@ -73,19 +80,19 @@ fun HomeScreen(
                         top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
                     ),
                     weatherPainter = painterResource(R.drawable.heartguard_home_weather),
-                    weatherContentDescription = stringResource(R.string.weather_sunny_description),
+                    weatherContentDescription = null,
                     statusTitle = stringResource(R.string.home_weather_status),
                     currentTemperature = currentTemperature,
                     feelsLikeTemperature = feelsLikeTemperature,
                     feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),
                     humidity = humidity,
                     humidityLabel = stringResource(R.string.home_humidity),
-                    weatherValue = stringResource(R.string.weather_sunny_description),
+                    weatherValue = weatherValue,
                     weatherLabel = stringResource(R.string.home_weather_label),
                     temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
                     temperatureDelta = temperatureDelta,
                     riskLabel = riskLabel,
-                    isTemperatureIncreasing = true,
+                    isTemperatureIncreasing = isTemperatureIncreasing,
                 )
             }
 
@@ -107,8 +114,8 @@ fun HomeScreen(
             item {
                 HomeCheckTimeline(
                     title = stringResource(R.string.home_today_check_title),
-                    nextCheckDescription = stringResource(R.string.home_next_check_description),
-                    items = homeCheckTimelineItems(),
+                    nextCheckDescription = nextCheckDescription,
+                    items = checkTimelineItems,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
             }
@@ -120,6 +127,7 @@ fun HomeScreen(
                     emergencyTitle = stringResource(R.string.home_emergency_call),
                     emergencyDescription = stringResource(R.string.home_emergency_call_description),
                     onManagerClick = onManagerCallClick,
+                    isManagerCallEnabled = isManagerCallEnabled,
                     onEmergencyClick = onEmergencyClick,
                     modifier = Modifier.padding(
                         start = HeartGuardSpacing.HomeContentHorizontal,
@@ -179,20 +187,6 @@ fun HomeScreen(
     }
 }
 
-/** 홈 Preview와 로컬 샘플 화면에서 Figma의 08시~22시 점검 상태를 재현한다. */
-private fun homeCheckTimelineItems(): List<CheckTimelineItem> {
-    return listOf(
-        CheckTimelineItem("08시", isCompleted = true),
-        CheckTimelineItem("10시", isCompleted = true),
-        CheckTimelineItem("12시", isCompleted = false),
-        CheckTimelineItem("14시", isCompleted = true),
-        CheckTimelineItem("16시", isCompleted = false),
-        CheckTimelineItem("18시", isCompleted = true),
-        CheckTimelineItem("20시", isCompleted = true, isCurrent = true),
-        CheckTimelineItem("22시", isCompleted = false),
-    )
-}
-
 @Preview(showBackground = true, widthDp = 402, heightDp = 978)
 @Composable
 private fun HomeScreenPreview() {
@@ -202,7 +196,17 @@ private fun HomeScreenPreview() {
             feelsLikeTemperature = "40.5°C",
             humidity = "55%",
             temperatureDelta = "+3.2°C",
-            riskLabel = stringResource(R.string.home_heat_caution),
+            isTemperatureIncreasing = true,
+            weatherValue = "맑음",
+            riskLabel = "폭염 주의 단계",
+            nextCheckDescription = "다음 체크까지 57분 · 22:00 예정",
+            checkTimelineItems = listOf(
+                CheckTimelineItem("08시", isCompleted = false),
+                CheckTimelineItem("10시", isCompleted = false),
+                CheckTimelineItem("12시", isCompleted = false, isCurrent = true),
+                CheckTimelineItem("14시", isCompleted = false),
+            ),
+            isManagerCallEnabled = true,
             onMenuClick = {},
             onNotificationClick = {},
             onManagerCallClick = {},
@@ -212,4 +216,16 @@ private fun HomeScreenPreview() {
             onRecordClick = {},
         )
     }
+}
+
+@Preview(name = "Compact phone · 200% text", showBackground = true, widthDp = 320, heightDp = 640, fontScale = 2f)
+@Composable
+private fun HomeScreenCompactPreview() {
+    HomeScreenPreview()
+}
+
+@Preview(name = "Wide tablet", showBackground = true, widthDp = 840, heightDp = 900)
+@Composable
+private fun HomeScreenWidePreview() {
+    HomeScreenPreview()
 }

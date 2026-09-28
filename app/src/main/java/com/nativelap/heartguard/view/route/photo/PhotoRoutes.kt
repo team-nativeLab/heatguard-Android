@@ -1,24 +1,47 @@
 package com.nativelap.heartguard.view.route.photo
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.res.stringResource
-import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.component.RecordType
+import com.nativelap.heartguard.view.component.valueOrEmptyText
+import com.nativelap.heartguard.view.route.record.rememberRecordSubmitter
 import com.nativelap.heartguard.view.screen.photo.FieldPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.RestPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.WorkPhotoScreen
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
+import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 
-/** 현장 사진 선택 상태를 [recordDraftViewModel]과 공유해 저장 전 확인 화면까지 값이 유지되게 한다. */
+/** 온도계 기록의 현장 사진 화면(Figma 14/15)이다. 사진 선택 상태는 [recordDraftViewModel]과 공유한다.
+ * 사진 없이 "저장"을 누르면 저장하지 않고 15 상태(온도계가 아직 저장이 안되었어요)를 보여주며, 사진을 고르면 그 상태를 해제한다.
+ * 사진이 있으면 바로 기록을 등록하고 결과에 따라 [onSaveSuccess]/[onSaveFailure]로 이동한다. */
 @Composable
 internal fun HeartGuardFieldPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
-    onSaveClick: () -> Unit,
     onCameraClick: (RecordType) -> Unit,
+    onSaveSuccess: () -> Unit,
+    onSaveFailure: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
+    val submitRecord = rememberRecordSubmitter(
+        recordDraftViewModel = recordDraftViewModel,
+        onSaveSuccess = onSaveSuccess,
+        onSaveFailure = onSaveFailure,
+    )
+    var showSaveError by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(draftState.fieldPhotoUris.isNotEmpty()) {
+        if (draftState.fieldPhotoUris.isNotEmpty()) {
+            showSaveError = false
+        }
+    }
 
     PhotoSelectionFlow(
         selectedPhotoUris = draftState.fieldPhotoUris,
@@ -32,27 +55,44 @@ internal fun HeartGuardFieldPhotoRoute(
         onCameraClick = { onCameraClick(RecordType.TEMPERATURE) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
         FieldPhotoScreen(
-            currentTemperature = "47.5°C",
-            humidity = "55%",
-            feelsLikeTemperature = "40.5°C",
-            selectedPhotoCount = selectedPhotoUris.size,
+            manualTemperature = valueOrEmptyText(
+                draftState.temperatureText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
+            ),
+            manualHumidity = valueOrEmptyText(
+                draftState.humidityText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
+            ),
             selectedPhotoUris = selectedPhotoUris,
-            showTemperatureSaveError = !draftState.isTemperatureSaved,
+            showSaveError = showSaveError,
+            isSaveEnabled = submissionState !is RecordSubmissionState.Submitting,
             onCaptureClick = onAddPhotoClick,
             onRemovePhoto = onRemovePhoto,
-            onSaveClick = onSaveClick,
+            onSaveClick = {
+                if (selectedPhotoUris.isEmpty()) {
+                    showSaveError = true
+                } else {
+                    submitRecord()
+                }
+            },
         )
     }
 }
 
-/** 작업 사진의 선택 상태와 메모를 [recordDraftViewModel]과 공유해 저장 완료 Navigation을 연결한다. */
+/** 작업 사진 화면(Figma 11)이다. 사진·메모를 [recordDraftViewModel]과 공유하고,
+ * "기록 저장"은 확인 화면 없이 바로 기록을 등록해 결과에 따라 [onSaveSuccess]/[onSaveFailure]로 이동한다. */
 @Composable
 internal fun HeartGuardWorkPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
-    onUploadClick: () -> Unit,
     onCameraClick: (RecordType) -> Unit,
+    onSaveSuccess: () -> Unit,
+    onSaveFailure: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
+    val submitRecord = rememberRecordSubmitter(
+        recordDraftViewModel = recordDraftViewModel,
+        onSaveSuccess = onSaveSuccess,
+        onSaveFailure = onSaveFailure,
+    )
 
     PhotoSelectionFlow(
         selectedPhotoUris = draftState.workPhotoUris,
@@ -73,19 +113,29 @@ internal fun HeartGuardWorkPhotoRoute(
             onRemovePhoto = onRemovePhoto,
             onRetakeClick = onClearPhotos,
             onMemoChange = recordDraftViewModel::updateWorkMemo,
-            onUploadClick = onUploadClick,
+            onUploadClick = submitRecord,
+            isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
+                submissionState !is RecordSubmissionState.Submitting,
         )
     }
 }
 
-/** 휴식 사진의 시간·선택 상태·메모를 [recordDraftViewModel]과 공유해 저장 완료 Navigation을 연결한다. */
+/** 휴식 사진 화면(Figma 12)이다. 사진·메모를 [recordDraftViewModel]과 공유하고,
+ * "기록 저장"은 확인 화면 없이 바로 기록을 등록해 결과에 따라 [onSaveSuccess]/[onSaveFailure]로 이동한다. */
 @Composable
 internal fun HeartGuardRestPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
-    onUploadClick: () -> Unit,
     onCameraClick: (RecordType) -> Unit,
+    onSaveSuccess: () -> Unit,
+    onSaveFailure: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
+    val submitRecord = rememberRecordSubmitter(
+        recordDraftViewModel = recordDraftViewModel,
+        onSaveSuccess = onSaveSuccess,
+        onSaveFailure = onSaveFailure,
+    )
 
     PhotoSelectionFlow(
         selectedPhotoUris = draftState.restPhotoUris,
@@ -100,19 +150,15 @@ internal fun HeartGuardRestPhotoRoute(
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         RestPhotoScreen(
             memo = draftState.restMemo,
-            selectedRestTime = if (draftState.isAlternateRestTimeSelected) {
-                stringResource(R.string.photo_rest_selected_time_alternate)
-            } else {
-                stringResource(R.string.photo_rest_selected_time)
-            },
             selectedPhotoCount = selectedPhotoUris.size,
             selectedPhotoUris = selectedPhotoUris,
-            onRestTimeClick = recordDraftViewModel::toggleAlternateRestTime,
             onCaptureClick = onAddPhotoClick,
             onRemovePhoto = onRemovePhoto,
             onRetakeClick = onClearPhotos,
             onMemoChange = recordDraftViewModel::updateRestMemo,
-            onUploadClick = onUploadClick,
+            onUploadClick = submitRecord,
+            isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
+                submissionState !is RecordSubmissionState.Submitting,
         )
     }
 }

@@ -1,17 +1,22 @@
 package com.nativelap.heartguard.view.component.menu
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -28,56 +33,72 @@ fun MenuDrawerContent(
     onEvent: (MenuDrawerEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
-    ) {
-        MenuDrawerProfile(
-            profile = profile,
-            modifier = Modifier.padding(bottom = HeartGuardSpacing.LargeSection),
-        )
+    BoxWithConstraints(modifier = modifier.fillMaxWidth().fillMaxHeight()) {
+        val isCompact = maxHeight < MENU_COMPACT_HEIGHT ||
+            LocalDensity.current.fontScale >= LARGE_FONT_SCALE_BREAKPOINT
 
-        HorizontalDivider(
-            thickness = HeartGuardBorderWidth.Divider,
-            color = MaterialTheme.extraColors.subtleDivider,
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .then(
+                    if (isCompact) {
+                        Modifier.verticalScroll(rememberScrollState())
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
+            MenuDrawerProfile(
+                profile = profile,
+                modifier = Modifier.padding(bottom = HeartGuardSpacing.LargeSection),
+            )
 
-        Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+            HorizontalDivider(
+                thickness = HeartGuardBorderWidth.Divider,
+                color = MaterialTheme.extraColors.subtleDivider,
+            )
 
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_edit_profile),
-            onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
-        )
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_notification_settings),
-            onClick = { onEvent(MenuDrawerEvent.NotificationSettingsClicked) },
-        )
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_notices),
-            onClick = { onEvent(MenuDrawerEvent.NoticesClicked) },
-        )
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_customer_center),
-            onClick = { onEvent(MenuDrawerEvent.CustomerCenterClicked) },
-        )
+            Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
 
-        Spacer(modifier = Modifier.weight(1f))
+            MenuDrawerItem(
+                title = stringResource(R.string.menu_edit_profile),
+                onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
+            )
+            MenuDrawerItem(
+                title = stringResource(R.string.menu_notification_settings),
+                onClick = { onEvent(MenuDrawerEvent.NotificationSettingsClicked) },
+            )
+            MenuDrawerItem(
+                title = stringResource(R.string.menu_notices),
+                onClick = { onEvent(MenuDrawerEvent.NoticesClicked) },
+            )
+            MenuDrawerItem(
+                title = stringResource(R.string.menu_customer_center),
+                onClick = { onEvent(MenuDrawerEvent.CustomerCenterClicked) },
+            )
 
-        HorizontalDivider(
-            thickness = HeartGuardBorderWidth.Divider,
-            color = MaterialTheme.extraColors.subtleDivider,
-        )
+            if (isCompact) {
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.LargeSection))
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
 
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_logout),
-            onClick = { onEvent(MenuDrawerEvent.LogoutClicked) },
-            showsChevron = false,
-        )
-        MenuDrawerWithdrawLink(
-            title = stringResource(R.string.menu_withdraw),
-            onClick = { onEvent(MenuDrawerEvent.WithdrawClicked) },
-        )
+            HorizontalDivider(
+                thickness = HeartGuardBorderWidth.Divider,
+                color = MaterialTheme.extraColors.subtleDivider,
+            )
+
+            MenuDrawerItem(
+                title = stringResource(R.string.menu_logout),
+                onClick = { onEvent(MenuDrawerEvent.LogoutClicked) },
+                showsChevron = false,
+            )
+            MenuDrawerWithdrawLink(
+                title = stringResource(R.string.menu_withdraw),
+                onClick = { onEvent(MenuDrawerEvent.WithdrawClicked) },
+            )
+        }
     }
 }
 
@@ -96,3 +117,6 @@ private fun MenuDrawerContentPreview() {
         )
     }
 }
+
+private val MENU_COMPACT_HEIGHT = 600.dp
+private const val LARGE_FONT_SCALE_BREAKPOINT = 1.5f

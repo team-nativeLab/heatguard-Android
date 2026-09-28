@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -45,7 +46,7 @@ fun SaveResultMessage(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(HeartGuardComponentSize.ResultMessageHeight),
+            .heightIn(min = HeartGuardComponentSize.ResultMessageHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,

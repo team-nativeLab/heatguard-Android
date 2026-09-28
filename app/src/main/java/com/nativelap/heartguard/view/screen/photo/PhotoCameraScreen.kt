@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -57,11 +60,14 @@ internal fun PhotoCameraScreen(
 ) {
     val captureContentDescription = stringResource(R.string.photo_camera_capture)
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.inverseSurface),
     ) {
+        val topGradientHeight = minOf(176.dp, maxHeight * CAMERA_TOP_GRADIENT_HEIGHT_FRACTION)
+        val bottomGradientHeight = minOf(220.dp, maxHeight * CAMERA_BOTTOM_GRADIENT_HEIGHT_FRACTION)
+
         if (hasCameraPermission) {
             AndroidView(
                 factory = { previewView },
@@ -73,7 +79,7 @@ internal fun PhotoCameraScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(176.dp)
+                .height(topGradientHeight)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -88,7 +94,7 @@ internal fun PhotoCameraScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(220.dp)
+                .height(bottomGradientHeight)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -130,43 +136,51 @@ internal fun PhotoCameraScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
             if (!hasCameraPermission || !isCameraReady || errorMessage != null) {
-                Column(
+                Box(
                     modifier = Modifier
+                        .weight(1f)
                         .fillMaxWidth()
-                        .padding(bottom = HeartGuardSpacing.LargeSection),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                        .padding(vertical = HeartGuardSpacing.Compact),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = errorMessage ?: stringResource(R.string.photo_camera_starting),
-                        color = MaterialTheme.colorScheme.inverseOnSurface,
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-
-                    if (isPermissionDenied) {
-                        Button(onClick = onRequestPermissionClick) {
-                            Text(text = stringResource(R.string.photo_camera_request_permission))
-                        }
-                        Button(onClick = onOpenSettingsClick) {
-                            Text(text = stringResource(R.string.photo_camera_open_settings))
-                        }
-                    } else if (hasCameraPermission && !isCameraReady && errorMessage != null) {
-                        Button(onClick = onRetryClick) {
-                            Text(text = stringResource(R.string.photo_camera_retry))
-                        }
-                    } else if (!hasCameraPermission) {
-                        Button(onClick = onRequestPermissionClick) {
-                            Text(text = stringResource(R.string.photo_camera_request_permission))
-                        }
-                    } else if (!isCameraReady) {
-                        CircularProgressIndicator(
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    ) {
+                        Text(
+                            text = errorMessage ?: stringResource(R.string.photo_camera_starting),
                             color = MaterialTheme.colorScheme.inverseOnSurface,
+                            style = MaterialTheme.typography.bodyLarge,
                         )
+
+                        if (isPermissionDenied) {
+                            Button(onClick = onRequestPermissionClick) {
+                                Text(text = stringResource(R.string.photo_camera_request_permission))
+                            }
+                            Button(onClick = onOpenSettingsClick) {
+                                Text(text = stringResource(R.string.photo_camera_open_settings))
+                            }
+                        } else if (hasCameraPermission && !isCameraReady && errorMessage != null) {
+                            Button(onClick = onRetryClick) {
+                                Text(text = stringResource(R.string.photo_camera_retry))
+                            }
+                        } else if (!hasCameraPermission) {
+                            Button(onClick = onRequestPermissionClick) {
+                                Text(text = stringResource(R.string.photo_camera_request_permission))
+                            }
+                        } else if (!isCameraReady) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.inverseOnSurface,
+                            )
+                        }
                     }
                 }
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
             }
 
             Row(
@@ -207,3 +221,6 @@ internal fun PhotoCameraScreen(
         }
     }
 }
+
+private const val CAMERA_TOP_GRADIENT_HEIGHT_FRACTION = 0.28f
+private const val CAMERA_BOTTOM_GRADIENT_HEIGHT_FRACTION = 0.36f

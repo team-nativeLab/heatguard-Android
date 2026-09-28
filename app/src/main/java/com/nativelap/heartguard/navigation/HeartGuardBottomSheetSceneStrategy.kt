@@ -2,11 +2,15 @@
 
 package com.nativelap.heartguard.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavMetadataKey
 import androidx.navigation3.runtime.NavKey
@@ -83,9 +87,18 @@ private data class HeartGuardBottomSheetScene(
             blurRadius = HeartGuardOverlayBlur.FigmaBackdrop,
         )
 
+        // 시트의 모양·배경·여백은 각 목적지의 Sheet 컴포넌트가 그리므로, 여기서는 Material 기본 배경(라벤더)·
+        // 드래그 핸들·모서리·그림자·inset을 모두 비워 두 겹으로 겹쳐 보이지 않게 한다.
         ModalBottomSheet(
             onDismissRequest = onBack,
             sheetState = currentSheetState,
+            shape = RectangleShape,
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+            dragHandle = null,
+            contentWindowInsets = {
+                WindowInsets(0)
+            },
         ) {
             entry.Content()
         }
