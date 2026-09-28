@@ -25,6 +25,7 @@ import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
+import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveConfirmationRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
@@ -245,10 +246,16 @@ private fun HeartGuardMainNavDisplay() {
                     onRecordClick = {
                         backStack.add(HeartGuardDestination.RecordTypeSelection)
                     },
+                    onInquiryClick = {
+                        backStack.add(HeartGuardDestination.Inquiry)
+                    },
                     onWithdrawClick = {
                         backStack.add(HeartGuardDestination.WithdrawNotice)
                     },
                 )
+            }
+            entry<HeartGuardDestination.Inquiry> {
+                HeartGuardInquiryRoute(onBackClick = ::goBack)
             }
             entry<HeartGuardDestination.Emergency> {
                 HeartGuardEmergencyRoute(

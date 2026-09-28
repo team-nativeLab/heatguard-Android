@@ -38,6 +38,7 @@ internal fun HeartGuardHomeRoute(
     onFieldPhotoClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
     onRecordClick: () -> Unit,
+    onInquiryClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     homeViewModel: HomeViewModel = hiltViewModel(),
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
@@ -109,8 +110,12 @@ internal fun HeartGuardHomeRoute(
                         MenuDrawerEvent.EditProfileClicked,
                         MenuDrawerEvent.NotificationSettingsClicked,
                         MenuDrawerEvent.NoticesClicked,
-                        MenuDrawerEvent.CustomerCenterClicked,
                         -> Unit
+
+                        MenuDrawerEvent.CustomerCenterClicked -> {
+                            isMenuDrawerOpen = false
+                            onInquiryClick()
+                        }
 
                         MenuDrawerEvent.LogoutClicked -> {
                             isMenuDrawerOpen = false
