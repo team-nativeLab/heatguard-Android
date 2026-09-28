@@ -113,6 +113,8 @@ object HeartGuardIconSize {
     val EmergencyCallInner = 110.dp
     val EmergencyCallGlyph = 42.dp
     val PhotoError = 68.dp
+    val RecordHistoryType = 44.dp
+    val EmptyStateIllustration = 72.dp
 }
 
 object HeartGuardComponentSize {

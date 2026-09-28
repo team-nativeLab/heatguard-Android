@@ -1,4 +1,4 @@
-package com.nativelap.heartguard.view.component.profile
+package com.nativelap.heartguard.view.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,9 +21,11 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.feedback.RetryButton
 
-/** 작업자 정보 조회 실패를 알리고 다시 조회할 수 있게 한다. 빈 값과 조회 실패를 구분하기 위한 안내다. */
+/** 서버 조회 실패를 알리고 다시 조회할 수 있게 한다. 빈 결과와 조회 실패를 구분해 보여주기 위한 공용 카드다. */
 @Composable
-fun ProfileLoadErrorCard(
+fun LoadErrorCard(
+    title: String,
+    description: String,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -39,12 +41,12 @@ fun ProfileLoadErrorCard(
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Text(
-                text = stringResource(R.string.profile_load_failure_title),
+                text = title,
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
             )
             Text(
-                text = stringResource(R.string.profile_load_failure_description),
+                text = description,
                 color = MaterialTheme.extraColors.secondaryText,
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -58,8 +60,12 @@ fun ProfileLoadErrorCard(
 
 @Preview(showBackground = true, widthDp = 360)
 @Composable
-private fun ProfileLoadErrorCardPreview() {
+private fun LoadErrorCardPreview() {
     HeartGuardTheme {
-        ProfileLoadErrorCard(onRetryClick = {})
+        LoadErrorCard(
+            title = "기록을 불러오지 못했어요",
+            description = "네트워크 연결을 확인한 뒤 다시 시도해주세요.",
+            onRetryClick = {},
+        )
     }
 }

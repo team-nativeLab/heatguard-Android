@@ -9,6 +9,11 @@ import com.nativelap.heartguard.data.record.remote.RecordRemoteDataSourceImpl
 import com.nativelap.heartguard.data.record.remote.UploadApiService
 import com.nativelap.heartguard.data.record.repository.RecordRepositoryImpl
 import com.nativelap.heartguard.domain.record.repository.RecordRepository
+import com.nativelap.heartguard.data.record.remote.RecordHistoryApiService
+import com.nativelap.heartguard.data.record.remote.RecordHistoryRemoteDataSource
+import com.nativelap.heartguard.data.record.remote.RecordHistoryRemoteDataSourceImpl
+import com.nativelap.heartguard.data.record.repository.RecordHistoryRepositoryImpl
+import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -28,6 +33,18 @@ abstract class RecordDataModule {
 
     @Binds
     @Singleton
+    abstract fun bindRecordHistoryRemoteDataSource(
+        impl: RecordHistoryRemoteDataSourceImpl,
+    ): RecordHistoryRemoteDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindRecordHistoryRepository(
+        impl: RecordHistoryRepositoryImpl,
+    ): RecordHistoryRepository
+
+    @Binds
+    @Singleton
     abstract fun bindRecordRepository(
         impl: RecordRepositoryImpl,
     ): RecordRepository
@@ -40,6 +57,16 @@ abstract class RecordDataModule {
         ): UploadApiService = apiRetrofitFactory.createService(
             baseUrl = BuildConfig.BASE_URL,
             serviceClass = UploadApiService::class.java,
+            authentication = ApiAuthentication.BEARER,
+        )
+
+        @Provides
+        @Singleton
+        fun provideRecordHistoryApiService(
+            apiRetrofitFactory: ApiRetrofitFactory,
+        ): RecordHistoryApiService = apiRetrofitFactory.createService(
+            baseUrl = BuildConfig.BASE_URL,
+            serviceClass = RecordHistoryApiService::class.java,
             authentication = ApiAuthentication.BEARER,
         )
 

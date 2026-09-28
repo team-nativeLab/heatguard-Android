@@ -1,42 +1,70 @@
 package com.nativelap.heartguard.view.screen.history
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.ui.theme.HeartGuardRadius
+import com.nativelap.heartguard.domain.record.model.FieldRecordType
+import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
-import com.nativelap.heartguard.view.component.UnavailableFeatureCard
+import com.nativelap.heartguard.view.component.BottomActionBar
+import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.history.RecordHistoryCountSummaryCard
+import com.nativelap.heartguard.view.component.history.RecordHistoryDateRangeSelector
+import com.nativelap.heartguard.view.component.history.RecordHistoryDayCard
+import com.nativelap.heartguard.view.component.history.RecordHistoryDayHeader
+import com.nativelap.heartguard.view.component.history.RecordHistoryEmptyState
+import com.nativelap.heartguard.view.component.history.RecordHistoryFilterRow
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
+import com.nativelap.heartguard.viewmodel.history.RecordHistoryLoadState
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryScreenEvent
+import com.nativelap.heartguard.viewmodel.history.RecordHistoryUiState
+import java.time.LocalDate
+import java.time.OffsetDateTime
 
-/** Figma 20_기록내역_목록의 필터 구조를 따르되, 작업자 기록 조회 API가 없어 목록을 비어 있다고 단정하지 않는다. */
+/** Figma 20_기록내역_목록·23_기록내역_빈상태 화면이다. 기간·유형 필터·유형별 건수·날짜별 기록 목록을 보여준다.
+ * [workplace]는 현재 팀의 작업 위치(홈 조회 값)이며 기록 부제에 쓴다. 빈 결과일 때만 하단에 "기록하기" 버튼을 둔다. */
 @Composable
 fun RecordHistoryScreen(
+    uiState: RecordHistoryUiState,
+    workplace: String?,
     onEvent: (RecordHistoryScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val loadState = uiState.loadState
+    val dayGroups = uiState.dayGroups
+    val isEmptyResult = loadState is RecordHistoryLoadState.Loaded && dayGroups.isEmpty()
+
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            if (isEmptyResult) {
+                BottomActionBar {
+                    RecordSaveButton(
+                        title = stringResource(R.string.history_create_record),
+                        onClick = { onEvent(RecordHistoryScreenEvent.CreateRecordClicked) },
+                    )
+                }
+            }
+        },
     ) { innerPadding ->
         ResponsivePageContent(
             modifier = Modifier
@@ -50,79 +78,149 @@ fun RecordHistoryScreen(
                 modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
-            Column(
+            LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-                    .padding(top = HeartGuardSpacing.Item),
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(
+                    start = HeartGuardSpacing.AccountContentHorizontal,
+                    end = HeartGuardSpacing.AccountContentHorizontal,
+                    top = HeartGuardSpacing.Item,
+                    bottom = HeartGuardSpacing.Section,
+                ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(HeartGuardRadius.Card),
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(
-                            horizontal = HeartGuardSpacing.Item,
-                            vertical = HeartGuardSpacing.Compact,
-                        ),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.history_date_range_unavailable),
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.extraColors.disabledText,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            text = stringResource(R.string.common_chevron_down),
-                            color = MaterialTheme.extraColors.tertiaryText,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                item(key = "dateRange") {
+                    RecordHistoryDateRangeSelector(
+                        startDate = uiState.startDate,
+                        endDate = uiState.endDate,
+                        onClick = { onEvent(RecordHistoryScreenEvent.DateRangeClicked) },
+                    )
+                }
+                item(key = "filters") {
+                    RecordHistoryFilterRow(
+                        selectedFilter = uiState.selectedFilter,
+                        onFilterClick = { filter ->
+                            onEvent(RecordHistoryScreenEvent.FilterSelected(filter))
+                        },
+                    )
+                }
+
+                when (loadState) {
+                    RecordHistoryLoadState.Loading -> {
+                        item(key = "loading") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = HeartGuardSpacing.LargeSection),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+
+                    RecordHistoryLoadState.Failed -> {
+                        item(key = "error") {
+                            LoadErrorCard(
+                                title = stringResource(R.string.history_load_failure_title),
+                                description = stringResource(R.string.history_load_failure_description),
+                                onRetryClick = { onEvent(RecordHistoryScreenEvent.RetryClicked) },
+                            )
+                        }
+                    }
+
+                    is RecordHistoryLoadState.Loaded -> {
+                        if (isEmptyResult) {
+                            item(key = "empty") {
+                                RecordHistoryEmptyState(selectedFilter = uiState.selectedFilter)
+                            }
+                        } else {
+                            item(key = "counts") {
+                                RecordHistoryCountSummaryCard(recordCounts = uiState.recordCounts)
+                            }
+                            dayGroups.forEach { dayGroup ->
+                                item(key = "header-${dayGroup.date}") {
+                                    RecordHistoryDayHeader(
+                                        date = dayGroup.date,
+                                        today = uiState.today,
+                                    )
+                                }
+                                item(key = "day-${dayGroup.date}") {
+                                    RecordHistoryDayCard(
+                                        recordEntries = dayGroup.entries,
+                                        workplace = workplace,
+                                        onRecordClick = { recordId ->
+                                            onEvent(RecordHistoryScreenEvent.RecordClicked(recordId))
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact)) {
-                    HistoryFilterChip(title = stringResource(R.string.history_filter_all), isSelected = true)
-                    HistoryFilterChip(title = stringResource(R.string.history_filter_temperature))
-                    HistoryFilterChip(title = stringResource(R.string.history_filter_work_photo))
-                    HistoryFilterChip(title = stringResource(R.string.history_filter_rest_photo))
-                }
-
-                UnavailableFeatureCard(
-                    title = stringResource(R.string.history_api_unavailable_title),
-                    description = stringResource(R.string.home_record_history_api_unavailable),
-                )
             }
         }
     }
 }
 
+@Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable
-private fun HistoryFilterChip(
-    title: String,
-    isSelected: Boolean = false,
-) {
-    Surface(
-        shape = RoundedCornerShape(HeartGuardRadius.Pill),
-        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-    ) {
-        Text(
-            text = title,
-            modifier = Modifier.padding(horizontal = HeartGuardSpacing.Item, vertical = HeartGuardSpacing.Compact),
-            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.extraColors.secondaryText,
-            style = MaterialTheme.typography.labelMedium,
+private fun RecordHistoryScreenLoadedPreview() {
+    HeartGuardTheme {
+        RecordHistoryScreen(
+            uiState = RecordHistoryUiState(
+                today = LocalDate.of(2026, 9, 27),
+                startDate = LocalDate.of(2026, 9, 21),
+                endDate = LocalDate.of(2026, 9, 27),
+                loadState = RecordHistoryLoadState.Loaded(
+                    entries = listOf(
+                        RecordHistoryEntry(
+                            recordId = "rec_01",
+                            type = FieldRecordType.THERMOMETER,
+                            temperature = 36.2,
+                            humidity = 65.0,
+                            apparentTemperature = 38.7,
+                            heatLevel = 1,
+                            photoCount = 1,
+                            photoUrls = emptyList(),
+                            memo = null,
+                            measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
+                        ),
+                        RecordHistoryEntry(
+                            recordId = "rec_02",
+                            type = FieldRecordType.REST,
+                            temperature = null,
+                            humidity = null,
+                            apparentTemperature = null,
+                            heatLevel = null,
+                            photoCount = 2,
+                            photoUrls = emptyList(),
+                            memo = null,
+                            measuredAt = OffsetDateTime.parse("2026-09-26T12:10:00+09:00"),
+                        ),
+                    ),
+                ),
+            ),
+            workplace = "3층 외벽",
+            onEvent = {},
         )
     }
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable
-private fun RecordHistoryScreenUnavailablePreview() {
+private fun RecordHistoryScreenEmptyPreview() {
     HeartGuardTheme {
-        RecordHistoryScreen(onEvent = {})
+        RecordHistoryScreen(
+            uiState = RecordHistoryUiState(
+                today = LocalDate.of(2026, 9, 27),
+                startDate = LocalDate.of(2026, 9, 21),
+                endDate = LocalDate.of(2026, 9, 27),
+                loadState = RecordHistoryLoadState.Loaded(entries = emptyList()),
+            ),
+            workplace = null,
+            onEvent = {},
+        )
     }
 }

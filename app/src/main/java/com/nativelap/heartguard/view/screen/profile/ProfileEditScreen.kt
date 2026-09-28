@@ -23,11 +23,11 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
+import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.profile.ProfileAvatarHeader
-import com.nativelap.heartguard.view.component.profile.ProfileLoadErrorCard
 import com.nativelap.heartguard.view.component.profile.ProfileReadOnlyField
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditScreenEvent
@@ -94,7 +94,9 @@ fun ProfileEditScreen(
                     )
 
                     if (loadState == ProfileLoadState.Failed) {
-                        ProfileLoadErrorCard(
+                        LoadErrorCard(
+                            title = stringResource(R.string.profile_load_failure_title),
+                            description = stringResource(R.string.profile_load_failure_description),
                             onRetryClick = { onEvent(ProfileEditScreenEvent.RetryClicked) },
                         )
                     }
