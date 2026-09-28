@@ -14,6 +14,8 @@ data class SiteStatusUiModel(
     val apparentTemperature: String? = null,
     val heatLevel: Int? = null,
     val managerPhoneNumber: String? = null,
+    val teamName: String? = null,
+    val workplace: String? = null,
 )
 
 /** 홈 화면 상태를 공용 현장 상태로 바꾼다. Success가 아니면 모든 값이 null이다. */
@@ -29,6 +31,8 @@ private fun TeamSiteOverview.toSiteStatusUiModel(): SiteStatusUiModel {
         humidity = humidity.toDisplayNumber(),
         apparentTemperature = apparentTemperature.toDisplayNumber(),
         heatLevel = heatLevel,
-        managerPhoneNumber = managerPhoneNumber.ifBlank { null },
+        managerPhoneNumber = managerPhoneNumber,
+        teamName = teamName,
+        workplace = workplace,
     )
 }
