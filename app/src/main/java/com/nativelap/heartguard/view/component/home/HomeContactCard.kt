@@ -42,6 +42,7 @@ fun HomeContactCard(
     onManagerClick: () -> Unit,
     onEmergencyClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isManagerCallEnabled: Boolean = true,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -55,6 +56,7 @@ fun HomeContactCard(
                 iconPainter = painterResource(R.drawable.home_manager_phone),
                 iconContainerColor = MaterialTheme.extraColors.homeMetricContainer,
                 onClick = onManagerClick,
+                isEnabled = isManagerCallEnabled,
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.Section),
@@ -79,12 +81,17 @@ private fun HomeContactRow(
     iconPainter: Painter,
     iconContainerColor: Color,
     onClick: () -> Unit,
+    isEnabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = HeartGuardComponentSize.HomeContactHeight / 2)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(
+                enabled = isEnabled,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .padding(horizontal = HeartGuardSpacing.Section),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),

@@ -120,6 +120,7 @@ object HeartGuardIconSize {
 }
 
 object HeartGuardComponentSize {
+    val ResponsiveContentMaxWidth = 600.dp
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
     val AuthContentMaxWidth = 280.dp

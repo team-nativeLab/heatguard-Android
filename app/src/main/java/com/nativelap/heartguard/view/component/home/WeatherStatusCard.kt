@@ -45,7 +45,7 @@ fun WeatherStatusCard(
     temperatureDeltaLabel: String,
     temperatureDelta: String,
     riskLabel: String,
-    isTemperatureIncreasing: Boolean,
+    isTemperatureIncreasing: Boolean?,
     modifier: Modifier = Modifier,
 ) {
     Column(

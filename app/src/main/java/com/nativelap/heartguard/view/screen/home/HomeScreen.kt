@@ -19,12 +19,13 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.HeartGuardHeader
-import com.nativelap.heartguard.view.component.home.CheckTimelineItem
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
 import com.nativelap.heartguard.view.component.home.HomeAdditionalRecordCard
-import com.nativelap.heartguard.view.component.home.HomeCheckTimeline
+import com.nativelap.heartguard.view.component.home.HomeChecklistCard
 import com.nativelap.heartguard.view.component.home.HomeContactCard
 import com.nativelap.heartguard.view.component.home.WeatherStatusCard
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
+import com.nativelap.heartguard.viewmodel.home.HomeChecklistUiState
 
 /** Figma 홈 리디자인의 날씨, 점검, 연락처, 추가 기록 영역을 하나의 화면으로 조립한다. */
 @Composable
@@ -33,6 +34,7 @@ fun HomeScreen(
     feelsLikeTemperature: String,
     humidity: String,
     temperatureDelta: String,
+    isTemperatureIncreasing: Boolean?,
     riskLabel: String,
     onMenuClick: () -> Unit,
     onNotificationClick: () -> Unit,
@@ -41,10 +43,14 @@ fun HomeScreen(
     onFieldPhotoClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
     onRecordClick: () -> Unit,
+    isManagerCallEnabled: Boolean,
+    checklistState: HomeChecklistUiState,
+    onChecklistItemChecked: (itemId: String, checked: Boolean) -> Unit,
+    onChecklistRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         LazyColumn(
@@ -85,7 +91,7 @@ fun HomeScreen(
                     temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
                     temperatureDelta = temperatureDelta,
                     riskLabel = riskLabel,
-                    isTemperatureIncreasing = true,
+                    isTemperatureIncreasing = isTemperatureIncreasing,
                 )
             }
 
@@ -105,10 +111,10 @@ fun HomeScreen(
             }
 
             item {
-                HomeCheckTimeline(
-                    title = stringResource(R.string.home_today_check_title),
-                    nextCheckDescription = stringResource(R.string.home_next_check_description),
-                    items = homeCheckTimelineItems(),
+                HomeChecklistCard(
+                    state = checklistState,
+                    onItemCheckedChange = onChecklistItemChecked,
+                    onRetry = onChecklistRetry,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
             }
@@ -121,6 +127,7 @@ fun HomeScreen(
                     emergencyDescription = stringResource(R.string.home_emergency_call_description),
                     onManagerClick = onManagerCallClick,
                     onEmergencyClick = onEmergencyClick,
+                    isManagerCallEnabled = isManagerCallEnabled,
                     modifier = Modifier.padding(
                         start = HeartGuardSpacing.HomeContentHorizontal,
                         top = HeartGuardSpacing.Compact,
@@ -179,20 +186,6 @@ fun HomeScreen(
     }
 }
 
-/** 홈 Preview와 로컬 샘플 화면에서 Figma의 08시~22시 점검 상태를 재현한다. */
-private fun homeCheckTimelineItems(): List<CheckTimelineItem> {
-    return listOf(
-        CheckTimelineItem("08시", isCompleted = true),
-        CheckTimelineItem("10시", isCompleted = true),
-        CheckTimelineItem("12시", isCompleted = false),
-        CheckTimelineItem("14시", isCompleted = true),
-        CheckTimelineItem("16시", isCompleted = false),
-        CheckTimelineItem("18시", isCompleted = true),
-        CheckTimelineItem("20시", isCompleted = true, isCurrent = true),
-        CheckTimelineItem("22시", isCompleted = false),
-    )
-}
-
 @Preview(showBackground = true, widthDp = 402, heightDp = 978)
 @Composable
 private fun HomeScreenPreview() {
@@ -202,6 +195,7 @@ private fun HomeScreenPreview() {
             feelsLikeTemperature = "40.5°C",
             humidity = "55%",
             temperatureDelta = "+3.2°C",
+            isTemperatureIncreasing = true,
             riskLabel = stringResource(R.string.home_heat_caution),
             onMenuClick = {},
             onNotificationClick = {},
@@ -210,6 +204,10 @@ private fun HomeScreenPreview() {
             onFieldPhotoClick = {},
             onRecordHistoryClick = {},
             onRecordClick = {},
+            isManagerCallEnabled = false,
+            checklistState = HomeChecklistUiState.Loading,
+            onChecklistItemChecked = { _, _ -> },
+            onChecklistRetry = {},
         )
     }
 }

@@ -3,13 +3,18 @@ package com.nativelap.heartguard.view.route.home
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.nativelap.heartguard.R
@@ -21,6 +26,7 @@ import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
+import kotlinx.coroutines.launch
 
 /** 홈에 팀 현장페이지 API 결과와 사용자 이벤트를 HomeScreen에 전달하는 Route이다.
  * 서버 응답을 아직 받지 못했거나([HomeUiState.Loading]) 실패했을 때([HomeUiState.Error])는
@@ -44,26 +50,33 @@ internal fun HeartGuardHomeRoute(
 ) {
     // TODO: androidx.lifecycle:lifecycle-runtime-compose 도입이 확정되면 collectAsStateWithLifecycle로 교체한다.
     val uiState by homeViewModel.uiState.collectAsState()
+    val checklistUiState by homeViewModel.checklistUiState.collectAsState()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsState()
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val unsupportedFeatureMessage = stringResource(R.string.home_feature_unavailable)
+    val showUnsupportedFeatureMessage: () -> Unit = {
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(message = unsupportedFeatureMessage)
+        }
+        Unit
+    }
     val overview = (uiState as? HomeUiState.Success)?.overview
 
-    // 기상청 폭염특보 4단계(관심/주의/경고/위험)에 맞춘 라벨이다. 서버 값이 아직 없으면(로딩·실패)
-    // 기존 화면과 동일하게 "주의" 단계를 기본값으로 보여준다.
+    // 서버에서 폭염 단계 값을 받지 못한 경우 예시 단계 대신 값 없음 상태를 표시한다.
     val riskLabel = when (overview?.heatLevel) {
         0 -> stringResource(R.string.home_heat_level_interest)
         2 -> stringResource(R.string.home_heat_level_warning)
         3 -> stringResource(R.string.home_heat_level_danger)
+        null -> stringResource(R.string.home_unavailable_value)
         else -> stringResource(R.string.home_heat_caution)
     }
 
     val dialPhoneNumber = rememberPhoneDialLauncher()
-    // 서버가 실제 관리자 전화번호(TeamSiteOverview.managerPhoneNumber)를 내려주면 그 값을 쓰고,
-    // 아직 응답을 못 받았으면 기존 화면과 동일한 고정 번호로 대체한다.
-    val managerPhoneNumber = overview?.managerPhoneNumber
-        ?: stringResource(R.string.home_manager_contact_phone)
+    val managerPhoneNumber = overview?.managerPhoneNumber?.takeIf(String::isNotBlank)
 
     // 드로어가 열려 있을 때만 시스템 뒤로가기를 가로채 드로어를 닫는다. 닫혀 있으면 NavHost의 onBack이 처리한다.
     BackHandler(enabled = isMenuDrawerOpen) {
@@ -72,26 +85,33 @@ internal fun HeartGuardHomeRoute(
 
     Box(modifier = Modifier.fillMaxSize()) {
         HomeScreen(
-            currentTemperature = overview?.let { "${it.currentTemperature}°C" } ?: "47.5°C",
-            feelsLikeTemperature = overview?.let { "${it.apparentTemperature}°C" } ?: "40.5°C",
+            currentTemperature = overview?.let { "${it.currentTemperature}°C" }
+                ?: stringResource(R.string.home_unavailable_value),
+            feelsLikeTemperature = overview?.let { "${it.apparentTemperature}°C" }
+                ?: stringResource(R.string.home_unavailable_value),
             humidity = overview?.let {
                 stringResource(
                     R.string.home_humidity_value_format,
                     it.humidity.toDisplayNumber(),
                 )
-            } ?: "55%",
-            temperatureDelta = "+3.2°C",
+            } ?: stringResource(R.string.home_unavailable_value),
+            temperatureDelta = stringResource(R.string.home_unavailable_value),
+            isTemperatureIncreasing = null,
             riskLabel = riskLabel,
             onMenuClick = {
                 isMenuDrawerOpen = true
             },
-            // 알림 아이콘 기능은 Figma/API 명세서 어디에도 정의되어 있지 않아 의도적으로 비워둔다.
-            onNotificationClick = {},
-            onManagerCallClick = { dialPhoneNumber(managerPhoneNumber) },
+            // 알림 기능은 API 명세에 없어 기능 안내를 보여준다.
+            onNotificationClick = showUnsupportedFeatureMessage,
+            onManagerCallClick = { managerPhoneNumber?.let(dialPhoneNumber) },
             onEmergencyClick = onEmergencyClick,
             onFieldPhotoClick = onFieldPhotoClick,
             onRecordHistoryClick = onRecordHistoryClick,
             onRecordClick = onRecordClick,
+            isManagerCallEnabled = managerPhoneNumber != null,
+            checklistState = checklistUiState,
+            onChecklistItemChecked = homeViewModel::setChecklistItemChecked,
+            onChecklistRetry = homeViewModel::loadTodayChecklist,
         )
 
         MenuDrawerOverlay(
@@ -107,10 +127,12 @@ internal fun HeartGuardHomeRoute(
                         // 내 정보 수정·알림 설정·공지사항·고객센터는 Figma에 이동할 화면이 정의되어 있지 않아
                         // 화면이 추가될 때까지 의도적으로 아무 동작도 하지 않는다.
                         MenuDrawerEvent.EditProfileClicked,
-                        MenuDrawerEvent.NotificationSettingsClicked,
-                        MenuDrawerEvent.NoticesClicked,
                         MenuDrawerEvent.CustomerCenterClicked,
                         -> Unit
+
+                        MenuDrawerEvent.NotificationSettingsClicked,
+                        MenuDrawerEvent.NoticesClicked,
+                        -> showUnsupportedFeatureMessage()
 
                         MenuDrawerEvent.LogoutClicked -> {
                             isMenuDrawerOpen = false
@@ -125,6 +147,11 @@ internal fun HeartGuardHomeRoute(
                 },
             )
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 

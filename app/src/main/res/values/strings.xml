@@ -35,6 +35,8 @@
     <string name="auth_password_confirm_hint">비밀번호를 한 번 더 입력해주세요</string>
     <string name="auth_password_mismatch_error">비밀번호가 일치하지 않아요</string>
     <string name="home_weather_status">현재 온도</string>
+    <string name="home_unavailable_value">—</string>
+    <string name="home_feature_unavailable">이 기능은 아직 사용할 수 없어요.</string>
     <string name="weather_sunny_description">맑음</string>
     <string name="home_weather_label">날씨</string>
     <string name="home_current_temperature">현재 온도</string>
@@ -65,13 +67,24 @@
     <string name="home_calculated">자동계산</string>
     <string name="home_additional_records">추가 기록</string>
     <string name="home_data_records">데이터 기록</string>
-    <string name="home_today_check_title">오늘 체크 시간</string>
-    <string name="home_next_check_description">다음 체크까지 57분 · 22:00 예정</string>
+    <string name="home_today_check_title">오늘 체크리스트</string>
+    <string name="home_checklist_empty">오늘 등록된 체크 항목이 없습니다.</string>
+    <string name="home_checklist_load_error">체크리스트를 불러오지 못했어요. 연결 상태를 확인하고 다시 시도해 주세요.</string>
+    <string name="home_checklist_update_error">완료 상태를 저장하지 못했어요. 다시 불러와 주세요.</string>
+    <string name="home_checklist_item_accessibility">%1$s 체크 항목</string>
+    <string name="history_period_unavailable">기간 선택 · 명세 보완 중</string>
+    <string name="history_filter_all">전체</string>
+    <string name="history_filter_temperature">온도계</string>
+    <string name="history_filter_work_photo">작업 사진</string>
+    <string name="history_filter_rest_photo">휴식 사진</string>
+    <string name="history_unavailable_title">기록 목록을 불러올 수 없어요</string>
+    <string name="history_unavailable_description">서버 기록 항목 계약이 보완되면 조회할 수 있어요.</string>
+    <string name="history_unavailable_message">기록 목록 응답 형식이 확정되지 않아 아직 사용할 수 없어요.</string>
+    <string name="history_record_action">기록하기</string>
     <string name="home_manager_call">관리자 전화</string>
     <string name="home_manager_call_description">현장 관리자에게 연락</string>
     <!-- emergency_contact_phone과 현재 값은 같지만, 관리자 전화(홈)와 긴급 전화(관리자 연락 카드)는
          의미가 다른 별도 연락처이므로 문자열을 분리한다. 실제 서버 연동 시 각각 다른 값으로 교체될 수 있다. -->
-    <string name="home_manager_contact_phone">010 - 1234 - 5678</string>
     <string name="home_emergency_call">긴급 전화</string>
     <string name="home_emergency_call_description">본사와 즉시 연결</string>
     <string name="home_record_action">기록하기</string>

@@ -25,13 +25,13 @@ import com.nativelap.heartguard.ui.theme.extraColors
 fun TemperatureDelta(
     deltaLabel: String,
     deltaValue: String,
-    isIncreasing: Boolean,
+    isIncreasing: Boolean?,
     modifier: Modifier = Modifier,
 ) {
-    val directionalDeltaText = if (isIncreasing) {
-        stringResource(R.string.home_temperature_rise_format, deltaValue)
-    } else {
-        stringResource(R.string.home_temperature_fall_format, deltaValue)
+    val directionalDeltaText = when (isIncreasing) {
+        true -> stringResource(R.string.home_temperature_rise_format, deltaValue)
+        false -> stringResource(R.string.home_temperature_fall_format, deltaValue)
+        null -> deltaValue
     }
 
     Surface(
@@ -41,15 +41,15 @@ fun TemperatureDelta(
                 contentDescription = "$deltaLabel $deltaValue"
             },
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
-        color = if (isIncreasing) {
-            MaterialTheme.extraColors.temperatureRiseContainer
-        } else {
-            MaterialTheme.extraColors.successContainer
+        color = when (isIncreasing) {
+            true -> MaterialTheme.extraColors.temperatureRiseContainer
+            false -> MaterialTheme.extraColors.successContainer
+            null -> MaterialTheme.colorScheme.surfaceVariant
         },
-        contentColor = if (isIncreasing) {
-            MaterialTheme.extraColors.onTemperatureRiseContainer
-        } else {
-            MaterialTheme.extraColors.success
+        contentColor = when (isIncreasing) {
+            true -> MaterialTheme.extraColors.onTemperatureRiseContainer
+            false -> MaterialTheme.extraColors.success
+            null -> MaterialTheme.extraColors.disabledText
         },
     ) {
         Text(
