@@ -44,6 +44,7 @@ fun CallingScreen(
     isContactCallEnabled: Boolean = true,
     isUpdatingStatus: Boolean = false,
     statusUpdateError: Boolean = false,
+    isConnectionUnstable: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
@@ -96,6 +97,15 @@ fun CallingScreen(
                 isCalling = false,
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (isConnectionUnstable) {
+                Text(
+                    text = stringResource(R.string.emergency_connection_unstable),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
 
             if (statusUpdateError) {
                 Text(

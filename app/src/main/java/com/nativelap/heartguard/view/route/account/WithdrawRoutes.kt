@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.account.WithdrawConfirmDialogContent
@@ -28,9 +29,8 @@ internal fun HeartGuardWithdrawNoticeRoute(
     onWithdrawClick: () -> Unit,
     onWithdrawSucceeded: () -> Unit,
 ) {
-    // TODO: androidx.lifecycle:lifecycle-runtime-compose 도입이 확정되면 collectAsStateWithLifecycle로 교체한다.
-    val uiState by withdrawViewModel.uiState.collectAsState()
-    val password by withdrawViewModel.password.collectAsState()
+    val uiState by withdrawViewModel.uiState.collectAsStateWithLifecycle()
+    val password by withdrawViewModel.password.collectAsStateWithLifecycle()
     val latestOnWithdrawSucceeded by rememberUpdatedState(onWithdrawSucceeded)
 
     LaunchedEffect(uiState.submissionState) {
