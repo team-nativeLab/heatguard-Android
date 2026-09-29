@@ -40,11 +40,10 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 
 /** Figma 20_기록내역_목록·23_기록내역_빈상태 화면이다. 기간·유형 필터·유형별 건수·날짜별 기록 목록을 보여준다.
- * [workplace]는 현재 팀의 작업 위치(홈 조회 값)이며 기록 부제에 쓴다. 빈 결과일 때만 하단에 "기록하기" 버튼을 둔다. */
+ * 빈 결과일 때만 하단에 "기록하기" 버튼을 둔다. */
 @Composable
 fun RecordHistoryScreen(
     uiState: RecordHistoryUiState,
-    workplace: String?,
     onEvent: (RecordHistoryScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -149,7 +148,6 @@ fun RecordHistoryScreen(
                                 item(key = "day-${dayGroup.date}") {
                                     RecordHistoryDayCard(
                                         recordEntries = dayGroup.entries,
-                                        workplace = workplace,
                                         onRecordClick = { recordId ->
                                             onEvent(RecordHistoryScreenEvent.RecordClicked(recordId))
                                         },
@@ -202,7 +200,6 @@ private fun RecordHistoryScreenLoadedPreview() {
                     ),
                 ),
             ),
-            workplace = "3층 외벽",
             onEvent = {},
         )
     }
@@ -219,7 +216,6 @@ private fun RecordHistoryScreenEmptyPreview() {
                 endDate = LocalDate.of(2026, 9, 27),
                 loadState = RecordHistoryLoadState.Loaded(entries = emptyList()),
             ),
-            workplace = null,
             onEvent = {},
         )
     }

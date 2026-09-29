@@ -9,21 +9,18 @@ import com.nativelap.heartguard.view.component.history.RecordHistoryDateRangePic
 import com.nativelap.heartguard.view.screen.history.RecordHistoryScreen
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryScreenEvent
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryViewModel
-import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import java.time.LocalDate
 
 /** 기록 내역 화면에 들어올 때마다 기본 기간(최근 7일)으로 서버 기록을 조회한다.
- * 작업 위치는 홈 조회 값(team.workplace)을 쓰며, 기간 선택 다이얼로그 표시 여부는 ViewModel 상태로 관리해 회전 후에도 유지한다. */
+ * 기간 선택 다이얼로그 표시 여부는 ViewModel 상태로 관리해 회전 후에도 유지한다. */
 @Composable
 internal fun HeartGuardRecordHistoryRoute(
-    homeViewModel: HomeViewModel,
     onBackClick: () -> Unit,
     onRecordClick: (String) -> Unit,
     onCreateRecordClick: () -> Unit,
     viewModel: RecordHistoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val today = uiState.today
 
     LaunchedEffect(viewModel) {
@@ -32,7 +29,6 @@ internal fun HeartGuardRecordHistoryRoute(
 
     RecordHistoryScreen(
         uiState = uiState,
-        workplace = siteStatus.workplace,
         onEvent = { event ->
             when (event) {
                 RecordHistoryScreenEvent.BackClicked -> onBackClick()

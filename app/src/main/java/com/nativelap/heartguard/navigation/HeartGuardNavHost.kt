@@ -285,7 +285,6 @@ private fun HeartGuardMainNavDisplay() {
             }
             entry<HeartGuardDestination.RecordHistory> {
                 HeartGuardRecordHistoryRoute(
-                    homeViewModel = homeViewModel,
                     onBackClick = ::goBack,
                     onRecordClick = { recordId ->
                         backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
@@ -299,7 +298,6 @@ private fun HeartGuardMainNavDisplay() {
             entry<HeartGuardDestination.RecordHistoryDetail> { destination ->
                 HeartGuardRecordDetailRoute(
                     recordId = destination.recordId,
-                    homeViewModel = homeViewModel,
                     onBackClick = ::goBack,
                 )
             }

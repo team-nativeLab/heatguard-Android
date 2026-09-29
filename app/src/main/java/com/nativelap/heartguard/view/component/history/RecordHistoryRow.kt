@@ -30,13 +30,11 @@ import com.nativelap.heartguard.viewmodel.toDisplayNumber
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
-/** 기록 내역 목록의 기록 한 줄이다(Figma 20). 부제는 작업 위치에 유형별 값을 붙인다.
- * 작업 위치는 기록 응답에 없어 현재 팀의 작업 위치(홈 조회 team.workplace)를 쓰고, 휴식 시간은 서버가 주지 않아 "--"로 둔다.
+/** 기록 내역 목록의 기록 한 줄이다(Figma 20). 부제는 기록 당시 작업 위치에 유형별 값을 붙인다.
  * 목록 응답에는 사진 URL이 없어 썸네일 없이 표시한다. */
 @Composable
 fun RecordHistoryRow(
     recordEntry: RecordHistoryEntry,
-    workplace: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -63,10 +61,7 @@ fun RecordHistoryRow(
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                 )
                 Text(
-                    text = recordSubtitleText(
-                        recordEntry = recordEntry,
-                        workplace = workplace,
-                    ),
+                    text = recordSubtitleText(recordEntry),
                     color = MaterialTheme.extraColors.secondaryText,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
@@ -89,15 +84,12 @@ fun RecordHistoryRow(
 
 private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-// "작업 위치 · 36.2°C · 습도 65%"(온도계), "작업 위치 · --분 휴식"(휴식), "작업 위치"(작업)처럼 만든다.
+// "작업 위치 · 36.2°C · 습도 65%"(온도계), "작업 위치 · 20분 휴식"(휴식), "작업 위치"(작업)처럼 만든다.
 @Composable
-private fun recordSubtitleText(
-    recordEntry: RecordHistoryEntry,
-    workplace: String?,
-): String {
+private fun recordSubtitleText(recordEntry: RecordHistoryEntry): String {
     val separator = stringResource(R.string.history_subtitle_separator)
     val subtitleParts = buildList {
-        add(valueOrEmptyText(workplace))
+        add(valueOrEmptyText(recordEntry.workplace))
         when (recordEntry.type) {
             FieldRecordType.THERMOMETER -> {
                 add(temperatureValueText(recordEntry.temperature.toDisplayNumber()))
@@ -110,7 +102,12 @@ private fun recordSubtitleText(
             }
 
             FieldRecordType.REST -> {
-                add(stringResource(R.string.history_rest_minutes_format, emptyValueText()))
+                add(
+                    stringResource(
+                        R.string.history_rest_minutes_format,
+                        valueOrEmptyText(recordEntry.restMinutes?.toString()),
+                    ),
+                )
             }
 
             FieldRecordType.WORK,
@@ -138,7 +135,6 @@ private fun RecordHistoryRowPreview() {
                 memo = null,
                 measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
             ),
-            workplace = "3층 외벽",
             onClick = {},
         )
     }

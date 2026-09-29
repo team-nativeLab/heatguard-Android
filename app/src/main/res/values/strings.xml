@@ -289,6 +289,8 @@
     <string name="history_detail_taken_at">촬영 시간</string>
     <string name="history_detail_location">위치</string>
     <string name="history_detail_rest_time">휴식 시간</string>
+    <string name="history_detail_rest_minutes_format">%1$d분</string>
+    <string name="history_detail_rest_range_format">%1$d분 (%2$s ~ %3$s)</string>
     <string name="history_detail_footnote">제출한 기록은 수정할 수 없어요. 수정이 필요하면 현장 관리자에게 문의해주세요.</string>
     <string name="history_detail_load_failure_title">기록 상세를 불러오지 못했어요</string>
     <string name="common_temperature_value_format">%1$s°C</string>

@@ -164,6 +164,8 @@ object HeartGuardComponentSize {
     val ResultMessageHeight = 218.dp
     val ResultSummaryHeight = 261.dp
     val ResultErrorDetailHeight = 123.dp
+    // Figma 22 기록 상세 정보 카드의 행 높이다.
+    val DetailInfoRowHeight = 45.dp
 }
 
 object HeartGuardOverlayBlur {
