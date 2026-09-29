@@ -29,11 +29,11 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 | 화면 | 설명 |
 |---|---|
 | Login | 사전 발급된 작업자 계정 로그인. 회원가입 화면과 흐름은 제공하지 않음 |
-| Home | 현재 온도·습도·체감온도·폭염 단계(홈 조회), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시), 관리자 전화(`site.managerPhone`), 기록·긴급 호출·기록 내역 진입. 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
-| ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`), 비밀번호 변경(`/auth/team/password`). 회사명은 서버 필드가 없어 `--` |
+| Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 현장관리자 긴급호출 화면으로, "긴급 전화"는 본사 번호(`company.phone`) 다이얼(번호 없으면 비활성). 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
+| ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
 | Inquiry | 문의 등록과 내 문의 목록(상태 배지·등록일). 문의 상세 화면은 범위 밖 |
-| RecordHistory / RecordHistoryDetail | 기간(기본 최근 7일, 최대 31일)·유형 필터·유형별 건수·날짜별 기록 목록과 온도계/사진 기록 상세 |
-| Emergency / Calling | "긴급 호출하기"를 눌러 호출 등록 → 호출 중(관리자 확인 시 연결됨) → 취소·종료. 앱 재시작 시 진행 중 호출을 이어받음 |
+| RecordHistory / RecordHistoryDetail | 기간(기본 최근 7일, 최대 31일)·유형 필터·유형별 건수·날짜별 기록 목록과 온도계/사진 기록 상세. 위치·팀명은 기록 당시 값, 휴식 기록은 `restMinutes` 표시 |
+| Emergency / Calling | 홈 "관리자 전화"로 진입. "긴급 호출하기"를 눌러 호출 등록 → 호출 중(관리자 확인 시 연결됨) → 취소·종료. 앱 재시작 시 진행 중 호출을 이어받음 |
 | RecordTypeSelection | 온도계 기록 / 작업 사진 / 휴식 사진 중 기록 유형 선택 (바텀시트) |
 | TemperatureRecord | 온도계 측정값 입력 |
 | FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 CameraX 전체 화면 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장) |
@@ -49,19 +49,19 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 홈, 프로필 수정, 문의, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패 화면에는 화면 폭을 최대 600dp로 제한하고 넓은 화면에서 가운데 정렬하는 콘텐츠 래퍼가 적용되어 있습니다. 카메라 촬영 화면은 전체 화면 구성을 유지합니다. Figma의 모든 프레임과 실제 기기 크기별 시각 비교·검증은 완료되지 않았습니다.
 
 ## 서버 API 계약 현황
-2026-09-28 테스트 서버(`https://heatguard-temp.https.gsmsv.site/`)와 테스트 계정으로 확인한 결과입니다. 명세에 없던 필드는 실서버 응답으로 확정했습니다.
+2026-09-28 테스트 서버(`https://heatguard-temp.https.gsmsv.site/`)와 테스트 계정으로 확인한 결과에, API 명세 v0.1(2026-09-29)에서 추가된 필드를 반영했습니다. 명세 v0.1 신규 필드는 실서버 응답으로 아직 확인하지 않았습니다(확인 필요).
 
 | API | 앱 연동 | 비고 |
 |---|---|---|
 | `POST /auth/team/login`, `POST /auth/team/logout` | 연결 | 응답 `data{accessToken, expiresAt, user, siteId, teamId}`, refresh token 없음 |
-| `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`만 수정 |
+| `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, companyName, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`과 마지막으로 받은 `version`을 보냄. 409는 최신 정보 재조회 후 안내 |
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
-| `GET /team` | 연결 | 기상 미입력 시 `weather`·`heatLevel`이 null, 관리자 연락처는 빈 문자열일 수 있음. `team.workplace`를 작업 위치로 사용 |
+| `GET /team` | 연결 | 기상 미입력 시 `weather`·`heatLevel`이 null, 관리자 연락처는 빈 문자열일 수 있음. `company.phone`(본사 연락처), `weather.skyStatus`, `weather.temperatureDelta` 사용 |
 | `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | `files[i] ↔ uploads[i]` 순서 보장, `slot`은 기록 내 사진 위치, `requiredHeaders`를 그대로 붙여 PUT |
-| `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 `date` 하루 단위 필터만 지원(기간·유형 쿼리는 무시됨). 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가 |
+| `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 `date` 하루 단위 필터만 지원(기간·유형 쿼리는 무시됨). 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
 | `POST·GET /team/inquiries` | 연결 | 목록 항목 `{inquiryId, title, content, status, deliveryStatus, replies[], createdAt}`, 알 수 없는 cursor는 400 |
-| `POST /team/emergency-calls`, `GET …/current`, `PATCH …/{callId}` | 연결 | `current`는 종료된 이전 호출(CANCELLED 등)도 반환하므로 앱은 자신이 시작·이어받은 `callId`만 반영 |
-| `DELETE /team/profile` | 연결 | 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
+| `POST /team/emergency-calls`, `GET …/current`, `PATCH …/{callId}` | 연결 | `current`는 종료된 이전 호출(CANCELLED 등)도 반환하므로 앱은 자신이 시작·이어받은 `callId`만 반영. 취소·종료의 409 `INVALID_STATUS_TRANSITION`은 현재 상태를 다시 조회해 화면을 맞춤 |
+| `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
 | `GET /team/checklist`, `PUT /team/checklist/items/{itemId}` | 미연결 | Figma에 화면이 없어 범위 제외(사용자 결정) |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | Figma에 문의 상세 화면이 없어 범위 제외(사용자 결정) |
 
@@ -71,9 +71,10 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 - **사진 업로드·조회 주소**: 테스트 서버의 `uploadUrl`과 기록 상세 `photoUrls`가 `http://localhost:8000/_local-upload/...`로 내려와, 기기에서 사진 업로드와 표시가 불가능합니다(현재 테스트 서버에서 앱의 기록 저장은 모두 실패). S3 presigned 설정이 필요합니다.
 - **체감온도 계산**: 테스트 기록(31.5°C, 습도 60%)의 체감온도가 81.9°C로 계산되어 내려왔습니다.
 - **체크 완료 판정**: 홈 체크 타임라인 완료 여부 필드가 없어, 앱이 "체크 시각 ~ 다음 체크 시각 전" 사이 기록 유무로 판정합니다. 서버 기준 확인 또는 필드 추가가 필요합니다.
-- **없는 필드**: 날씨 상태·온도 변화량, 본사 긴급 연락처, 휴식 시간, 기록별 위치, 회사명, 온도계 설치 여부(현재 측정 온도 유무로 표시), 기록 목록 썸네일 URL, 기록 목록 기간·유형 쿼리
-- **계약 확인**: `sha256` 인코딩(Base64/hex), `slot` 의미, `POST /team/records`의 Idempotency-Key 지원, 허용 이미지 형식·최대 크기, 탈퇴 사유 전송 필드
-- **알림**: FCM 토큰 등록·푸시 API가 명세에 없어 알림 기능은 제공하지 않습니다.
+- **없는 필드**: 온도계 설치 여부(현재 측정 온도 유무로 표시), 기록 목록 썸네일 URL, 기록 목록 기간·유형 쿼리
+- **휴식 시간 입력**: 기록 저장 `restMinutes` 전송 방식은 서버에서 수정 예정이라 앱은 아직 보내지 않습니다(표시만 연결).
+- **계약 확인**: `sha256` 인코딩(Base64/hex), `slot` 의미, `POST /team/records`의 Idempotency-Key 지원, 허용 이미지 형식·최대 크기
+- **알림**: 명세 v0.1에 알림 목록·읽음 API(`/team/notifications`)가 추가됐지만 Figma에 화면이 없어 이번 범위에서 제외했습니다. FCM 토큰 등록·푸시 API는 명세에 없습니다.
 
 ## 기술 스택
 `gradle/libs.versions.toml`, `app/build.gradle.kts` 기준으로 확인한 값입니다.
