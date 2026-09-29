@@ -2,6 +2,7 @@ package com.nativelap.heartguard.domain.emergency.usecase
 
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.domain.emergency.repository.EmergencyCallRepository
 import javax.inject.Inject
@@ -16,7 +17,7 @@ class UpdateEmergencyCallStatusUseCase @Inject constructor(
     suspend operator fun invoke(
         callId: String,
         status: EmergencyCallUpdateStatus,
-    ): ApiResult<EmergencyCallStatus> = emergencyCallRepository.updateEmergencyCallStatus(
+    ): EmergencyCallUpdateResult = emergencyCallRepository.updateEmergencyCallStatus(
         callId = callId,
         status = status,
     )

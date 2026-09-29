@@ -2,8 +2,10 @@ package com.nativelap.heartguard.data.account.repository
 
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.data.account.mapper.toRequestReason
 import com.nativelap.heartguard.data.account.remote.AccountRemoteDataSource
 import com.nativelap.heartguard.domain.account.model.WithdrawAccountResult
+import com.nativelap.heartguard.domain.account.model.WithdrawReason
 import com.nativelap.heartguard.domain.account.repository.AccountRepository
 import javax.inject.Inject
 
@@ -11,8 +13,15 @@ class AccountRepositoryImpl @Inject constructor(
     private val accountRemoteDataSource: AccountRemoteDataSource,
 ) : AccountRepository {
 
-    override suspend fun withdraw(currentPassword: String): WithdrawAccountResult {
-        return when (val result = accountRemoteDataSource.withdraw(currentPassword)) {
+    override suspend fun withdraw(
+        currentPassword: String,
+        reason: WithdrawReason?,
+    ): WithdrawAccountResult {
+        val withdrawResult = accountRemoteDataSource.withdraw(
+            currentPassword = currentPassword,
+            reason = reason?.toRequestReason(),
+        )
+        return when (val result = withdrawResult) {
             is ApiResult.Success -> WithdrawAccountResult.Success
             is ApiResult.Failure -> result.toWithdrawResult()
         }

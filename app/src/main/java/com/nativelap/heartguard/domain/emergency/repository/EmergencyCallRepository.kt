@@ -2,6 +2,7 @@ package com.nativelap.heartguard.domain.emergency.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import java.time.Instant
 
@@ -17,5 +18,5 @@ interface EmergencyCallRepository {
     suspend fun updateEmergencyCallStatus(
         callId: String,
         status: EmergencyCallUpdateStatus,
-    ): ApiResult<EmergencyCallStatus>
+    ): EmergencyCallUpdateResult
 }
