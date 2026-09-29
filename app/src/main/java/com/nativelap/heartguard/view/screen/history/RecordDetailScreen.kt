@@ -112,14 +112,15 @@ fun RecordDetailScreen(
 
 private val restClockFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-// "20분 (11:45 ~ 12:05)"처럼 만든다. 휴식이 끝난 시각은 저장 시각(measuredAt)으로 본다.
+// "20분 (11:45 ~ 12:05)"처럼 만든다. 서버가 시작·종료 시각을 주지 않으면 저장 시각(measuredAt)을 종료 시각으로 본다.
 @Composable
 @ReadOnlyComposable
 private fun restTimeText(recordEntry: RecordHistoryEntry): String {
     val restMinutes = recordEntry.restMinutes ?: return emptyValueText()
-    val restEndedAt = recordEntry.measuredAt
+    val restEndedAt = recordEntry.restEndedAt
+        ?: recordEntry.measuredAt
         ?: return stringResource(R.string.history_detail_rest_minutes_format, restMinutes)
-    val restStartedAt = restEndedAt.minusMinutes(restMinutes.toLong())
+    val restStartedAt = recordEntry.restStartedAt ?: restEndedAt.minusMinutes(restMinutes.toLong())
 
     return stringResource(
         R.string.history_detail_rest_range_format,

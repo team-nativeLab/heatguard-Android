@@ -54,6 +54,11 @@ data class RecordHistoryItemDto(
     // 휴식(REST) 기록의 휴식 시간(분)이다.
     @SerialName("restMinutes")
     val restMinutes: Int? = null,
+    // 휴식 시작·종료 시각이다. 명세에는 아직 없고 2026-09-29 실서버 응답에서 확인했다.
+    @SerialName("restStartedAt")
+    val restStartedAt: String? = null,
+    @SerialName("restEndedAt")
+    val restEndedAt: String? = null,
     @SerialName("teamName")
     val teamName: String? = null,
     @SerialName("workplace")

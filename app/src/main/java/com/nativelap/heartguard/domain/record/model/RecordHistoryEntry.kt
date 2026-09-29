@@ -17,6 +17,8 @@ data class RecordHistoryEntry(
     val memo: String?,
     val measuredAt: OffsetDateTime?,
     val restMinutes: Int? = null,
+    val restStartedAt: OffsetDateTime? = null,
+    val restEndedAt: OffsetDateTime? = null,
     val teamName: String? = null,
     val workplace: String? = null,
     val siteName: String? = null,
