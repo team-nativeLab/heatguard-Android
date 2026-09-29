@@ -17,7 +17,8 @@ import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 
 /** 온도계 기록의 현장 사진 화면(Figma 14/15)이다. 사진 선택 상태는 [recordDraftViewModel]과 공유한다.
- * 사진 없이 "저장"을 누르면 저장하지 않고 15 상태(온도계가 아직 저장이 안되었어요)를 보여주며, 사진을 고르면 그 상태를 해제한다.
+ * 사진 없이(또는 직접 입력 값이 올바르지 않은 채) "저장"을 누르면 저장하지 않고 15 상태(온도계가 아직 저장이 안되었어요)를 보여주며,
+ * 사진을 고르면 그 상태를 해제한다.
  * 사진이 있으면 바로 기록을 등록하고 결과에 따라 [onSaveSuccess]/[onSaveFailure]로 이동한다. */
 @Composable
 internal fun HeartGuardFieldPhotoRoute(
@@ -25,6 +26,8 @@ internal fun HeartGuardFieldPhotoRoute(
     onCameraClick: (RecordType) -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
+    onMenuClick: () -> Unit,
+    onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
@@ -55,6 +58,8 @@ internal fun HeartGuardFieldPhotoRoute(
         onCameraClick = { onCameraClick(RecordType.TEMPERATURE) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
         FieldPhotoScreen(
+            onMenuClick = onMenuClick,
+            onNotificationClick = onNotificationClick,
             manualTemperature = valueOrEmptyText(
                 draftState.temperatureText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
             ),
@@ -66,8 +71,9 @@ internal fun HeartGuardFieldPhotoRoute(
             isSaveEnabled = submissionState !is RecordSubmissionState.Submitting,
             onCaptureClick = onAddPhotoClick,
             onRemovePhoto = onRemovePhoto,
+            // 사진이 없거나 직접 입력한 온도·습도가 올바르지 않으면 저장하지 않고 15 상태로 알린다(아무 반응 없이 끝나지 않게).
             onSaveClick = {
-                if (selectedPhotoUris.isEmpty()) {
+                if (selectedPhotoUris.isEmpty() || !draftState.canSubmitTemperatureRecord) {
                     showSaveError = true
                 } else {
                     submitRecord()
@@ -85,6 +91,8 @@ internal fun HeartGuardWorkPhotoRoute(
     onCameraClick: (RecordType) -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
+    onMenuClick: () -> Unit,
+    onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
@@ -106,6 +114,8 @@ internal fun HeartGuardWorkPhotoRoute(
         onCameraClick = { onCameraClick(RecordType.WORK) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         WorkPhotoScreen(
+            onMenuClick = onMenuClick,
+            onNotificationClick = onNotificationClick,
             memo = draftState.workMemo,
             selectedPhotoCount = selectedPhotoUris.size,
             selectedPhotoUris = selectedPhotoUris,
@@ -128,6 +138,8 @@ internal fun HeartGuardRestPhotoRoute(
     onCameraClick: (RecordType) -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
+    onMenuClick: () -> Unit,
+    onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
@@ -149,6 +161,8 @@ internal fun HeartGuardRestPhotoRoute(
         onCameraClick = { onCameraClick(RecordType.REST) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         RestPhotoScreen(
+            onMenuClick = onMenuClick,
+            onNotificationClick = onNotificationClick,
             memo = draftState.restMemo,
             selectedPhotoCount = selectedPhotoUris.size,
             selectedPhotoUris = selectedPhotoUris,

@@ -33,7 +33,6 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
-import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
@@ -53,17 +52,6 @@ fun InquiryScreen(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
-        bottomBar = {
-            BottomActionBar {
-                RecordSaveButton(
-                    title = stringResource(R.string.inquiry_submit),
-                    onClick = { onEvent(InquiryScreenEvent.SubmitClicked) },
-                    enabled = !uiState.isSubmitting &&
-                        uiState.title.isNotBlank() &&
-                        uiState.content.isNotBlank(),
-                )
-            }
-        },
     ) { innerPadding ->
         ResponsivePageContent(
             modifier = Modifier
@@ -104,6 +92,13 @@ fun InquiryScreen(
                     text = stringResource(R.string.inquiry_reply_note),
                     color = MaterialTheme.extraColors.secondaryText,
                     style = MaterialTheme.typography.bodySmall,
+                )
+                RecordSaveButton(
+                    title = stringResource(R.string.inquiry_submit),
+                    onClick = { onEvent(InquiryScreenEvent.SubmitClicked) },
+                    enabled = !uiState.isSubmitting &&
+                        uiState.title.isNotBlank() &&
+                        uiState.content.isNotBlank(),
                 )
                 if (uiState.isSubmitting) {
                     Text(

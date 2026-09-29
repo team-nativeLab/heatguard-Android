@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.route.emergency
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +42,13 @@ internal fun HeartGuardEmergencyRoute(
         onCallClosed = {},
     )
 
+    // 등록 요청 중에는 뒤로가기로 시트를 닫지 않는다(응답 전에 닫으면 호출 결과를 놓친다).
+    BackHandler {
+        if (!uiState.isRegistering) {
+            onCancelClick()
+        }
+    }
+
     EmergencyScreen(
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = valueOrEmptyText(managerPhoneNumber),
@@ -74,6 +82,10 @@ internal fun HeartGuardCallingRoute(
         onCallStarted = {},
         onCallClosed = { currentOnCallClosed() },
     )
+
+    BackHandler {
+        emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+    }
 
     CallingScreen(
         isConnected = uiState.isConnected,

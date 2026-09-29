@@ -1,11 +1,12 @@
 package com.nativelap.heartguard.view.component.feedback
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
@@ -18,17 +19,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
-import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -42,7 +39,8 @@ data class SavedRecordSummaryItem(
     val detail: String? = null,
 )
 
-/** 저장 성공 화면에서 방금 저장한 기록의 주요 값을 행 단위로 보여준다. */
+/** 저장 성공 화면에서 방금 저장한 기록의 주요 값을 행 단위로 보여준다.
+ * [onDetailsClick]이 있으면 상세 표시([SavedRecordSummaryItem.hasDetails]) 행을 눌러 기록 상세로 이동하고, 없으면 `›`도 그리지 않는다. */
 @Composable
 fun SavedRecordSummaryCard(
     title: String,
@@ -51,9 +49,7 @@ fun SavedRecordSummaryCard(
     onDetailsClick: (() -> Unit)? = null,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(HeartGuardComponentSize.ResultSummaryHeight),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(
@@ -63,7 +59,7 @@ fun SavedRecordSummaryCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(
                     start = HeartGuardSpacing.ResultSummaryHorizontal,
                     end = HeartGuardSpacing.ResultErrorDetailHorizontal,
@@ -84,10 +80,21 @@ fun SavedRecordSummaryCard(
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
             records.forEachIndexed { index, record ->
+                val rowDetailsClick = onDetailsClick.takeIf { record.hasDetails }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(HeartGuardSpacing.ResultSummaryRowHeight)
+                        .then(
+                            if (rowDetailsClick != null) {
+                                Modifier.clickable(
+                                    role = Role.Button,
+                                    onClick = rowDetailsClick,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        )
                         .padding(start = HeartGuardSpacing.ResultSummaryRowIndent),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -113,6 +120,7 @@ fun SavedRecordSummaryCard(
                                 ),
                             )
                             record.detail?.let { detailText ->
+                                Spacer(modifier = Modifier.width(HeartGuardSpacing.Compact))
                                 Text(
                                     text = detailText,
                                     color = MaterialTheme.extraColors.mutedText,
@@ -124,7 +132,7 @@ fun SavedRecordSummaryCard(
                             }
                         }
                     }
-                    if (record.hasDetails) {
+                    if (rowDetailsClick != null) {
                         Icon(
                             imageVector = Icons.Outlined.ChevronRight,
                             contentDescription = null,
@@ -137,20 +145,6 @@ fun SavedRecordSummaryCard(
                         modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldInset),
                         color = MaterialTheme.colorScheme.outlineVariant,
                     )
-                }
-            }
-            onDetailsClick?.let { click ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = click) {
-                        Text(text = stringResource(R.string.common_details))
-                        Icon(
-                            imageVector = Icons.Outlined.ChevronRight,
-                            contentDescription = null,
-                        )
-                    }
                 }
             }
         }

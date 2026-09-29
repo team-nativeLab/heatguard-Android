@@ -15,6 +15,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.RecordType
 import java.time.OffsetDateTime
 
 /** 같은 날 기록들을 구분선으로 나눠 한 카드에 담는다(Figma 20). */
@@ -23,6 +24,9 @@ fun RecordHistoryDayCard(
     recordEntries: List<RecordHistoryEntry>,
     onRecordClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    temporaryDraftType: RecordType? = null,
+    temporaryDraftSavedAt: OffsetDateTime? = null,
+    onTemporaryDraftClick: () -> Unit = {},
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -30,8 +34,15 @@ fun RecordHistoryDayCard(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column {
+            if (temporaryDraftType != null) {
+                RecordHistoryTemporaryDraftRow(
+                    recordType = temporaryDraftType,
+                    savedAt = temporaryDraftSavedAt,
+                    onClick = onTemporaryDraftClick,
+                )
+            }
             recordEntries.forEachIndexed { entryIndex, recordEntry ->
-                if (entryIndex > 0) {
+                if (entryIndex > 0 || temporaryDraftType != null) {
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
                         thickness = HeartGuardBorderWidth.Divider,

@@ -3,7 +3,7 @@ package com.nativelap.heartguard.view.component.auth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,7 +88,7 @@ fun AuthTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.AuthFieldLabelInput)
-                .height(HeartGuardComponentSize.AuthTextFieldHeight)
+                .heightIn(min = HeartGuardComponentSize.AuthTextFieldHeight)
                 // 포커스를 얻은 직후 IME를 명시적으로 열어 에뮬레이터에서도 입력을 보장한다.
                 .onFocusChanged { focusState ->
                     if (focusState.isFocused) {

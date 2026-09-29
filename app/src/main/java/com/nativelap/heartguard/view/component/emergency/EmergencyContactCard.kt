@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,7 +32,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 긴급 화면에서 연결할 관리자 이름과 전화번호를 Figma 03/04 연락 대상 카드로 보여준다.
- * 서버에서 전화번호를 아직 받지 못했으면 [isCallEnabled]를 false로 넘겨 카드 탭으로 전화를 걸 수 없게 한다. */
+ * 서버에서 전화번호를 아직 받지 못했으면 [isCallEnabled]를 false로 넘겨 카드 탭으로 전화를 걸 수 없게 하고, 번호·전화 아이콘을 흐리게 보여준다. */
 @Composable
 fun EmergencyContactCard(
     contactTitle: String,
@@ -80,6 +81,13 @@ fun EmergencyContactCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .alpha(
+                        if (isCallEnabled) {
+                            ENABLED_ALPHA
+                        } else {
+                            DISABLED_ALPHA
+                        },
+                    )
                     .padding(start = HeartGuardSpacing.EmergencyContactIndent),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
@@ -110,6 +118,9 @@ fun EmergencyContactCard(
         }
     }
 }
+
+private const val ENABLED_ALPHA = 1f
+private const val DISABLED_ALPHA = 0.5f
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable

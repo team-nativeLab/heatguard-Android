@@ -48,6 +48,8 @@ fun RestPhotoScreen(
     onUploadClick: () -> Unit,
     isSaveEnabled: Boolean,
     modifier: Modifier = Modifier,
+    onMenuClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -81,9 +83,8 @@ fun RestPhotoScreen(
                 title = stringResource(R.string.brand_name),
                 menuPainter = painterResource(R.drawable.menu_hamburger),
                 notificationPainter = painterResource(R.drawable.notification_bell),
-                // 메뉴·알림 기능은 Figma/API 명세서 어디에도 정의되어 있지 않아 의도적으로 비워둔다.
-                onMenuClick = {},
-                onNotificationClick = {},
+                onMenuClick = onMenuClick,
+                onNotificationClick = onNotificationClick,
             )
 
             Column(

@@ -1,35 +1,28 @@
 package com.nativelap.heartguard.view.screen.feedback
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
+import com.nativelap.heartguard.view.component.HeartGuardSheetSurface
 import com.nativelap.heartguard.view.component.feedback.RetryButton
 import com.nativelap.heartguard.view.component.feedback.SaveDraftExitButton
 import com.nativelap.heartguard.view.component.feedback.SaveErrorDetailCard
 import com.nativelap.heartguard.view.component.feedback.SaveResultMessage
 import com.nativelap.heartguard.view.component.feedback.SaveResultTitle
 
-/** 저장 실패 메시지와 원인·재시도 동작을 결과 화면으로 조합한다. */
+/** 저장 실패 메시지와 원인·재시도 동작을 바텀시트(Figma 10)로 조합한다. */
 @Composable
 fun SaveFailureScreen(
     errorDetails: List<String>,
@@ -37,36 +30,14 @@ fun SaveFailureScreen(
     onSaveDraftAndExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.extraColors.pageBackground,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            BottomActionBar {
-                RetryButton(
-                    title = stringResource(R.string.save_retry),
-                    onClick = onRetryClick,
-                )
-                SaveDraftExitButton(
-                    title = stringResource(R.string.save_draft_exit),
-                    onClick = onSaveDraftAndExitClick,
-                )
-            }
-        },
-    ) { innerPadding ->
-        Box(
+    HeartGuardSheetSurface(modifier = modifier) {
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.TopCenter,
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
         ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
-            ) {
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultTitleTop))
             SaveResultTitle(
                 title = stringResource(R.string.save_record_title),
@@ -85,7 +56,16 @@ fun SaveFailureScreen(
                 details = errorDetails,
             )
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
-            }
+        }
+        BottomActionBar {
+            RetryButton(
+                title = stringResource(R.string.save_retry),
+                onClick = onRetryClick,
+            )
+            SaveDraftExitButton(
+                title = stringResource(R.string.save_draft_exit),
+                onClick = onSaveDraftAndExitClick,
+            )
         }
     }
 }

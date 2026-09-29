@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +21,7 @@ import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.ResponsivePageContent
@@ -34,6 +34,7 @@ import com.nativelap.heartguard.view.component.history.RecordHistoryEmptyState
 import com.nativelap.heartguard.view.component.history.RecordHistoryFilterRow
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryLoadState
+import com.nativelap.heartguard.viewmodel.history.RecordHistoryFilter
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryScreenEvent
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryUiState
 import java.time.LocalDate
@@ -46,10 +47,20 @@ fun RecordHistoryScreen(
     uiState: RecordHistoryUiState,
     onEvent: (RecordHistoryScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
+    temporaryDraftType: RecordType? = null,
+    temporaryDraftSavedAt: OffsetDateTime? = null,
 ) {
     val loadState = uiState.loadState
     val dayGroups = uiState.dayGroups
-    val isEmptyResult = loadState is RecordHistoryLoadState.Loaded && dayGroups.isEmpty()
+    val temporaryDraftDate = temporaryDraftSavedAt?.toLocalDate() ?: uiState.today
+    val visibleTemporaryDraftType = temporaryDraftType?.takeIf { draftType ->
+        draftType.matches(uiState.selectedFilter) &&
+            !temporaryDraftDate.isBefore(uiState.startDate) &&
+            !temporaryDraftDate.isAfter(uiState.endDate)
+    }
+    val isEmptyResult = loadState is RecordHistoryLoadState.Loaded &&
+        dayGroups.isEmpty() &&
+        visibleTemporaryDraftType == null
 
     Scaffold(
         modifier = modifier,
@@ -138,7 +149,35 @@ fun RecordHistoryScreen(
                             item(key = "counts") {
                                 RecordHistoryCountSummaryCard(recordCounts = uiState.recordCounts)
                             }
-                            dayGroups.forEach { dayGroup ->
+                            val todayGroup = dayGroups.firstOrNull { dayGroup ->
+                                dayGroup.date == uiState.today
+                            }
+                            if (visibleTemporaryDraftType != null) {
+                                item(key = "header-${uiState.today}") {
+                                    RecordHistoryDayHeader(
+                                        date = uiState.today,
+                                        today = uiState.today,
+                                    )
+                                }
+                                item(key = "day-${uiState.today}") {
+                                    RecordHistoryDayCard(
+                                        recordEntries = todayGroup?.entries.orEmpty(),
+                                        temporaryDraftType = visibleTemporaryDraftType,
+                                        temporaryDraftSavedAt = temporaryDraftSavedAt,
+                                        onTemporaryDraftClick = {
+                                            onEvent(RecordHistoryScreenEvent.TemporaryDraftClicked)
+                                        },
+                                        onRecordClick = { recordId ->
+                                            onEvent(RecordHistoryScreenEvent.RecordClicked(recordId))
+                                        },
+                                    )
+                                }
+                            }
+                            dayGroups
+                                .filterNot { dayGroup ->
+                                    visibleTemporaryDraftType != null && dayGroup.date == uiState.today
+                                }
+                                .forEach { dayGroup ->
                                 item(key = "header-${dayGroup.date}") {
                                     RecordHistoryDayHeader(
                                         date = dayGroup.date,
@@ -160,6 +199,13 @@ fun RecordHistoryScreen(
             }
         }
     }
+}
+
+private fun RecordType.matches(filter: RecordHistoryFilter): Boolean = when (filter) {
+    RecordHistoryFilter.ALL -> true
+    RecordHistoryFilter.THERMOMETER -> this == RecordType.TEMPERATURE
+    RecordHistoryFilter.WORK -> this == RecordType.WORK
+    RecordHistoryFilter.REST -> this == RecordType.REST
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
