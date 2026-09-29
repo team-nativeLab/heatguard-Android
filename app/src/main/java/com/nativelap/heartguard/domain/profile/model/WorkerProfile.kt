@@ -5,4 +5,6 @@ data class WorkerProfile(
     val userId: String,
     val name: String?,
     val email: String?,
+    val companyName: String? = null,
+    val version: Long? = null,
 )

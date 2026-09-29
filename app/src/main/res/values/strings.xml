@@ -222,6 +222,7 @@
     <string name="profile_save">저장하기</string>
     <string name="profile_saved">저장 완료</string>
     <string name="profile_save_failure">저장하지 못했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="profile_save_conflict">다른 곳에서 정보가 바뀌어 최신 정보를 불러왔어요. 다시 저장해주세요.</string>
     <string name="profile_load_failure_title">내 정보를 불러오지 못했어요</string>
     <string name="profile_load_failure_description">네트워크 연결을 확인한 뒤 다시 시도해주세요.</string>
     <string name="inquiry_title">문의하기</string>

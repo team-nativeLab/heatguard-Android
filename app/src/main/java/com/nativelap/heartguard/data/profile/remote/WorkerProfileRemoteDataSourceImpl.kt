@@ -22,10 +22,12 @@ class WorkerProfileRemoteDataSourceImpl @Inject constructor(
     /** 작업자 이름을 수정하고, 서버가 반영한 최신 계정 정보를 돌려준다. */
     override suspend fun updateWorkerName(
         name: String,
+        version: Long?,
     ): ApiResult<WorkerProfileResponseDto> = apiExecutor.execute {
         val envelope = workerProfileApiService.updateWorkerProfile(
             UpdateWorkerProfileRequestDto(
                 name = name,
+                version = version,
             ),
         )
         envelope.data ?: error("작업자 정보 수정 응답에 data가 없습니다.")

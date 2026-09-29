@@ -4,6 +4,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
+import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
 import com.nativelap.heartguard.domain.profile.usecase.ChangeWorkerPasswordUseCase
@@ -132,7 +133,10 @@ class PasswordChangeViewModelTest {
 
         override suspend fun getWorkerProfile(): ApiResult<WorkerProfile> = error("not used")
 
-        override suspend fun updateWorkerName(name: String): ApiResult<WorkerProfile> = error("not used")
+        override suspend fun updateWorkerName(
+            name: String,
+            version: Long?,
+        ): ProfileUpdateResult = error("not used")
 
         override suspend fun changePassword(
             currentPassword: String,

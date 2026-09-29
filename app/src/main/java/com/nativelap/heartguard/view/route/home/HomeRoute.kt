@@ -99,16 +99,8 @@ internal fun HeartGuardHomeRoute(
         mutableStateOf(false)
     }
 
-    // 드로어의 이름·이메일은 작업자 정보 조회 값이고, 팀명·작업 위치는 홈 조회 값을 그대로 쓴다.
-    val drawerProfile = remember(menuDrawerProfile, siteStatus.teamName, siteStatus.workplace) {
-        menuDrawerProfile.copy(
-            teamName = siteStatus.teamName,
-            workplace = siteStatus.workplace,
-        )
-    }
-
     val dialPhoneNumber = rememberPhoneDialLauncher()
-    val managerPhoneNumber = siteStatus.managerPhoneNumber
+    val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
 
     // 드로어가 열려 있을 때만 시스템 뒤로가기를 가로채 드로어를 닫는다. 닫혀 있으면 NavHost의 onBack이 처리한다.
     BackHandler(enabled = isMenuDrawerOpen) {

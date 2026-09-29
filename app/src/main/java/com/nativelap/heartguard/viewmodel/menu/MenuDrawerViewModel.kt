@@ -47,6 +47,7 @@ class MenuDrawerViewModel @Inject constructor(
                     _profile.value = _profile.value.copy(
                         userName = profileResult.value.name,
                         email = profileResult.value.email,
+                        companyName = profileResult.value.companyName,
                     )
                 }
 
