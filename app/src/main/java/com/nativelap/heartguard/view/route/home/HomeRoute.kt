@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.route.home
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -27,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
+import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.heatLevelLabelText
@@ -46,18 +48,16 @@ import kotlinx.coroutines.launch
 
 /** 홈에 팀 현장페이지 API 결과와 사용자 이벤트를 HomeScreen에 전달하는 Route이다.
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
- * 온도 변화량·날씨 상태는 overview API 필드에 없어 "--"로 둔다. 체크 완료 여부는 별도 체크리스트 API의
- * 응답과 홈 시간표 사이에 매핑 규칙이 없어 현재 연결하지 않는다.
- * "관리자 전화"는 Emergency 화면으로 이동하지 않고 이 Route에서 바로 다이얼러를 여는 반면,
- * "긴급 전화"([onEmergencyClick])는 긴급호출 흐름(Emergency 화면)으로 이동한다 — 두 버튼의
- * 목적이 다르므로(즉시 통화 vs 긴급호출 절차 시작) 의도적으로 다른 방식으로 동작한다.
+ * 체크 완료 여부는 서버 필드가 없어 오늘 기록의 측정 시각으로 판정한다.
+ * "관리자 전화"([onManagerCallClick])는 현장관리자 긴급호출 흐름(Emergency 화면)으로 이동하고,
+ * "긴급 전화"는 이 Route에서 본사 연락처(company.phone)로 바로 다이얼러를 연다. 본사 번호가 없으면 비활성이다.
  * 메뉴 드로어는 홈 헤더에서만 열리는 오버레이라 이 Route가 열림 상태를 직접 소유한다.
  * android-navigation SKILL은 다이얼로그·바텀시트를 NavKey로 만들도록 하지만, 드로어는 사용자 결정에 따라
  * Navigation 3 목적지가 아닌 이 화면의 로컬 상태로 관리한다(드로어에서 시작하는 회원탈퇴만 NavHost로 이동). */
 @Composable
 internal fun HeartGuardHomeRoute(
     homeViewModel: HomeViewModel,
-    onEmergencyClick: () -> Unit,
+    onManagerCallClick: () -> Unit,
     onFieldPhotoClick: () -> Unit,
     onRecordClick: () -> Unit,
     onProfileEditClick: () -> Unit,
@@ -117,17 +117,17 @@ internal fun HeartGuardHomeRoute(
 
     Box(modifier = Modifier.fillMaxSize()) {
         HomeScreen(
-            currentTemperature = temperatureValueText(siteStatus.temperature),
+            currentTemperature = homeTemperatureText(siteStatus.temperature),
             feelsLikeTemperature = temperatureValueText(siteStatus.apparentTemperature),
             humidity = humidityValueText(siteStatus.humidity),
-            // TODO: 온도 변화량·날씨 상태는 API 명세에 필드가 없어 "--"로 표시한다. 필드가 추가되면 연결한다.
-            temperatureDelta = emptyValueText(),
-            isTemperatureIncreasing = null,
-            weatherValue = emptyValueText(),
+            temperatureDelta = temperatureValueText(siteStatus.temperatureDelta),
+            isTemperatureIncreasing = siteStatus.isTemperatureIncreasing,
+            weatherValue = skyStatusText(siteStatus.skyStatus),
+            weatherImageRes = skyStatusImageRes(siteStatus.skyStatus),
             riskLabel = heatLevelLabelText(siteStatus.heatLevel),
             nextCheckDescription = nextCheckDescriptionText(checkSchedule),
             checkTimelineItems = checkTimelineItems(checkSchedule),
-            isManagerCallEnabled = managerPhoneNumber != null,
+            isEmergencyCallEnabled = headquartersPhoneNumber != null,
             onMenuClick = {
                 isMenuDrawerOpen = true
                 menuDrawerViewModel.loadProfile()
@@ -137,10 +137,10 @@ internal fun HeartGuardHomeRoute(
                     snackbarHostState.showSnackbar(unavailableNotificationMessage)
                 }
             },
-            onManagerCallClick = {
-                managerPhoneNumber?.let(dialPhoneNumber)
+            onManagerCallClick = onManagerCallClick,
+            onEmergencyClick = {
+                headquartersPhoneNumber?.let(dialPhoneNumber)
             },
-            onEmergencyClick = onEmergencyClick,
             onFieldPhotoClick = onFieldPhotoClick,
             onRecordHistoryClick = onRecordHistoryClick,
             onRecordClick = onRecordClick,
@@ -153,7 +153,7 @@ internal fun HeartGuardHomeRoute(
             },
         ) {
             MenuDrawerContent(
-                profile = drawerProfile,
+                profile = menuDrawerProfile,
                 onEvent = { event ->
                     when (event) {
                         MenuDrawerEvent.EditProfileClicked -> {
@@ -187,6 +187,47 @@ internal fun HeartGuardHomeRoute(
                 .navigationBarsPadding()
                 .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
         )
+    }
+}
+
+// 온도를 받지 못했으면 Figma 홈의 관측값 없음 표기("--.- °C")를 쓴다.
+@Composable
+@ReadOnlyComposable
+private fun homeTemperatureText(temperature: String?): String {
+    return if (temperature == null) {
+        stringResource(R.string.home_temperature_empty)
+    } else {
+        temperatureValueText(temperature)
+    }
+}
+
+@Composable
+@ReadOnlyComposable
+private fun skyStatusText(skyStatus: SkyStatus?): String {
+    return when (skyStatus) {
+        SkyStatus.CLEAR -> stringResource(R.string.home_sky_clear)
+        SkyStatus.PARTLY_CLOUDY -> stringResource(R.string.home_sky_partly_cloudy)
+        SkyStatus.CLOUDY -> stringResource(R.string.home_sky_cloudy)
+        SkyStatus.RAIN -> stringResource(R.string.home_sky_rain)
+        SkyStatus.SNOW -> stringResource(R.string.home_sky_snow)
+        SkyStatus.UNKNOWN,
+        null,
+        -> emptyValueText()
+    }
+}
+
+// 눈 전용 이미지가 없어 눈·미입력은 기본 홈 날씨 이미지를 쓴다.
+@DrawableRes
+private fun skyStatusImageRes(skyStatus: SkyStatus?): Int {
+    return when (skyStatus) {
+        SkyStatus.CLEAR -> R.drawable.weather_sunny
+        SkyStatus.CLOUDY -> R.drawable.weather_cloud
+        SkyStatus.RAIN -> R.drawable.weather_rain
+        SkyStatus.PARTLY_CLOUDY,
+        SkyStatus.SNOW,
+        SkyStatus.UNKNOWN,
+        null,
+        -> R.drawable.heartguard_home_weather
     }
 }
 

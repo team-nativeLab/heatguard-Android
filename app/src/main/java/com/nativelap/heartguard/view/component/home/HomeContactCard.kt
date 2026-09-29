@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -42,7 +43,7 @@ fun HomeContactCard(
     onManagerClick: () -> Unit,
     onEmergencyClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isManagerCallEnabled: Boolean = true,
+    isEmergencyCallEnabled: Boolean = true,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -56,7 +57,6 @@ fun HomeContactCard(
                 iconPainter = painterResource(R.drawable.home_manager_phone),
                 iconContainerColor = MaterialTheme.extraColors.homeMetricContainer,
                 onClick = onManagerClick,
-                isEnabled = isManagerCallEnabled,
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = HeartGuardSpacing.Section),
@@ -68,12 +68,13 @@ fun HomeContactCard(
                 iconPainter = painterResource(R.drawable.home_emergency_phone),
                 iconContainerColor = MaterialTheme.extraColors.homeContactAlertContainer,
                 onClick = onEmergencyClick,
+                isEnabled = isEmergencyCallEnabled,
             )
         }
     }
 }
 
-/** 연락처 카드의 한 행을 터치 가능한 65dp 영역으로 표현한다. */
+/** 연락처 카드의 한 행을 터치 가능한 65dp 영역으로 표현한다. 비활성이면 행 전체를 흐리게 보여준다. */
 @Composable
 private fun HomeContactRow(
     title: String,
@@ -91,6 +92,13 @@ private fun HomeContactRow(
                 enabled = isEnabled,
                 role = Role.Button,
                 onClick = onClick,
+            )
+            .alpha(
+                if (isEnabled) {
+                    ENABLED_ALPHA
+                } else {
+                    DISABLED_ALPHA
+                },
             )
             .padding(horizontal = HeartGuardSpacing.Section),
         verticalAlignment = Alignment.CenterVertically,
@@ -126,6 +134,9 @@ private fun HomeContactRow(
         )
     }
 }
+
+private const val ENABLED_ALPHA = 1f
+private const val DISABLED_ALPHA = 0.5f
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable

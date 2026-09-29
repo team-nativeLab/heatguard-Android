@@ -236,10 +236,9 @@ private fun HeartGuardMainNavDisplay() {
             entry<HeartGuardDestination.Home> {
                 HeartGuardHomeRoute(
                     homeViewModel = homeViewModel,
-                    // 관리자 전화는 HeartGuardHomeRoute 내부에서 바로 다이얼러로 연결하므로
-                    // 여기서는 긴급호출 흐름으로 이동하는 콜백만 전달한다.
+                    // 관리자 전화는 현장관리자 긴급호출 흐름으로 이동한다(본사 긴급 전화는 Route가 바로 다이얼한다).
                     // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
-                    onEmergencyClick = {
+                    onManagerCallClick = {
                         val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
                         if (hasActiveEmergencyCall) {
                             backStack.add(HeartGuardDestination.Calling)

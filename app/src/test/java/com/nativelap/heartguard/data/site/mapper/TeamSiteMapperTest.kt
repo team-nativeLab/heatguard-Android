@@ -1,10 +1,12 @@
 package com.nativelap.heartguard.data.site.mapper
 
 import com.nativelap.heartguard.data.site.dto.ActiveEmergencyCallDto
+import com.nativelap.heartguard.data.site.dto.CompanyDto
 import com.nativelap.heartguard.data.site.dto.SiteDto
 import com.nativelap.heartguard.data.site.dto.TeamDto
 import com.nativelap.heartguard.data.site.dto.TeamSiteResponseDto
 import com.nativelap.heartguard.data.site.dto.WeatherDto
+import com.nativelap.heartguard.domain.site.model.SkyStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -83,13 +85,41 @@ class TeamSiteMapperTest {
         assertNull(overview.currentTemperature)
     }
 
+    @Test
+    fun `본사 연락처와 하늘 상태, 온도 변화량이 도메인 모델로 매핑된다`() {
+        val overview = teamSiteResponseDto(
+            company = CompanyDto(companyId = "cmp_01", name = "이음", phone = "02-000-0000"),
+            weather = WeatherDto(skyStatus = "RAIN", temperatureDelta = 3.2),
+        ).toDomain()
+
+        assertEquals("02-000-0000", overview.headquartersPhoneNumber)
+        assertEquals(SkyStatus.RAIN, overview.skyStatus)
+        assertEquals(3.2, overview.temperatureDelta ?: error("delta missing"), 0.0)
+    }
+
+    @Test
+    fun `알 수 없는 하늘 상태는 UNKNOWN, 빈 본사 연락처와 company 누락은 null이다`() {
+        val unknownSky = teamSiteResponseDto(
+            company = CompanyDto(phone = ""),
+            weather = WeatherDto(skyStatus = "FOG"),
+        ).toDomain()
+        val missingCompany = teamSiteResponseDto(company = null).toDomain()
+
+        assertEquals(SkyStatus.UNKNOWN, unknownSky.skyStatus)
+        assertNull(unknownSky.headquartersPhoneNumber)
+        assertNull(missingCompany.headquartersPhoneNumber)
+        assertNull(missingCompany.skyStatus)
+    }
+
     private fun teamSiteResponseDto(
+        company: CompanyDto? = null,
         activeEmergencyCall: ActiveEmergencyCallDto? = null,
         weather: WeatherDto? = WeatherDto(temperature = 33.5, humidity = 62.0, apparentTemperature = 36.1),
         heatLevel: Int? = 2,
         team: TeamDto = TeamDto(teamId = "team_01", name = "철근팀", workplace = "3층 외벽"),
         site: SiteDto = SiteDto(siteId = "site_01", name = "서울현장", managerPhone = "010-1234-5678"),
     ) = TeamSiteResponseDto(
+        company = company,
         team = team,
         site = site,
         weather = weather,
