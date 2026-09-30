@@ -210,7 +210,6 @@ feature/<feature>/
 - DTO는 Retrofit Kotlin Serialization Converter가 직렬화·역직렬화하는 전용 타입으로 유지한다.
 - `@SerializedName` 또는 `@SerialName`은 JSON 필드명 매핑일 뿐 DTO → Domain 변환이 아니다.
 - DTO와 Domain은 별도 타입으로 만들고 명시적인 mapper로 변환한다.
-- 한 줄 변환 함수에 불필요하게 긴 주석을 붙이지 않는다.
 
 ### 서버 고정 코드값과 enum
 
@@ -337,6 +336,8 @@ fun LoginServerErrorCode.toAppError(): LoginError = when (this) {
 - DTO, ApiService, Retrofit `Response`를 참조하지 않는다.
 - Coroutine은 기본적으로 `viewModelScope`에서 시작한다.
 - 로딩, 성공, 빈 결과, 오류를 UiState로 분명히 표현한다.
+- 요청 실패와 서버 상태 변경은 `android-coroutine-errors`의 "서버 요청 실패 처리"와 "서버 상태 변경 반영"을 따른다.
+- 사용자 데이터를 cache하는 Repository를 추가하면 `android-oauth-security` 8-1에 따라 세션 종료 시 비워지게 등록한다.
 
 ### Route와 Screen
 
@@ -348,22 +349,7 @@ fun LoginServerErrorCode.toAppError(): LoginError = when (this) {
 
 ## 메소드 주석
 
-새로 만드는 주요 메소드에는 다음 정보를 가능한 범위에서 한국어로 적는다.
-
-- 메소드가 수행하는 일
-- 호출되는 시점
-- 중요한 매개변수 의미
-- 반환값 또는 실패 동작
-
-예시:
-
-```kotlin
-// 추천 프로젝트 목록을 서버에서 불러오는 메소드다.
-// ViewModel의 새로고침 이벤트에서 호출되며, 성공 시 Domain Model 목록을 반환한다.
-suspend operator fun invoke(): List<Project> {
-    return projectRepository.getRecommendedProjects()
-}
-```
+주석은 `android-code-naming`의 주석 규칙을 따른다.
 
 ## 예외 적용 규칙
 

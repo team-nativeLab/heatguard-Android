@@ -47,7 +47,7 @@ README와 PRD가 서로 충돌하거나, 이 파일과 `SKILL.md`가 충돌하�
 | 화면 전환, back stack, 하단 탭, 화면 간 상태 공유, 새 목적지 추가 | `$android-navigation` |
 | 색상, 테마 모드, 문자열, spacing, radius, elevation 등 디자인 시스템 수정 | `$android-design-system` |
 | 다이얼로그·바텀시트 배경 블러 추가·수정 | `$android-dialog-blur` |
-| 변수·함수·클래스·파일·패키지·UseCase 이름을 새로 짓거나 검토 | `$android-code-naming` |
+| 변수·함수·클래스·파일·패키지·UseCase 이름을 새로 짓거나 검토, 코드 주석 작성 | `$android-code-naming` |
 | BuildConfig, product flavor, Retrofit, OkHttp, Interceptor, Authenticator, timeout, 서버 주소 수정 | `$android-network-environment` |
 | Coroutine 취소, Flow, UiState 오류 상태, 이벤트 효과 처리 | `$android-coroutine-errors` |
 | Google·Kakao·Apple 로그인, OAuth/OIDC, PKCE, 토큰 저장, Redirect URI 등 인증 보안 | `$android-oauth-security` |
@@ -74,7 +74,7 @@ README와 PRD가 서로 충돌하거나, 이 파일과 `SKILL.md`가 충돌하�
 - 화면 최상위는 특별한 이유가 없으면 `Scaffold`를 사용한다.
 - 고정 UI 문자열은 `strings.xml`, 색상은 `MaterialTheme.colorScheme`, 반복 수치는 디자인 토큰 또는 의미 있는 상수로 관리한다.
 - 같은 범위에서 의미가 겹치거나 모호한 이름(`data`, `value`, `item`, `result`, `temp` 등)을 쓰지 않는다. 상세 규칙은 `$android-code-naming`을 따른다.
-- 주요 메소드에는 역할, 호출 시점, 중요한 매개변수, 반환 또는 실패 동작을 한국어 주석으로 설명한다. 코드를 그대로 번역하는 주석은 쓰지 않는다.
+- 주석은 핵심 메소드에만 간략히 쓴다. 상세 규칙은 `$android-code-naming`을 따른다.
 - 함수·조건문·`when`·객체 생성·컬렉션 변환을 한 줄로 압축하지 않는다. 짧더라도 제어 흐름 또는 인자가 둘 이상이면 줄바꿈과 들여쓰기로 의도를 드러낸다.
 - `CancellationException`을 삼키지 않는다.
 - 새 dependency나 라이브러리는 기존 dependency로 해결할 수 없을 때만 추가하며, 추가 전에 이유·유지보수 상태·호환성·라이선스·보안·앱 크기 영향을 설명하고 사용자 확인을 받는다.
