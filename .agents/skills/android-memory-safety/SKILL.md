@@ -111,6 +111,11 @@ DisposableEffect(key1 = owner) {
 - Compose 화면 수명 작업은 `LaunchedEffect` 또는 `rememberCoroutineScope`
 - 직접 만든 Scope가 꼭 필요하면 owner, Job 취소 시점, `close()` 경로를 명시한다.
 
+### 세션 수명
+
+- 사용자 데이터를 보관하는 객체의 수명은 "앱"이 아니라 "로그인 세션"이다. `@Singleton`이나 Activity 범위 ViewModel이 사용자 데이터를 들고 있으면 로그아웃 후 다음 사용자에게 이전 사용자 정보가 보일 수 있다.
+- 세션 종료 시 정리 경로(`SessionScopedDataCleaner` 등록, 세션 `key` 안쪽 ViewModel 범위, 사용자 범위 작업 취소)는 `android-oauth-security`의 "8-1. 세션 전환 시 이전 사용자 데이터 초기화"를 따른다.
+
 ## 수명 불일치 예시
 
 ### 위험
@@ -139,4 +144,5 @@ Singleton WebSocketManager
 - 등록과 해제 경로가 모두 존재한다.
 - Scope 취소 또는 자원 release 시점이 코드에 있다.
 - Singleton이 Activity, View, NavController, Composable lambda를 보관하지 않는다.
+- 사용자 데이터를 보관하는 객체가 세션 종료 시 비워진다.
 - Compose side effect는 lifecycle에 맞게 정리된다.
