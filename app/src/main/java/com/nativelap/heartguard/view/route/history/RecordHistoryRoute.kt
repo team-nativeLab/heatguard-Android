@@ -54,6 +54,7 @@ internal fun HeartGuardRecordHistoryRoute(
                     }
                 }
                 RecordHistoryScreenEvent.RetryClicked -> viewModel.loadRecords()
+                RecordHistoryScreenEvent.LoadMore -> viewModel.loadMoreRecords()
                 RecordHistoryScreenEvent.CreateRecordClicked -> onCreateRecordClick()
             }
         },

@@ -4,6 +4,7 @@ import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
+import com.nativelap.heartguard.domain.record.model.RecordHistoryPage
 import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -89,6 +90,11 @@ class GetRecordHistoryUseCaseTest {
                 ),
             )
         }
+
+        override suspend fun getRecordPage(
+            date: LocalDate,
+            cursor: String?,
+        ): ApiResult<RecordHistoryPage> = ApiResult.Failure(ApiError.Unknown)
 
         override suspend fun getRecordDetail(recordId: String): ApiResult<RecordHistoryEntry> =
             ApiResult.Failure(ApiError.Unknown)

@@ -20,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
@@ -66,18 +69,19 @@ fun RecordHistoryDateRangeSelector(
                 modifier = Modifier.size(HeartGuardIconSize.Navigation),
                 tint = MaterialTheme.extraColors.secondaryText,
             )
+            // 한 Text로 합쳐 좁은 화면·큰 글꼴에서는 날짜 단위로 줄을 바꾸게 한다(글자 단위로 쪼개지지 않게).
+            val separatorColor = MaterialTheme.extraColors.tertiaryText
+            val separator = stringResource(R.string.history_date_range_separator)
             Text(
-                text = startDate.format(dateFormatter),
-                color = MaterialTheme.extraColors.strongText,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            )
-            Text(
-                text = stringResource(R.string.history_date_range_separator),
-                color = MaterialTheme.extraColors.tertiaryText,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = endDate.format(dateFormatter),
+                text = buildAnnotatedString {
+                    append(startDate.format(dateFormatter).withoutLineBreaks())
+                    append(" ")
+                    withStyle(SpanStyle(color = separatorColor, fontWeight = FontWeight.Normal)) {
+                        append(separator)
+                    }
+                    append(" ")
+                    append(endDate.format(dateFormatter).withoutLineBreaks())
+                },
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -102,3 +106,8 @@ private fun RecordHistoryDateRangeSelectorPreview() {
         )
     }
 }
+
+// 날짜 안의 공백(예: "2026. 10. 01.")에서 줄이 바뀌지 않도록 줄바꿈 없는 공백으로 바꾼다.
+private fun String.withoutLineBreaks(): String = replace(' ', NO_BREAK_SPACE)
+
+private const val NO_BREAK_SPACE = '\u00A0'

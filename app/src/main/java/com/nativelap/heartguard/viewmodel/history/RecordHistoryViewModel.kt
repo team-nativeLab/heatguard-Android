@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
+import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
+import com.nativelap.heartguard.domain.record.model.RecordHistoryPosition
+import com.nativelap.heartguard.domain.record.usecase.GetRecordHistorySliceUseCase
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
@@ -19,19 +22,23 @@ import kotlinx.coroutines.launch
 /** 기록 내역 화면의 기간 선택·유형 필터·서버 조회를 담당한다. */
 @HiltViewModel
 class RecordHistoryViewModel @Inject constructor(
-    private val getRecordHistoryUseCase: GetRecordHistoryUseCase,
+    private val getRecordHistorySliceUseCase: GetRecordHistorySliceUseCase,
     private val clock: Clock,
-    sessionManager: SessionManager,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(createDefaultUiState())
     val uiState: StateFlow<RecordHistoryUiState> = _uiState.asStateFlow()
 
     private var loadRecordsJob: Job? = null
 
+    // 같은 조회 조건에서 이미 받은 위치다. 서버 커서가 되돌아오면 무한 반복 대신 목록을 끝내고 실패를 알린다.
+    private val loadedPositions = mutableSetOf<RecordHistoryPosition>()
+
     init {
         clearStateWhenSessionEnds(sessionManager) {
             loadRecordsJob?.cancel()
             loadRecordsJob = null
+            loadedPositions.clear()
             _uiState.value = createDefaultUiState()
         }
     }
@@ -43,25 +50,94 @@ class RecordHistoryViewModel @Inject constructor(
         loadRecords()
     }
 
-    /** 현재 기간의 기록을 다시 조회한다. 오류 화면의 재시도에서도 쓴다. */
+    /** 현재 기간의 첫 기록을 다시 조회한다. 오류 화면의 재시도와 기간 변경에서도 쓴다. */
     fun loadRecords() {
         val currentState = _uiState.value
         loadRecordsJob?.cancel()
+        loadedPositions.clear()
         _uiState.value = currentState.copy(
             loadState = RecordHistoryLoadState.Loading,
         )
-        loadRecordsJob = viewModelScope.launch {
-            val historyResult = getRecordHistoryUseCase(
-                startDate = currentState.startDate,
-                endDate = currentState.endDate,
-            )
-            _uiState.value = _uiState.value.copy(
-                loadState = when (historyResult) {
-                    is ApiResult.Success -> RecordHistoryLoadState.Loaded(historyResult.value)
-                    is ApiResult.Failure -> RecordHistoryLoadState.Failed
-                },
-            )
+        requestSlice(
+            startDate = currentState.startDate,
+            position = RecordHistoryPosition(
+                date = currentState.endDate,
+                cursor = null,
+            ),
+            previousEntries = null,
+        )
+    }
+
+    /** 목록 끝에 닿았을 때 다음 기록을 이어 받는다. 이어 받기 실패 뒤의 재시도에서도 쓴다. */
+    fun loadMoreRecords() {
+        val loadedState = _uiState.value.loadState as? RecordHistoryLoadState.Loaded ?: return
+        val nextPosition = loadedState.nextPosition ?: return
+        if (loadedState.isLoadingMore) {
+            return
         }
+        _uiState.value = _uiState.value.copy(
+            loadState = loadedState.copy(
+                isLoadingMore = true,
+                hasLoadMoreError = false,
+            ),
+        )
+        requestSlice(
+            startDate = _uiState.value.startDate,
+            position = nextPosition,
+            previousEntries = loadedState.entries,
+        )
+    }
+
+    private fun requestSlice(
+        startDate: LocalDate,
+        position: RecordHistoryPosition,
+        previousEntries: List<RecordHistoryEntry>?,
+    ) {
+        val owningGeneration = sessionManager.getSnapshot().generation
+        loadRecordsJob = viewModelScope.launch {
+            val sliceResult = getRecordHistorySliceUseCase(
+                startDate = startDate,
+                position = position,
+            )
+            // 여러 날짜를 이어 받는 동안 계정이 바뀌었으면 이전 계정 기록을 섞지 않는다.
+            if (owningGeneration != sessionManager.getSnapshot().generation) {
+                return@launch
+            }
+            when (sliceResult) {
+                is ApiResult.Success -> {
+                    val receivedSlice = sliceResult.value
+                    loadedPositions += position
+                    val receivedNextPosition = receivedSlice.nextPosition
+                    val isRepeatedPosition = receivedNextPosition != null && receivedNextPosition in loadedPositions
+                    _uiState.value = _uiState.value.copy(
+                        loadState = RecordHistoryLoadState.Loaded(
+                            entries = (previousEntries.orEmpty() + receivedSlice.entries)
+                                .distinctBy { recordEntry -> recordEntry.recordId },
+                            nextPosition = receivedNextPosition.takeUnless { isRepeatedPosition },
+                            hasLoadMoreError = isRepeatedPosition,
+                        ),
+                    )
+                }
+
+                is ApiResult.Failure -> applySliceFailure(previousEntries)
+            }
+        }
+    }
+
+    private fun applySliceFailure(
+        previousEntries: List<RecordHistoryEntry>?,
+    ) {
+        val loadedState = _uiState.value.loadState as? RecordHistoryLoadState.Loaded
+        _uiState.value = _uiState.value.copy(
+            loadState = if (previousEntries == null || loadedState == null) {
+                RecordHistoryLoadState.Failed
+            } else {
+                loadedState.copy(
+                    isLoadingMore = false,
+                    hasLoadMoreError = true,
+                )
+            },
+        )
     }
 
     fun showDateRangePicker() {
