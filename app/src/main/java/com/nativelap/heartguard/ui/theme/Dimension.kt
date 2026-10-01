@@ -118,6 +118,15 @@ object HeartGuardIconSize {
 }
 
 object HeartGuardComponentSize {
+    // 목록 끝에서 다음 페이지를 받는 동안 보이는 작은 진행 표시다.
+    val ListLoadingIndicator = 24.dp
+    // 스크롤 Column에서 끝까지 이만큼 남았을 때 다음 페이지를 미리 요청한다.
+    val ListLoadMorePrefetchDistance = 200.dp
+    // 홈 날씨 지표 3개를 가로로 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 세로로 쌓는다.
+    val HomeMetricRowMinWidth = 260.dp
+    // 기록 건수 4칸을 한 줄에 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 2×2로 나눈다.
+    val HistoryCountRowMinWidth = 240.dp
+    val PageContentMaxWidth = 600.dp
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
     val AuthContentMaxWidth = 280.dp
