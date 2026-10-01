@@ -303,4 +303,10 @@
     <string name="save_photo_count_format">%1$d장</string>
     <string name="save_temperature_detail_format">( 습도 %1$s 체감 %2$s )</string>
     <string name="photo_field_instruction_two_line">사진 촬영 또는\n앨범에서 선택</string>
+    <string name="photo_rest_time_prompt">시작과 종료 시간을 선택해 주세요</string>
+    <string name="photo_rest_time_range">%1$02d : %2$02d ~ %3$02d : %4$02d</string>
+    <string name="photo_rest_time_next_day">%1$02d : %2$02d ~ %3$02d : %4$02d (다음 날)</string>
+    <string name="photo_rest_time_required">휴식 시작·종료 시간을 모두 선택해 주세요.</string>
+    <string name="photo_rest_start_time">휴식 시작 시간</string>
+    <string name="photo_rest_end_time">휴식 종료 시간</string>
 </resources>

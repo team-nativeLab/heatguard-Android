@@ -26,7 +26,6 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardHeader
-import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.photo.PhotoMemoField
 import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
@@ -45,6 +44,9 @@ fun RestPhotoScreen(
     onRemovePhoto: (Uri) -> Unit,
     onRetakeClick: () -> Unit,
     onMemoChange: (String) -> Unit,
+    selectedRestTime: String,
+    onRestTimeClick: () -> Unit,
+    hasRestTimeError: Boolean,
     onUploadClick: () -> Unit,
     isSaveEnabled: Boolean,
     modifier: Modifier = Modifier,
@@ -124,12 +126,16 @@ fun RestPhotoScreen(
                     )
                 }
 
-                // TODO: 휴식 시간은 API 명세(기록 등록·현장페이지)에 필드가 없어 "--"로 표시한다. 필드가 생기면 연결한다.
                 RestTimeCard(
                     title = stringResource(R.string.photo_rest_time),
-                    selectedTime = emptyValueText(),
-                    onClick = null,
+                    selectedTime = selectedRestTime,
+                    onClick = onRestTimeClick,
                     contentHorizontalPadding = HeartGuardSpacing.RecordFieldInset,
+                    errorMessage = if (hasRestTimeError) {
+                        stringResource(R.string.photo_rest_time_required)
+                    } else {
+                        null
+                    },
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordFieldHorizontal),
                 )
 
@@ -160,6 +166,9 @@ private fun RestPhotoScreenPreview() {
             onRemovePhoto = {},
             onRetakeClick = {},
             onMemoChange = {},
+            selectedRestTime = "13 : 00 ~ 13 : 30",
+            onRestTimeClick = {},
+            hasRestTimeError = false,
             onUploadClick = {},
             isSaveEnabled = true,
         )

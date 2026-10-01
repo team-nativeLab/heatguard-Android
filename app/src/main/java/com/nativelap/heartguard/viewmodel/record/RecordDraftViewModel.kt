@@ -21,6 +21,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
 import java.time.OffsetDateTime
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -147,6 +150,45 @@ class RecordDraftViewModel @Inject constructor(
         updateDraft { it.copy(restMemo = memo) }
     }
 
+    fun updateRestStartTime(startTime: LocalTime) {
+        updateDraft { state ->
+            state.copy(
+                restDate = LocalDate.now(clock.withZone(REST_ZONE)),
+                restStartTime = startTime.withSecond(0).withNano(0),
+                restEndTime = null,
+            )
+        }
+    }
+
+    fun updateRestEndTime(endTime: LocalTime) {
+        updateDraft { state ->
+            state.copy(restEndTime = endTime.withSecond(0).withNano(0))
+        }
+    }
+
+    /** 저장 실패 화면에서 보관을 선택한 초안을 현재 세션의 기록 내역에 표시한다. */
+    fun markDraftTemporarilySaved() {
+        if (mutableUiState.value.selectedRecordType == null) {
+            return
+        }
+
+        updateDraft { state ->
+            state.copy(
+                isTemporarilySaved = true,
+                temporarilySavedAt = OffsetDateTime.now(clock),
+            )
+        }
+    }
+
+    fun resumeTemporarilySavedDraft() {
+        updateDraft { state ->
+            state.copy(
+                isTemporarilySaved = false,
+                temporarilySavedAt = null,
+            )
+        }
+    }
+
     /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형의 사진을 먼저
      * 업로드하고, 그 objectKey로 현장 기록을 저장한다. 결과는 [submissionState](SaveSuccess·SaveFailure 화면이 읽음)와
      * [submissionEffects](저장 화면의 이동)로 알린다.
@@ -230,6 +272,8 @@ class RecordDraftViewModel @Inject constructor(
                 null
             },
             memo = state.memoFor(recordType),
+            restStartedAt = if (recordType == RecordType.REST) state.restStartedAt else null,
+            restEndedAt = if (recordType == RecordType.REST) state.restEndedAt else null,
         )
         // 업로드 키를 서버가 찾지 못하거나(만료·정리) 이미 쓴 키라면, 재시도 때 같은 키를 다시 보내지 않도록 비워 새로 올린다.
         if (submitResult is ApiResult.Failure && submitResult.error.isStaleUploadKey()) {
@@ -247,7 +291,7 @@ class RecordDraftViewModel @Inject constructor(
     private fun RecordDraftUiState.canSubmit(recordType: RecordType): Boolean = when (recordType) {
         RecordType.TEMPERATURE -> canSubmitTemperatureRecord && fieldPhotoUris.isNotEmpty()
         RecordType.WORK -> workPhotoUris.isNotEmpty()
-        RecordType.REST -> restPhotoUris.isNotEmpty()
+        RecordType.REST -> restPhotoUris.isNotEmpty() && hasValidRestTimeRange
     }
 
     private fun RecordDraftUiState.photoUrisFor(recordType: RecordType): List<Uri> = when (recordType) {
@@ -316,6 +360,11 @@ class RecordDraftViewModel @Inject constructor(
         savedStateHandle[KEY_MANUAL_INPUT_ENABLED] = state.isManualInputEnabled
         savedStateHandle[KEY_WORK_MEMO] = state.workMemo
         savedStateHandle[KEY_REST_MEMO] = state.restMemo
+        savedStateHandle[KEY_REST_DATE] = state.restDate?.toString()
+        savedStateHandle[KEY_REST_START_TIME] = state.restStartTime?.toString()
+        savedStateHandle[KEY_REST_END_TIME] = state.restEndTime?.toString()
+        savedStateHandle[KEY_TEMPORARILY_SAVED] = state.isTemporarilySaved
+        savedStateHandle[KEY_TEMPORARILY_SAVED_AT] = state.temporarilySavedAt?.toString()
     }
 
     private fun clearSavedDraft() {
@@ -325,6 +374,11 @@ class RecordDraftViewModel @Inject constructor(
         savedStateHandle.remove<Boolean>(KEY_MANUAL_INPUT_ENABLED)
         savedStateHandle.remove<String>(KEY_WORK_MEMO)
         savedStateHandle.remove<String>(KEY_REST_MEMO)
+        savedStateHandle.remove<String>(KEY_REST_DATE)
+        savedStateHandle.remove<String>(KEY_REST_START_TIME)
+        savedStateHandle.remove<String>(KEY_REST_END_TIME)
+        savedStateHandle.remove<Boolean>(KEY_TEMPORARILY_SAVED)
+        savedStateHandle.remove<String>(KEY_TEMPORARILY_SAVED_AT)
     }
 
     private fun SavedStateHandle.restoreRecordDraft(): RecordDraftUiState {
@@ -337,6 +391,15 @@ class RecordDraftViewModel @Inject constructor(
             isManualInputEnabled = get<Boolean>(KEY_MANUAL_INPUT_ENABLED) ?: false,
             workMemo = get<String>(KEY_WORK_MEMO).orEmpty(),
             restMemo = get<String>(KEY_REST_MEMO).orEmpty(),
+            restDate = get<String>(KEY_REST_DATE)
+                ?.let { savedDate -> runCatching { LocalDate.parse(savedDate) }.getOrNull() },
+            restStartTime = get<String>(KEY_REST_START_TIME)
+                ?.let { savedTime -> runCatching { LocalTime.parse(savedTime) }.getOrNull() },
+            restEndTime = get<String>(KEY_REST_END_TIME)
+                ?.let { savedTime -> runCatching { LocalTime.parse(savedTime) }.getOrNull() },
+            isTemporarilySaved = get<Boolean>(KEY_TEMPORARILY_SAVED) ?: false,
+            temporarilySavedAt = get<String>(KEY_TEMPORARILY_SAVED_AT)
+                ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() },
         )
     }
 
@@ -347,7 +410,13 @@ class RecordDraftViewModel @Inject constructor(
         const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
         const val KEY_WORK_MEMO = "record_draft.work_memo"
         const val KEY_REST_MEMO = "record_draft.rest_memo"
+        const val KEY_REST_DATE = "record_draft.rest_date"
+        const val KEY_REST_START_TIME = "record_draft.rest_start_time"
+        const val KEY_REST_END_TIME = "record_draft.rest_end_time"
+        const val KEY_TEMPORARILY_SAVED = "record_draft.temporarily_saved"
+        const val KEY_TEMPORARILY_SAVED_AT = "record_draft.temporarily_saved_at"
         const val UPLOAD_NOT_FOUND_CODE = "UPLOAD_NOT_FOUND"
         const val UPLOAD_ALREADY_USED_CODE = "UPLOAD_ALREADY_USED"
+        val REST_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
     }
 }

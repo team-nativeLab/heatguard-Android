@@ -6,8 +6,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.component.RecordType
+import com.nativelap.heartguard.view.component.photo.RestTimePickerDialog
 import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.view.route.record.rememberRecordSubmitter
 import com.nativelap.heartguard.view.screen.photo.FieldPhotoScreen
@@ -136,6 +139,33 @@ internal fun HeartGuardRestPhotoRoute(
         onSaveSuccess = onSaveSuccess,
         onSaveFailure = onSaveFailure,
     )
+    var isSelectingRestStart by rememberSaveable { mutableStateOf(false) }
+    var isSelectingRestEnd by rememberSaveable { mutableStateOf(false) }
+    var hasRestTimeError by rememberSaveable { mutableStateOf(false) }
+    val restStartTime = draftState.restStartTime
+    val restEndTime = draftState.restEndTime
+    val restTimeDisplay = if (restStartTime != null && restEndTime != null) {
+        val displayResource = if (restEndTime <= restStartTime) {
+            R.string.photo_rest_time_next_day
+        } else {
+            R.string.photo_rest_time_range
+        }
+        stringResource(
+            displayResource,
+            restStartTime.hour,
+            restStartTime.minute,
+            restEndTime.hour,
+            restEndTime.minute,
+        )
+    } else {
+        stringResource(R.string.photo_rest_time_prompt)
+    }
+
+    LaunchedEffect(draftState.hasValidRestTimeRange) {
+        if (draftState.hasValidRestTimeRange) {
+            hasRestTimeError = false
+        }
+    }
 
     PhotoSelectionFlow(
         selectedPhotoUris = draftState.restPhotoUris,
@@ -156,9 +186,42 @@ internal fun HeartGuardRestPhotoRoute(
             onRemovePhoto = onRemovePhoto,
             onRetakeClick = onClearPhotos,
             onMemoChange = recordDraftViewModel::updateRestMemo,
-            onUploadClick = submitRecord,
+            selectedRestTime = restTimeDisplay,
+            onRestTimeClick = { isSelectingRestStart = true },
+            hasRestTimeError = hasRestTimeError,
+            onUploadClick = {
+                if (draftState.hasValidRestTimeRange) {
+                    submitRecord()
+                } else {
+                    hasRestTimeError = true
+                }
+            },
             isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
                 submissionState !is RecordSubmissionState.Submitting,
+        )
+    }
+
+    if (isSelectingRestStart) {
+        RestTimePickerDialog(
+            title = stringResource(R.string.photo_rest_start_time),
+            selectedTime = restStartTime,
+            onConfirm = { selectedTime ->
+                recordDraftViewModel.updateRestStartTime(selectedTime)
+                isSelectingRestStart = false
+                isSelectingRestEnd = true
+            },
+            onDismiss = { isSelectingRestStart = false },
+        )
+    }
+    if (isSelectingRestEnd) {
+        RestTimePickerDialog(
+            title = stringResource(R.string.photo_rest_end_time),
+            selectedTime = restEndTime,
+            onConfirm = { selectedTime ->
+                recordDraftViewModel.updateRestEndTime(selectedTime)
+                isSelectingRestEnd = false
+            },
+            onDismiss = { isSelectingRestEnd = false },
         )
     }
 }

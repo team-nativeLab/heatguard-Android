@@ -36,7 +36,7 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 | Emergency / Calling | "긴급 호출하기"를 눌러 호출 등록 → 호출 중(관리자 확인 시 연결됨) → 취소·종료. 앱 재시작 시 진행 중 호출을 이어받음 |
 | RecordTypeSelection | 온도계 기록 / 작업 사진 / 휴식 사진 중 기록 유형 선택 (바텀시트) |
 | TemperatureRecord | 온도계 측정값 입력 |
-| FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 CameraX 전체 화면 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장) |
+| FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 CameraX 전체 화면 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장). 휴식 기록은 시작·종료 시각을 TimePicker로 선택하고 자정을 넘기는 구간을 지원 |
 | PhotoCamera | 선택한 기록 유형으로 CameraX 전체 화면 촬영 |
 | SaveSuccess / SaveFailure | 저장 성공/실패 결과. 실패 시 명세 오류 코드별 안내 |
 | WithdrawNotice / WithdrawConfirm / WithdrawDone | 회원탈퇴 안내·확인·완료. 현재 비밀번호 확인 후 팀 계정과 세션을 비활성화 |
@@ -47,6 +47,12 @@ PRD 문서는 저장소에 없습니다. 제품 목표·요구사항의 공식 �
 
 ## 반응형 UI 진행 상태
 홈, 프로필 수정, 문의, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패 화면에는 화면 폭을 최대 600dp로 제한하고 넓은 화면에서 가운데 정렬하는 콘텐츠 래퍼가 적용되어 있습니다. 카메라 촬영 화면은 전체 화면 구성을 유지합니다. Figma의 모든 프레임과 실제 기기 크기별 시각 비교·검증은 완료되지 않았습니다.
+
+## 휴식 기록 입력·검증 현황
+
+휴식 기록은 시작·종료 시각을 선택하고 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 전송합니다. 종료 시각이 시작 시각과 같거나 이르면 다음 날로 처리하고, 1~1440분 범위를 검사합니다. 선택한 한국 날짜와 시각은 SavedState로 복원하며, 재선택·초기화·세션 종료 시 관련 상태를 정리합니다. 사진 URI와 업로드 키는 프로세스 복원 대상에서 제외합니다.
+
+2026-10-01 독립 REST 브랜치에서 `assembleDebug`, 단위 테스트 88개, `RecordDraftSavedStateTest` 계측 테스트 2개가 통과했습니다. `lintDebug`는 오류 0개·경고 47개였습니다. 메인 통합 브랜치의 147개/20개 결과와 구분합니다. 실제 서버 REST 저장·업로드 API와 모든 작업자 Figma 화면 비교는 미검증이며, 인증 세션 Critical 2건 및 일반 identity 정책은 별도 확인 대기입니다. 관련 Issue는 #93, #40, 업로드 계약 #65입니다.
 
 ## 서버 API 계약 현황
 2026-09-28 테스트 서버(`https://heatguard-temp.https.gsmsv.site/`)와 테스트 계정으로 확인한 결과입니다. 명세에 없던 필드는 실서버 응답으로 확정했습니다.

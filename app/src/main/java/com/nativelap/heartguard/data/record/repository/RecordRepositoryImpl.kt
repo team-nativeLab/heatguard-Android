@@ -93,6 +93,8 @@ class RecordRepositoryImpl @Inject constructor(
         temperature: Double?,
         humidity: Double?,
         memo: String?,
+        restStartedAt: OffsetDateTime?,
+        restEndedAt: OffsetDateTime?,
     ): ApiResult<FieldRecord> {
         val request = RecordRequestDto(
             type = type.toApiValue(),
@@ -104,6 +106,8 @@ class RecordRepositoryImpl @Inject constructor(
             measuredAt = measuredAt
                 .truncatedTo(ChronoUnit.SECONDS)
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+            restStartedAt = restStartedAt?.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+            restEndedAt = restEndedAt?.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         )
 
         return recordRemoteDataSource.submitRecord(request).map { recordResponse -> recordResponse.toDomain() }
