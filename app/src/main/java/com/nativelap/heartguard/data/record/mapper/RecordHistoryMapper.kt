@@ -4,6 +4,7 @@ import com.nativelap.heartguard.data.record.dto.RecordHistoryItemDto
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeParseException
 
 internal fun RecordHistoryItemDto.toDomain(): RecordHistoryEntry = RecordHistoryEntry(
@@ -35,10 +36,15 @@ private fun String?.toFieldRecordTypeOrNull(): FieldRecordType? = when (this) {
     else -> null
 }
 
+// 명세는 +09:00이지만 일부 기록은 UTC(Z)로 내려오므로, 화면 표시·날짜 묶음이 어긋나지 않게 한국 시각으로 맞춘다.
 private fun String.toOffsetDateTimeOrNull(): OffsetDateTime? {
     return try {
         OffsetDateTime.parse(this)
+            .atZoneSameInstant(KOREA_ZONE)
+            .toOffsetDateTime()
     } catch (_: DateTimeParseException) {
         null
     }
 }
+
+private val KOREA_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
