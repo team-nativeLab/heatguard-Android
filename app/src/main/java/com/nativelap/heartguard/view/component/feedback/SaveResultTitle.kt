@@ -1,7 +1,7 @@
 package com.nativelap.heartguard.view.component.feedback
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +22,7 @@ fun SaveResultTitle(
         text = title,
         modifier = modifier
             .fillMaxWidth()
-            .height(HeartGuardSpacing.ResultTitleHeight),
+            .heightIn(min = HeartGuardSpacing.ResultTitleHeight),
         textAlign = TextAlign.Center,
         color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.titleLarge.copy(

@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.notification.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import mockwebserver3.MockResponse
@@ -73,9 +74,34 @@ class TeamNotificationApiServiceTest {
         }
     }
 
+    @Test
+    fun `모든 알림 읽음은 query와 body 없이 PATCH를 보내고 카운트를 읽는다`() = runBlocking {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(
+                MockResponse.Builder()
+                    .code(200)
+                    .body("""{"success":true,"data":{"updatedCount":0,"unreadCount":0},"error":null}""")
+                    .build(),
+            )
+            val response = createService(server).markAllNotificationsRead()
+            val request = server.takeRequest()
+            assertEquals("PATCH", request.method)
+            assertEquals("/api/v1/team/notifications/read-all", request.url.encodedPath)
+            assertEquals(null, request.url.query)
+            assertEquals(0L, request.bodySize)
+            assertEquals(0, requireNotNull(response.data).updatedCount)
+            assertEquals(0, requireNotNull(response.data).unreadCount)
+        } finally {
+            server.close()
+        }
+    }
+
     private fun createService(server: MockWebServer): TeamNotificationApiService = ApiRetrofitFactory(
         authenticatedApiClient = OkHttpClient(),
         unauthenticatedApiClient = OkHttpClient(),
+        sessionManager = createUnauthenticatedTestSessionManager(),
         json = Json { ignoreUnknownKeys = true },
     ).createService(
         baseUrl = server.url("/").toString(),

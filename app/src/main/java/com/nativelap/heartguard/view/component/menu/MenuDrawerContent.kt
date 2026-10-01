@@ -1,11 +1,16 @@
 package com.nativelap.heartguard.view.component.menu
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -21,55 +26,64 @@ import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 
 /** 드로어 패널 안의 프로필·메뉴 목록·로그아웃·회원탈퇴 영역을 Figma 순서대로 묶는다.
- * 목록과 하단 영역 사이는 남는 높이로 채워 로그아웃·회원탈퇴가 항상 패널 아래쪽에 붙게 한다. */
+ * 높이가 충분하면 종료 동작을 아래에 두고, 작은 창에서는 전체 내용을 스크롤한다. */
 @Composable
 fun MenuDrawerContent(
     profile: MenuDrawerProfileUiModel,
     onEvent: (MenuDrawerEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize(),
     ) {
-        MenuDrawerProfile(
-            profile = profile,
-            modifier = Modifier.padding(bottom = HeartGuardSpacing.LargeSection),
-        )
+        val availableHeight = maxHeight
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = availableHeight),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column {
+                MenuDrawerProfile(
+                    profile = profile,
+                    modifier = Modifier.padding(bottom = HeartGuardSpacing.LargeSection),
+                )
 
-        HorizontalDivider(
-            thickness = HeartGuardBorderWidth.Divider,
-            color = MaterialTheme.extraColors.subtleDivider,
-        )
+                HorizontalDivider(
+                    thickness = HeartGuardBorderWidth.Divider,
+                    color = MaterialTheme.extraColors.subtleDivider,
+                )
 
-        Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
 
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_edit_profile),
-            onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
-        )
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_inquiry),
-            onClick = { onEvent(MenuDrawerEvent.InquiryClicked) },
-        )
+                MenuDrawerItem(
+                    title = stringResource(R.string.menu_edit_profile),
+                    onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
+                )
+                MenuDrawerItem(
+                    title = stringResource(R.string.menu_inquiry),
+                    onClick = { onEvent(MenuDrawerEvent.InquiryClicked) },
+                )
+            }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Column {
+                HorizontalDivider(
+                    thickness = HeartGuardBorderWidth.Divider,
+                    color = MaterialTheme.extraColors.subtleDivider,
+                )
 
-        HorizontalDivider(
-            thickness = HeartGuardBorderWidth.Divider,
-            color = MaterialTheme.extraColors.subtleDivider,
-        )
-
-        MenuDrawerItem(
-            title = stringResource(R.string.menu_logout),
-            onClick = { onEvent(MenuDrawerEvent.LogoutClicked) },
-            showsChevron = false,
-        )
-        MenuDrawerWithdrawLink(
-            title = stringResource(R.string.menu_withdraw),
-            onClick = { onEvent(MenuDrawerEvent.WithdrawClicked) },
-        )
+                MenuDrawerItem(
+                    title = stringResource(R.string.menu_logout),
+                    onClick = { onEvent(MenuDrawerEvent.LogoutClicked) },
+                    showsChevron = false,
+                )
+                MenuDrawerWithdrawLink(
+                    title = stringResource(R.string.menu_withdraw),
+                    onClick = { onEvent(MenuDrawerEvent.WithdrawClicked) },
+                )
+            }
+        }
     }
 }
 

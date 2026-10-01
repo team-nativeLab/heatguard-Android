@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -45,7 +47,7 @@ fun SaveResultMessage(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(HeartGuardComponentSize.ResultMessageHeight),
+            .heightIn(min = HeartGuardComponentSize.ResultMessageHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -108,9 +110,12 @@ fun SaveResultMessage(
                     },
                 )
             }
+
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultMessageTitleGap))
+
             Text(
                 text = title,
+                textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontSize = HeartGuardFontSize.ResultMessageTitle,
@@ -118,9 +123,12 @@ fun SaveResultMessage(
                     fontWeight = FontWeight.Bold,
                 ),
             )
+
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultMessageDescriptionGap))
+
             Text(
                 text = description,
+                textAlign = TextAlign.Center,
                 color = MaterialTheme.extraColors.disabledText,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontSize = HeartGuardFontSize.ResultMessageDescription,

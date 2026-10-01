@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.notification.remote
 
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.data.notification.dto.NotificationReadReceiptDto
+import com.nativelap.heartguard.data.notification.dto.NotificationReadAllReceiptDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationPageDto
 
 interface TeamNotificationRemoteDataSource {
@@ -12,4 +13,6 @@ interface TeamNotificationRemoteDataSource {
     ): ApiResult<TeamNotificationPageDto>
 
     suspend fun markNotificationRead(notificationId: String): ApiResult<NotificationReadReceiptDto>
+
+    suspend fun markAllNotificationsRead(): ApiResult<NotificationReadAllReceiptDto>
 }

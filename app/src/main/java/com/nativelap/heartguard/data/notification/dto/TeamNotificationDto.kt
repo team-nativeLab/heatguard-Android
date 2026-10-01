@@ -54,3 +54,11 @@ data class NotificationReadReceiptDto(
     @SerialName("readAt")
     val readAt: String? = null,
 )
+
+@Serializable
+data class NotificationReadAllReceiptDto(
+    @SerialName("updatedCount")
+    val updatedCount: Int,
+    @SerialName("unreadCount")
+    val unreadCount: Int,
+)

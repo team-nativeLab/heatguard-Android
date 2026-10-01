@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
@@ -47,7 +49,7 @@ fun TemperatureRecordCard(
     installationLabel: String,
     isManualInputEnabled: Boolean,
     onManualInputChange: (Boolean) -> Unit,
-    @Suppress("UNUSED_PARAMETER") checkboxContentDescription: String,
+    checkboxContentDescription: String,
     modifier: Modifier = Modifier,
     title: String,
     isCardEnabled: Boolean = true,
@@ -82,6 +84,7 @@ fun TemperatureRecordCard(
             ) {
                 Text(
                     text = title,
+                    modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontSize = HeartGuardFontSize.CardTitle,
@@ -89,6 +92,9 @@ fun TemperatureRecordCard(
                     ),
                 )
                 Switch(
+                    modifier = Modifier.semantics {
+                        contentDescription = checkboxContentDescription
+                    },
                     checked = isManualInputEnabled,
                     onCheckedChange = onManualInputChange,
                     enabled = isCardEnabled,

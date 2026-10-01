@@ -1,10 +1,12 @@
 package com.nativelap.heartguard.view.screen.account
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -15,6 +17,8 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
+import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawDoneMessage
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
@@ -28,35 +32,41 @@ fun WithdrawDoneScreen(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            BottomActionBar {
+                RecordSaveButton(
+                    title = stringResource(R.string.common_confirm),
+                    onClick = onConfirmClick,
+                )
+            }
+        },
     ) { innerPadding ->
-        Column(
+        ResponsivePageContent(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
                 modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
-            Spacer(modifier = Modifier.height(HeartGuardSpacing.Section))
-
-            WithdrawDoneMessage(
-                title = stringResource(R.string.withdraw_done_title),
-                description = stringResource(R.string.withdraw_done_message),
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.ResultHorizontal),
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            RecordSaveButton(
-                title = stringResource(R.string.common_confirm),
-                onClick = onConfirmClick,
-                modifier = Modifier.padding(
-                    horizontal = HeartGuardSpacing.BottomActionHorizontal,
-                    vertical = HeartGuardSpacing.Section,
-                ),
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = HeartGuardSpacing.ResultHorizontal,
+                        vertical = HeartGuardSpacing.Section,
+                    ),
+            ) {
+                WithdrawDoneMessage(
+                    title = stringResource(R.string.withdraw_done_title),
+                    description = stringResource(R.string.withdraw_done_message),
+                )
+            }
         }
     }
 }
