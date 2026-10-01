@@ -67,6 +67,7 @@ class WorkerProfileRepositoryImpl @Inject constructor(
         }
 
         ApiError.Network,
+        ApiError.SessionChanged,
         ApiError.Serialization,
         ApiError.Unknown,
         -> PasswordChangeResult.Failure

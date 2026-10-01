@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
@@ -37,6 +39,7 @@ class EmergencyViewModel @Inject constructor(
     private val observeEmergencyCallStatusUseCase: ObserveEmergencyCallStatusUseCase,
     private val updateEmergencyCallStatusUseCase: UpdateEmergencyCallStatusUseCase,
     private val getCurrentEmergencyCallUseCase: GetCurrentEmergencyCallUseCase,
+    private val sessionManager: SessionManager,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -53,6 +56,13 @@ class EmergencyViewModel @Inject constructor(
     // 호출 의도 1회에 하나다. 등록이 실패해 다시 누르면 같은 키를 보내 서버에 호출이 중복 생성되지 않게 한다.
     private var pendingIdempotencyKey: String? = null
     private var consecutivePollingFailureCount = 0
+
+    init {
+        // 백그라운드에서 세션이 끝나도 3초 폴링이 이전 계정 호출을 계속 조회하지 않도록 함께 정리한다.
+        clearStateWhenSessionEnds(sessionManager) {
+            reset()
+        }
+    }
 
     /** "긴급 호출하기" 버튼에서 호출한다. 이미 진행 중인 호출이 있으면 새로 등록하지 않고 호출 중 화면으로 보낸다. */
     fun startEmergencyCall() {
@@ -98,10 +108,12 @@ class EmergencyViewModel @Inject constructor(
         }
     }
 
-    /** 앱을 다시 열었을 때 홈 조회에 진행 중인 긴급호출이 있으면 호출한다. 서버의 현재 호출이 진행 중이면 이어받는다. */
+    /** 홈 조회에 진행 중인 긴급호출이 있을 때마다 호출한다. 서버의 현재 호출이 진행 중이면 이어받는다.
+     * 이어받기에 실패해도 다음 홈 새로고침에서 다시 호출되며, 이미 이어받았으면 아무것도 하지 않는다. */
     fun resumeActiveCall() {
         val currentState = mutableUiState.value
-        if (currentState.callId != null || currentState.isRegistering) {
+        // 홈 새로고침마다 불릴 수 있으므로 이미 이어받는 중이면 겹쳐 요청하지 않는다.
+        if (currentState.callId != null || currentState.isRegistering || requestJob?.isActive == true) {
             return
         }
 
@@ -154,9 +166,25 @@ class EmergencyViewModel @Inject constructor(
 
     // 요청 사이 관리자가 호출을 확인하는 등 상태가 바뀐 경우다. 최신 상태로 화면을 맞춰 사용자가 다시 누를 수 있게 한다.
     private suspend fun refreshCallAfterInvalidTransition(callId: String) {
-        val currentCall = (getCurrentEmergencyCallUseCase() as? ApiResult.Success)?.value
-        val isSameCallInProgress = currentCall != null &&
-            currentCall.callId == callId &&
+        val currentCall = when (val currentCallResult = getCurrentEmergencyCallUseCase()) {
+            is ApiResult.Success -> currentCallResult.value
+            is ApiResult.Failure -> {
+                mutableUiState.value = mutableUiState.value.copy(
+                    isUpdatingStatus = false,
+                    statusUpdateFailed = true,
+                )
+                return
+            }
+        }
+        if (currentCall.callId == callId && currentCall.state == EmergencyCallState.UNKNOWN) {
+            // 앱이 모르는 새 상태값이면 진행 중인 호출 화면을 닫지 않고, 화면 상태를 유지한 채 다시 시도하게 한다(폴링과 같은 정책).
+            mutableUiState.value = mutableUiState.value.copy(
+                isUpdatingStatus = false,
+                statusUpdateFailed = true,
+            )
+            return
+        }
+        val isSameCallInProgress = currentCall.callId == callId &&
             currentCall.state.isInProgress()
         if (!isSameCallInProgress) {
             closeCallFlow()
@@ -232,7 +260,12 @@ class EmergencyViewModel @Inject constructor(
             .onEach { statusResult ->
                 when (statusResult) {
                     is ApiResult.Success -> applyPolledStatus(statusResult.value)
-                    is ApiResult.Failure -> countPollingFailure()
+                    is ApiResult.Failure -> {
+                        // 세션 전환으로 보내지 않은 요청은 연결 실패가 아니므로 실패 횟수에 넣지 않는다.
+                        if (statusResult.error != ApiError.SessionChanged) {
+                            countPollingFailure()
+                        }
+                    }
                 }
             }
             .launchIn(viewModelScope)
@@ -241,6 +274,12 @@ class EmergencyViewModel @Inject constructor(
     private fun applyPolledStatus(polledStatus: EmergencyCallStatus) {
         consecutivePollingFailureCount = 0
         val currentState = mutableUiState.value
+        if (currentState.callId != null && polledStatus.callId == null &&
+            polledStatus.state == EmergencyCallState.NONE
+        ) {
+            closeCallFlow()
+            return
+        }
         // 서버는 가장 최근 호출을 돌려준다. 이 기기의 호출과 다른 호출이면 반영하지 않는다.
         if (polledStatus.callId != currentState.callId) {
             mutableUiState.value = currentState.copy(isConnectionUnstable = false)

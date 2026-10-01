@@ -17,6 +17,9 @@ sealed interface ApiError {
 
     data object Network : ApiError
 
+    // 요청을 만든 세션이 전송 전에 끝나 요청을 보내지 않았다. 화면에 오류로 노출하지 않는다.
+    data object SessionChanged : ApiError
+
     data object Serialization : ApiError
 
     data object Unknown : ApiError

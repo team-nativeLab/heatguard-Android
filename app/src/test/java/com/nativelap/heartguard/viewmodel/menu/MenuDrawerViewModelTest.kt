@@ -5,6 +5,7 @@ import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionState
+import com.nativelap.heartguard.core.session.SessionToken
 import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.auth.model.TeamLoginResult
 import com.nativelap.heartguard.domain.auth.repository.TeamAuthRepository
@@ -30,6 +31,33 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MenuDrawerViewModelTest {
+    @Test
+    fun lateLogoutCompletionDoesNotExpireRelogin() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val storage = FakeTokenStorage("same-token")
+            val sessionManager = SessionManager(storage, StandardTestDispatcher(testScheduler))
+            sessionManager.initialize()
+            val logoutResponse = CompletableDeferred<Unit>()
+            val viewModel = MenuDrawerViewModel(
+                GetWorkerProfileUseCase(FakeWorkerProfileRepository()),
+                TeamLogoutUseCase(FakeTeamAuthRepository { logoutResponse.await() }),
+                sessionManager,
+            )
+            viewModel.logout()
+            runCurrent()
+            sessionManager.onLoginSucceeded(SessionToken("same-token"))
+            logoutResponse.complete(Unit)
+            advanceUntilIdle()
+
+            assertEquals("same-token", storage.accessToken)
+            assertEquals(SessionState.Authenticated, sessionManager.sessionState.value)
+            viewModel.viewModelScope.cancel()
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
     @Test
     fun logoutCallsServerBeforeClearingLocalTokenAndIgnoresRepeatedTaps() = runTest {
         val mainDispatcher = StandardTestDispatcher(testScheduler)

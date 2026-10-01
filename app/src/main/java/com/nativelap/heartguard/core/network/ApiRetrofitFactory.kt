@@ -2,7 +2,9 @@ package com.nativelap.heartguard.core.network
 
 import com.nativelap.heartguard.core.network.di.AuthenticatedApiClient
 import com.nativelap.heartguard.core.network.di.UnauthenticatedApiClient
+import com.nativelap.heartguard.core.session.SessionManager
 import javax.inject.Inject
+import okhttp3.Call
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -14,6 +16,7 @@ import kotlinx.serialization.json.Json
 class ApiRetrofitFactory @Inject constructor(
     @param:AuthenticatedApiClient private val authenticatedApiClient: OkHttpClient,
     @param:UnauthenticatedApiClient private val unauthenticatedApiClient: OkHttpClient,
+    private val sessionManager: SessionManager,
     private val json: Json,
 ) {
     fun <ApiService : Any> createService(
@@ -21,9 +24,12 @@ class ApiRetrofitFactory @Inject constructor(
         serviceClass: Class<ApiService>,
         authentication: ApiAuthentication,
     ): ApiService {
-        val client = when (authentication) {
+        val callFactory: Call.Factory = when (authentication) {
             ApiAuthentication.NONE -> unauthenticatedApiClient
-            ApiAuthentication.BEARER -> authenticatedApiClient
+            ApiAuthentication.BEARER -> SessionBoundCallFactory(
+                delegateClient = authenticatedApiClient,
+                sessionManager = sessionManager,
+            )
         }
         val contentType = JSON_MEDIA_TYPE.toMediaType()
 
@@ -34,7 +40,7 @@ class ApiRetrofitFactory @Inject constructor(
 
         return Retrofit.Builder()
             .baseUrl(parsedBaseUrl)
-            .client(client)
+            .callFactory(callFactory)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
             .create(serviceClass)

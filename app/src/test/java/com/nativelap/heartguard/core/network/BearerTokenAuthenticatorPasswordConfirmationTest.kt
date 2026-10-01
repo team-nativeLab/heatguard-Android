@@ -71,6 +71,7 @@ class BearerTokenAuthenticatorPasswordConfirmationTest {
             sessionManager.initialize()
 
             val client = OkHttpClient.Builder()
+                .addInterceptor(BearerTokenInterceptor(sessionManager))
                 .authenticator(BearerTokenAuthenticator(sessionManager))
                 .build()
             val requestBuilder = Request.Builder()

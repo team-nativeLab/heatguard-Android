@@ -50,6 +50,7 @@ class TeamAuthRepositoryImpl @Inject constructor(
         }
 
         ApiError.Network,
+        ApiError.SessionChanged,
         ApiError.Serialization,
         ApiError.Unknown,
         -> TeamLoginResult.Failure

@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.emergency.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
 import com.nativelap.heartguard.data.emergency.dto.UpdateEmergencyCallStatusRequestDto
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -28,6 +29,7 @@ class EmergencyCallApiServiceTest {
             val service = ApiRetrofitFactory(
                 authenticatedApiClient = OkHttpClient(),
                 unauthenticatedApiClient = OkHttpClient(),
+                sessionManager = createUnauthenticatedTestSessionManager(),
                 json = Json { ignoreUnknownKeys = true },
             ).createService(
                 baseUrl = server.url("/").toString(),

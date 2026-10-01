@@ -152,5 +152,7 @@ private fun ApiError.toDisplayMessage(): String = when (this) {
 
     ApiError.Network -> stringResource(R.string.save_error_network)
     ApiError.Serialization -> stringResource(R.string.save_error_serialization)
-    ApiError.Unknown -> stringResource(R.string.save_error_unknown)
+    ApiError.SessionChanged,
+    ApiError.Unknown,
+    -> stringResource(R.string.save_error_unknown)
 }

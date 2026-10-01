@@ -3,6 +3,9 @@ package com.nativelap.heartguard.viewmodel.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionState
+import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
 import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
@@ -30,6 +33,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel @Inject constructor(
     private val getTeamSiteOverviewUseCase: GetTeamSiteOverviewUseCase,
     private val getRecordHistoryUseCase: GetRecordHistoryUseCase,
+    private val sessionManager: SessionManager,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -80,6 +84,20 @@ class HomeViewModel @Inject constructor(
 
     private var loadJob: Job? = null
 
+    // 홈 조회가 끝날 때마다 늘어난다. 응답 내용이 같아도 진행 중 긴급호출 이어받기를 다시 시도하는 기준으로 쓴다.
+    private val mutableRefreshCompletionCount = MutableStateFlow(0)
+    val refreshCompletionCount: StateFlow<Int> = mutableRefreshCompletionCount.asStateFlow()
+
+    init {
+        clearStateWhenSessionEnds(sessionManager) {
+            reset()
+            // 다른 계정으로 바로 다시 로그인해 홈이 그대로 떠 있으면 새 계정 값을 이어서 조회한다.
+            if (sessionManager.sessionState.value == SessionState.Authenticated) {
+                loadTeamSiteOverview()
+            }
+        }
+    }
+
     /** 홈 정보와 오늘 기록을 조회한다. 로그인 직후처럼 이전 값이 없을 때 쓰며, 응답 전에는 모든 값을 "--"로 둔다. */
     fun loadTeamSiteOverview() {
         mutableUiState.value = HomeUiState.Loading
@@ -90,9 +108,15 @@ class HomeViewModel @Inject constructor(
      * 새로 받은 결과로 바꾼다. 이전 값이 있는데 새 조회만 실패하면 이전 값을 유지하고 [HomeUiState.Error]로 바꾸지 않는다. */
     fun refresh() {
         loadJob?.cancel()
+        val owningGeneration = sessionManager.getSnapshot().generation
         loadJob = viewModelScope.launch {
-            loadTodayRecordTimes()
+            val fetchedRecordTimes = fetchTodayRecordTimes()
             val overviewResult = getTeamSiteOverviewUseCase()
+            // 두 조회 사이에 계정이 바뀌었으면 이전 계정 응답을 새 계정 홈에 반영하지 않는다.
+            if (owningGeneration != sessionManager.getSnapshot().generation) {
+                return@launch
+            }
+            fetchedRecordTimes?.let { recordTimes -> todayRecordTimes.value = recordTimes }
             val currentState = mutableUiState.value
             mutableUiState.value = when (overviewResult) {
                 is ApiResult.Success -> HomeUiState.Success(overviewResult.value)
@@ -102,6 +126,7 @@ class HomeViewModel @Inject constructor(
                     HomeUiState.Error(overviewResult.error)
                 }
             }
+            mutableRefreshCompletionCount.value += 1
         }
     }
 
@@ -113,19 +138,20 @@ class HomeViewModel @Inject constructor(
         todayRecordTimes.value = emptyList()
     }
 
-    // 오늘(Asia/Seoul) 기록의 측정 시각을 받아 둔다. 실패하면 이전 값을 유지한다(완료 표시를 임의로 지우지 않는다).
-    private suspend fun loadTodayRecordTimes() {
+    // 오늘(Asia/Seoul) 기록의 측정 시각을 받는다. 실패하면 null을 돌려 이전 값을 유지하게 한다(완료 표시를 임의로 지우지 않는다).
+    private suspend fun fetchTodayRecordTimes(): List<LocalTime>? {
         val today = LocalDate.now(clock)
         val todayRecordsResult = getRecordHistoryUseCase(
             startDate = today,
             endDate = today,
         )
-        if (todayRecordsResult is ApiResult.Success) {
-            todayRecordTimes.value = todayRecordsResult.value.mapNotNull { recordEntry ->
-                recordEntry.measuredAt
-                    ?.atZoneSameInstant(clock.zone)
-                    ?.toLocalTime()
-            }
+        if (todayRecordsResult !is ApiResult.Success) {
+            return null
+        }
+        return todayRecordsResult.value.mapNotNull { recordEntry ->
+            recordEntry.measuredAt
+                ?.atZoneSameInstant(clock.zone)
+                ?.toLocalTime()
         }
     }
 

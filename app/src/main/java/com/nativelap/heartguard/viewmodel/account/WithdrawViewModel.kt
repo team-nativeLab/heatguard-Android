@@ -3,6 +3,7 @@ package com.nativelap.heartguard.viewmodel.account
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.account.model.WithdrawAccountResult
 import com.nativelap.heartguard.domain.account.model.WithdrawReason
 import com.nativelap.heartguard.domain.account.usecase.WithdrawAccountUseCase
@@ -33,6 +34,15 @@ class WithdrawViewModel @Inject constructor(
 
     private var withdrawJob: Job? = null
     private var isFinishing = false
+    private var withdrawalGeneration: Long? = null
+    private var submissionGeneration = 0L
+
+    init {
+        // 계정이 바뀌면 이전 계정의 비밀번호 입력과 진행 중인 탈퇴 요청을 남기지 않는다.
+        clearStateWhenSessionEnds(sessionManager) {
+            reset()
+        }
+    }
 
     fun selectReason(reason: WithdrawReason?) {
         _uiState.update { it.copy(selectedReason = reason) }
@@ -60,21 +70,43 @@ class WithdrawViewModel @Inject constructor(
             return
         }
 
+        val owningGeneration = sessionManager.getSnapshot().generation
+        val submissionId = ++submissionGeneration
+        val submittedPassword = _password.value
+        val submittedReason = _uiState.value.selectedReason
+        withdrawalGeneration = owningGeneration
         _uiState.update { it.copy(submissionState = WithdrawSubmissionState.Submitting) }
         withdrawJob = viewModelScope.launch {
             val withdrawResult = withdrawAccountUseCase(
-                currentPassword = _password.value,
-                reason = _uiState.value.selectedReason,
+                currentPassword = submittedPassword,
+                reason = submittedReason,
             )
+            if (submissionId != submissionGeneration) {
+                return@launch
+            }
+            if (owningGeneration != sessionManager.getSnapshot().generation) {
+                reset()
+                return@launch
+            }
             val nextSubmissionState = when (withdrawResult) {
                 WithdrawAccountResult.Success -> WithdrawSubmissionState.Succeeded
                 WithdrawAccountResult.InvalidPassword -> WithdrawSubmissionState.InvalidPassword
                 WithdrawAccountResult.Failure -> WithdrawSubmissionState.Failed
             }
-            if (withdrawResult == WithdrawAccountResult.Success) {
-                sessionManager.clearAccessTokenAfterWithdrawal()
+            // 저장소 삭제 실패는 SessionManager가 흡수하므로, 서버 탈퇴 성공 후 실패 화면으로 되돌리지 않는다.
+            if (withdrawResult == WithdrawAccountResult.Success &&
+                !sessionManager.clearAccessTokenAfterWithdrawal(owningGeneration)
+            ) {
+                resetOwnedSubmission(submissionId)
+                return@launch
             }
-            _uiState.update { it.copy(submissionState = nextSubmissionState) }
+            if (submissionId == submissionGeneration &&
+                owningGeneration == sessionManager.getSnapshot().generation
+            ) {
+                _uiState.update { it.copy(submissionState = nextSubmissionState) }
+            } else {
+                resetOwnedSubmission(submissionId)
+            }
         }
     }
 
@@ -85,11 +117,17 @@ class WithdrawViewModel @Inject constructor(
             return
         }
 
+        // Activity가 다시 만들어져 탈퇴 세대를 잃었어도, 토큰만 지워진 탈퇴 완료 세션이면 현재 세대로 종료해 화면을 벗어나게 한다.
+        val finishedGeneration = withdrawalGeneration
+            ?: sessionManager.getSnapshot()
+                .takeIf { currentSnapshot -> currentSnapshot.accessToken == null }
+                ?.generation
+            ?: return
         isFinishing = true
         reset()
         viewModelScope.launch {
             try {
-                sessionManager.expireSession()
+                sessionManager.expireSession(finishedGeneration)
             } finally {
                 isFinishing = false
             }
@@ -98,6 +136,8 @@ class WithdrawViewModel @Inject constructor(
 
     /** 흐름을 벗어날 때 호출한다. 진행 중인 요청을 취소해, 늦게 도착한 결과가 다시 들어온 흐름에 반영되지 않게 한다. */
     fun reset() {
+        submissionGeneration += 1L
+        withdrawalGeneration = null
         withdrawJob?.cancel()
         withdrawJob = null
         _password.value = ""
@@ -111,6 +151,12 @@ class WithdrawViewModel @Inject constructor(
             -> WithdrawSubmissionState.Idle
 
             else -> this
+        }
+    }
+
+    private fun resetOwnedSubmission(submissionId: Long) {
+        if (submissionId == submissionGeneration) {
+            reset()
         }
     }
 }
