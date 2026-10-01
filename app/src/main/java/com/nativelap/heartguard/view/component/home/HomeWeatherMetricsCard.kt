@@ -2,6 +2,7 @@ package com.nativelap.heartguard.view.component.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,40 +52,73 @@ fun HomeWeatherMetricsCard(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = HeartGuardElevation.HomeMetricCard,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                    vertical = HeartGuardSpacing.Section,
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
-        ) {
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_humidity),
-                metricLabel = humidityLabel,
-                metricValue = humidity,
-                modifier = Modifier.weight(1f),
-            )
+        // 좁은 화면이나 큰 글꼴에서는 지표 3개를 가로로 나누면 글자가 세로로 쪼개지므로 한 줄씩 쌓는다.
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val fontScale = LocalDensity.current.fontScale
+            val isStacked = maxWidth.value / fontScale < HeartGuardComponentSize.HomeMetricRowMinWidth.value
+            if (isStacked) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                ) {
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_humidity),
+                        metricLabel = humidityLabel,
+                        metricValue = humidity,
+                    )
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_feels_like),
+                        metricLabel = feelsLikeTemperatureLabel,
+                        metricValue = feelsLikeTemperature,
+                    )
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_weather),
+                        metricLabel = weatherLabel,
+                        metricValue = weatherValue,
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                ) {
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_humidity),
+                        metricLabel = humidityLabel,
+                        metricValue = humidity,
+                        modifier = Modifier.weight(1f),
+                    )
 
-            HomeWeatherMetricDivider()
+                    HomeWeatherMetricDivider()
 
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_feels_like),
-                metricLabel = feelsLikeTemperatureLabel,
-                metricValue = feelsLikeTemperature,
-                modifier = Modifier.weight(1.25f),
-            )
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_feels_like),
+                        metricLabel = feelsLikeTemperatureLabel,
+                        metricValue = feelsLikeTemperature,
+                        modifier = Modifier.weight(1.25f),
+                    )
 
-            HomeWeatherMetricDivider()
+                    HomeWeatherMetricDivider()
 
-            HomeWeatherMetric(
-                iconPainter = painterResource(R.drawable.home_weather),
-                metricLabel = weatherLabel,
-                metricValue = weatherValue,
-                modifier = Modifier.weight(0.95f),
-            )
+                    HomeWeatherMetric(
+                        iconPainter = painterResource(R.drawable.home_weather),
+                        metricLabel = weatherLabel,
+                        metricValue = weatherValue,
+                        modifier = Modifier.weight(0.95f),
+                    )
+                }
+            }
         }
     }
 }

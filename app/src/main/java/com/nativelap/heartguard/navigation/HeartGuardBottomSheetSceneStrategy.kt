@@ -2,7 +2,12 @@
 
 package com.nativelap.heartguard.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
@@ -10,6 +15,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
@@ -133,7 +139,14 @@ private data class HeartGuardBottomSheetScene(
                 WindowInsets(0)
             },
         ) {
-            entry.Content()
+            // inset을 비워 둔 투명 시트라, 큰 글꼴·작은 화면에서 내용이 길면 상태 표시줄 밑까지 올라간다.
+            // 위쪽 패딩 대신 최대 높이를 상태 표시줄 아래로 제한해 스크림 없는 띠 없이 제목이 가려지지 않게 한다.
+            val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            BoxWithConstraints {
+                Box(modifier = Modifier.heightIn(max = maxHeight - statusBarTop)) {
+                    entry.Content()
+                }
+            }
         }
     }
 

@@ -116,9 +116,11 @@ fun WorkPhotoScreen(
                 )
 
                 if (selectedPhotoCount > 0) {
+                    // Figma 14 "다시하기" 카드처럼 사진 카드와 같은 좌우 여백 안에 둔다.
                     PhotoRetakeButton(
                         title = stringResource(R.string.photo_retake),
                         onClick = onRetakeClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
                     )
                 }
 
