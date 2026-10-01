@@ -1,20 +1,24 @@
 package com.nativelap.heartguard.view.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -45,36 +49,42 @@ fun RecordTypeSelectionSheet(
         ),
         color = MaterialTheme.extraColors.pageBackground,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = HeartGuardSpacing.Section,
-                    vertical = HeartGuardSpacing.LargeSection,
-                ),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            RecordTypeSelectionTitle(
-                title = title,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            options.forEach { option ->
-                RecordTypeOptionCard(
-                    title = option.title,
-                    description = option.description,
-                    iconPainter = option.iconPainter,
-                    isSelected = option.key == selectedKey,
-                    onClick = { onOptionSelected(option.key) },
+            Column(
+                modifier = Modifier
+                    .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = HeartGuardSpacing.Section,
+                        vertical = HeartGuardSpacing.LargeSection,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+            ) {
+                RecordTypeSelectionTitle(
+                    title = title,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                options.forEach { option ->
+                    RecordTypeOptionCard(
+                        title = option.title,
+                        description = option.description,
+                        iconPainter = option.iconPainter,
+                        isSelected = option.key == selectedKey,
+                        onClick = { onOptionSelected(option.key) },
+                    )
+                }
+                RecordTypeConfirmButton(
+                    title = confirmTitle,
+                    isEnabled = selectedKey != null,
+                    onClick = onConfirm,
+                    modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
                 )
             }
-            RecordTypeConfirmButton(
-                title = confirmTitle,
-                isEnabled = selectedKey != null,
-                onClick = onConfirm,
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
-            )
         }
     }
 }

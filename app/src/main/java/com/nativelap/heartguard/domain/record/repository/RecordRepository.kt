@@ -22,5 +22,7 @@ interface RecordRepository {
         temperature: Double?,
         humidity: Double?,
         memo: String?,
+        restStartedAt: OffsetDateTime?,
+        restEndedAt: OffsetDateTime?,
     ): ApiResult<FieldRecord>
 }
