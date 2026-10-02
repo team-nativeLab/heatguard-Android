@@ -21,7 +21,6 @@ import java.time.OffsetDateTime
 @Composable
 fun RecordHistoryDayCard(
     recordEntries: List<RecordHistoryEntry>,
-    workplace: String?,
     onRecordClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -41,7 +40,6 @@ fun RecordHistoryDayCard(
                 }
                 RecordHistoryRow(
                     recordEntry = recordEntry,
-                    workplace = workplace,
                     onClick = { onRecordClick(recordEntry.recordId) },
                 )
             }
@@ -68,7 +66,6 @@ private fun RecordHistoryDayCardPreview() {
                     measuredAt = OffsetDateTime.parse("2026-09-27T10:30:00+09:00"),
                 ),
             ),
-            workplace = "지하 배관",
             onRecordClick = {},
         )
     }

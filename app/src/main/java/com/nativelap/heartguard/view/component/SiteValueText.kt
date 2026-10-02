@@ -39,7 +39,7 @@ fun humidityValueText(humidity: String?): String {
     }
 }
 
-/** 기상청 폭염특보 4단계(0 관심·1 주의·2 경고·3 위험) 라벨이다. 값이 없거나 범위를 벗어나면 "폭염 단계 --"다. */
+/** 폭염 단계(0 주의보 없음·1 주의·2 경고·3 위험) 라벨이다. 값이 없거나 범위를 벗어나면 "관측값 없음"이다. */
 @Composable
 @ReadOnlyComposable
 fun heatLevelLabelText(heatLevel: Int?): String {

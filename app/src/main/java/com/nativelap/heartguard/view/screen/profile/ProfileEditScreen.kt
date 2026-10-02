@@ -34,6 +34,7 @@ import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditScreenEvent
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditUiState
 import com.nativelap.heartguard.viewmodel.profile.ProfileLoadState
+import com.nativelap.heartguard.viewmodel.profile.ProfileSaveError
 
 /** Figma 24_내정보수정 화면이다. 이름·이메일은 작업자 정보 조회(GET /auth/team/me) 값이고 이름만 수정할 수 있다.
  * 회사명은 서버가 제공하지 않아 "--"로 표시한다. "비밀번호 변경" 행은 비밀번호 변경 화면(Figma 26)으로 이동한다. */
@@ -102,10 +103,9 @@ fun ProfileEditScreen(
                         )
                     }
 
-                    // 회사명은 작업자 API에 필드가 없어 항상 "--"로 표시한다.
                     ProfileReadOnlyField(
                         label = stringResource(R.string.profile_company),
-                        value = null,
+                        value = loadedProfile?.companyName,
                     )
 
                     if (loadedProfile != null) {
@@ -117,11 +117,11 @@ fun ProfileEditScreen(
                             },
                             placeholder = stringResource(R.string.profile_name_placeholder),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            isError = uiState.hasSaveError,
-                            supportingText = if (uiState.hasSaveError) {
-                                stringResource(R.string.profile_save_failure)
-                            } else {
-                                null
+                            isError = uiState.saveError != null,
+                            supportingText = when (uiState.saveError) {
+                                ProfileSaveError.FAILURE -> stringResource(R.string.profile_save_failure)
+                                ProfileSaveError.CONFLICT -> stringResource(R.string.profile_save_conflict)
+                                null -> null
                             },
                         )
                     } else {
@@ -156,6 +156,7 @@ private fun ProfileEditScreenLoadedPreview() {
                 loadState = ProfileLoadState.Loaded(
                     userName = "김현장",
                     email = "worker01",
+                    companyName = "이음산업건설",
                 ),
                 nameInput = "김현장",
             ),

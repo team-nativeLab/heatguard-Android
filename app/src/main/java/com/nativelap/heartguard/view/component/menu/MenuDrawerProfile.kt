@@ -70,8 +70,8 @@ fun MenuDrawerProfile(
             Text(
                 text = stringResource(
                     R.string.menu_profile_affiliation_format,
-                    valueOrEmptyText(profile.teamName),
-                    valueOrEmptyText(profile.workplace),
+                    valueOrEmptyText(profile.companyName),
+                    stringResource(R.string.profile_worker_role),
                 ),
                 color = MaterialTheme.extraColors.secondaryText,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -100,8 +100,7 @@ private fun MenuDrawerProfilePreview() {
         MenuDrawerProfile(
             profile = MenuDrawerProfileUiModel(
                 userName = "김현장",
-                teamName = "철근팀",
-                workplace = "3층 외벽",
+                companyName = "이음산업건설",
                 email = "worker@ieum.co.kr",
             ),
         )

@@ -6,6 +6,7 @@ import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.domain.emergency.usecase.GetCurrentEmergencyCallUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.ObserveEmergencyCallStatusUseCase
@@ -47,6 +48,7 @@ class EmergencyViewModel @Inject constructor(
 
     private var pollingJob: Job? = null
     private var requestJob: Job? = null
+    private var statusUpdateJob: Job? = null
 
     // 호출 의도 1회에 하나다. 등록이 실패해 다시 누르면 같은 키를 보내 서버에 호출이 중복 생성되지 않게 한다.
     private var pendingIdempotencyKey: String? = null
@@ -128,29 +130,44 @@ class EmergencyViewModel @Inject constructor(
             isUpdatingStatus = true,
             statusUpdateFailed = false,
         )
-        viewModelScope.launch {
+        statusUpdateJob = viewModelScope.launch {
             val updateResult = updateEmergencyCallStatusUseCase(
                 callId = currentCallId,
                 status = allowedStatus,
             )
             when (updateResult) {
-                is ApiResult.Success -> {
-                    closeCallFlow()
-                }
+                is EmergencyCallUpdateResult.Updated,
+                EmergencyCallUpdateResult.AlreadyClosed,
+                -> closeCallFlow()
 
-                is ApiResult.Failure -> {
-                    // 이미 관리자 쪽에서 끝난 호출이면(409) 사용자가 할 일은 없으므로 흐름을 끝낸다.
-                    if (updateResult.error.isCallAlreadyClosed()) {
-                        closeCallFlow()
-                    } else {
-                        mutableUiState.value = mutableUiState.value.copy(
-                            isUpdatingStatus = false,
-                            statusUpdateFailed = true,
-                        )
-                    }
+                EmergencyCallUpdateResult.InvalidTransition -> refreshCallAfterInvalidTransition(currentCallId)
+
+                EmergencyCallUpdateResult.Failure -> {
+                    mutableUiState.value = mutableUiState.value.copy(
+                        isUpdatingStatus = false,
+                        statusUpdateFailed = true,
+                    )
                 }
             }
         }
+    }
+
+    // 요청 사이 관리자가 호출을 확인하는 등 상태가 바뀐 경우다. 최신 상태로 화면을 맞춰 사용자가 다시 누를 수 있게 한다.
+    private suspend fun refreshCallAfterInvalidTransition(callId: String) {
+        val currentCall = (getCurrentEmergencyCallUseCase() as? ApiResult.Success)?.value
+        val isSameCallInProgress = currentCall != null &&
+            currentCall.callId == callId &&
+            currentCall.state.isInProgress()
+        if (!isSameCallInProgress) {
+            closeCallFlow()
+            return
+        }
+
+        mutableUiState.value = mutableUiState.value.copy(
+            callState = currentCall.state,
+            isUpdatingStatus = false,
+            statusUpdateFailed = false,
+        )
     }
 
     /** 세션이 끝나 메인 흐름을 벗어날 때 폴링과 진행 중인 요청을 멈추고 상태를 비운다. 서버 호출 상태는 바꾸지 않는다. */
@@ -159,6 +176,8 @@ class EmergencyViewModel @Inject constructor(
         pollingJob = null
         requestJob?.cancel()
         requestJob = null
+        statusUpdateJob?.cancel()
+        statusUpdateJob = null
         pendingIdempotencyKey = null
         consecutivePollingFailureCount = 0
         mutableUiState.value = EmergencyUiState()
@@ -263,9 +282,6 @@ class EmergencyViewModel @Inject constructor(
     private fun ApiError.isActiveCallAlreadyExists(): Boolean =
         this is ApiError.Http && statusCode == HTTP_CONFLICT && errorCode == ACTIVE_CALL_ALREADY_EXISTS_CODE
 
-    private fun ApiError.isCallAlreadyClosed(): Boolean =
-        this is ApiError.Http && statusCode == HTTP_CONFLICT && errorCode == EMERGENCY_CALL_CLOSED_CODE
-
     override fun onCleared() {
         pollingJob?.cancel()
     }
@@ -273,7 +289,6 @@ class EmergencyViewModel @Inject constructor(
     private companion object {
         const val HTTP_CONFLICT = 409
         const val ACTIVE_CALL_ALREADY_EXISTS_CODE = "ACTIVE_CALL_ALREADY_EXISTS"
-        const val EMERGENCY_CALL_CLOSED_CODE = "EMERGENCY_CALL_CLOSED"
 
         // 3초 폴링이 세 번(약 9초) 연속 실패하면 연결이 불안정하다고 알린다.
         const val UNSTABLE_FAILURE_COUNT = 3

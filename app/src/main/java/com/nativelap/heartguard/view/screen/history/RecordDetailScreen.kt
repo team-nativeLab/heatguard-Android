@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -38,14 +39,13 @@ import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.viewmodel.history.RecordDetailScreenEvent
 import com.nativelap.heartguard.viewmodel.history.RecordDetailUiState
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 /** Figma 21_기록상세_온도계·22_기록상세_사진 화면이다. 온도계 기록은 측정값·사진·메모를, 사진 기록은 사진과 정보 카드를 보여준다.
- * 위치는 현재 팀의 작업 위치·팀명(홈 조회 값)이다. 제출한 기록은 수정할 수 없어 읽기 전용이다. */
+ * 위치는 기록을 저장한 당시의 작업 위치·팀명이다. 제출한 기록은 수정할 수 없어 읽기 전용이다. */
 @Composable
 fun RecordDetailScreen(
     uiState: RecordDetailUiState,
-    workplace: String?,
-    teamName: String?,
     onEvent: (RecordDetailScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -99,8 +99,8 @@ fun RecordDetailScreen(
                             recordEntry = uiState.entry,
                             locationText = stringResource(
                                 R.string.history_detail_location_format,
-                                valueOrEmptyText(workplace),
-                                valueOrEmptyText(teamName),
+                                valueOrEmptyText(uiState.entry.workplace),
+                                valueOrEmptyText(uiState.entry.teamName),
                             ),
                         )
                     }
@@ -108,6 +108,26 @@ fun RecordDetailScreen(
             }
         }
     }
+}
+
+private val restClockFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+// "20분 (11:45 ~ 12:05)"처럼 만든다. 서버가 시작·종료 시각을 주지 않으면 저장 시각(measuredAt)을 종료 시각으로 본다.
+@Composable
+@ReadOnlyComposable
+private fun restTimeText(recordEntry: RecordHistoryEntry): String {
+    val restMinutes = recordEntry.restMinutes ?: return emptyValueText()
+    val restEndedAt = recordEntry.restEndedAt
+        ?: recordEntry.measuredAt
+        ?: return stringResource(R.string.history_detail_rest_minutes_format, restMinutes)
+    val restStartedAt = recordEntry.restStartedAt ?: restEndedAt.minusMinutes(restMinutes.toLong())
+
+    return stringResource(
+        R.string.history_detail_rest_range_format,
+        restMinutes,
+        restStartedAt.format(restClockFormatter),
+        restEndedAt.format(restClockFormatter),
+    )
 }
 
 @Composable
@@ -141,6 +161,7 @@ private fun RecordDetailContent(
             recordType = recordEntry.type,
             takenAtText = measuredAtText,
             locationText = locationText,
+            restTimeText = restTimeText(recordEntry),
         )
     }
 
@@ -179,8 +200,6 @@ private fun RecordDetailScreenThermometerPreview() {
                     measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
                 ),
             ),
-            workplace = "3층 외벽",
-            teamName = "홍길동 팀",
             onEvent = {},
         )
     }

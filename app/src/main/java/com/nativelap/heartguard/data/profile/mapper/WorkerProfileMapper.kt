@@ -8,4 +8,6 @@ internal fun WorkerProfileResponseDto.toDomain(): WorkerProfile = WorkerProfile(
     userId = userId,
     name = name?.takeIf { workerName -> workerName.isNotBlank() },
     email = email?.takeIf { workerEmail -> workerEmail.isNotBlank() },
+    companyName = companyName?.takeIf { workerCompanyName -> workerCompanyName.isNotBlank() },
+    version = version,
 )

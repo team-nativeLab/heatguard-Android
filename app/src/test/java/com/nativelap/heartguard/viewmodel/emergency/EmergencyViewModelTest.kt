@@ -4,6 +4,7 @@ import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.domain.emergency.repository.EmergencyCallRepository
 import com.nativelap.heartguard.domain.emergency.usecase.GetCurrentEmergencyCallUseCase
@@ -139,6 +140,27 @@ class EmergencyViewModelTest {
         viewModel.reset()
     }
 
+    @Test
+    fun `취소 사이 관리자가 확인해 전이 불가(409)가 오면 최신 상태로 화면을 맞추고 흐름을 유지한다`() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        repository.currentCall = callStatus("call_new", EmergencyCallState.ACTIVE)
+        val viewModel = createViewModel(repository)
+        viewModel.startEmergencyCall()
+        runCurrent()
+
+        repository.currentCall = callStatus("call_new", EmergencyCallState.ACKNOWLEDGED)
+        repository.updateResult = EmergencyCallUpdateResult.InvalidTransition
+        viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        runCurrent()
+
+        val uiState = viewModel.uiState.value
+        assertEquals("call_new", uiState.callId)
+        assertEquals(EmergencyCallState.ACKNOWLEDGED, uiState.callState)
+        assertEquals(false, uiState.isUpdatingStatus)
+        assertEquals(false, uiState.statusUpdateFailed)
+        viewModel.reset()
+    }
+
     private fun callStatus(
         callId: String,
         callState: EmergencyCallState,
@@ -188,12 +210,14 @@ class EmergencyViewModelTest {
         override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
             currentCallResult ?: ApiResult.Success(currentCall)
 
+        var updateResult: EmergencyCallUpdateResult? = null
+
         override suspend fun updateEmergencyCallStatus(
             callId: String,
             status: EmergencyCallUpdateStatus,
-        ): ApiResult<EmergencyCallStatus> {
+        ): EmergencyCallUpdateResult {
             requestedUpdates += status
-            return ApiResult.Success(
+            return updateResult ?: EmergencyCallUpdateResult.Updated(
                 EmergencyCallStatus(
                     callId = callId,
                     state = EmergencyCallState.COMPLETED,

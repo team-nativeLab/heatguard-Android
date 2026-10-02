@@ -24,7 +24,8 @@ data class RecordHistoryCursorDto(
  * 예: {"recordId":"rec_01","type":"THERMOMETER","temperature":31.5,"humidity":60.0,"apparentTemperature":35.2,
  * "heatLevel":3,"photoKeys":["teams/team_01/uploads/up_01.jpg"],"memo":"메모","measuredAt":"2026-09-28T23:18:05+09:00",
  * "createdAt":"2026-09-28T14:18:05+00:00","photoUrls":["https://..."]}
- * 명세에 목록 항목 정의가 없어 2026-09-28 실서버 응답으로 확인한 구조다. photoUrls는 상세 응답에만 있다.
+ * 2026-09-28 실서버 응답으로 확인한 구조에 명세 v0.1(2026-09-29)의 restMinutes·teamName·workplace·siteName을 더했다.
+ * 위치·팀명은 기록 당시 값이고, 이 필드가 생기기 전 기록은 null이다. photoUrls는 상세 응답에만 있다.
  * type은 서버가 새 값을 추가해도 목록 전체가 실패하지 않도록 문자열로 받고 mapper에서 해석한다. */
 @Serializable
 data class RecordHistoryItemDto(
@@ -50,4 +51,18 @@ data class RecordHistoryItemDto(
     val measuredAt: String? = null,
     @SerialName("createdAt")
     val createdAt: String? = null,
+    // 휴식(REST) 기록의 휴식 시간(분)이다.
+    @SerialName("restMinutes")
+    val restMinutes: Int? = null,
+    // 휴식 시작·종료 시각이다. 명세에는 아직 없고 2026-09-29 실서버 응답에서 확인했다.
+    @SerialName("restStartedAt")
+    val restStartedAt: String? = null,
+    @SerialName("restEndedAt")
+    val restEndedAt: String? = null,
+    @SerialName("teamName")
+    val teamName: String? = null,
+    @SerialName("workplace")
+    val workplace: String? = null,
+    @SerialName("siteName")
+    val siteName: String? = null,
 )

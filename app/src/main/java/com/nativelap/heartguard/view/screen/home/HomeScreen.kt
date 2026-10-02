@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.screen.home
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,10 +40,11 @@ fun HomeScreen(
     temperatureDelta: String,
     isTemperatureIncreasing: Boolean?,
     weatherValue: String,
+    @DrawableRes weatherImageRes: Int,
     riskLabel: String,
     nextCheckDescription: String,
     checkTimelineItems: List<CheckTimelineItem>,
-    isManagerCallEnabled: Boolean,
+    isEmergencyCallEnabled: Boolean,
     onMenuClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onManagerCallClick: () -> Unit,
@@ -87,7 +89,7 @@ fun HomeScreen(
                     modifier = Modifier.padding(
                         top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
                     ),
-                    weatherPainter = painterResource(R.drawable.heartguard_home_weather),
+                    weatherPainter = painterResource(weatherImageRes),
                     weatherContentDescription = null,
                     statusTitle = stringResource(R.string.home_weather_status),
                     currentTemperature = currentTemperature,
@@ -135,8 +137,8 @@ fun HomeScreen(
                     emergencyTitle = stringResource(R.string.home_emergency_call),
                     emergencyDescription = stringResource(R.string.home_emergency_call_description),
                     onManagerClick = onManagerCallClick,
-                    isManagerCallEnabled = isManagerCallEnabled,
                     onEmergencyClick = onEmergencyClick,
+                    isEmergencyCallEnabled = isEmergencyCallEnabled,
                     modifier = Modifier.padding(
                         start = HeartGuardSpacing.HomeContentHorizontal,
                         top = HeartGuardSpacing.Compact,
@@ -207,6 +209,7 @@ private fun HomeScreenPreview() {
             temperatureDelta = "+3.2°C",
             isTemperatureIncreasing = true,
             weatherValue = "맑음",
+            weatherImageRes = R.drawable.weather_sunny,
             riskLabel = "폭염 주의 단계",
             nextCheckDescription = "다음 체크까지 57분 · 22:00 예정",
             checkTimelineItems = listOf(
@@ -215,7 +218,7 @@ private fun HomeScreenPreview() {
                 CheckTimelineItem("12시", isCompleted = false, isCurrent = true),
                 CheckTimelineItem("14시", isCompleted = false),
             ),
-            isManagerCallEnabled = true,
+            isEmergencyCallEnabled = true,
             onMenuClick = {},
             onNotificationClick = {},
             onManagerCallClick = {},

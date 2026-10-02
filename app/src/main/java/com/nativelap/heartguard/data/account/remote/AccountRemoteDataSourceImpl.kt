@@ -10,9 +10,15 @@ class AccountRemoteDataSourceImpl @Inject constructor(
     private val accountApiService: AccountApiService,
     private val apiExecutor: ApiExecutor,
 ) : AccountRemoteDataSource {
-    override suspend fun withdraw(currentPassword: String): ApiResult<Unit> = apiExecutor.execute {
+    override suspend fun withdraw(
+        currentPassword: String,
+        reason: String?,
+    ): ApiResult<Unit> = apiExecutor.execute {
         accountApiService.withdraw(
-            request = WithdrawAccountRequestDto(currentPassword = currentPassword),
+            request = WithdrawAccountRequestDto(
+                currentPassword = currentPassword,
+                reason = reason,
+            ),
             passwordConfirmationRequest = PasswordConfirmationRequest,
         )
     }

@@ -5,6 +5,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
+import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
@@ -41,7 +42,12 @@ class ProfileEditViewModelTest {
 
         val uiState = viewModel.uiState.value
         assertEquals(
-            ProfileLoadState.Loaded(userName = "홍길동", email = "worker01"),
+            ProfileLoadState.Loaded(
+                userName = "홍길동",
+                email = "worker01",
+                companyName = "이음산업건설",
+                version = 3,
+            ),
             uiState.loadState,
         )
         assertEquals("홍길동", uiState.nameInput)
@@ -77,7 +83,7 @@ class ProfileEditViewModelTest {
         viewModel.saveProfile()
         advanceUntilIdle()
 
-        assertEquals(listOf("김현장"), repository.requestedNames)
+        assertEquals(listOf("김현장" to 3L), repository.requestedUpdates)
         assertEquals(ProfileEditEffect.Saved, viewModel.effects.first())
         assertEquals("김현장", viewModel.uiState.value.nameInput)
         assertFalse(viewModel.uiState.value.isSaving)
@@ -86,7 +92,7 @@ class ProfileEditViewModelTest {
     @Test
     fun `이름 저장에 실패하면 입력을 유지하고 오류를 표시한다`() = runTest {
         val repository = FakeWorkerProfileRepository(
-            updateResult = ApiResult.Failure(ApiError.Http(statusCode = 400, errorCode = "VALIDATION_ERROR")),
+            updateResult = ProfileUpdateResult.Failure,
         )
         val viewModel = createViewModel(repository)
         viewModel.loadProfile()
@@ -98,7 +104,30 @@ class ProfileEditViewModelTest {
 
         val uiState = viewModel.uiState.value
         assertEquals("김현장", uiState.nameInput)
-        assertTrue(uiState.hasSaveError)
+        assertEquals(ProfileSaveError.FAILURE, uiState.saveError)
+        assertFalse(uiState.isSaving)
+    }
+
+    @Test
+    fun `저장이 충돌하면 입력을 유지한 채 최신 버전을 다시 불러오고 충돌을 알린다`() = runTest {
+        val repository = FakeWorkerProfileRepository(
+            updateResult = ProfileUpdateResult.Conflict,
+        )
+        val viewModel = createViewModel(repository)
+        viewModel.loadProfile()
+        advanceUntilIdle()
+        repository.profileResult = ApiResult.Success(
+            workerProfile(name = "홍길순", version = 4),
+        )
+
+        viewModel.updateName("김현장")
+        viewModel.saveProfile()
+        advanceUntilIdle()
+
+        val uiState = viewModel.uiState.value
+        assertEquals("김현장", uiState.nameInput)
+        assertEquals(ProfileSaveError.CONFLICT, uiState.saveError)
+        assertEquals(4L, (uiState.loadState as ProfileLoadState.Loaded).version)
         assertFalse(uiState.isSaving)
     }
 
@@ -141,26 +170,22 @@ class ProfileEditViewModelTest {
     }
 
     private class FakeWorkerProfileRepository(
-        private val profileResult: ApiResult<WorkerProfile> = ApiResult.Success(
-            WorkerProfile(
-                userId = "usr_01",
-                name = "홍길동",
-                email = "worker01",
-            ),
-        ),
-        private val updateResult: ApiResult<WorkerProfile>? = null,
+        var profileResult: ApiResult<WorkerProfile> = ApiResult.Success(workerProfile()),
+        private val updateResult: ProfileUpdateResult? = null,
     ) : WorkerProfileRepository {
-        val requestedNames = mutableListOf<String>()
+        val requestedUpdates = mutableListOf<Pair<String, Long?>>()
 
         override suspend fun getWorkerProfile(): ApiResult<WorkerProfile> = profileResult
 
-        override suspend fun updateWorkerName(name: String): ApiResult<WorkerProfile> {
-            requestedNames += name
-            return updateResult ?: ApiResult.Success(
-                WorkerProfile(
-                    userId = "usr_01",
+        override suspend fun updateWorkerName(
+            name: String,
+            version: Long?,
+        ): ProfileUpdateResult {
+            requestedUpdates += name to version
+            return updateResult ?: ProfileUpdateResult.Success(
+                workerProfile(
                     name = name,
-                    email = "worker01",
+                    version = (version ?: 0L) + 1,
                 ),
             )
         }
@@ -185,3 +210,14 @@ class ProfileEditViewModelTest {
         }
     }
 }
+
+private fun workerProfile(
+    name: String = "홍길동",
+    version: Long = 3,
+) = WorkerProfile(
+    userId = "usr_01",
+    name = name,
+    email = "worker01",
+    companyName = "이음산업건설",
+    version = version,
+)

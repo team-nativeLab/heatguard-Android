@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
+import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
 import com.nativelap.heartguard.domain.profile.usecase.UpdateWorkerNameUseCase
@@ -66,7 +67,7 @@ class ProfileEditViewModel @Inject constructor(
     fun updateName(name: String) {
         _uiState.value = _uiState.value.copy(
             nameInput = name,
-            hasSaveError = false,
+            saveError = null,
         )
     }
 
@@ -77,34 +78,63 @@ class ProfileEditViewModel @Inject constructor(
             return
         }
 
+        val loadedVersion = (currentState.loadState as? ProfileLoadState.Loaded)?.version
         _uiState.value = currentState.copy(
             isSaving = true,
-            hasSaveError = false,
+            saveError = null,
         )
         saveProfileJob = viewModelScope.launch {
-            when (val saveResult = updateWorkerNameUseCase(currentState.nameInput)) {
-                is ApiResult.Success -> {
-                    applyLoadedProfile(saveResult.value)
+            val saveResult = updateWorkerNameUseCase(
+                name = currentState.nameInput,
+                version = loadedVersion,
+            )
+            when (saveResult) {
+                is ProfileUpdateResult.Success -> {
+                    applyLoadedProfile(saveResult.profile)
                     effectChannel.send(ProfileEditEffect.Saved)
                 }
 
-                is ApiResult.Failure -> {
+                ProfileUpdateResult.Conflict -> {
+                    reloadProfileKeepingInput()
+                }
+
+                ProfileUpdateResult.Failure -> {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false,
-                        hasSaveError = true,
+                        saveError = ProfileSaveError.FAILURE,
                     )
                 }
             }
         }
     }
 
+    // 저장 충돌 뒤 최신 정보(버전)를 다시 받아오되, 사용자가 입력한 이름은 그대로 둔다.
+    private suspend fun reloadProfileKeepingInput() {
+        val profileResult = getWorkerProfileUseCase()
+        val reloadedLoadState = when (profileResult) {
+            is ApiResult.Success -> profileResult.value.toLoadedState()
+            is ApiResult.Failure -> _uiState.value.loadState
+        }
+        _uiState.value = _uiState.value.copy(
+            loadState = reloadedLoadState,
+            isSaving = false,
+            saveError = ProfileSaveError.CONFLICT,
+        )
+    }
+
     private fun applyLoadedProfile(workerProfile: WorkerProfile) {
         _uiState.value = ProfileEditUiState(
-            loadState = ProfileLoadState.Loaded(
-                userName = workerProfile.name,
-                email = workerProfile.email,
-            ),
+            loadState = workerProfile.toLoadedState(),
             nameInput = workerProfile.name.orEmpty(),
+        )
+    }
+
+    private fun WorkerProfile.toLoadedState(): ProfileLoadState.Loaded {
+        return ProfileLoadState.Loaded(
+            userName = name,
+            email = email,
+            companyName = companyName,
+            version = version,
         )
     }
 
