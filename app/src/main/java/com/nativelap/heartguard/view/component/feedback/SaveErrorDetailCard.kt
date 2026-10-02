@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +34,7 @@ fun SaveErrorDetailCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(HeartGuardComponentSize.ResultErrorDetailHeight),
+            .heightIn(min = HeartGuardComponentSize.ResultErrorDetailHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
@@ -41,13 +42,15 @@ fun SaveErrorDetailCard(
             color = MaterialTheme.extraColors.cardBorder,
         ),
     ) {
+        // 서버 오류 문구가 길어도 잘리지 않도록 높이는 Figma 값을 최소로만 두고 내용에 맞춰 늘어난다.
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(
                     start = HeartGuardSpacing.ResultErrorDetailHorizontal,
                     end = HeartGuardSpacing.ResultErrorDetailHorizontal,
                     top = HeartGuardSpacing.ResultErrorDetailTop,
+                    bottom = HeartGuardSpacing.ResultErrorDetailTop,
                 ),
         ) {
             Text(

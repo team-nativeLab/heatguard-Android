@@ -1,35 +1,30 @@
 package com.nativelap.heartguard.view.screen.emergency
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.HeartGuardSheetSurface
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
 import com.nativelap.heartguard.view.component.emergency.CallEndButton
 import com.nativelap.heartguard.view.component.emergency.EmergencyAlertBanner
-import com.nativelap.heartguard.view.component.emergency.EmergencyContactCard
 import com.nativelap.heartguard.view.component.emergency.EmergencyCallIndicator
+import com.nativelap.heartguard.view.component.emergency.EmergencyContactCard
 
 /** 긴급 호출의 대기·연결 상태를 동일한 화면 구조에서 정적으로 보여준다. */
 @Composable
@@ -46,21 +41,18 @@ fun CallingScreen(
     statusUpdateError: Boolean = false,
     isConnectionUnstable: Boolean = false,
 ) {
-    Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.extraColors.pageBackground,
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.TopCenter,
-        ) {
+    // Figma 03·04는 아래에서 올라오는 시트다. 호출 상태 변경이 확인되기 전에는 닫기 시도를 소비한다.
+    HeartGuardSheetSurface(modifier = modifier) {
             Column(
                 modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .padding(
+                        top = HeartGuardSpacing.LargeSection,
+                        bottom = HeartGuardSpacing.LargeSection,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
             Text(
@@ -143,7 +135,6 @@ fun CallingScreen(
                 )
             }
             }
-        }
     }
 }
 

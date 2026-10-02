@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.route.feedback
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
@@ -25,10 +26,19 @@ import java.time.format.DateTimeFormatter
 internal fun HeartGuardSaveSuccessRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onCompleteClick: () -> Unit,
+    onRecordDetailClick: (String) -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val record = (submissionState as? RecordSubmissionState.Success)?.record
+    val savedRecordId = record?.recordId
+    val completeRecord = {
+        recordDraftViewModel.reset()
+        onCompleteClick()
+    }
+
+    // 시스템 뒤로가기도 "확인"과 같이 기록을 마치고 홈으로 간다(입력 화면으로 돌아가 중복 저장하지 않게).
+    BackHandler(onBack = completeRecord)
     val recordSummaryItems = when (draftState.selectedRecordType) {
         RecordType.TEMPERATURE -> temperatureRecordSummaryItems(
             draftState = draftState,
@@ -60,9 +70,12 @@ internal fun HeartGuardSaveSuccessRoute(
             value = valueOrEmptyText(record?.createdAt?.format(savedAtFormatter)),
         ),
         // 기록 완료 후 홈으로 돌아가기 전에 draft(임시 사진 파일 포함)를 정리한다.
-        onCompleteClick = {
-            recordDraftViewModel.reset()
-            onCompleteClick()
+        onCompleteClick = completeRecord,
+        onDetailsClick = savedRecordId?.let { recordId ->
+            {
+                recordDraftViewModel.reset()
+                onRecordDetailClick(recordId)
+            }
         },
     )
 }

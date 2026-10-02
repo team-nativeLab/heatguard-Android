@@ -1,30 +1,25 @@
 package com.nativelap.heartguard.view.screen.emergency
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.HeartGuardSheetSurface
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
 import com.nativelap.heartguard.view.component.emergency.EmergencyAlertBanner
 import com.nativelap.heartguard.view.component.emergency.EmergencyCallIndicator
@@ -47,21 +42,18 @@ fun EmergencyScreen(
     isRegistering: Boolean = false,
     hasRegistrationFailed: Boolean = false,
 ) {
-    Scaffold(
-        modifier = modifier,
-        containerColor = MaterialTheme.extraColors.pageBackground,
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.TopCenter,
-        ) {
+    // Figma 03·04는 아래에서 올라오는 시트다. 호출 등록 중 실수로 닫히지 않도록 NavHost가 닫을 수 없는 시트로 띄운다.
+    HeartGuardSheetSurface(modifier = modifier) {
             Column(
                 modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .padding(
+                        top = HeartGuardSpacing.LargeSection,
+                        bottom = HeartGuardSpacing.LargeSection,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
             Text(
@@ -123,7 +115,6 @@ fun EmergencyScreen(
                     .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
                     .padding(top = HeartGuardSpacing.RecordFieldInset),
             )
-            }
             }
         }
 }

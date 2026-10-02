@@ -6,7 +6,6 @@
     <string name="common_back_description">뒤로 가기</string>
     <string name="common_confirm">확인</string>
     <string name="common_cancel">취소</string>
-    <string name="common_details">상세 보기</string>
     <string name="common_optional_parenthesized">(선택)</string>
     <string name="common_call">전화 걸기</string>
     <string name="common_retry">재시도</string>
@@ -48,7 +47,21 @@
     <string name="home_field_photo_description">사진 촬영 또는 앨범에서 선택</string>
     <string name="home_record_history">기록 내역</string>
     <string name="home_record_history_description">지금까지의 기록을 확인하세요</string>
-    <string name="home_notifications_unavailable">알림 화면과 알림 API가 준비되지 않았습니다.</string>
+    <string name="notification_title">알림</string>
+    <string name="notification_filter_all">전체</string>
+    <string name="notification_filter_record">기록</string>
+    <string name="notification_filter_emergency">긴급</string>
+    <string name="notification_filter_notice">공지</string>
+    <string name="notification_read">읽음</string>
+    <string name="notification_unread">읽지 않음</string>
+    <string name="notification_empty_title">아직 받은 알림이 없어요</string>
+    <string name="notification_empty_description">폭염 경보나 기록 알림이 오면 여기에 모아서 보여드려요</string>
+    <string name="notification_filtered_empty_title">선택한 유형의 알림이 없어요</string>
+    <string name="notification_filtered_empty_description">다른 유형을 선택해 알림을 확인해 보세요.</string>
+    <string name="notification_load_error_title">알림을 불러오지 못했어요</string>
+    <string name="notification_load_error_description">네트워크 연결을 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="notification_load_more_retry">더 불러오지 못했어요. 다시 시도</string>
+    <string name="notification_read_error">읽음 처리에 실패했어요. 다시 시도해 주세요.</string>
     <string name="home_weather_summary_format">%1$s %2$s · %3$s %4$s</string>
     <string name="home_humidity_value_format">%1$s%%</string>
     <string name="home_temperature_rise_format">▲ %1$s</string>
@@ -122,7 +135,7 @@
     <string name="emergency_indicator_description">버튼을 누르면 즉시\n관리자에게 전화가 연결됩니다</string>
     <string name="emergency_screen_title">긴급 호출</string>
     <string name="emergency_calling_indicator_title">긴급 호출 중...</string>
-    <string name="emergency_calling_indicator_description">버튼을 누르면 즉시 관리자에게 전화가 연결됩니다</string>
+    <string name="emergency_calling_indicator_description">버튼을 누르면 즉시\n관리자에게 전화가 연결됩니다</string>
     <string name="emergency_connected_status">관리자와 연결됨</string>
     <string name="emergency_connected_status_description">통화를 계속 진행해 주세요</string>
     <string name="temperature_not_installed_note">미설치 시 자동으로 기록됩니다.</string>
@@ -264,6 +277,8 @@
     <string name="history_type_work">작업 사진</string>
     <string name="history_type_rest">휴식 사진</string>
     <string name="history_type_unknown">기타 기록</string>
+    <string name="history_temporary_draft_badge">임시저장</string>
+    <string name="history_temporary_draft_not_saved">저장되지 않았어요</string>
     <string name="history_subtitle_separator" translatable="false">" · "</string>
     <string name="history_humidity_format">습도 %1$s%%</string>
     <string name="history_rest_minutes_format">%1$s분 휴식</string>

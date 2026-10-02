@@ -2,6 +2,7 @@ package com.nativelap.heartguard.viewmodel.record
 
 import android.net.Uri
 import com.nativelap.heartguard.view.component.RecordType
+import java.time.OffsetDateTime
 
 /** 기록유형 선택부터 저장까지, 화면을 오가는 동안에도 유지돼야 하는 입력값을 모은 상태다.
  * 온도계 기록과 현장 사진은 같은 "온도계"(THERMOMETER) 기록 흐름에 속하고, 작업 사진·휴식 사진은 각각 독립된 흐름이다. */
@@ -17,6 +18,8 @@ data class RecordDraftUiState(
     val workMemo: String = "",
     val restPhotoUris: List<Uri> = emptyList(),
     val restMemo: String = "",
+    val isTemporarilySaved: Boolean = false,
+    val temporarilySavedAt: OffsetDateTime? = null,
 ) {
     // 직접 입력한 온도·습도가 모두 숫자로 해석될 때만 true다.
     val isManualTemperatureValid: Boolean

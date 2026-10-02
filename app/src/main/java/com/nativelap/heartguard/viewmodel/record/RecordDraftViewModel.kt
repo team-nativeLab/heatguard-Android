@@ -147,6 +147,29 @@ class RecordDraftViewModel @Inject constructor(
         updateDraft { it.copy(restMemo = memo) }
     }
 
+    /** 저장 실패 화면에서 보관을 선택한 초안을 현재 세션의 기록 내역에 표시한다. */
+    fun markDraftTemporarilySaved() {
+        if (mutableUiState.value.selectedRecordType == null) {
+            return
+        }
+
+        updateDraft { state ->
+            state.copy(
+                isTemporarilySaved = true,
+                temporarilySavedAt = OffsetDateTime.now(clock),
+            )
+        }
+    }
+
+    fun resumeTemporarilySavedDraft() {
+        updateDraft { state ->
+            state.copy(
+                isTemporarilySaved = false,
+                temporarilySavedAt = null,
+            )
+        }
+    }
+
     /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형의 사진을 먼저
      * 업로드하고, 그 objectKey로 현장 기록을 저장한다. 결과는 [submissionState](SaveSuccess·SaveFailure 화면이 읽음)와
      * [submissionEffects](저장 화면의 이동)로 알린다.
@@ -316,6 +339,8 @@ class RecordDraftViewModel @Inject constructor(
         savedStateHandle[KEY_MANUAL_INPUT_ENABLED] = state.isManualInputEnabled
         savedStateHandle[KEY_WORK_MEMO] = state.workMemo
         savedStateHandle[KEY_REST_MEMO] = state.restMemo
+        savedStateHandle[KEY_TEMPORARILY_SAVED] = state.isTemporarilySaved
+        savedStateHandle[KEY_TEMPORARILY_SAVED_AT] = state.temporarilySavedAt?.toString()
     }
 
     private fun clearSavedDraft() {
@@ -325,6 +350,8 @@ class RecordDraftViewModel @Inject constructor(
         savedStateHandle.remove<Boolean>(KEY_MANUAL_INPUT_ENABLED)
         savedStateHandle.remove<String>(KEY_WORK_MEMO)
         savedStateHandle.remove<String>(KEY_REST_MEMO)
+        savedStateHandle.remove<Boolean>(KEY_TEMPORARILY_SAVED)
+        savedStateHandle.remove<String>(KEY_TEMPORARILY_SAVED_AT)
     }
 
     private fun SavedStateHandle.restoreRecordDraft(): RecordDraftUiState {
@@ -337,6 +364,9 @@ class RecordDraftViewModel @Inject constructor(
             isManualInputEnabled = get<Boolean>(KEY_MANUAL_INPUT_ENABLED) ?: false,
             workMemo = get<String>(KEY_WORK_MEMO).orEmpty(),
             restMemo = get<String>(KEY_REST_MEMO).orEmpty(),
+            isTemporarilySaved = get<Boolean>(KEY_TEMPORARILY_SAVED) ?: false,
+            temporarilySavedAt = get<String>(KEY_TEMPORARILY_SAVED_AT)
+                ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() },
         )
     }
 
@@ -347,6 +377,8 @@ class RecordDraftViewModel @Inject constructor(
         const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
         const val KEY_WORK_MEMO = "record_draft.work_memo"
         const val KEY_REST_MEMO = "record_draft.rest_memo"
+        const val KEY_TEMPORARILY_SAVED = "record_draft.temporarily_saved"
+        const val KEY_TEMPORARILY_SAVED_AT = "record_draft.temporarily_saved_at"
         const val UPLOAD_NOT_FOUND_CODE = "UPLOAD_NOT_FOUND"
         const val UPLOAD_ALREADY_USED_CODE = "UPLOAD_ALREADY_USED"
     }

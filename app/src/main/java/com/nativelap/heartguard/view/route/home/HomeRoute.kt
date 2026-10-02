@@ -16,7 +16,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,7 +43,6 @@ import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.launch
 
 /** 홈에 팀 현장페이지 API 결과와 사용자 이벤트를 HomeScreen에 전달하는 Route이다.
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
@@ -63,6 +61,7 @@ internal fun HeartGuardHomeRoute(
     onProfileEditClick: () -> Unit,
     onInquiryClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
@@ -71,8 +70,6 @@ internal fun HeartGuardHomeRoute(
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    val unavailableNotificationMessage = stringResource(R.string.home_notifications_unavailable)
     val loadFailureMessage = stringResource(R.string.home_load_failure)
     val retryActionLabel = stringResource(R.string.common_retry)
 
@@ -124,11 +121,7 @@ internal fun HeartGuardHomeRoute(
                 isMenuDrawerOpen = true
                 menuDrawerViewModel.loadProfile()
             },
-            onNotificationClick = {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(unavailableNotificationMessage)
-                }
-            },
+            onNotificationClick = onNotificationsClick,
             onManagerCallClick = onManagerCallClick,
             onEmergencyClick = {
                 headquartersPhoneNumber?.let(dialPhoneNumber)

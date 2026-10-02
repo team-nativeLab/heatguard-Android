@@ -19,6 +19,8 @@ sealed interface RecordHistoryScreenEvent {
 
     data class RecordClicked(val recordId: String) : RecordHistoryScreenEvent
 
+    data object TemporaryDraftClicked : RecordHistoryScreenEvent
+
     data object RetryClicked : RecordHistoryScreenEvent
 
     data object CreateRecordClicked : RecordHistoryScreenEvent

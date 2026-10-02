@@ -50,6 +50,8 @@ fun TemperatureRecordScreen(
     onFieldPhotoClick: () -> Unit,
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onMenuClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -83,9 +85,8 @@ fun TemperatureRecordScreen(
                 title = stringResource(R.string.brand_name),
                 menuPainter = painterResource(R.drawable.menu_hamburger),
                 notificationPainter = painterResource(R.drawable.notification_bell),
-                // 메뉴·알림 기능은 홈 화면에서만 제공한다.
-                onMenuClick = {},
-                onNotificationClick = {},
+                onMenuClick = onMenuClick,
+                onNotificationClick = onNotificationClick,
             )
 
             TemperatureScreenIntro(
