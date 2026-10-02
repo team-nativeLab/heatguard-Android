@@ -2,6 +2,10 @@ package com.nativelap.heartguard.viewmodel.emergency
 
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionToken
+import com.nativelap.heartguard.core.session.createTestSessionManager
+import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
@@ -16,6 +20,7 @@ import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -33,6 +38,125 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EmergencyViewModelTest {
+    @Test
+    fun networkFailureAfterConflictKeepsCallAndPolling() = runTest {
+        assertConflictRefreshFailure(ApiError.Network)
+    }
+
+    @Test
+    fun rateLimitAfterConflictKeepsCallAndPolling() = runTest {
+        assertConflictRefreshFailure(ApiError.Http(429, null))
+    }
+
+    @Test
+    fun serverFailureAfterConflictKeepsCallAndPolling() = runTest {
+        assertConflictRefreshFailure(ApiError.Http(500, null))
+    }
+
+    @Test
+    fun pollingNoneClosesActiveCallOnceAndStopsPolling() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        val receivedEffects = mutableListOf<EmergencyEffect>()
+        backgroundScope.launch { viewModel.effects.collect { receivedEffects += it } }
+        viewModel.startEmergencyCall()
+        runCurrent()
+        repository.currentCall = EmergencyCallStatus(null, EmergencyCallState.NONE, null)
+        advanceTimeBy(POLLING_INTERVAL_MS + 1)
+        runCurrent()
+        assertNull(viewModel.uiState.value.callId)
+        assertEquals(1, receivedEffects.count { it == EmergencyEffect.CallClosed })
+        val completedRequestCount = repository.currentRequestCount
+        advanceTimeBy(POLLING_INTERVAL_MS * 3)
+        runCurrent()
+        assertEquals(completedRequestCount, repository.currentRequestCount)
+        assertEquals(1, receivedEffects.count { it == EmergencyEffect.CallClosed })
+        viewModel.reset()
+    }
+
+    @Test
+    fun accountSwitchClearsActiveCallAndStopsPolling() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val sessionManager = createTestSessionManager(StandardTestDispatcher(testScheduler))
+        sessionManager.onLoginSucceeded(SessionToken("first-account-token"))
+        val viewModel = createViewModel(repository, sessionManager)
+        runCurrent()
+        viewModel.startEmergencyCall()
+        runCurrent()
+        assertEquals("call_new", viewModel.uiState.value.callId)
+
+        sessionManager.expireSession()
+        sessionManager.onLoginSucceeded(SessionToken("second-account-token"))
+        runCurrent()
+        val requestCountAfterSwitch = repository.currentRequestCount
+        advanceTimeBy(POLLING_INTERVAL_MS * 3)
+        runCurrent()
+
+        assertNull(viewModel.uiState.value.callId)
+        assertEquals(requestCountAfterSwitch, repository.currentRequestCount)
+    }
+
+    @Test
+    fun unknownStateAfterConflictKeepsSameCallOpen() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        val receivedEffects = mutableListOf<EmergencyEffect>()
+        backgroundScope.launch { viewModel.effects.collect { receivedEffects += it } }
+        viewModel.startEmergencyCall()
+        runCurrent()
+        repository.currentCall = callStatus("call_new", EmergencyCallState.UNKNOWN)
+        repository.updateResult = EmergencyCallUpdateResult.InvalidTransition
+
+        viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        runCurrent()
+
+        assertEquals("call_new", viewModel.uiState.value.callId)
+        assertEquals(true, viewModel.uiState.value.statusUpdateFailed)
+        assertEquals(0, receivedEffects.count { it == EmergencyEffect.CallClosed })
+        viewModel.reset()
+    }
+
+    @Test
+    fun failedResumeCanBeRetriedOnNextHomeRefresh() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        repository.currentCallResult = ApiResult.Failure(ApiError.Network)
+        viewModel.resumeActiveCall()
+        runCurrent()
+        assertNull(viewModel.uiState.value.callId)
+
+        repository.currentCallResult = null
+        viewModel.resumeActiveCall()
+        runCurrent()
+
+        assertEquals("call_new", viewModel.uiState.value.callId)
+        viewModel.reset()
+    }
+
+    private suspend fun TestScope.assertConflictRefreshFailure(error: ApiError) {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        val receivedEffects = mutableListOf<EmergencyEffect>()
+        backgroundScope.launch { viewModel.effects.collect { receivedEffects += it } }
+        viewModel.startEmergencyCall()
+        runCurrent()
+        repository.currentCallResult = ApiResult.Failure(error)
+        repository.updateResult = EmergencyCallUpdateResult.InvalidTransition
+        viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        runCurrent()
+
+        assertEquals("call_new", viewModel.uiState.value.callId)
+        assertEquals(EmergencyCallState.ACTIVE, viewModel.uiState.value.callState)
+        assertFalse(viewModel.uiState.value.isUpdatingStatus)
+        assertTrue(viewModel.uiState.value.statusUpdateFailed)
+        assertFalse(EmergencyEffect.CallClosed in receivedEffects)
+        repository.currentCallResult = null
+        repository.currentCall = callStatus("call_new", EmergencyCallState.ACKNOWLEDGED)
+        advanceTimeBy(POLLING_INTERVAL_MS + 1)
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isConnected)
+        viewModel.reset()
+    }
 
     @After
     fun tearDown() {
@@ -170,13 +294,17 @@ class EmergencyViewModelTest {
         acknowledgedAt = null,
     )
 
-    private fun TestScope.createViewModel(repository: FakeEmergencyCallRepository): EmergencyViewModel {
+    private fun TestScope.createViewModel(
+        repository: FakeEmergencyCallRepository,
+        sessionManager: SessionManager = createUnauthenticatedTestSessionManager(),
+    ): EmergencyViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         return EmergencyViewModel(
             registerEmergencyCallUseCase = RegisterEmergencyCallUseCase(repository),
             observeEmergencyCallStatusUseCase = ObserveEmergencyCallStatusUseCase(repository),
             updateEmergencyCallStatusUseCase = UpdateEmergencyCallStatusUseCase(repository),
             getCurrentEmergencyCallUseCase = GetCurrentEmergencyCallUseCase(repository),
+            sessionManager = sessionManager,
             clock = Clock.fixed(Instant.parse("2026-09-28T03:00:00Z"), ZoneId.of("Asia/Seoul")),
         )
     }
@@ -191,6 +319,7 @@ class EmergencyViewModelTest {
             acknowledgedAt = null,
         )
         var currentCallResult: ApiResult<EmergencyCallStatus>? = null
+        var currentRequestCount = 0
 
         override suspend fun registerEmergencyCall(
             idempotencyKey: String,
@@ -207,8 +336,10 @@ class EmergencyViewModelTest {
             )
         }
 
-        override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
-            currentCallResult ?: ApiResult.Success(currentCall)
+        override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> {
+            currentRequestCount += 1
+            return currentCallResult ?: ApiResult.Success(currentCall)
+        }
 
         var updateResult: EmergencyCallUpdateResult? = null
 

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
-import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
@@ -63,15 +62,14 @@ class MenuDrawerViewModel @Inject constructor(
         }
 
         isLoggingOut = true
+        val logoutGeneration = sessionManager.getSnapshot().generation
         viewModelScope.launch {
             try {
                 teamLogoutUseCase()
             } finally {
                 try {
                     withContext(NonCancellable) {
-                        if (sessionManager.sessionState.value != SessionState.Unauthenticated) {
-                            sessionManager.expireSession()
-                        }
+                        sessionManager.expireSession(logoutGeneration)
                     }
                 } finally {
                     isLoggingOut = false

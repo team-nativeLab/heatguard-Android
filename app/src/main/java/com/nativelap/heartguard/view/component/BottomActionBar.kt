@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 
 /** Figma처럼 화면 하단에 고정되는 주요 버튼 영역이다. Scaffold의 bottomBar로 쓴다.
@@ -31,8 +31,8 @@ fun BottomActionBar(
     ) {
         Column(
             modifier = Modifier
+                .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
                 .fillMaxWidth()
-                .widthIn(max = 600.dp)
                 .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                 .padding(
                     horizontal = HeartGuardSpacing.BottomActionHorizontal,

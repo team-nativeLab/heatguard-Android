@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.security.GeneralSecurityException
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -24,9 +25,19 @@ class AndroidKeystoreTokenStorage @Inject constructor(
         Context.MODE_PRIVATE,
     )
 
+    /** 복호화할 수 없는 저장값(키 폐기·Keystore 손상)은 없는 토큰으로 보고 정리를 시도한다. */
     @Synchronized
     override fun readAccessToken(): String? {
-        return preferences.getString(KEY_ACCESS_TOKEN, null)?.let(::decrypt)
+        val storedValue = preferences.getString(KEY_ACCESS_TOKEN, null) ?: return null
+        return try {
+            decrypt(storedValue)
+        } catch (_: GeneralSecurityException) {
+            discardUnreadableToken()
+            null
+        } catch (_: IllegalArgumentException) {
+            discardUnreadableToken()
+            null
+        }
     }
 
     @Synchronized
@@ -40,13 +51,30 @@ class AndroidKeystoreTokenStorage @Inject constructor(
         check(saved) { "Unable to persist the session tokens" }
     }
 
+    /** 디스크 삭제가 실패하면 암호화 키를 폐기해 남은 암호문을 다시 읽을 수 없게 만든다. */
     @Synchronized
     override fun clear() {
         val cleared = preferences.edit()
             .remove(KEY_ACCESS_TOKEN)
             .commit()
 
-        check(cleared) { "Unable to clear the session tokens" }
+        if (!cleared) {
+            deleteSecretKey()
+        }
+    }
+
+    // 읽을 수 없는 값은 다음 시작에서도 다시 읽지 않도록 즉시 지운다. 실패해도 읽기 결과는 이미 null이다.
+    private fun discardUnreadableToken() {
+        preferences.edit(commit = true) {
+            remove(KEY_ACCESS_TOKEN)
+        }
+    }
+
+    private fun deleteSecretKey() {
+        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply {
+            load(null)
+        }
+        keyStore.deleteEntry(KEY_ALIAS)
     }
 
     private fun encrypt(value: String): String {

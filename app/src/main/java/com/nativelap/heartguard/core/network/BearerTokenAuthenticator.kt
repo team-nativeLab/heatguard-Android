@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.core.network
 
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionSnapshot
 import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -27,10 +28,12 @@ class BearerTokenAuthenticator @Inject constructor(
             return null
         }
 
+        val requestSession = response.request.tag(SessionSnapshot::class.java) ?: return null
+
         // OkHttp Authenticator는 동기 콜백으로 호출되는 계약이라 suspend로 선언할 수 없다.
         // SessionManager 외에 Repository·UseCase를 직접 호출하지 않으므로 runBlocking 범위를 최소로 둔다.
         runBlocking {
-            sessionManager.expireSession()
+            sessionManager.expireSessionForRequest(requestSession)
         }
 
         // 갱신할 수 있는 토큰이 없으므로 재시도용 Request를 만들지 않고 원래 401 응답을 그대로 전달한다.

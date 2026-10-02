@@ -43,3 +43,8 @@ data class NotificationReadReceipt(
     val isRead: Boolean,
     val readAt: OffsetDateTime?,
 )
+
+data class NotificationReadAllReceipt(
+    val updatedCount: Int,
+    val unreadCount: Int,
+)

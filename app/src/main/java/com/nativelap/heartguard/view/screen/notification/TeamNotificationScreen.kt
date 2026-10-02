@@ -1,10 +1,13 @@
 package com.nativelap.heartguard.view.screen.notification
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -35,12 +37,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -62,6 +63,8 @@ import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.view.component.list.LoadMoreWhenNearEnd
+import com.nativelap.heartguard.view.component.list.pagedListFooter
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
@@ -73,7 +76,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun TeamNotificationScreen(
@@ -83,25 +85,13 @@ fun TeamNotificationScreen(
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) {
     val listState = rememberLazyListState()
-    LaunchedEffect(
-        listState,
-        uiState.notifications.size,
-        uiState.hasMore,
-        uiState.isLoadingMore,
-        uiState.hasLoadMoreError,
-    ) {
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            layoutInfo.totalItemsCount > 0 && lastVisibleIndex >= layoutInfo.totalItemsCount - PAGINATION_PREFETCH_ITEMS
-        }
-            .distinctUntilChanged()
-            .collect { shouldLoadMore ->
-                if (shouldLoadMore && uiState.hasMore && !uiState.isLoadingMore && !uiState.hasLoadMoreError) {
-                    onEvent(TeamNotificationScreenEvent.LoadMore)
-                }
-            }
-    }
+    LoadMoreWhenNearEnd(
+        listState = listState,
+        canLoadMore = uiState.hasMore && !uiState.isLoadingMore && !uiState.hasLoadMoreError &&
+            uiState.markingReadIds.isEmpty() && !uiState.isMarkingAllRead &&
+            !uiState.isRefreshing && !uiState.hasRefreshError,
+        onLoadMore = { onEvent(TeamNotificationScreenEvent.LoadMore) },
+    )
 
     Scaffold(
         modifier = modifier,
@@ -122,8 +112,42 @@ fun TeamNotificationScreen(
 
             NotificationCategoryFilters(
                 selectedCategory = uiState.selectedCategory,
+                isEnabled = !uiState.isMarkingAllRead,
                 onCategoryClick = { category -> onEvent(TeamNotificationScreenEvent.CategorySelected(category)) },
             )
+
+            TextButton(
+                onClick = { onEvent(TeamNotificationScreenEvent.MarkAllReadClicked) },
+                enabled = uiState.hasLoaded && !uiState.hasInitialError &&
+                    uiState.unreadCount > 0 && !uiState.isMarkingAllRead &&
+                    !uiState.isRefreshing && !uiState.hasRefreshError,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal),
+            ) {
+                if (uiState.isMarkingAllRead || uiState.isRefreshing) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(text = stringResource(R.string.notification_read_all))
+                }
+            }
+
+            if (uiState.hasRefreshError) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal),
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_refresh_error),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    TextButton(onClick = { onEvent(TeamNotificationScreenEvent.RetryRefresh) }) {
+                        Text(text = stringResource(R.string.common_retry))
+                    }
+                }
+            }
 
             when {
                 uiState.isInitialLoading || !uiState.hasLoaded -> {
@@ -157,10 +181,10 @@ fun TeamNotificationScreen(
                 }
 
                 else -> {
-                    val today = LocalDate.now()
+                    val today = LocalDate.now(KOREA_ZONE)
                     val notificationGroups = uiState.notifications.groupBy { notification ->
                         notification.createdAt
-                            ?.atZoneSameInstant(ZoneId.systemDefault())
+                            ?.atZoneSameInstant(KOREA_ZONE)
                             ?.toLocalDate()
                     }
                     LazyColumn(
@@ -184,33 +208,21 @@ fun TeamNotificationScreen(
                                 NotificationGroupCard(
                                     notifications = notifications,
                                     markingReadIds = uiState.markingReadIds,
+                                    isMarkingAllRead = uiState.isMarkingAllRead ||
+                                        uiState.isRefreshing || uiState.hasRefreshError,
                                     onNotificationClick = { notification ->
                                         onEvent(TeamNotificationScreenEvent.NotificationClicked(notification.notificationId))
                                     },
                                 )
                             }
                         }
-                        if (uiState.isLoadingMore) {
-                            item(key = "notification-loading-more") {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(HeartGuardSpacing.Item),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                }
-                            }
-                        } else if (uiState.hasLoadMoreError) {
-                            item(key = "notification-load-more-error") {
-                                TextButton(
-                                    onClick = { onEvent(TeamNotificationScreenEvent.RetryLoadMore) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Text(text = stringResource(R.string.notification_load_more_retry))
-                                }
-                            }
-                        }
+                        pagedListFooter(
+                            keyPrefix = "notification",
+                            isLoadingMore = uiState.isLoadingMore,
+                            hasLoadMoreError = uiState.hasLoadMoreError,
+                            canRetry = uiState.hasMore,
+                            onRetryClick = { onEvent(TeamNotificationScreenEvent.RetryLoadMore) },
+                        )
                     }
                 }
             }
@@ -236,7 +248,7 @@ private fun NotificationDateHeader(
     Text(
         text = dateLabel,
         modifier = Modifier.semantics { heading() },
-        color = NOTIFICATION_META,
+        color = MaterialTheme.extraColors.notificationMeta,
         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
     )
 }
@@ -244,6 +256,7 @@ private fun NotificationDateHeader(
 @Composable
 private fun NotificationCategoryFilters(
     selectedCategory: NotificationCategory,
+    isEnabled: Boolean,
     onCategoryClick: (NotificationCategory) -> Unit,
 ) {
     Row(
@@ -258,6 +271,7 @@ private fun NotificationCategoryFilters(
             NotificationFilterChip(
                 title = stringResource(option.titleResource),
                 isSelected = selectedCategory == option.category,
+                isEnabled = isEnabled,
                 onClick = { onCategoryClick(option.category) },
             )
         }
@@ -268,25 +282,27 @@ private fun NotificationCategoryFilters(
 private fun NotificationFilterChip(
     title: String,
     isSelected: Boolean,
+    isEnabled: Boolean,
     onClick: () -> Unit,
 ) {
     Surface(
         onClick = onClick,
+        enabled = isEnabled,
         modifier = Modifier.semantics {
             role = Role.Tab
             selected = isSelected
         },
         shape = RoundedCornerShape(18.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         border = if (isSelected) null else androidx.compose.foundation.BorderStroke(
             HeartGuardBorderWidth.Divider,
-            NOTIFICATION_BORDER,
+            MaterialTheme.extraColors.notificationBorder,
         ),
     ) {
         Text(
             text = title,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-            color = if (isSelected) Color.White else NOTIFICATION_BODY,
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.extraColors.notificationBody,
             style = MaterialTheme.typography.labelLarge.copy(
                 fontSize = 13.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -299,19 +315,24 @@ private fun NotificationFilterChip(
 private fun NotificationGroupCard(
     notifications: List<TeamNotification>,
     markingReadIds: Set<String>,
+    isMarkingAllRead: Boolean,
     onNotificationClick: (TeamNotification) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(HeartGuardRadius.Card))
-            .background(Color.White),
+            .background(MaterialTheme.colorScheme.surface),
     ) {
         notifications.forEach { notification ->
-            HorizontalDivider(thickness = HeartGuardBorderWidth.Divider, color = NOTIFICATION_BORDER)
+            HorizontalDivider(
+                thickness = HeartGuardBorderWidth.Divider,
+                color = MaterialTheme.extraColors.notificationBorder,
+            )
             NotificationRow(
                 notification = notification,
                 isMarkingRead = notification.notificationId in markingReadIds,
+                isMarkingAllRead = isMarkingAllRead,
                 onClick = { onNotificationClick(notification) },
             )
         }
@@ -322,18 +343,25 @@ private fun NotificationGroupCard(
 private fun NotificationRow(
     notification: TeamNotification,
     isMarkingRead: Boolean,
+    isMarkingAllRead: Boolean,
     onClick: () -> Unit,
 ) {
     val unreadStatus = stringResource(R.string.notification_unread)
     val readStatus = stringResource(R.string.notification_read)
     val isUnread = !notification.isRead
-    val colors = notificationIconColors(notification.type)
+    val iconBackground = notificationIconBackground(notification.type)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isUnread) NOTIFICATION_UNREAD_SURFACE else Color.White)
-            .clickable(onClick = onClick)
+            .background(
+                if (isUnread) MaterialTheme.extraColors.notificationUnreadSurface
+                else MaterialTheme.colorScheme.surface,
+            )
+            .clickable(
+                enabled = isUnread && !isMarkingRead && !isMarkingAllRead,
+                onClick = onClick,
+            )
             .semantics { stateDescription = if (isUnread) unreadStatus else readStatus }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -343,20 +371,36 @@ private fun NotificationRow(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(colors.background),
+                .background(iconBackground),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = notificationIcon(notification.type),
-                contentDescription = null,
-                tint = colors.foreground,
-                modifier = Modifier.size(HeartGuardIconSize.Navigation),
-            )
+            when (notification.type) {
+                NotificationType.EMERGENCY_ACKNOWLEDGED -> Image(
+                    painter = painterResource(R.drawable.save_warning),
+                    contentDescription = null,
+                    modifier = Modifier.size(HeartGuardIconSize.Navigation),
+                )
+
+                NotificationType.RECORD_CREATED -> Icon(
+                    imageVector = Icons.Filled.PhotoCamera,
+                    contentDescription = null,
+                    tint = MaterialTheme.extraColors.notificationRecordIcon,
+                    modifier = Modifier.size(HeartGuardIconSize.Navigation),
+                )
+
+                NotificationType.INQUIRY_ANSWERED,
+                NotificationType.UNKNOWN,
+                -> Image(
+                    painter = painterResource(R.drawable.notification_bell),
+                    contentDescription = null,
+                    modifier = Modifier.size(HeartGuardIconSize.Navigation),
+                )
+            }
         }
         Text(
             text = notification.title,
             modifier = Modifier.weight(1f),
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontSize = 14.sp,
                 fontWeight = if (isUnread) FontWeight.Bold else FontWeight.Medium,
@@ -364,10 +408,10 @@ private fun NotificationRow(
         )
         Text(
             text = notification.createdAt
-                ?.atZoneSameInstant(ZoneId.systemDefault())
+                ?.atZoneSameInstant(KOREA_ZONE)
                 ?.format(NOTIFICATION_TIME_FORMATTER)
                 ?: stringResource(R.string.common_empty_value),
-            color = NOTIFICATION_META,
+            color = MaterialTheme.extraColors.notificationMeta,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
         )
         when {
@@ -401,25 +445,29 @@ private fun NotificationEmptyState(
     } else {
         stringResource(R.string.notification_filtered_empty_description)
     }
-    Column(
-        modifier = modifier
-            .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-            .padding(top = 128.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val topOffset = minOf(128.dp, maxHeight * 0.18f)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
+                .padding(top = topOffset, bottom = HeartGuardSpacing.Section),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+        ) {
             Box(
                 modifier = Modifier
                     .size(HeartGuardIconSize.EmptyStateIllustration)
                     .clip(CircleShape)
-                    .background(NOTIFICATION_ICON_SURFACE),
+                    .background(MaterialTheme.extraColors.notificationIconSurface),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Outlined.NotificationsNone,
                     contentDescription = null,
                     modifier = Modifier.size(36.dp),
-                    tint = NOTIFICATION_NEUTRAL_ICON,
+                    tint = MaterialTheme.extraColors.notificationNeutralIcon,
                 )
             }
             Text(
@@ -433,10 +481,11 @@ private fun NotificationEmptyState(
             )
         Text(
             text = description,
-            color = NOTIFICATION_BODY,
+            color = MaterialTheme.extraColors.notificationBody,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
             textAlign = TextAlign.Center,
         )
+        }
     }
 }
 
@@ -469,31 +518,14 @@ private fun NotificationLoadError(
 }
 
 @Composable
-private fun notificationIcon(type: NotificationType) = when (type) {
-    NotificationType.RECORD_CREATED -> Icons.Filled.PhotoCamera
-    NotificationType.EMERGENCY_ACKNOWLEDGED -> Icons.Filled.PriorityHigh
-    NotificationType.INQUIRY_ANSWERED,
-    NotificationType.UNKNOWN,
-    -> Icons.Outlined.NotificationsNone
-}
+private fun notificationIconBackground(type: NotificationType): Color = when (type) {
+    NotificationType.RECORD_CREATED -> MaterialTheme.extraColors.notificationIconSurface
 
-private fun notificationIconColors(type: NotificationType): NotificationIconColors = when (type) {
-    NotificationType.RECORD_CREATED -> NotificationIconColors(
-        background = NOTIFICATION_ICON_SURFACE,
-        foreground = NOTIFICATION_RECORD_ICON,
-    )
-
-    NotificationType.EMERGENCY_ACKNOWLEDGED -> NotificationIconColors(
-        background = NOTIFICATION_ALERT_SURFACE,
-        foreground = NOTIFICATION_ALERT_ICON,
-    )
+    NotificationType.EMERGENCY_ACKNOWLEDGED -> MaterialTheme.extraColors.notificationAlertSurface
 
     NotificationType.INQUIRY_ANSWERED,
     NotificationType.UNKNOWN,
-    -> NotificationIconColors(
-        background = NOTIFICATION_NEUTRAL_SURFACE,
-        foreground = NOTIFICATION_NEUTRAL_ICON,
-    )
+    -> MaterialTheme.extraColors.notificationNeutralSurface
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 978)
@@ -512,11 +544,6 @@ private data class NotificationCategoryOption(
     val titleResource: Int,
 )
 
-private data class NotificationIconColors(
-    val background: Color,
-    val foreground: Color,
-)
-
 private val NOTIFICATION_CATEGORIES = listOf(
     NotificationCategoryOption(NotificationCategory.ALL, R.string.notification_filter_all),
     NotificationCategoryOption(NotificationCategory.RECORD, R.string.notification_filter_record),
@@ -524,16 +551,6 @@ private val NOTIFICATION_CATEGORIES = listOf(
     NotificationCategoryOption(NotificationCategory.NOTICE, R.string.notification_filter_notice),
 )
 
-private val NOTIFICATION_BORDER = Color(0xFFE8EBF5)
-private val NOTIFICATION_UNREAD_SURFACE = Color(0xFFF4F7FE)
-private val NOTIFICATION_ICON_SURFACE = Color(0xFFEDF1FB)
-private val NOTIFICATION_ALERT_SURFACE = Color(0xFFFFECEC)
-private val NOTIFICATION_NEUTRAL_SURFACE = Color(0xFFF1F2F5)
-private val NOTIFICATION_BODY = Color(0xFF54596B)
-private val NOTIFICATION_META = Color(0xFF6B7280)
-private val NOTIFICATION_ALERT_ICON = Color(0xFFF03B43)
-private val NOTIFICATION_RECORD_ICON = Color(0xFF20A15D)
-private val NOTIFICATION_NEUTRAL_ICON = Color(0xFF373B45)
 private val NOTIFICATION_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
+private val KOREA_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
 
-private const val PAGINATION_PREFETCH_ITEMS = 3

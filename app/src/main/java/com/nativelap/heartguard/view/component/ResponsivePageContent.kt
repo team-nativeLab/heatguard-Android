@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 
 /** 화면 콘텐츠를 좁은 기기에서는 꽉 채우고 넓은 화면에서는 중앙의 읽기 폭으로 제한한다. */
 @Composable
@@ -24,7 +24,7 @@ fun ResponsivePageContent(
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 600.dp)
+                .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
                 .fillMaxWidth()
                 .fillMaxHeight(),
             content = content,

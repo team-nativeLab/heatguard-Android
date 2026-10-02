@@ -1,12 +1,12 @@
 package com.nativelap.heartguard.domain.inquiry.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.domain.inquiry.model.InquiryPage
 import com.nativelap.heartguard.domain.inquiry.model.InquirySubmission
-import com.nativelap.heartguard.domain.inquiry.model.InquirySummary
 
 interface InquiryRepository {
     suspend fun submitInquiry(title: String, content: String): ApiResult<InquirySubmission>
 
-    /** 내 문의 전체를 최신순으로 돌려준다. 여러 페이지면 이어 받는다. */
-    suspend fun getInquiries(): ApiResult<List<InquirySummary>>
+    /** 내 문의 목록의 한 페이지를 받는다. 첫 페이지는 [cursor]를 null로 요청한다. */
+    suspend fun getInquiryPage(cursor: String?): ApiResult<InquiryPage>
 }

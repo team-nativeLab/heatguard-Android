@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,6 +25,8 @@ import com.nativelap.heartguard.domain.account.model.WithdrawReason
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
+import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawAgreementRow
 import com.nativelap.heartguard.view.component.account.WithdrawDangerButton
 import com.nativelap.heartguard.view.component.account.WithdrawHeadline
@@ -38,7 +39,7 @@ import com.nativelap.heartguard.viewmodel.account.WithdrawSubmissionState
 import com.nativelap.heartguard.viewmodel.account.WithdrawUiState
 
 /** Figma 17_회원탈퇴_안내 화면이다. 유의사항·탈퇴 사유·비밀번호·동의를 받고,
- * 조건을 모두 채우면 하단 탈퇴하기 버튼을 활성화한다. 직전 요청이 실패했으면 버튼 위에 오류 안내를 보여준다. */
+ * 조건을 모두 채우면 하단 탈퇴하기 버튼을 활성화한다. */
 @Composable
 fun WithdrawNoticeScreen(
     uiState: WithdrawUiState,
@@ -49,13 +50,21 @@ fun WithdrawNoticeScreen(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            BottomActionBar {
+                WithdrawDangerButton(
+                    title = stringResource(R.string.withdraw_action),
+                    onClick = { onEvent(WithdrawNoticeScreenEvent.WithdrawClicked) },
+                    isEnabled = uiState.canSubmit,
+                )
+            }
+        },
     ) { innerPadding ->
-        Column(
+        ResponsivePageContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
-                .imePadding(),
+                .consumeWindowInsets(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
@@ -130,26 +139,18 @@ fun WithdrawNoticeScreen(
                         onEvent(WithdrawNoticeScreenEvent.AgreementChanged(isAgreed))
                     },
                 )
+
+                if (uiState.submissionState == WithdrawSubmissionState.Failed) {
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+
+                    Text(
+                        text = stringResource(R.string.withdraw_failure_message),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
 
-            if (uiState.submissionState == WithdrawSubmissionState.Failed) {
-                Text(
-                    text = stringResource(R.string.withdraw_failure_message),
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.BottomActionHorizontal),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-
-            WithdrawDangerButton(
-                title = stringResource(R.string.withdraw_action),
-                onClick = { onEvent(WithdrawNoticeScreenEvent.WithdrawClicked) },
-                isEnabled = uiState.canSubmit,
-                modifier = Modifier.padding(
-                    horizontal = HeartGuardSpacing.BottomActionHorizontal,
-                    vertical = HeartGuardSpacing.Section,
-                ),
-            )
         }
     }
 }

@@ -2,12 +2,12 @@ package com.nativelap.heartguard.view.component.feedback
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.width
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,7 +84,7 @@ fun SavedRecordSummaryCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(HeartGuardSpacing.ResultSummaryRowHeight)
+                        .heightIn(min = HeartGuardSpacing.ResultSummaryRowHeight)
                         .then(
                             if (rowDetailsClick != null) {
                                 Modifier.clickable(
@@ -107,30 +107,17 @@ fun SavedRecordSummaryCard(
                                 fontWeight = FontWeight.Bold,
                             ),
                         )
-                        Row(
-                            modifier = Modifier.padding(start = HeartGuardSpacing.RecordFieldInset),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = record.value,
-                                color = MaterialTheme.extraColors.mutedText,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = HeartGuardFontSize.ResultSummaryValue,
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                            )
-                            record.detail?.let { detailText ->
-                                Spacer(modifier = Modifier.width(HeartGuardSpacing.Compact))
-                                Text(
-                                    text = detailText,
-                                    color = MaterialTheme.extraColors.mutedText,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = HeartGuardFontSize.ResultSummaryValue,
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
-                                )
-                            }
-                        }
+                        Text(
+                            text = listOfNotNull(record.value, record.detail).joinToString(" "),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = HeartGuardSpacing.RecordFieldInset),
+                            color = MaterialTheme.extraColors.mutedText,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = HeartGuardFontSize.ResultSummaryValue,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        )
                     }
                     if (rowDetailsClick != null) {
                         Icon(

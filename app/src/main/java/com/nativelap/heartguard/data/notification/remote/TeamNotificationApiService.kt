@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.notification.remote
 
 import com.nativelap.heartguard.core.network.ApiEnvelope
 import com.nativelap.heartguard.data.notification.dto.NotificationReadReceiptDto
+import com.nativelap.heartguard.data.notification.dto.NotificationReadAllReceiptDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationPageDto
 import retrofit2.http.GET
 import retrofit2.http.PATCH
@@ -20,4 +21,7 @@ interface TeamNotificationApiService {
     suspend fun markNotificationRead(
         @Path("notificationId") notificationId: String,
     ): ApiEnvelope<NotificationReadReceiptDto>
+
+    @PATCH("api/v1/team/notifications/read-all")
+    suspend fun markAllNotificationsRead(): ApiEnvelope<NotificationReadAllReceiptDto>
 }

@@ -1,11 +1,12 @@
 package com.nativelap.heartguard.data.record.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.map
-import com.nativelap.heartguard.data.record.dto.RecordHistoryItemDto
 import com.nativelap.heartguard.data.record.mapper.toDomain
 import com.nativelap.heartguard.data.record.remote.RecordHistoryRemoteDataSource
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
+import com.nativelap.heartguard.domain.record.model.RecordHistoryPage
 import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -14,38 +15,54 @@ import javax.inject.Inject
 class RecordHistoryRepositoryImpl @Inject constructor(
     private val recordHistoryRemoteDataSource: RecordHistoryRemoteDataSource,
 ) : RecordHistoryRepository {
-    /** 서버 목록은 하루 단위 커서 페이징이라, hasMore가 false가 될 때까지 다음 커서로 이어 받아 합친다.
-     * 서버가 같은 커서를 반복해 무한 요청이 되지 않도록 최대 페이지 수를 둔다. 한 페이지라도 실패하면 그 실패를 돌려준다. */
+    /** 하루 기록을 끝까지 이어 받는다. 커서가 반복되거나 안전 상한을 넘으면 잘린 목록을 성공으로 반환하지 않고 실패로 끝낸다. */
     override suspend fun getRecordsOfDate(date: LocalDate): ApiResult<List<RecordHistoryEntry>> {
-        val requestDate = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        val collectedItems = mutableListOf<RecordHistoryItemDto>()
+        val collectedEntries = mutableListOf<RecordHistoryEntry>()
         var nextCursor: String? = null
-        var requestedPageCount = 0
+        val visitedCursors = mutableSetOf<String?>()
 
-        do {
-            val pageResult = recordHistoryRemoteDataSource.getRecordPage(
-                date = requestDate,
-                cursor = nextCursor,
-                limit = PAGE_SIZE,
-            )
-            val recordPage = when (pageResult) {
+        while (true) {
+            visitedCursors += nextCursor
+            val recordPage = when (val pageResult = getRecordPage(date, nextCursor)) {
                 is ApiResult.Success -> pageResult.value
                 is ApiResult.Failure -> return pageResult
             }
-            collectedItems += recordPage.items
-            requestedPageCount += 1
-
-            val hasMorePages = recordPage.page?.hasMore == true
-            val receivedCursor = recordPage.page?.nextCursor
-            val canRequestNextPage = hasMorePages &&
-                receivedCursor != null &&
-                receivedCursor != nextCursor &&
-                requestedPageCount < MAX_PAGE_COUNT
+            collectedEntries += recordPage.entries
+            val receivedCursor = recordPage.nextCursor ?: break
+            if (receivedCursor in visitedCursors || visitedCursors.size >= MAX_DAILY_PAGE_COUNT) {
+                return ApiResult.Failure(ApiError.Unknown)
+            }
             nextCursor = receivedCursor
-        } while (canRequestNextPage)
+        }
+
+        return ApiResult.Success(collectedEntries)
+    }
+
+    /** 명세상 필수인 page 정보가 없거나, 더 있다는데 다음 커서가 없으면 목록이 잘린 것이므로 실패로 바꾼다. */
+    override suspend fun getRecordPage(
+        date: LocalDate,
+        cursor: String?,
+    ): ApiResult<RecordHistoryPage> {
+        val pageResult = recordHistoryRemoteDataSource.getRecordPage(
+            date = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
+            cursor = cursor,
+            limit = PAGE_SIZE,
+        )
+        val recordPage = when (pageResult) {
+            is ApiResult.Success -> pageResult.value
+            is ApiResult.Failure -> return pageResult
+        }
+        val pageInfo = recordPage.page ?: return ApiResult.Failure(ApiError.Unknown)
+        val receivedCursor = pageInfo.nextCursor?.takeIf(String::isNotBlank)
+        if (pageInfo.hasMore && receivedCursor == null) {
+            return ApiResult.Failure(ApiError.Unknown)
+        }
 
         return ApiResult.Success(
-            collectedItems.map { recordItem -> recordItem.toDomain() },
+            RecordHistoryPage(
+                entries = recordPage.items.map { recordItem -> recordItem.toDomain() },
+                nextCursor = receivedCursor.takeIf { pageInfo.hasMore },
+            ),
         )
     }
 
@@ -56,6 +73,8 @@ class RecordHistoryRepositoryImpl @Inject constructor(
     private companion object {
         // 명세상 limit 최대값이다. 하루 기록 수가 많지 않아 대부분 한 번에 끝난다.
         const val PAGE_SIZE = 100
-        const val MAX_PAGE_COUNT = 20
+
+        // 서버 오류로 새 커서가 끝없이 와도 홈을 열 때마다 요청이 이어지지 않게 하는 안전 상한(하루 1만 건)이다.
+        const val MAX_DAILY_PAGE_COUNT = 100
     }
 }

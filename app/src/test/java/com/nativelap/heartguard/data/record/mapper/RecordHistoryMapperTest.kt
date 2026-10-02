@@ -33,6 +33,19 @@ class RecordHistoryMapperTest {
     }
 
     @Test
+    fun `UTC로 내려온 측정 시각은 한국 시각으로 바꾼다`() {
+        val itemDto = json.decodeFromString<RecordHistoryItemDto>(
+            """
+            {"recordId":"rec_03","type":"REST","measuredAt":"2026-09-30T16:15:21Z"}
+            """.trimIndent(),
+        )
+
+        val recordEntry = itemDto.toDomain()
+
+        assertEquals(OffsetDateTime.parse("2026-10-01T01:15:21+09:00"), recordEntry.measuredAt)
+    }
+
+    @Test
     fun `이전 기록처럼 위치·휴식 값이 null이거나 비어 있으면 null이다`() {
         val itemDto = json.decodeFromString<RecordHistoryItemDto>(
             """

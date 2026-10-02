@@ -5,6 +5,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.inquiry.model.InquiryStatus
+import com.nativelap.heartguard.domain.inquiry.model.InquiryPage
 import com.nativelap.heartguard.domain.inquiry.model.InquirySubmission
 import com.nativelap.heartguard.domain.inquiry.model.InquirySummary
 import com.nativelap.heartguard.domain.inquiry.repository.InquiryRepository
@@ -76,6 +77,31 @@ class InquiryViewModelTest {
     }
 
     @Test
+    fun `목록 끝에서 다음 페이지를 이어 받고 실패하면 받은 목록을 유지한다`() = runTest {
+        val repository = FakeInquiryRepository(pageSize = 2, failingCursor = "cur_2")
+        repeat(3) { inquiryIndex ->
+            repository.storedInquiries += inquirySummary("inq_$inquiryIndex", "2026-09-2${inquiryIndex}T01:00:00Z")
+        }
+        val viewModel = createViewModel(repository)
+        viewModel.openInquiry()
+        advanceUntilIdle()
+
+        viewModel.loadMoreInquiries()
+        advanceUntilIdle()
+        val failedState = viewModel.uiState.value.listState as InquiryListState.Loaded
+        assertEquals(2, failedState.inquiries.size)
+        assertEquals(true, failedState.hasLoadMoreError)
+
+        repository.failingCursor = null
+        viewModel.loadMoreInquiries()
+        advanceUntilIdle()
+        val loadedState = viewModel.uiState.value.listState as InquiryListState.Loaded
+        assertEquals(3, loadedState.inquiries.size)
+        assertEquals(null, loadedState.nextCursor)
+        assertEquals(listOf(null, "cur_2", "cur_2"), repository.requestedCursors)
+    }
+
+    @Test
     fun `세션이 끝나면 입력과 목록을 지운다`() = runTest {
         val sessionManager = createSessionManager()
         val viewModel = createViewModel(
@@ -126,8 +152,11 @@ class InquiryViewModelTest {
 
     private inner class FakeInquiryRepository(
         private val shouldFailList: Boolean = false,
+        private val pageSize: Int = Int.MAX_VALUE,
+        var failingCursor: String? = null,
     ) : InquiryRepository {
         val storedInquiries = mutableListOf<InquirySummary>()
+        val requestedCursors = mutableListOf<String?>()
 
         override suspend fun submitInquiry(
             title: String,
@@ -144,11 +173,19 @@ class InquiryViewModelTest {
             )
         }
 
-        override suspend fun getInquiries(): ApiResult<List<InquirySummary>> {
-            if (shouldFailList) {
+        override suspend fun getInquiryPage(cursor: String?): ApiResult<InquiryPage> {
+            requestedCursors += cursor
+            if (shouldFailList || (cursor != null && cursor == failingCursor)) {
                 return ApiResult.Failure(ApiError.Network)
             }
-            return ApiResult.Success(storedInquiries.toList())
+            val startIndex = cursor?.removePrefix("cur_")?.toInt() ?: 0
+            val endIndex = minOf(startIndex + pageSize, storedInquiries.size)
+            return ApiResult.Success(
+                InquiryPage(
+                    inquiries = storedInquiries.subList(startIndex, endIndex).toList(),
+                    nextCursor = "cur_$endIndex".takeIf { endIndex < storedInquiries.size },
+                ),
+            )
         }
     }
 

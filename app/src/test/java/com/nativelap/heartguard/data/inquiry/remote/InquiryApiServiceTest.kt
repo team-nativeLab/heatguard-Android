@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.inquiry.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
 import com.nativelap.heartguard.data.inquiry.dto.SubmitInquiryRequestDto
 import com.nativelap.heartguard.data.inquiry.mapper.toDomain
 import com.nativelap.heartguard.domain.inquiry.model.InquiryStatus
@@ -31,6 +32,7 @@ class InquiryApiServiceTest {
             val service = ApiRetrofitFactory(
                 authenticatedApiClient = OkHttpClient(),
                 unauthenticatedApiClient = OkHttpClient(),
+                sessionManager = createUnauthenticatedTestSessionManager(),
                 json = Json { ignoreUnknownKeys = true },
             ).createService(
                 baseUrl = server.url("/").toString(),
@@ -78,6 +80,7 @@ class InquiryApiServiceTest {
             val service = ApiRetrofitFactory(
                 authenticatedApiClient = OkHttpClient(),
                 unauthenticatedApiClient = OkHttpClient(),
+                sessionManager = createUnauthenticatedTestSessionManager(),
                 json = Json { ignoreUnknownKeys = true },
             ).createService(
                 baseUrl = server.url("/").toString(),

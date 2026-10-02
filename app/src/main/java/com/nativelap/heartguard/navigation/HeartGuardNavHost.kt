@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,12 +60,13 @@ internal fun HeartGuardNavHost(
     sessionViewModel: HeartGuardSessionViewModel = hiltViewModel(),
 ) {
     val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
+    val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
 
     when (sessionState) {
         // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 어느 화면도 그리지 않는다.
         // TODO: 스플래시 화면이 추가되면 빈 화면 대신 그 화면을 보여준다.
         SessionState.Initializing -> Unit
-        SessionState.Authenticated -> HeartGuardMainNavDisplay()
+        SessionState.Authenticated -> HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
         SessionState.Unauthenticated -> HeartGuardAuthNavDisplay()
     }
 }
@@ -114,8 +118,19 @@ private fun HeartGuardAuthNavDisplay() {
 
 /** 로그인 이후의 홈·기록·긴급 호출 흐름을 단일 Navigation 3 back stack으로 연결한다. */
 @Composable
-private fun HeartGuardMainNavDisplay() {
+private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
+
+    // 로그아웃→재로그인이 한 프레임 안에 지나가 이 화면이 유지돼도, 세대가 바뀌면 이전 계정의 화면 이동 기록을 홈으로 되돌린다.
+    // 세대는 프로세스마다 다시 시작하므로 저장하지 않는다. 프로세스 복원 시에는 복원된 back stack을 그대로 둔다.
+    var displayedSessionGeneration by remember { mutableLongStateOf(sessionGeneration) }
+    LaunchedEffect(sessionGeneration) {
+        if (sessionGeneration != displayedSessionGeneration) {
+            displayedSessionGeneration = sessionGeneration
+            backStack.clear()
+            backStack.add(HeartGuardDestination.Home)
+        }
+    }
 
     // 팀 현장페이지(현재 온도·습도·체감온도·폭염 단계·관리자 번호·체크 시각)는 홈뿐 아니라 온도계 기록·
     // 긴급 호출 화면도 함께 보여준다. 아래 공유 ViewModel들과 같은 이유로 여기서 한 번 만들어 필요한 Route에 명시적으로 넘긴다.
@@ -164,11 +179,13 @@ private fun HeartGuardMainNavDisplay() {
     }
 
     // 앱을 다시 열었을 때 서버에 진행 중인 긴급호출이 있으면 이어받아, 홈의 "긴급 전화"가 새 호출 대신 그 호출로 이어지게 한다.
+    // 홈 조회가 끝날 때마다 다시 확인해, 이어받기가 한 번 실패해도 응답 내용과 상관없이 다음 새로고침에서 복구한다.
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val homeRefreshCompletionCount by homeViewModel.refreshCompletionCount.collectAsStateWithLifecycle()
     val hasServerActiveEmergencyCall = (homeUiState as? HomeUiState.Success)
         ?.overview
         ?.hasActiveEmergencyCall == true
-    LaunchedEffect(hasServerActiveEmergencyCall) {
+    LaunchedEffect(homeRefreshCompletionCount, hasServerActiveEmergencyCall) {
         if (hasServerActiveEmergencyCall) {
             emergencyViewModel.resumeActiveCall()
         }

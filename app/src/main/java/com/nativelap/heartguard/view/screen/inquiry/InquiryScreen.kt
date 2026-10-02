@@ -38,6 +38,8 @@ import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.list.LoadMoreWhenScrolledToEnd
+import com.nativelap.heartguard.view.component.list.PagedListFooter
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
@@ -49,6 +51,17 @@ fun InquiryScreen(
     onEvent: (InquiryScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scrollState = rememberScrollState()
+    val loadedListState = uiState.listState as? InquiryListState.Loaded
+    LoadMoreWhenScrolledToEnd(
+        scrollState = scrollState,
+        canLoadMore = loadedListState != null &&
+            loadedListState.nextCursor != null &&
+            !loadedListState.isLoadingMore &&
+            !loadedListState.hasLoadMoreError,
+        onLoadMore = { onEvent(InquiryScreenEvent.LoadMore) },
+    )
+
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
@@ -69,7 +82,7 @@ fun InquiryScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
                     .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
                     .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
@@ -153,7 +166,12 @@ fun InquiryScreen(
                     val listState = uiState.listState
                     if (listState is InquiryListState.Loaded) {
                         Text(
-                            text = stringResource(R.string.inquiry_list_count_format, listState.inquiries.size),
+                            // 아직 받을 문의가 남았으면 '+'를 붙여 전체 건수가 아님을 드러낸다.
+                            text = if (listState.nextCursor != null) {
+                                stringResource(R.string.list_partial_count_format, listState.inquiries.size)
+                            } else {
+                                stringResource(R.string.inquiry_list_count_format, listState.inquiries.size)
+                            },
                             color = MaterialTheme.extraColors.secondaryText,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -193,6 +211,12 @@ fun InquiryScreen(
                             )
                         } else {
                             InquiryListCard(inquiries = listState.inquiries)
+                            PagedListFooter(
+                                isLoadingMore = listState.isLoadingMore,
+                                hasLoadMoreError = listState.hasLoadMoreError,
+                                canRetry = listState.nextCursor != null,
+                                onRetryClick = { onEvent(InquiryScreenEvent.LoadMore) },
+                            )
                         }
                     }
                 }

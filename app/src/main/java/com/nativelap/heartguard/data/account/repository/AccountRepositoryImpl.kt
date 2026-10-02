@@ -37,6 +37,7 @@ class AccountRepositoryImpl @Inject constructor(
         }
 
         ApiError.Network,
+        ApiError.SessionChanged,
         ApiError.Serialization,
         ApiError.Unknown,
         -> WithdrawAccountResult.Failure

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,8 @@ import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.list.LoadMoreWhenNearEnd
+import com.nativelap.heartguard.view.component.list.pagedListFooter
 import com.nativelap.heartguard.view.component.history.RecordHistoryCountSummaryCard
 import com.nativelap.heartguard.view.component.history.RecordHistoryDateRangeSelector
 import com.nativelap.heartguard.view.component.history.RecordHistoryDayCard
@@ -58,9 +61,18 @@ fun RecordHistoryScreen(
             !temporaryDraftDate.isBefore(uiState.startDate) &&
             !temporaryDraftDate.isAfter(uiState.endDate)
     }
+    // 기간에 남은 기록이 있으면 빈 상태 대신 계속 이어 받는다(필터로 걸러진 경우 포함).
     val isEmptyResult = loadState is RecordHistoryLoadState.Loaded &&
         dayGroups.isEmpty() &&
-        visibleTemporaryDraftType == null
+        visibleTemporaryDraftType == null &&
+        !uiState.hasMore &&
+        !uiState.hasLoadMoreError
+    val listState = rememberLazyListState()
+    LoadMoreWhenNearEnd(
+        listState = listState,
+        canLoadMore = uiState.hasMore && !uiState.isLoadingMore && !uiState.hasLoadMoreError,
+        onLoadMore = { onEvent(RecordHistoryScreenEvent.LoadMore) },
+    )
 
     Scaffold(
         modifier = modifier,
@@ -89,6 +101,7 @@ fun RecordHistoryScreen(
             )
 
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
@@ -147,7 +160,10 @@ fun RecordHistoryScreen(
                             }
                         } else {
                             item(key = "counts") {
-                                RecordHistoryCountSummaryCard(recordCounts = uiState.recordCounts)
+                                RecordHistoryCountSummaryCard(
+                                    recordCounts = uiState.recordCounts,
+                                    hasMoreRecords = uiState.hasMore,
+                                )
                             }
                             val todayGroup = dayGroups.firstOrNull { dayGroup ->
                                 dayGroup.date == uiState.today
@@ -194,6 +210,13 @@ fun RecordHistoryScreen(
                                 }
                             }
                         }
+                        pagedListFooter(
+                            keyPrefix = "history",
+                            isLoadingMore = uiState.isLoadingMore,
+                            hasLoadMoreError = uiState.hasLoadMoreError,
+                            canRetry = uiState.hasMore,
+                            onRetryClick = { onEvent(RecordHistoryScreenEvent.LoadMore) },
+                        )
                     }
                 }
             }

@@ -53,6 +53,15 @@ data class HeartGuardExtraColors(
     val emergencyCallingContainer: Color,
     val emergencyContactPhone: Color,
     val inputFieldBackground: Color,
+    val notificationBorder: Color,
+    val notificationUnreadSurface: Color,
+    val notificationIconSurface: Color,
+    val notificationAlertSurface: Color,
+    val notificationNeutralSurface: Color,
+    val notificationBody: Color,
+    val notificationMeta: Color,
+    val notificationRecordIcon: Color,
+    val notificationNeutralIcon: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -137,6 +146,15 @@ private val emergencyCallingContainerColor = Color(0xFFF9EBD7)
 private val emergencyContactPhoneColor = Color(0xFF1169FA)
 // Figma 온도계 데이터 직접 입력 카드의 입력칸 배경(중립 회색)이다.
 private val inputFieldBackgroundColor = Color(0xFFF6F6F7)
+private val notificationBorderColor = Color(0xFFE8EBF5)
+private val notificationUnreadSurfaceColor = Color(0xFFF4F7FE)
+private val notificationIconSurfaceColor = Color(0xFFEDF1FB)
+private val notificationAlertSurfaceColor = Color(0xFFFFECEC)
+private val notificationNeutralSurfaceColor = Color(0xFFF1F2F5)
+private val notificationBodyColor = Color(0xFF54596B)
+private val notificationMetaColor = Color(0xFF6B7280)
+private val notificationRecordIconColor = Color(0xFF20A15D)
+private val notificationNeutralIconColor = Color(0xFF373B45)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -208,6 +226,15 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     emergencyCallingContainer = emergencyCallingContainerColor,
     emergencyContactPhone = emergencyContactPhoneColor,
     inputFieldBackground = inputFieldBackgroundColor,
+    notificationBorder = notificationBorderColor,
+    notificationUnreadSurface = notificationUnreadSurfaceColor,
+    notificationIconSurface = notificationIconSurfaceColor,
+    notificationAlertSurface = notificationAlertSurfaceColor,
+    notificationNeutralSurface = notificationNeutralSurfaceColor,
+    notificationBody = notificationBodyColor,
+    notificationMeta = notificationMetaColor,
+    notificationRecordIcon = notificationRecordIconColor,
+    notificationNeutralIcon = notificationNeutralIconColor,
 )
 
 /**

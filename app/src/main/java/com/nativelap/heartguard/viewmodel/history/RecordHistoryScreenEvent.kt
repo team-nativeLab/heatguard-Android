@@ -23,5 +23,8 @@ sealed interface RecordHistoryScreenEvent {
 
     data object RetryClicked : RecordHistoryScreenEvent
 
+    // 목록 끝에 닿았거나 이어 받기 실패 후 재시도를 눌렀을 때 다음 기록을 요청한다.
+    data object LoadMore : RecordHistoryScreenEvent
+
     data object CreateRecordClicked : RecordHistoryScreenEvent
 }

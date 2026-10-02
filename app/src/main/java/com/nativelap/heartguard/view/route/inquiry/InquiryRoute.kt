@@ -30,6 +30,7 @@ internal fun HeartGuardInquiryRoute(
                 is InquiryScreenEvent.ContentChanged -> inquiryViewModel.updateContent(event.content)
                 InquiryScreenEvent.SubmitClicked -> inquiryViewModel.submitInquiry()
                 InquiryScreenEvent.RetryListClicked -> inquiryViewModel.loadInquiries()
+                InquiryScreenEvent.LoadMore -> inquiryViewModel.loadMoreInquiries()
             }
         },
     )

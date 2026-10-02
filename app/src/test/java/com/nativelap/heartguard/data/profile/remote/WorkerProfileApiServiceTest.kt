@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.profile.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
 import com.nativelap.heartguard.core.network.PasswordConfirmationRequest
 import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordRequestDto
 import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
@@ -107,6 +108,7 @@ class WorkerProfileApiServiceTest {
     private fun createService(server: MockWebServer): WorkerProfileApiService = ApiRetrofitFactory(
         authenticatedApiClient = OkHttpClient(),
         unauthenticatedApiClient = OkHttpClient(),
+        sessionManager = createUnauthenticatedTestSessionManager(),
         json = Json { ignoreUnknownKeys = true },
     ).createService(
         baseUrl = server.url("/").toString(),

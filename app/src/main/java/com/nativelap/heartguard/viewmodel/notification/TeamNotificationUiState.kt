@@ -9,6 +9,8 @@ data class TeamNotificationUiState(
     val isInitialLoading: Boolean = false,
     val hasLoaded: Boolean = false,
     val hasInitialError: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val hasRefreshError: Boolean = false,
     val nextCursor: String? = null,
     val hasMore: Boolean = false,
     val isLoadingMore: Boolean = false,
@@ -16,4 +18,5 @@ data class TeamNotificationUiState(
     val unreadCount: Int = 0,
     val filteredUnreadCount: Int = 0,
     val markingReadIds: Set<String> = emptySet(),
+    val isMarkingAllRead: Boolean = false,
 )

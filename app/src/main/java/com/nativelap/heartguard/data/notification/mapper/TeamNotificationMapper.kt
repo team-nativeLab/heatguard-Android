@@ -1,10 +1,12 @@
 package com.nativelap.heartguard.data.notification.mapper
 
 import com.nativelap.heartguard.data.notification.dto.NotificationReadReceiptDto
+import com.nativelap.heartguard.data.notification.dto.NotificationReadAllReceiptDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationItemDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationPageDto
 import com.nativelap.heartguard.domain.notification.model.NotificationCategory
 import com.nativelap.heartguard.domain.notification.model.NotificationReadReceipt
+import com.nativelap.heartguard.domain.notification.model.NotificationReadAllReceipt
 import com.nativelap.heartguard.domain.notification.model.NotificationType
 import com.nativelap.heartguard.domain.notification.model.TeamNotification
 import com.nativelap.heartguard.domain.notification.model.TeamNotificationPage
@@ -34,6 +36,11 @@ internal fun NotificationReadReceiptDto.toDomain(): NotificationReadReceipt = No
     notificationId = notificationId,
     isRead = isRead,
     readAt = readAt?.toOffsetDateTimeOrNull(),
+)
+
+internal fun NotificationReadAllReceiptDto.toDomain(): NotificationReadAllReceipt = NotificationReadAllReceipt(
+    updatedCount = updatedCount.coerceAtLeast(0),
+    unreadCount = unreadCount.coerceAtLeast(0),
 )
 
 private fun String.toNotificationCategory(): NotificationCategory = when (this) {

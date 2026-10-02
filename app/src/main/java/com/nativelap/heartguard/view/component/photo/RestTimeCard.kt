@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -30,6 +32,7 @@ fun RestTimeCard(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     contentHorizontalPadding: Dp = 0.dp,
+    errorMessage: String? = null,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -43,6 +46,7 @@ fun RestTimeCard(
                 .padding(top = HeartGuardSpacing.Compact)
                 .padding(horizontal = contentHorizontalPadding)
                 .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.TouchTarget)
                 .clickable(
                     enabled = onClick != null,
                     role = Role.Button,
@@ -66,6 +70,14 @@ fun RestTimeCard(
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 )
             }
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

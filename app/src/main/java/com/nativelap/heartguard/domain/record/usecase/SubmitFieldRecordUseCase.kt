@@ -17,6 +17,8 @@ class SubmitFieldRecordUseCase @Inject constructor(
         temperature: Double?,
         humidity: Double?,
         memo: String?,
+        restStartedAt: OffsetDateTime?,
+        restEndedAt: OffsetDateTime?,
     ): ApiResult<FieldRecord> = recordRepository.submitFieldRecord(
         type = type,
         photoKeys = photoKeys,
@@ -24,5 +26,7 @@ class SubmitFieldRecordUseCase @Inject constructor(
         temperature = temperature,
         humidity = humidity,
         memo = memo,
+        restStartedAt = restStartedAt,
+        restEndedAt = restEndedAt,
     )
 }

@@ -17,7 +17,13 @@ data class InquiryUiState(
 sealed interface InquiryListState {
     data object Loading : InquiryListState
 
-    data class Loaded(val inquiries: List<InquirySummary>) : InquiryListState
+    /** [nextCursor]가 null이면 끝까지 받았다. 이어 받기 실패는 받은 목록을 유지한 채 [hasLoadMoreError]로 알린다. */
+    data class Loaded(
+        val inquiries: List<InquirySummary>,
+        val nextCursor: String? = null,
+        val isLoadingMore: Boolean = false,
+        val hasLoadMoreError: Boolean = false,
+    ) : InquiryListState
 
     data object Failed : InquiryListState
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
+import com.nativelap.heartguard.domain.inquiry.model.InquirySummary
 import com.nativelap.heartguard.domain.inquiry.usecase.GetInquiriesUseCase
 import com.nativelap.heartguard.domain.inquiry.usecase.SubmitInquiryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,13 +20,16 @@ import kotlinx.coroutines.launch
 class InquiryViewModel @Inject constructor(
     private val submitInquiryUseCase: SubmitInquiryUseCase,
     private val getInquiriesUseCase: GetInquiriesUseCase,
-    sessionManager: SessionManager,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(InquiryUiState())
     val uiState: StateFlow<InquiryUiState> = mutableUiState.asStateFlow()
 
     private var submitInquiryJob: Job? = null
     private var loadInquiriesJob: Job? = null
+
+    // 현재 목록에서 이미 받은 커서다. 서버 커서가 되돌아오면 무한 반복 대신 목록을 끝내고 실패를 알린다.
+    private val loadedCursors = mutableSetOf<String>()
 
     init {
         // Activity 수명 ViewModel이라 로그아웃 뒤 다른 작업자가 로그인해도 이전 입력·접수 결과가 남지 않게 한다.
@@ -34,6 +38,7 @@ class InquiryViewModel @Inject constructor(
             submitInquiryJob = null
             loadInquiriesJob?.cancel()
             loadInquiriesJob = null
+            loadedCursors.clear()
             mutableUiState.value = InquiryUiState()
         }
     }
@@ -47,18 +52,74 @@ class InquiryViewModel @Inject constructor(
         loadInquiries()
     }
 
-    /** 내 문의 목록을 조회한다. 오류 카드의 재시도와 등록 성공 후 갱신에서도 쓴다. */
+    /** 내 문의 목록 첫 페이지를 조회한다. 오류 카드의 재시도와 등록 성공 후 갱신에서도 쓴다. */
     fun loadInquiries() {
         loadInquiriesJob?.cancel()
+        loadedCursors.clear()
         mutableUiState.value = mutableUiState.value.copy(
             listState = InquiryListState.Loading,
         )
+        requestInquiryPage(
+            cursor = null,
+            previousInquiries = null,
+        )
+    }
+
+    /** 목록 끝에 닿았을 때 다음 문의를 이어 받는다. 이어 받기 실패 뒤의 재시도에서도 쓴다. */
+    fun loadMoreInquiries() {
+        val loadedState = mutableUiState.value.listState as? InquiryListState.Loaded ?: return
+        val nextCursor = loadedState.nextCursor ?: return
+        if (loadedState.isLoadingMore) {
+            return
+        }
+        mutableUiState.value = mutableUiState.value.copy(
+            listState = loadedState.copy(
+                isLoadingMore = true,
+                hasLoadMoreError = false,
+            ),
+        )
+        requestInquiryPage(
+            cursor = nextCursor,
+            previousInquiries = loadedState.inquiries,
+        )
+    }
+
+    private fun requestInquiryPage(
+        cursor: String?,
+        previousInquiries: List<InquirySummary>?,
+    ) {
+        val owningGeneration = sessionManager.getSnapshot().generation
         loadInquiriesJob = viewModelScope.launch {
-            val inquiriesResult = getInquiriesUseCase()
+            val pageResult = getInquiriesUseCase(cursor)
+            // 응답을 기다리는 동안 계정이 바뀌었으면 이전 계정 문의를 섞지 않는다.
+            if (owningGeneration != sessionManager.getSnapshot().generation) {
+                return@launch
+            }
             mutableUiState.value = mutableUiState.value.copy(
-                listState = when (inquiriesResult) {
-                    is ApiResult.Success -> InquiryListState.Loaded(inquiriesResult.value)
-                    is ApiResult.Failure -> InquiryListState.Failed
+                listState = when (pageResult) {
+                    is ApiResult.Success -> {
+                        cursor?.let(loadedCursors::add)
+                        val receivedCursor = pageResult.value.nextCursor
+                        val isRepeatedCursor = receivedCursor != null && receivedCursor in loadedCursors
+                        InquiryListState.Loaded(
+                            inquiries = (previousInquiries.orEmpty() + pageResult.value.inquiries)
+                                .distinctBy { inquirySummary -> inquirySummary.inquiryId },
+                            nextCursor = receivedCursor.takeUnless { isRepeatedCursor },
+                            hasLoadMoreError = isRepeatedCursor,
+                        )
+                    }
+
+                    is ApiResult.Failure -> {
+                        val loadedState = mutableUiState.value.listState as? InquiryListState.Loaded
+                        if (previousInquiries == null || loadedState == null) {
+                            InquiryListState.Failed
+                        } else {
+                            loadedState.copy(
+                                isLoadingMore = false,
+                                hasLoadMoreError = true,
+                            )
+                        }
+                    }
                 },
             )
         }

@@ -19,6 +19,8 @@ class ApiExecutor @Inject constructor() {
                 errorCode = httpException.readErrorCode(),
             ),
         )
+    } catch (_: SessionChangedException) {
+        ApiResult.Failure(ApiError.SessionChanged)
     } catch (_: IOException) {
         ApiResult.Failure(ApiError.Network)
     } catch (_: SerializationException) {

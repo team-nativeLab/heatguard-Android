@@ -2,8 +2,13 @@ package com.nativelap.heartguard.viewmodel.home
 
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionToken
+import com.nativelap.heartguard.core.session.createTestSessionManager
+import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
+import com.nativelap.heartguard.domain.record.model.RecordHistoryPage
 import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
@@ -89,11 +94,34 @@ class HomeViewModelTest {
         hasActiveEmergencyCall = false,
     )
 
-    private fun TestScope.createViewModel(teamSiteRepository: FakeTeamSiteRepository): HomeViewModel {
+    @Test
+    fun quickReloginWithAnotherAccountClearsPreviousHomeValues() = runTest {
+        val sessionManager = createTestSessionManager(StandardTestDispatcher(testScheduler))
+        sessionManager.onLoginSucceeded(SessionToken("first-account-token"))
+        val viewModel = createViewModel(
+            teamSiteRepository = FakeTeamSiteRepository(ApiResult.Success(overview())),
+            sessionManager = sessionManager,
+        )
+        viewModel.loadTeamSiteOverview()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is HomeUiState.Success)
+
+        sessionManager.expireSession()
+        sessionManager.onLoginSucceeded(SessionToken("second-account-token"))
+        advanceUntilIdle()
+
+        assertEquals(HomeUiState.Loading, viewModel.uiState.value)
+    }
+
+    private fun TestScope.createViewModel(
+        teamSiteRepository: FakeTeamSiteRepository,
+        sessionManager: SessionManager = createUnauthenticatedTestSessionManager(),
+    ): HomeViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         return HomeViewModel(
             getTeamSiteOverviewUseCase = GetTeamSiteOverviewUseCase(teamSiteRepository),
             getRecordHistoryUseCase = GetRecordHistoryUseCase(FakeRecordHistoryRepository()),
+            sessionManager = sessionManager,
             clock = fixedClock,
         )
     }
@@ -122,6 +150,11 @@ class HomeViewModelTest {
                 ),
             ),
         )
+
+        override suspend fun getRecordPage(
+            date: LocalDate,
+            cursor: String?,
+        ): ApiResult<RecordHistoryPage> = ApiResult.Failure(ApiError.Unknown)
 
         override suspend fun getRecordDetail(recordId: String): ApiResult<RecordHistoryEntry> =
             ApiResult.Failure(ApiError.Unknown)

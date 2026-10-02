@@ -1,7 +1,8 @@
 package com.nativelap.heartguard.view.component.photo
 
+import android.content.ContentResolver
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -93,7 +94,7 @@ private fun SelectedPhotoItem(
     ) {
         value = try {
             withContext(Dispatchers.IO) {
-                decodeSampledBitmap(uri, context.contentResolver::openInputStream)
+                decodeSampledBitmap(uri, context.contentResolver)
             }
         } catch (cancellationException: CancellationException) {
             throw cancellationException
@@ -158,33 +159,20 @@ private fun SelectedPhotoItem(
     }
 }
 
+/** 미리보기용으로 줄여 디코딩한다. ImageDecoder는 촬영 파일의 EXIF 회전값을 반영해 사진이 눕지 않게 한다. */
 private fun decodeSampledBitmap(
     uri: Uri,
-    openInputStream: (Uri) -> java.io.InputStream?,
-): Bitmap? {
-    val bounds = BitmapFactory.Options().apply {
-        inJustDecodeBounds = true
-    }
-    openInputStream(uri)?.use { inputStream ->
-        BitmapFactory.decodeStream(inputStream, null, bounds)
-    } ?: return null
-
-    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-        return null
-    }
-
-    var sampleSize = 1
-    while (bounds.outWidth / sampleSize > MAX_PREVIEW_DIMENSION ||
-        bounds.outHeight / sampleSize > MAX_PREVIEW_DIMENSION
-    ) {
-        sampleSize *= 2
-    }
-
-    val options = BitmapFactory.Options().apply {
-        inSampleSize = sampleSize
-    }
-    return openInputStream(uri)?.use { inputStream ->
-        BitmapFactory.decodeStream(inputStream, null, options)
+    contentResolver: ContentResolver,
+): Bitmap {
+    val imageSource = ImageDecoder.createSource(contentResolver, uri)
+    return ImageDecoder.decodeBitmap(imageSource) { imageDecoder, imageInfo, _ ->
+        var sampleSize = 1
+        while (imageInfo.size.width / sampleSize > MAX_PREVIEW_DIMENSION ||
+            imageInfo.size.height / sampleSize > MAX_PREVIEW_DIMENSION
+        ) {
+            sampleSize *= 2
+        }
+        imageDecoder.setTargetSampleSize(sampleSize)
     }
 }
 
