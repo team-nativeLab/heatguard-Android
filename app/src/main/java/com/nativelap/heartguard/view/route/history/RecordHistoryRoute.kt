@@ -26,14 +26,21 @@ internal fun HeartGuardRecordHistoryRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val pendingSubmissions by recordDraftViewModel.pendingSubmissions.collectAsStateWithLifecycle()
+    val hasPendingCleanup by recordDraftViewModel.hasPendingCleanup.collectAsStateWithLifecycle()
+    val hasPendingLoadFailed by recordDraftViewModel.hasPendingLoadFailed.collectAsStateWithLifecycle()
     val today = uiState.today
 
     LaunchedEffect(viewModel) {
         viewModel.openHistory()
+        recordDraftViewModel.refreshPendingSubmissions()
     }
 
     RecordHistoryScreen(
         uiState = uiState,
+        pendingSubmissions = pendingSubmissions,
+        hasPendingLoadFailed = hasPendingLoadFailed,
+        hasPendingCleanup = hasPendingCleanup,
         temporaryDraftType = draftState.selectedRecordType.takeIf { draftState.isTemporarilySaved },
         temporaryDraftSavedAt = draftState.temporarilySavedAt,
         onEvent = { event ->
@@ -53,6 +60,7 @@ internal fun HeartGuardRecordHistoryRoute(
                         onResumeDraftClick(recordType)
                     }
                 }
+                RecordHistoryScreenEvent.PendingSubmissionsRetryClicked -> recordDraftViewModel.refreshPendingSubmissions()
                 RecordHistoryScreenEvent.RetryClicked -> viewModel.loadRecords()
                 RecordHistoryScreenEvent.LoadMore -> viewModel.loadMoreRecords()
                 RecordHistoryScreenEvent.CreateRecordClicked -> onCreateRecordClick()

@@ -18,6 +18,7 @@ import com.nativelap.heartguard.view.screen.photo.RestPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.WorkPhotoScreen
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
+import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 
 /** 온도계 기록의 현장 사진 화면(Figma 14/15)이다. 사진 선택 상태는 [recordDraftViewModel]과 공유한다.
  * 사진 없이(또는 직접 입력 값이 올바르지 않은 채) "저장"을 누르면 저장하지 않고 15 상태(온도계가 아직 저장이 안되었어요)를 보여주며,
@@ -71,7 +72,7 @@ internal fun HeartGuardFieldPhotoRoute(
             ),
             selectedPhotoUris = selectedPhotoUris,
             showSaveError = showSaveError,
-            isSaveEnabled = submissionState !is RecordSubmissionState.Submitting,
+            isSaveEnabled = submissionState.canAttemptSubmission,
             onCaptureClick = onAddPhotoClick,
             onRemovePhoto = onRemovePhoto,
             // 사진이 없거나 직접 입력한 온도·습도가 올바르지 않으면 저장하지 않고 15 상태로 알린다(아무 반응 없이 끝나지 않게).
@@ -128,7 +129,7 @@ internal fun HeartGuardWorkPhotoRoute(
             onMemoChange = recordDraftViewModel::updateWorkMemo,
             onUploadClick = submitRecord,
             isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
-                submissionState !is RecordSubmissionState.Submitting,
+                submissionState.canAttemptSubmission,
         )
     }
 }
@@ -211,7 +212,7 @@ internal fun HeartGuardRestPhotoRoute(
                 }
             },
             isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
-                submissionState !is RecordSubmissionState.Submitting,
+                submissionState.canAttemptSubmission,
         )
     }
 

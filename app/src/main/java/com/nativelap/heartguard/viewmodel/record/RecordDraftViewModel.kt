@@ -11,7 +11,11 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.core.util.releasePhoto
-import com.nativelap.heartguard.domain.record.model.FieldRecord
+import com.nativelap.heartguard.domain.record.model.RecordSubmissionCleanup
+import com.nativelap.heartguard.domain.record.usecase.RetryRecordSubmissionCleanupUseCase
+import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
+import com.nativelap.heartguard.domain.record.model.RecordSubmitResult
+import com.nativelap.heartguard.domain.record.usecase.GetPendingRecordSubmissionsUseCase
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.domain.record.usecase.SubmitFieldRecordUseCase
@@ -20,6 +24,7 @@ import com.nativelap.heartguard.view.component.RecordType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Clock
+import java.util.UUID
 import java.time.OffsetDateTime
 import java.time.LocalDate
 import java.time.LocalTime
@@ -50,6 +55,8 @@ class RecordDraftViewModel @Inject constructor(
     private val sessionManager: SessionManager,
     private val uploadFieldPhotosUseCase: UploadFieldPhotosUseCase,
     private val submitFieldRecordUseCase: SubmitFieldRecordUseCase,
+    private val getPendingRecordSubmissionsUseCase: GetPendingRecordSubmissionsUseCase,
+    private val retryRecordSubmissionCleanupUseCase: RetryRecordSubmissionCleanupUseCase,
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(restoreDraftOfCurrentSession())
@@ -62,6 +69,53 @@ class RecordDraftViewModel @Inject constructor(
     val submissionEffects: Flow<RecordSubmissionEffect> = submissionEffectChannel.receiveAsFlow()
 
     private var submitJob: Job? = null
+    private var pendingLoadJob: Job? = null
+    private var draftGeneration = 0L
+    private val pendingCleanups = mutableListOf<RecordSubmissionCleanup>()
+    private val _hasPendingCleanup = MutableStateFlow(false)
+    val hasPendingCleanup: StateFlow<Boolean> = _hasPendingCleanup.asStateFlow()
+    private var submissionId: String? = savedStateHandle[KEY_SUBMISSION_ID]
+    private var submissionMeasuredAt: OffsetDateTime? = savedStateHandle.get<String>(KEY_SUBMISSION_MEASURED_AT)
+        ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() }
+    private val _pendingSubmissions = MutableStateFlow<List<PendingRecordSubmission>>(emptyList())
+    val pendingSubmissions: StateFlow<List<PendingRecordSubmission>> = _pendingSubmissions.asStateFlow()
+    private val _hasPendingLoadFailed = MutableStateFlow(false)
+    val hasPendingLoadFailed: StateFlow<Boolean> = _hasPendingLoadFailed.asStateFlow()
+
+    fun refreshPendingSubmissions() {
+        pendingLoadJob?.cancel()
+        val owningGeneration = sessionManager.getSnapshot().generation
+        pendingLoadJob = viewModelScope.launch {
+            for (cleanup in pendingCleanups.toList()) {
+                val cleanupResult = retryRecordSubmissionCleanupUseCase(cleanup)
+                if (owningGeneration != sessionManager.getSnapshot().generation) {
+                    return@launch
+                }
+                if (cleanupResult is ApiResult.Success) {
+                    pendingCleanups.remove(cleanup)
+                }
+            }
+            _hasPendingCleanup.value = pendingCleanups.isNotEmpty()
+            val pendingResult = getPendingRecordSubmissionsUseCase()
+            if (owningGeneration != sessionManager.getSnapshot().generation) {
+                return@launch
+            }
+            when (pendingResult) {
+                is ApiResult.Success -> {
+                    val knownSavedIds = pendingCleanups.map { cleanup -> cleanup.submissionId }.toSet()
+                    _pendingSubmissions.value = pendingResult.value.filterNot { pending ->
+                        pending.submissionId in knownSavedIds
+                    }
+                    _hasPendingLoadFailed.value = false
+                }
+                is ApiResult.Failure -> {
+                    if (pendingResult.error != ApiError.SessionChanged) {
+                        _hasPendingLoadFailed.value = true
+                    }
+                }
+            }
+        }
+    }
 
     // 부분 업로드 성공을 기록해 재시도 시 성공한 사진의 URL 발급과 업로드를 건너뛴다(메모리에만 둔다).
     private val uploadedPhotoKeysByUri = mutableMapOf<Uri, String>()
@@ -69,6 +123,11 @@ class RecordDraftViewModel @Inject constructor(
     init {
         clearStateWhenSessionEnds(sessionManager) {
             reset()
+            pendingLoadJob?.cancel()
+            pendingCleanups.clear()
+            _hasPendingCleanup.value = false
+            _pendingSubmissions.value = emptyList()
+            _hasPendingLoadFailed.value = false
         }
     }
 
@@ -190,7 +249,10 @@ class RecordDraftViewModel @Inject constructor(
      * 저장은 화면이 아니라 viewModelScope에서 돌아, 화면을 벗어나거나 회전해도 요청이 끊기지 않는다.
      * 진행 중이면 연타를 무시하고(같은 프레임의 두 번 입력도 [submitJob]으로 막는다), 요청이 취소되면 저장 전 상태로 되돌린다. */
     fun submit() {
-        if (submitJob?.isActive == true) {
+        if (submitJob?.isActive == true ||
+            mutableSubmissionState.value is RecordSubmissionState.Unknown ||
+            mutableSubmissionState.value is RecordSubmissionState.Success
+        ) {
             return
         }
 
@@ -201,34 +263,58 @@ class RecordDraftViewModel @Inject constructor(
             return
         }
 
+        val owningGeneration = sessionManager.getSnapshot().generation
+        val owningDraft = draftGeneration
+        val hasPreviousAttempt = submissionId != null
+        val intentionId = submissionId ?: UUID.randomUUID().toString().also {
+            submissionId = it
+            savedStateHandle[KEY_SUBMISSION_ID] = it
+        }
+        val intentionMeasuredAt = submissionMeasuredAt ?: OffsetDateTime.now(clock).also {
+            submissionMeasuredAt = it
+            savedStateHandle[KEY_SUBMISSION_MEASURED_AT] = it.toString()
+        }
         mutableSubmissionState.value = RecordSubmissionState.Submitting
         submitJob = viewModelScope.launch {
             try {
                 val submitResult = uploadAndSubmit(
                     state = state,
                     recordType = recordType,
+                    intentionId = intentionId,
+                    intentionMeasuredAt = intentionMeasuredAt,
+                    owningGeneration = owningGeneration,
+                    owningDraft = owningDraft,
+                    hasPreviousAttempt = hasPreviousAttempt,
                 )
+                if (owningGeneration != sessionManager.getSnapshot().generation || owningDraft != draftGeneration) {
+                    return@launch
+                }
                 // 세션 전환으로 멈춘 저장은 새 계정 화면에 실패로 보여주지 않는다. 초안 정리는 세션 연결이 맡는다.
-                if (submitResult is ApiResult.Failure && submitResult.error == ApiError.SessionChanged) {
+                if (submitResult is RecordSubmitResult.NotSaved && submitResult.error == ApiError.SessionChanged) {
                     return@launch
                 }
                 mutableSubmissionState.value = when (submitResult) {
-                    is ApiResult.Success -> {
+                    is RecordSubmitResult.Saved -> {
+                        submitResult.pendingCleanup?.let { cleanup -> pendingCleanups.add(cleanup) }
+                        _hasPendingCleanup.value = pendingCleanups.isNotEmpty()
                         clearSavedDraft()
-                        RecordSubmissionState.Success(submitResult.value)
+                        RecordSubmissionState.Success(submitResult.record)
                     }
-
-                    is ApiResult.Failure -> RecordSubmissionState.Failure(submitResult.error)
+                    is RecordSubmitResult.NotSaved -> RecordSubmissionState.Failure(submitResult.error)
+                    is RecordSubmitResult.Unknown -> RecordSubmissionState.Unknown(submitResult.error)
                 }
+                refreshPendingSubmissions()
                 submissionEffectChannel.send(
-                    if (submitResult is ApiResult.Success) {
+                    if (submitResult is RecordSubmitResult.Saved) {
                         RecordSubmissionEffect.Succeeded
                     } else {
                         RecordSubmissionEffect.Failed
                     },
                 )
             } finally {
-                if (mutableSubmissionState.value == RecordSubmissionState.Submitting) {
+                if (owningDraft == draftGeneration && owningGeneration == sessionManager.getSnapshot().generation &&
+                    mutableSubmissionState.value == RecordSubmissionState.Submitting
+                ) {
                     mutableSubmissionState.value = RecordSubmissionState.Idle
                 }
             }
@@ -238,33 +324,53 @@ class RecordDraftViewModel @Inject constructor(
     private suspend fun uploadAndSubmit(
         state: RecordDraftUiState,
         recordType: RecordType,
-    ): ApiResult<FieldRecord> {
-        val owningGeneration = sessionManager.getSnapshot().generation
-        val measuredAt = OffsetDateTime.now(clock)
+        intentionId: String,
+        intentionMeasuredAt: OffsetDateTime,
+        owningGeneration: Long,
+        owningDraft: Long,
+        hasPreviousAttempt: Boolean,
+    ): RecordSubmitResult {
+        if (hasPreviousAttempt) {
+            when (val pending = getPendingRecordSubmissionsUseCase()) {
+                is ApiResult.Failure -> return RecordSubmitResult.Unknown(pending.error)
+                is ApiResult.Success -> if (pending.value.any { pendingSubmission ->
+                    pendingSubmission.submissionId == intentionId
+                }) {
+                    return RecordSubmitResult.Unknown(ApiError.Unknown)
+                }
+            }
+        }
+        if (owningGeneration != sessionManager.getSnapshot().generation || owningDraft != draftGeneration) {
+            return RecordSubmitResult.NotSaved(ApiError.SessionChanged)
+        }
         val photoUris = state.photoUrisFor(recordType)
         val uploadResult = uploadFieldPhotosUseCase(
             photoUris = photoUris,
             alreadyUploadedPhotoKeys = uploadedPhotoKeysByUri.toMap(),
             onPhotoUploaded = { photoUri, objectKey ->
-                if (photoUri in mutableUiState.value.photoUrisFor(recordType)) {
+                if (owningGeneration == sessionManager.getSnapshot().generation && owningDraft == draftGeneration &&
+                    photoUri in mutableUiState.value.photoUrisFor(recordType)
+                ) {
                     uploadedPhotoKeysByUri[photoUri] = objectKey
                 }
             },
         )
         val photoKeys = when (uploadResult) {
             is ApiResult.Success -> uploadResult.value
-            is ApiResult.Failure -> return uploadResult
+            is ApiResult.Failure -> return RecordSubmitResult.NotSaved(uploadResult.error)
         }
         // 업로드 중 계정이 바뀌었으면 이전 계정의 사진·메모가 새 계정 기록으로 저장되지 않게 멈춘다.
         if (owningGeneration != sessionManager.getSnapshot().generation) {
-            return ApiResult.Failure(ApiError.SessionChanged)
+            return RecordSubmitResult.NotSaved(ApiError.SessionChanged)
         }
 
         val isManualTemperature = recordType == RecordType.TEMPERATURE && state.isManualInputEnabled
         val submitResult = submitFieldRecordUseCase(
+            submissionId = intentionId,
+            expectedSessionGeneration = owningGeneration,
             type = recordType.toFieldRecordType(),
             photoKeys = photoKeys,
-            measuredAt = measuredAt,
+            measuredAt = intentionMeasuredAt,
             temperature = if (isManualTemperature) {
                 state.temperatureText.toDoubleOrNull()
             } else {
@@ -279,16 +385,22 @@ class RecordDraftViewModel @Inject constructor(
             restStartedAt = if (recordType == RecordType.REST) state.restStartedAt else null,
             restEndedAt = if (recordType == RecordType.REST) state.restEndedAt else null,
         )
-        // 업로드 키를 서버가 찾지 못하거나(만료·정리) 이미 쓴 키라면, 재시도 때 같은 키를 다시 보내지 않도록 비워 새로 올린다.
-        if (submitResult is ApiResult.Failure && submitResult.error.isStaleUploadKey()) {
+        // 이미 사용된 키는 저장 결과 불명으로 보관하고 재업로드하지 않는다.
+        if (owningDraft == draftGeneration && owningGeneration == sessionManager.getSnapshot().generation &&
+            submitResult is RecordSubmitResult.NotSaved && submitResult.error.isStaleUploadKey()
+        ) {
             photoUris.forEach(uploadedPhotoKeysByUri::remove)
         }
         return submitResult
     }
 
     private fun ApiError.isStaleUploadKey(): Boolean {
-        val httpError = this as? ApiError.Http ?: return false
-        return httpError.errorCode == UPLOAD_NOT_FOUND_CODE || httpError.errorCode == UPLOAD_ALREADY_USED_CODE
+        val errorCode = when (this) {
+            is ApiError.Http -> errorCode
+            is ApiError.ServerRejected -> errorCode
+            else -> null
+        }
+        return errorCode == UPLOAD_NOT_FOUND_CODE
     }
 
     // 모든 기록 유형은 사진 1~2장이 필요하며, 온도계 수기 입력 시에도 사진을 함께 첨부한다.
@@ -330,12 +442,18 @@ class RecordDraftViewModel @Inject constructor(
      * 입력값과, 아직 서버에 올리지 않아 로컬에만 남아 있던 임시 사진 파일을 모두 정리한다.
      * UI 상태는 즉시 초기화하고, 파일 I/O는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
     fun reset() {
+        draftGeneration += 1L
         submitJob?.cancel()
         submitJob = null
         val photoUrisToRelease = currentPhotoUris()
         mutableUiState.value = RecordDraftUiState()
         uploadedPhotoKeysByUri.clear()
         clearSavedDraft()
+        submissionId = null
+        submissionMeasuredAt = null
+        while (submissionEffectChannel.tryReceive().isSuccess) {
+            // 종료된 초안의 화면 이동 효과를 다음 초안에 전달하지 않는다.
+        }
         mutableSubmissionState.value = RecordSubmissionState.Idle
         viewModelScope.launch(ioDispatcher) {
             photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
@@ -382,6 +500,8 @@ class RecordDraftViewModel @Inject constructor(
     }
 
     private fun clearSavedDraft() {
+        savedStateHandle.remove<String>(KEY_SUBMISSION_ID)
+        savedStateHandle.remove<String>(KEY_SUBMISSION_MEASURED_AT)
         savedStateHandle.remove<String>(KEY_SELECTED_RECORD_TYPE)
         savedStateHandle.remove<String>(KEY_TEMPERATURE_TEXT)
         savedStateHandle.remove<String>(KEY_HUMIDITY_TEXT)
@@ -430,7 +550,8 @@ class RecordDraftViewModel @Inject constructor(
         const val KEY_TEMPORARILY_SAVED = "record_draft.temporarily_saved"
         const val KEY_TEMPORARILY_SAVED_AT = "record_draft.temporarily_saved_at"
         const val UPLOAD_NOT_FOUND_CODE = "UPLOAD_NOT_FOUND"
-        const val UPLOAD_ALREADY_USED_CODE = "UPLOAD_ALREADY_USED"
+        const val KEY_SUBMISSION_ID = "record_draft.submission_id"
+        const val KEY_SUBMISSION_MEASURED_AT = "record_draft.submission_measured_at"
         val REST_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
     }
 }

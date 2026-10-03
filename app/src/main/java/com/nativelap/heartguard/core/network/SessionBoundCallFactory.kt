@@ -14,8 +14,13 @@ class SessionBoundCallFactory(
     private val sessionManager: SessionManager,
 ) : Call.Factory {
     override fun newCall(request: Request): Call {
+        val owningSnapshot = sessionManager.getSnapshot()
+        val expectedGeneration = request.tag(RequestSessionGeneration::class.java)?.generation
+        if (expectedGeneration != null && expectedGeneration != owningSnapshot.generation) {
+            throw SessionChangedException()
+        }
         val sessionBoundRequest = request.newBuilder()
-            .tag(SessionSnapshot::class.java, sessionManager.getSnapshot())
+            .tag(SessionSnapshot::class.java, owningSnapshot)
             .build()
         return delegateClient.newCall(sessionBoundRequest)
     }

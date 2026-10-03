@@ -16,6 +16,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardSheetSurface
+import com.nativelap.heartguard.view.component.feedback.SaveErrorDetailCard
 import com.nativelap.heartguard.view.component.feedback.SaveCompleteButton
 import com.nativelap.heartguard.view.component.feedback.SaveResultMessage
 import com.nativelap.heartguard.view.component.feedback.SaveResultTitle
@@ -30,6 +31,7 @@ fun SaveSuccessScreen(
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
     onDetailsClick: (() -> Unit)? = null,
+    hasPendingCleanup: Boolean = false,
 ) {
     HeartGuardSheetSurface(modifier = modifier) {
         Column(
@@ -51,6 +53,15 @@ fun SaveSuccessScreen(
                 isSuccess = true,
             )
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
+
+            if (hasPendingCleanup) {
+                SaveErrorDetailCard(
+                    title = stringResource(R.string.save_cleanup_title),
+                    details = listOf(stringResource(R.string.save_cleanup_description)),
+                )
+
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
+            }
 
             SavedRecordSummaryCard(
                 title = stringResource(R.string.save_record_summary),

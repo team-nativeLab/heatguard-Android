@@ -87,6 +87,7 @@ class RecordRepositoryImpl @Inject constructor(
     }
 
     override suspend fun submitFieldRecord(
+        expectedSessionGeneration: Long,
         type: FieldRecordType,
         photoKeys: List<String>,
         measuredAt: OffsetDateTime,
@@ -110,7 +111,7 @@ class RecordRepositoryImpl @Inject constructor(
             restEndedAt = restEndedAt?.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
         )
 
-        return recordRemoteDataSource.submitRecord(request).map { recordResponse -> recordResponse.toDomain() }
+        return recordRemoteDataSource.submitRecord(request, expectedSessionGeneration).map { recordResponse -> recordResponse.toDomain() }
     }
 
     // 서버가 Content-Type을 요구 헤더로 주지 않았으면 발급 요청에 보낸 사진 형식을 붙인다(대소문자 구분 없이 확인).

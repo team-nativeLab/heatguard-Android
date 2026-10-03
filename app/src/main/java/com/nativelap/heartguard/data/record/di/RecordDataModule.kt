@@ -1,6 +1,10 @@
 package com.nativelap.heartguard.data.record.di
 
 import com.nativelap.heartguard.BuildConfig
+import com.nativelap.heartguard.data.record.local.RecordSubmissionLocalDataSource
+import com.nativelap.heartguard.data.record.local.RecordSubmissionLocalDataSourceImpl
+import com.nativelap.heartguard.data.record.repository.RecordSubmissionRepositoryImpl
+import com.nativelap.heartguard.domain.record.repository.RecordSubmissionRepository
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
 import com.nativelap.heartguard.data.record.remote.RecordApiService
@@ -24,6 +28,16 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RecordDataModule {
+
+    @Binds
+    abstract fun bindSubmissionLocalDataSource(
+        impl: RecordSubmissionLocalDataSourceImpl,
+    ): RecordSubmissionLocalDataSource
+
+    @Binds
+    abstract fun bindSubmissionRepository(
+        impl: RecordSubmissionRepositoryImpl,
+    ): RecordSubmissionRepository
 
     @Binds
     @Singleton
@@ -78,6 +92,7 @@ abstract class RecordDataModule {
             baseUrl = BuildConfig.BASE_URL,
             serviceClass = RecordApiService::class.java,
             authentication = ApiAuthentication.BEARER,
+            allowRequestReplay = false,
         )
     }
 }

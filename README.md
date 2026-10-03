@@ -7,6 +7,7 @@
 - [주요 화면](#주요-화면)
 - [반응형 UI 진행 상태](#반응형-ui-진행-상태)
 - [서버 API 계약 현황](#서버-api-계약-현황)
+- [기록 저장 안전성](#기록-저장-안전성)
 - [인증·계정 전환 정책](#인증계정-전환-정책)
 - [백엔드 확인 요청](#백엔드-확인-요청)
 - [기술 스택](#기술-스택)
@@ -22,7 +23,7 @@
 폭염 환경에서 작업하는 현장 인력의 체온·작업/휴식 상태를 기록하고, 위험 상황 발생 시 관리자에게 긴급 호출을 보낼 수 있도록 돕는 것을 목표로 하는 Android 앱입니다.
 현재 구현된 작업자 앱 화면(로그인, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용하며 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)에 연결되어 있습니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다. 회원가입 기능은 제공하지 않으며 계정은 관리자가 사전에 발급합니다.
 
-PRD 문서는 저장소에 없습니다. 현재 확인 가능한 제품 범위 자료는 사용자 제공 Figma와 API 명세 v0.1이며, 별도 PRD 문서는 `확인 필요`입니다.
+PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 README·사용자 제공 요구사항·Figma·API 명세 v0.1을 작업 범위 자료로 사용하며, 별도 PRD는 생성하지 않습니다.
 
 ## 주요 화면
 `app/src/main/java/com/nativelap/heartguard/navigation/HeartGuardDestination.kt`에 정의된 목적지 기준입니다.
@@ -40,12 +41,12 @@ PRD 문서는 저장소에 없습니다. 현재 확인 가능한 제품 범위 �
 | TemperatureRecord | 온도계 측정값 입력 |
 | FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 CameraX 전체 화면 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장). 휴식 기록은 시작·종료 시각을 TimePicker로 선택하고 자정을 넘기는 구간을 지원 |
 | PhotoCamera | 선택한 기록 유형으로 CameraX 전체 화면 촬영 |
-| SaveSuccess / SaveFailure | 저장 성공/실패 결과. 실패 시 명세 오류 코드별 안내 |
+| SaveSuccess / SaveFailure | 저장 성공·명확한 실패·결과 확인 필요를 구분. 결과 불명 제출은 재전송 대신 기록 내역 확인을 안내하며, 성공 후 로컬 정리 실패는 별도 경고 |
 | WithdrawNotice / WithdrawConfirm / WithdrawDone | 회원탈퇴 안내·확인·완료. 현재 비밀번호 확인 후 팀 계정과 세션을 비활성화 |
 
 세션은 `core/session/SessionManager`와 Android Keystore 기반 토큰 저장소(`AndroidKeystoreTokenStorage`)가 관리하고, `HeartGuardNavHost`가 `SessionState`를 구독해 인증 화면을 전환합니다. 화면 ViewModel이 Activity 수명으로 남기 때문에, 사용자 데이터를 가진 ViewModel은 `clearStateWhenSessionEnds`로 로그아웃·세션 만료 시 이전 작업자의 값을 지웁니다. 비밀번호 확인 요청(회원탈퇴·비밀번호 변경)은 `PasswordConfirmationRequest` 태그를 붙여, 비밀번호 불일치(401)가 세션 만료로 처리되지 않게 합니다. 알림 ViewModel도 세션 종료 시 목록과 읽지 않은 수를 초기화합니다. 읽지 않은 항목을 누르면 해당 항목만 읽음 처리하고, 실패하면 읽지 않은 상태를 유지하며 Snackbar로 안내합니다.
 
-사진 흐름은 사진 종류 선택 → CameraX 전체 화면 촬영 또는 Android Photo Picker(`PickVisualMedia`) 앨범 선택 → 공유 `RecordDraftViewModel` 목록 반영 → 업로드 및 기록 제출 순서입니다. 사진 종류별 최대 2장까지 담으며, 저장 확인 화면 없이 제출하며, 저장은 `RecordDraftViewModel`의 `viewModelScope`에서 한 번만 실행됩니다(연타 방지, 취소 시 상태 복구). CameraX 화면은 Manifest의 `CAMERA` 권한을 선언하고 런타임 권한도 요청합니다. 촬영 JPEG은 앱 캐시의 `photos/` 임시 파일로 만들고 `FileProvider` URI를 목록·미리보기·업로드에 사용합니다. 기록 흐름이 끝나거나 사진을 삭제하면 촬영 캐시 파일을 정리합니다. 온도·습도·메모 등 일부 입력 초안은 `SavedStateHandle`로 복구하며, 사진 URI나 업로드 키는 프로세스 재생성 후 복구하지 않습니다.
+사진 흐름은 사진 종류 선택 → CameraX 전체 화면 촬영 또는 Android Photo Picker(`PickVisualMedia`) 앨범 선택 → 공유 `RecordDraftViewModel` 목록 반영 → 업로드 및 기록 제출 순서입니다. 사진 종류별 최대 2장까지 담으며, 저장 확인 화면 없이 제출하며, 저장은 `RecordDraftViewModel`의 `viewModelScope`에서 실행하며 연타를 차단합니다. POST 이후 취소되거나 응답을 확인하지 못한 제출은 로컬 표식을 유지해 같은 제출의 재전송을 차단합니다. CameraX 화면은 Manifest의 `CAMERA` 권한을 선언하고 런타임 권한도 요청합니다. 촬영 JPEG은 앱 캐시의 `photos/` 임시 파일로 만들고 `FileProvider` URI를 목록·미리보기·업로드에 사용합니다. 기록 흐름이 끝나거나 사진을 삭제하면 촬영 캐시 파일을 정리합니다. 온도·습도·메모 등 일부 입력 초안은 `SavedStateHandle`로 복구하며, 사진 URI나 업로드 키는 프로세스 재생성 후 복구하지 않습니다.
 
 ## 반응형 UI 진행 상태
 홈, 프로필 수정, 문의, 알림, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패, 탈퇴 안내·완료 화면에는 최대 600dp 중앙 콘텐츠 래퍼와 하단 동작 폭 제한을 적용했습니다. 로그인은 폼의 실제 높이에 따라 상단 여백을 줄이고 상태바·내비게이션 바·키보드 여백을 처리합니다. 로그인 입력 영역, 알림 빈 상태, 탈퇴 완료 본문은 작은 화면에서 스크롤됩니다. 카메라 촬영 화면은 전체 화면 구성을 유지합니다. 2026-10-01 에뮬레이터에서 로그인 393×582dp 잘림 수정과 실제 IME 표시를 캡처로 확인했으며, 확대 글꼴·탈퇴 화면의 넓은 폭·스크롤은 계측 테스트로 검증했습니다. 저장 결과 제목·메시지·요약·버튼은 확대 글꼴에 맞춰 높이가 늘어나고, 메뉴는 짧은 화면에서 스크롤됩니다. 시트 본문도 최대 600dp로 제한하며 온도계 수동 입력 스위치에 접근성 이름을 연결했습니다. 저장 결과의 긴 요약·가로 오류 화면, 메뉴 스크롤, 태블릿 중앙 정렬과 스위치 semantics는 계측 테스트로 검증했습니다. 모든 작업자 프레임의 인증된 화면과 기기 크기별 시각 비교는 아직 완료되지 않았습니다.
@@ -76,11 +77,21 @@ PRD 문서는 저장소에 없습니다. 현재 확인 가능한 제품 범위 �
 
 2026-10-01 추가 계약 점검에서 긴급호출의 409 후 상태 재조회가 실패하면 기존 호출과 폴링을 유지하고 실패를 표시하도록 수정했습니다. 폴링의 정상 `NONE`·호출 ID 없음 응답은 현재 호출을 종료합니다. 기록 내역·문의·알림 목록은 첫 페이지만 받고 스크롤이 끝에 가까워지면 `nextCursor`로 다음 페이지를 이어 받습니다(기록 내역은 최신 날짜부터 하루씩, 기록이 없는 날은 건너뜀). `page` 누락, `hasMore=true`인데 커서 없음, 이미 받은 커서 반복은 잘린 목록을 성공으로 보여주지 않고 실패로 알립니다. 아직 받을 목록이 남아 있으면 건수 뒤에 `+`를 붙입니다(예: `32+건`). 홈 체크 타임라인용 오늘 기록 전체 조회만 하루 100페이지 안전 상한을 둡니다.
 
+## 기록 저장 안전성
+
+기록 저장 응답은 HTTP 성공만으로 판단하지 않습니다. `requireSuccessData`가 `success=true`, 오류 없음, 필수 `data`와 비어 있지 않은 `recordId`를 확인합니다. 모순되거나 누락된 응답, 응답 유실, 저장 여부를 확정할 수 없는 서버 오류는 `Unknown`으로 분류하며 성공 화면을 표시하지 않습니다. 명세의 명확한 거절 코드만 일반 실패로 처리합니다.
+
+`SubmitFieldRecordUseCase`는 현재 작업자 `userId`를 조회하고 POST 전에 제출 ID·기록 유형·측정 시각을 로컬에 기록합니다. `RecordSubmissionRepository` → `RecordSubmissionLocalDataSource` 흐름으로 `noBackupFilesDir/record-submissions` 아래 `AtomicFile`에 저장하며, 파일명은 서버 주소와 작업자 ID의 SHA-256으로 계정·서버별로 분리합니다. 사진·메모·토큰은 이 표식에 저장하지 않습니다. 파일을 읽거나 확정 기록할 수 없으면 서버 제출을 진행하지 않습니다.
+
+결과 불명 표식은 앱 재시작·로그아웃 후에도 남고, 같은 작업자로 로그인하면 기록 내역 화면에 서버 기록과 별도로 표시됩니다. 해당 제출 ID는 사진 업로드와 POST를 다시 실행하지 않습니다. 서버 내역과 시간·유형으로 자동 매칭하거나 이전 제출을 재시도 가능한 상태로 풀지 않으며, 내역 확인 후 별도의 새 기록을 작성할 수 있습니다. 서버의 Idempotency-Key 지원은 아직 확인되지 않아, 서로 다른 새 제출이나 다른 기기의 중복 저장까지 보장하지는 않습니다.
+
+서버 저장 성공 후 표식 정리에 실패하면 성공 결과를 유지하면서 로컬 정리 필요를 안내합니다. 현재 ViewModel이 알고 있는 성공 표식은 기록 내역 진입·재시도 때 서버 재전송 없이 로컬 파일 정리만 재시도합니다. 정리가 끝나기 전에 프로세스가 종료되면 남은 표식은 결과 확인 필요 항목으로 표시될 수 있습니다.
+
 ## 인증·계정 전환 정책
 
 - **요청 소유 세션**: 인증 요청은 만들어진 시점의 세션 스냅샷(세대·토큰)을 태그로 가지며, 전송 직전에 세션이 바뀌었으면 보내지 않습니다(`SessionChangedException`, 화면에는 오류로 노출하지 않음). 늦게 도착한 이전 세션의 401은 새 로그인을 끝내지 않습니다.
 - **토큰 삭제 실패**: 로그아웃·만료 때 메모리 세션을 먼저 끝내고, 저장소 삭제가 실패하면 Keystore 키를 폐기해 남은 암호문을 읽을 수 없게 합니다. 저장값을 읽거나 복호화하지 못하면 로그아웃 상태로 시작합니다.
-- **계정 전환 정리**: 로그인·로그아웃마다 세션 세대가 바뀌고, 로그아웃→재로그인이 빠르게 지나가도 홈·긴급호출·탈퇴·기록 초안·목록 ViewModel과 화면 이동 기록을 정리합니다. 업로드→저장처럼 여러 요청으로 이어지는 흐름은 단계 사이에 세대를 비교해 다른 계정으로 저장되지 않게 합니다.
+- **계정 전환 정리**: 로그인·로그아웃마다 세션 세대가 바뀌고, 로그아웃→재로그인이 빠르게 지나가도 홈·긴급호출·탈퇴·기록 초안·목록 ViewModel과 화면 이동 기록을 정리합니다. 업로드→저장처럼 여러 요청으로 이어지는 흐름은 단계 사이에 세대를 비교해 다른 계정으로 저장되지 않게 합니다. 기록 제출은 시작 시점의 `expectedSessionGeneration`을 UseCase·Repository·RemoteDataSource까지 전달하고, Retrofit의 로컬 `RequestSessionGeneration` 태그를 호출 생성 시에도 확인합니다. 이 값은 서버 요청 본문이나 헤더에 추가하지 않습니다.
 - **초안 복원**: 프로세스 재생성 뒤 남은 입력 초안은 저장 토큰으로 복원된 같은 세션일 때만 되살리고, 새로 로그인한 세션이면 버립니다.
 
 ## 백엔드 확인 요청
@@ -108,10 +119,10 @@ PRD 문서는 저장소에 없습니다. 현재 확인 가능한 제품 범위 �
 | 빌드 | Gradle (Kotlin DSL), Version Catalog, AGP 9.2.1 |
 | minSdk / targetSdk / compileSdk | 34 / 37 / 37 |
 
-Hilt와 Retrofit/OkHttp를 사용합니다. `core/di`, `core/network`, `core/session`에는 DI 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리가 있습니다. `domain`과 `data`에는 로그인·로그아웃, 내 정보·비밀번호, 홈, 사진 업로드·기록 저장, 기록 내역, 긴급 호출, 문의, 회원탈퇴 기능의 UseCase·Repository·RemoteDataSource 흐름이 있습니다. 화면 상태는 `viewmodel`에 있으며 로컬 데이터베이스(Room 등)는 없습니다.
+Hilt와 Retrofit/OkHttp를 사용합니다. `core/di`, `core/network`, `core/session`에는 DI 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리가 있습니다. `domain`과 `data`에는 로그인·로그아웃, 내 정보·비밀번호, 홈, 사진 업로드·기록 저장, 기록 내역, 긴급 호출, 문의, 회원탈퇴 기능의 UseCase·Repository·RemoteDataSource 흐름이 있습니다. 화면 상태는 `viewmodel`에 있습니다. 로컬 데이터베이스(Room 등)는 없으며, 결과 불명 기록 제출 표식은 Android `AtomicFile`로 별도 영속화합니다.
 
 ## 아키텍처
-`AGENTS.md`가 안내하는 Presentation/Domain/Data/Core 구분을 단일 `app` 모듈 안에서 패키지로 나누어 사용합니다. Compose Route/Screen이 ViewModel의 상태와 이벤트를 연결하고, ViewModel은 UseCase를 호출합니다. Repository 구현은 RemoteDataSource를 통해 Retrofit API와 사진 파일 업로드를 처리합니다.
+`AGENTS.md`가 안내하는 Presentation/Domain/Data/Core 구분을 단일 `app` 모듈 안에서 패키지로 나누어 사용합니다. Compose Route/Screen이 ViewModel의 상태와 이벤트를 연결하고, ViewModel은 UseCase를 호출합니다. Repository 구현은 RemoteDataSource를 통해 Retrofit API와 사진 파일 업로드를 처리하고, 기록 제출 표식은 LocalDataSource를 통해 처리합니다. `RecordDataModule`이 제출 Repository와 LocalDataSource 인터페이스를 Hilt로 연결하며, 로컬 파일 접근은 Application Context에서 얻은 경로·IO dispatcher·Singleton Mutex를 사용합니다.
 
 ```
 view/
@@ -120,7 +131,7 @@ view/
 └── component/   # 화면별 재사용 Composable (account, auth, emergency, feedback, history, home, inquiry, menu, photo, profile, temperature 등)
 viewmodel/       # account / auth / emergency / history / home / inquiry / menu / password / profile / record 상태와 이벤트
 domain/          # account / auth / emergency / inquiry / profile / record / site 모델, Repository 계약, UseCase
-data/            # account / auth / emergency / inquiry / profile / record / site DTO·Mapper·RemoteDataSource·Repository 구현
+data/            # account / auth / emergency / inquiry / profile / record / site DTO·Mapper·RemoteDataSource·Repository 구현, record/local 제출 표식
 navigation/      # HeartGuardDestination(Navigation3 목적지), HeartGuardNavHost, 커스텀 SceneStrategy
 core/component/  # 다이얼로그 배경 블러 등 공통 UI 유틸
 core/network/    # Retrofit·OkHttp, API 결과 및 인증 처리
@@ -128,7 +139,7 @@ core/session/    # 세션 상태와 Keystore 기반 토큰 저장
 ui/theme/        # Theme, Shapes, Type, Dimension
 ```
 
-사진 Route에서 카메라 또는 앨범 출처를 선택합니다. CameraX 촬영 결과와 Photo Picker URI는 기록 종류별 목록을 보유한 공유 `RecordDraftViewModel`에 추가됩니다. 저장 버튼은 사진 1~2장을 업로드(URL 발급 → PUT)한 뒤 받은 `objectKey`로 `/api/v1/team/records`에 기록을 제출하며 `measuredAt`에는 저장 버튼 시각을 사용합니다.
+사진 Route에서 카메라 또는 앨범 출처를 선택합니다. CameraX 촬영 결과와 Photo Picker URI는 기록 종류별 목록을 보유한 공유 `RecordDraftViewModel`에 추가됩니다. 저장 버튼은 사진 1~2장을 업로드(URL 발급 → PUT)한 뒤 받은 `objectKey`로 `/api/v1/team/records`에 기록을 제출하며 `measuredAt`에는 첫 저장 버튼 시각을 사용하며, 같은 제출의 명확한 실패 후 재시도에서도 제출 ID와 해당 시각을 유지합니다.
 
 ## 프로젝트 구조
 ```
@@ -140,7 +151,7 @@ HeartGuard/
 │       │   ├── navigation/   # Navigation3 목적지·NavHost·SceneStrategy
 │       │   ├── ui/theme/     # 디자인 토큰(Theme, Shapes, Type, Dimension)
 │       │   ├── core/         # di / network(Retrofit·OkHttp 설정) / session(인증 상태) / util / component(공통 오버레이)
-│       │   ├── data/         # account / auth / emergency / inquiry / profile / record / site 원격 데이터와 Repository 구현
+│       │   ├── data/         # account / auth / emergency / inquiry / profile / record / site 원격 데이터와 Repository 구현, record/local 제출 표식
 │       │   ├── domain/       # account / auth / emergency / inquiry / profile / record / site 모델, Repository 계약, UseCase
 │       │   ├── viewmodel/    # account / auth / emergency / history / home / inquiry / menu / password / profile / record 상태와 이벤트
 │       │   └── view/         # route / screen / component
@@ -186,6 +197,8 @@ Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면
 
 알림 테스트는 API 경로·query/body 계약, 유형·분류 매핑, cursor 페이지, 개별·전체 읽음 성공/실패, 지연 응답·재진입·세션 전환, PATCH와 페이지 조회 교차, 최신 분류 대기 조회, 포그라운드 5초 갱신 간격과 읽음 완료 후 예약 갱신, 느린 오류 안내 중 분류 조회, PATCH 성공 후 GET 실패와 재시도를 다룹니다. REST 테스트는 자정 경과·1440분 경계·필수 입력·한국 날짜·SavedState 복원과 초기화를 검증합니다. 긴급호출 테스트는 409 후 Network·429·500 재조회 실패와 NONE 종료를, 문의·기록 테스트는 마지막 허용 페이지·커서 순환·누락·취소를 검증합니다. 화면 계측 테스트는 빈 목록의 새로고침 오류·읽음 완료 후 자동 페이지 조회 재개, 로그인 짧은 화면·확대 글꼴·실제 IME·오류 안내 조합, 탈퇴 중앙 폭 제한·스크롤·IME 실패 안내를 검증합니다. 2026-10-01 `testDebugUnitTest` 167개와 `connectedDebugAndroidTest` 20개가 통과했으며, `lintDebug` 오류 0개(기존 경고 46개), `assembleDebug` 성공을 확인했습니다. 실제 서버 사진 업로드·REST 저장은 이번 변경에서 아직 재검증하지 않았습니다.
 
+2026-10-04 기록 저장 안전성 작업 중 단위 테스트 198개와 기록 제출 파일 저장·초안 복원에 한정한 계측 테스트 12개가 통과했습니다. 응답 유실·모순된 성공 응답·중복 제출 ID·계정 전환·파일 손상·동시 제출·최초 파일 쓰기 중단·성공 후 로컬 정리 실패를 다룹니다. 작업 중 `assembleDebug`·`lintDebug` 성공도 확인했으나, 이후 수정까지 포함한 최종 전체 검증 결과는 아닙니다. 같은 날짜 로그인·탈퇴 IME 계측 재검증에서는 2건이 실패해 원인 확인과 재검증이 필요합니다. 관리자 웹 연동, 전체 화면 회귀, 작업·휴식 실서버 저장은 이번 작업의 완료로 간주하지 않습니다.
+
 ## 개발 워크플로
 - 코드 작업 전 `AGENTS.md`와 `.agents/skills/**/SKILL.md`를 먼저 확인하고 규칙을 따릅니다.
 - GitHub Issue·브랜치·커밋·PR 규칙은 [`AGENTS.md`](AGENTS.md) 6장과 [`.agents/skills/android-github-workflow/SKILL.md`](.agents/skills/android-github-workflow/SKILL.md)를 따릅니다.
@@ -193,7 +206,7 @@ Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면
 ## 문서
 - [`AGENTS.md`](AGENTS.md) — 저장소 공통 에이전트 계약(계층 구조, 기술 계약, 스킬 라우팅)
 - `.agents/skills/` — 영역별 개발 규칙(SKILL.md 모음: DI, 네트워크, UI, Navigation, 디자인 시스템 등)
-- PRD 문서: 저장소에 없음 (`확인 필요`)
+- PRD 문서: 저장소에 없음. 사용자 확인에 따라 별도 생성하지 않음
 
 ## 라이선스
 라이선스 파일이 저장소에 없어 확인 필요합니다.

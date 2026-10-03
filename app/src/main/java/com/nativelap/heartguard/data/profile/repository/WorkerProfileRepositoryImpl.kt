@@ -70,6 +70,8 @@ class WorkerProfileRepositoryImpl @Inject constructor(
         ApiError.SessionChanged,
         ApiError.Serialization,
         ApiError.Unknown,
+        ApiError.LocalStorage,
+        is ApiError.ServerRejected,
         -> PasswordChangeResult.Failure
     }
 

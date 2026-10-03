@@ -82,7 +82,7 @@ class RecordRemoteDataSourceUploadTest {
                 error("not used")
         },
         recordApiService = object : RecordApiService {
-            override suspend fun submitRecord(request: RecordRequestDto): ApiEnvelope<RecordResponseDto> =
+            override suspend fun submitRecord(request: RecordRequestDto, owningSession: com.nativelap.heartguard.core.network.RequestSessionGeneration?): ApiEnvelope<RecordResponseDto> =
                 error("not used")
         },
         externalUploadService = ExternalUploadService(OkHttpClient()),

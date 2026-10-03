@@ -1,5 +1,21 @@
 package com.nativelap.heartguard.viewmodel.record
 
+import com.nativelap.heartguard.domain.record.usecase.GetPendingRecordSubmissionsUseCase
+
+import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
+
+import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
+
+import com.nativelap.heartguard.domain.profile.model.WorkerProfile
+
+import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
+
+import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
+
+import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
+
+import com.nativelap.heartguard.domain.record.repository.RecordSubmissionRepository
+
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -190,6 +206,87 @@ class RecordDraftSavedStateTest {
         }
     }
 
+    @Test
+    fun restoredUnknownSubmissionDoesNotUploadOrPost() {
+        val session = authenticatedSession()
+        val repository = CountingRecordRepository()
+        val savedState = previousProcessRestDraft()
+        savedState["record_draft.submission_id"] = "unknown-intent"
+        savedState["record_draft.submission_measured_at"] = "2026-10-01T01:00:00+09:00"
+        instrumentation.runOnMainSync {
+            val viewModel = createViewModel(
+                savedState,
+                session,
+                repository,
+                listOf(PendingRecordSubmission("unknown-intent", FieldRecordType.REST, OffsetDateTime.parse("2026-10-01T01:00:00+09:00"))),
+            )
+            try {
+                viewModel.addPhoto(RecordType.REST, Uri.parse("content://photos/restored"))
+                viewModel.submit()
+                assertTrue(viewModel.submissionState.value is RecordSubmissionState.Unknown)
+                assertEquals(0, repository.uploadCount)
+                assertEquals(0, repository.postCount)
+                viewModel.submit()
+                assertEquals(0, repository.uploadCount)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+    }
+
+    @Test
+    fun restoredSubmissionWithUnavailableJournalRemainsUnknown() {
+        val session = authenticatedSession()
+        val repository = CountingRecordRepository()
+        val savedState = previousProcessRestDraft()
+        savedState["record_draft.submission_id"] = "previous-intent"
+        savedState["record_draft.submission_measured_at"] = "2026-10-01T01:00:00+09:00"
+        instrumentation.runOnMainSync {
+            val viewModel = createViewModel(
+                savedState = savedState,
+                sessionManager = session,
+                repository = repository,
+                pendingReadError = ApiError.LocalStorage,
+            )
+            try {
+                viewModel.addPhoto(RecordType.REST, Uri.parse("content://photos/restored"))
+                viewModel.submit()
+                assertTrue(viewModel.submissionState.value is RecordSubmissionState.Unknown)
+                assertEquals(0, repository.uploadCount)
+                assertEquals(0, repository.postCount)
+            } finally {
+                viewModel.viewModelScope.cancel()
+            }
+        }
+    }
+
+    private class CountingRecordRepository : RecordRepository {
+        var uploadCount = 0
+        var postCount = 0
+        override suspend fun uploadFieldPhotos(
+            photoUris: List<Uri>,
+            alreadyUploadedPhotoKeys: Map<Uri, String>,
+            onPhotoUploaded: (Uri, String) -> Unit,
+        ): ApiResult<List<String>> {
+            uploadCount += 1
+            return ApiResult.Success(listOf("uploaded"))
+        }
+        override suspend fun submitFieldRecord(
+            expectedSessionGeneration: Long,
+            type: FieldRecordType,
+            photoKeys: List<String>,
+            measuredAt: OffsetDateTime,
+            temperature: Double?,
+            humidity: Double?,
+            memo: String?,
+            restStartedAt: OffsetDateTime?,
+            restEndedAt: OffsetDateTime?,
+        ): ApiResult<FieldRecord> {
+            postCount += 1
+            return ApiResult.Success(FieldRecord("record", null, null, emptyList(), null))
+        }
+    }
+
     private fun previousProcessRestDraft(): SavedStateHandle = SavedStateHandle(
         mapOf(
             "record_draft.selected_record_type" to RecordType.REST.name,
@@ -209,7 +306,41 @@ class RecordDraftSavedStateTest {
         savedState: SavedStateHandle,
         sessionManager: SessionManager,
         repository: RecordRepository = NoNetworkRecordRepository(),
+        pendingEntries: List<PendingRecordSubmission> = emptyList(),
+        pendingReadError: ApiError? = null,
     ): RecordDraftViewModel {
+        val journal = object : RecordSubmissionRepository {
+            private val entries = pendingEntries.associateBy { entry -> entry.submissionId }.toMutableMap()
+            override suspend fun getPendingSubmissions(userId: String): ApiResult<List<PendingRecordSubmission>> {
+                return if (pendingReadError != null) {
+                    ApiResult.Failure(pendingReadError)
+                } else {
+                    ApiResult.Success(entries.values.toList())
+                }
+            }
+            override suspend fun beginSubmission(userId: String, submission: PendingRecordSubmission): ApiResult<Boolean> {
+                if (submission.submissionId in entries) {
+                    return ApiResult.Success(false)
+                }
+                entries[submission.submissionId] = submission
+                return ApiResult.Success(true)
+            }
+            override suspend fun completeSubmission(userId: String, submissionId: String): ApiResult<Unit> {
+                entries.remove(submissionId)
+                return ApiResult.Success(Unit)
+            }
+        }
+        val profile = GetWorkerProfileUseCase(
+            object : WorkerProfileRepository {
+                override suspend fun getWorkerProfile() = ApiResult.Success(
+                    WorkerProfile("worker-test", null, null),
+                )
+                override suspend fun updateWorkerName(name: String, version: Long?) =
+                    ProfileUpdateResult.Failure
+                override suspend fun changePassword(currentPassword: String, newPassword: String) =
+                    PasswordChangeResult.Failure
+            },
+        )
         return RecordDraftViewModel(
             context = instrumentation.targetContext.applicationContext,
             ioDispatcher = Dispatchers.Unconfined,
@@ -217,7 +348,22 @@ class RecordDraftSavedStateTest {
             savedStateHandle = savedState,
             sessionManager = sessionManager,
             uploadFieldPhotosUseCase = UploadFieldPhotosUseCase(repository),
-            submitFieldRecordUseCase = SubmitFieldRecordUseCase(repository),
+            submitFieldRecordUseCase = SubmitFieldRecordUseCase(
+                recordRepository = repository,
+                submissionRepository = journal,
+                getWorkerProfileUseCase = profile,
+                sessionManager = sessionManager,
+            ),
+            retryRecordSubmissionCleanupUseCase = com.nativelap.heartguard.domain.record.usecase.RetryRecordSubmissionCleanupUseCase(
+                submissionRepository = journal,
+                getWorkerProfileUseCase = profile,
+                sessionManager = sessionManager,
+            ),
+            getPendingRecordSubmissionsUseCase = GetPendingRecordSubmissionsUseCase(
+                submissionRepository = journal,
+                getWorkerProfileUseCase = profile,
+                sessionManager = sessionManager,
+            ),
         )
     }
 
@@ -256,6 +402,7 @@ class RecordDraftSavedStateTest {
         }
 
         override suspend fun submitFieldRecord(
+        expectedSessionGeneration: Long,
             type: FieldRecordType,
             photoKeys: List<String>,
             measuredAt: OffsetDateTime,
@@ -278,6 +425,7 @@ class RecordDraftSavedStateTest {
         ): ApiResult<List<String>> = ApiResult.Failure(ApiError.Network)
 
         override suspend fun submitFieldRecord(
+        expectedSessionGeneration: Long,
             type: FieldRecordType,
             photoKeys: List<String>,
             measuredAt: OffsetDateTime,
