@@ -22,6 +22,10 @@ sealed interface ApiError {
 
     data object Serialization : ApiError
 
+    data class ServerRejected(val errorCode: String) : ApiError
+
+    data object LocalStorage : ApiError
+
     data object Unknown : ApiError
 }
 

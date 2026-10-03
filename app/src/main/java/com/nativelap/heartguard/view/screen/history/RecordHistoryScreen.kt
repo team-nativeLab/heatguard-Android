@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.view.component.history.PendingRecordSubmissionCard
+import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -52,6 +54,9 @@ fun RecordHistoryScreen(
     modifier: Modifier = Modifier,
     temporaryDraftType: RecordType? = null,
     temporaryDraftSavedAt: OffsetDateTime? = null,
+    pendingSubmissions: List<PendingRecordSubmission> = emptyList(),
+    hasPendingLoadFailed: Boolean = false,
+    hasPendingCleanup: Boolean = false,
 ) {
     val loadState = uiState.loadState
     val dayGroups = uiState.dayGroups
@@ -127,6 +132,30 @@ fun RecordHistoryScreen(
                             onEvent(RecordHistoryScreenEvent.FilterSelected(filter))
                         },
                     )
+                }
+
+                if (hasPendingCleanup) {
+                    item(key = "cleanup-warning") {
+                        LoadErrorCard(
+                            title = stringResource(R.string.save_cleanup_title),
+                            description = stringResource(R.string.save_cleanup_description),
+                            onRetryClick = { onEvent(RecordHistoryScreenEvent.PendingSubmissionsRetryClicked) },
+                        )
+                    }
+                }
+                if (hasPendingLoadFailed) {
+                    item(key = "pending-error") {
+                        LoadErrorCard(
+                            title = stringResource(R.string.save_unknown_title),
+                            description = stringResource(R.string.pending_submissions_load_failure),
+                            onRetryClick = { onEvent(RecordHistoryScreenEvent.PendingSubmissionsRetryClicked) },
+                        )
+                    }
+                }
+                pendingSubmissions.forEach { pending ->
+                    item(key = "pending-${pending.submissionId}") {
+                        PendingRecordSubmissionCard(submission = pending)
+                    }
                 }
 
                 when (loadState) {

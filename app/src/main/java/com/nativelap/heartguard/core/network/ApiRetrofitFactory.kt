@@ -19,15 +19,40 @@ class ApiRetrofitFactory @Inject constructor(
     private val sessionManager: SessionManager,
     private val json: Json,
 ) {
+    private val singleAttemptClient by lazy {
+        authenticatedApiClient.newBuilder()
+            .retryOnConnectionFailure(false)
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .addInterceptor { chain ->
+                val originalRequest = chain.request()
+                val originalBody = originalRequest.body
+                val singleAttemptRequest = if (originalBody != null) {
+                    originalRequest.newBuilder()
+                        .method(originalRequest.method, SingleAttemptRequestBody(originalBody))
+                        .build()
+                } else {
+                    originalRequest
+                }
+                chain.proceed(singleAttemptRequest)
+            }
+            .build()
+    }
+
     fun <ApiService : Any> createService(
         baseUrl: String,
         serviceClass: Class<ApiService>,
         authentication: ApiAuthentication,
+        allowRequestReplay: Boolean = true,
     ): ApiService {
         val callFactory: Call.Factory = when (authentication) {
             ApiAuthentication.NONE -> unauthenticatedApiClient
             ApiAuthentication.BEARER -> SessionBoundCallFactory(
-                delegateClient = authenticatedApiClient,
+                delegateClient = if (allowRequestReplay) {
+                    authenticatedApiClient
+                } else {
+                    singleAttemptClient
+                },
                 sessionManager = sessionManager,
             )
         }

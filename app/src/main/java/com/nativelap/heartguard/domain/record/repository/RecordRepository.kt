@@ -16,6 +16,7 @@ interface RecordRepository {
     ): ApiResult<List<String>>
 
     suspend fun submitFieldRecord(
+        expectedSessionGeneration: Long,
         type: FieldRecordType,
         photoKeys: List<String>,
         measuredAt: OffsetDateTime,

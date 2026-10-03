@@ -13,6 +13,7 @@ import com.nativelap.heartguard.view.component.humidityValueText
 import com.nativelap.heartguard.view.component.temperatureValueText
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
+import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.component.RecordTypeSelectionSheet
 import com.nativelap.heartguard.view.component.recordTypeOptions
@@ -84,7 +85,7 @@ internal fun HeartGuardTemperatureRecordRoute(
         selectedFieldPhotoCount = draftState.fieldPhotoUris.size,
         isSaveEnabled = draftState.canSubmitTemperatureRecord &&
             draftState.fieldPhotoUris.isNotEmpty() &&
-            submissionState !is RecordSubmissionState.Submitting,
+            submissionState.canAttemptSubmission,
         onTemperatureChange = recordDraftViewModel::updateTemperatureText,
         onHumidityChange = recordDraftViewModel::updateHumidityText,
         onManualInputChange = recordDraftViewModel::updateManualInputEnabled,

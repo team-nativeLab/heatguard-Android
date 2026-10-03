@@ -33,6 +33,7 @@ internal fun HeartGuardSaveSuccessRoute(
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val record = (submissionState as? RecordSubmissionState.Success)?.record
     val savedRecordId = record?.recordId
+    val hasPendingCleanup by recordDraftViewModel.hasPendingCleanup.collectAsStateWithLifecycle()
     val completeRecord = {
         recordDraftViewModel.reset()
         onCompleteClick()
@@ -66,6 +67,7 @@ internal fun HeartGuardSaveSuccessRoute(
     }
 
     SaveSuccessScreen(
+        hasPendingCleanup = hasPendingCleanup,
         records = recordSummaryItems + SavedRecordSummaryItem(
             label = stringResource(R.string.save_time_summary),
             // 서버 createdAt은 UTC(+00:00)로 오므로 한국 시각으로 바꿔 표시한다.
@@ -129,17 +131,25 @@ internal fun HeartGuardSaveFailureRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onRetryClick: () -> Unit,
     onSaveDraftAndExitClick: () -> Unit,
+    onCheckHistoryClick: () -> Unit,
+    onUnknownExitClick: () -> Unit,
 ) {
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
+    val isResultUnknown = submissionState is RecordSubmissionState.Unknown
     val error = (submissionState as? RecordSubmissionState.Failure)?.error
+    if (isResultUnknown) {
+        BackHandler(onBack = onCheckHistoryClick)
+    }
 
     SaveFailureScreen(
-        errorDetails = listOf(
-            error?.toDisplayMessage() ?: stringResource(R.string.save_error_network),
-            stringResource(R.string.save_error_retry),
-        ),
-        onRetryClick = onRetryClick,
-        onSaveDraftAndExitClick = onSaveDraftAndExitClick,
+        isResultUnknown = isResultUnknown,
+        errorDetails = if (isResultUnknown) {
+            listOf(stringResource(R.string.save_unknown_detail))
+        } else {
+            listOf(error?.toDisplayMessage() ?: stringResource(R.string.save_error_unknown))
+        },
+        onRetryClick = if (isResultUnknown) onCheckHistoryClick else onRetryClick,
+        onSaveDraftAndExitClick = if (isResultUnknown) onUnknownExitClick else onSaveDraftAndExitClick,
     )
 }
 
@@ -157,9 +167,23 @@ private fun ApiError.toDisplayMessage(): String = when (this) {
         else -> stringResource(R.string.save_error_http, statusCode)
     }
 
+    is ApiError.ServerRejected -> serverRejectionMessage(errorCode)
+    ApiError.LocalStorage -> stringResource(R.string.save_error_local_storage)
     ApiError.Network -> stringResource(R.string.save_error_network)
     ApiError.Serialization -> stringResource(R.string.save_error_serialization)
     ApiError.SessionChanged,
     ApiError.Unknown,
     -> stringResource(R.string.save_error_unknown)
+}
+
+@Composable
+private fun serverRejectionMessage(errorCode: String): String {
+    return when (errorCode) {
+        "WEATHER_BASELINE_REQUIRED" -> stringResource(R.string.save_error_weather_baseline_required)
+        "UPLOAD_NOT_FOUND" -> stringResource(R.string.save_error_upload_expired)
+        "FILE_TOO_LARGE" -> stringResource(R.string.save_error_file_too_large)
+        "UNSUPPORTED_MEDIA_TYPE" -> stringResource(R.string.save_error_unsupported_media_type)
+        "RATE_LIMITED" -> stringResource(R.string.save_error_rate_limited)
+        else -> stringResource(R.string.save_error_unknown)
+    }
 }

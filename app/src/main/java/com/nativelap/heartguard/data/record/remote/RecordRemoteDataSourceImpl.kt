@@ -1,8 +1,11 @@
 package com.nativelap.heartguard.data.record.remote
 
+import com.nativelap.heartguard.core.network.RequestSessionGeneration
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.requireSuccessData
+import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.data.record.dto.RecordRequestDto
 import com.nativelap.heartguard.data.record.dto.RecordResponseDto
 import com.nativelap.heartguard.data.record.dto.UploadFileRequestDto
@@ -20,11 +23,10 @@ class RecordRemoteDataSourceImpl @Inject constructor(
 
     override suspend fun issueUploadUrls(files: List<UploadFileRequestDto>): ApiResult<List<UploadSlotDto>> =
         apiExecutor.execute {
-            val envelope = uploadApiService.issueUploadUrls(
+            uploadApiService.issueUploadUrls(
                 request = UploadRequestDto(files),
             )
-            envelope.data?.uploads ?: error("사진 업로드 URL 응답에 data가 없습니다.")
-        }
+        }.requireSuccessData().map { uploadResponse -> uploadResponse.uploads }
 
     /** presigned URL로 사진을 올린다. 2xx가 아니면(만료된 서명 403 등) 네트워크 오류가 아니라 HTTP 오류로 돌려줘
      * 호출부가 원인을 구분할 수 있게 한다. */
@@ -51,10 +53,9 @@ class RecordRemoteDataSourceImpl @Inject constructor(
         }
     }
 
-    override suspend fun submitRecord(request: RecordRequestDto): ApiResult<RecordResponseDto> = apiExecutor.execute {
-        val envelope = recordApiService.submitRecord(request)
-        envelope.data ?: error("현장 기록 등록 응답에 data가 없습니다.")
-    }
+    override suspend fun submitRecord(request: RecordRequestDto, expectedSessionGeneration: Long): ApiResult<RecordResponseDto> = apiExecutor.execute {
+        recordApiService.submitRecord(request, RequestSessionGeneration(expectedSessionGeneration))
+    }.requireSuccessData { recordResponse -> recordResponse.recordId.isNotBlank() }
 
     private companion object {
         val SUCCESS_STATUS_CODES = 200..299

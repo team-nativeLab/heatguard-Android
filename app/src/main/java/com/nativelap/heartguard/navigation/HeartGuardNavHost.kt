@@ -50,6 +50,7 @@ import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
+import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
@@ -163,6 +164,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // 흐름별 초기화는 ViewModelStore를 새로 만드는 대신 Route가 명시적으로 호출하는
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
+    val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
@@ -529,11 +531,22 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
             }
             // 실패 시트를 내리면 "다시 시도하기"와 같이 입력 화면으로 돌아간다.
             entry<HeartGuardDestination.SaveFailure>(
-                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
+                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(
+                    isDismissible = recordSubmissionState !is RecordSubmissionState.Unknown,
+                ),
             ) {
                 HeartGuardSaveFailureRoute(
                     recordDraftViewModel = recordDraftViewModel,
                     onRetryClick = ::goBack,
+                    onCheckHistoryClick = {
+                        recordDraftViewModel.reset()
+                        goHome()
+                        backStack.add(HeartGuardDestination.RecordHistory)
+                    },
+                    onUnknownExitClick = {
+                        recordDraftViewModel.reset()
+                        goHome()
+                    },
                     // "임시저장 후 나가기"는 draft를 보존한 채 홈으로 돌아가는 동작을 의도하므로,
                     // SaveSuccess와 달리 여기서는 recordDraftViewModel.reset()을 호출하지 않는다.
                     onSaveDraftAndExitClick = {
