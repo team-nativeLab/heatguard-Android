@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.notification.remote
 
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.notification.dto.NotificationReadReceiptDto
 import com.nativelap.heartguard.data.notification.dto.NotificationReadAllReceiptDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationPageDto
@@ -20,18 +21,16 @@ class TeamNotificationRemoteDataSourceImpl @Inject constructor(
             category = category,
             limit = limit,
             cursor = cursor,
-        ).data ?: error("알림 목록 응답에 data가 없습니다.")
-    }
+        )
+    }.requireSuccessData()
 
     override suspend fun markNotificationRead(
         notificationId: String,
     ): ApiResult<NotificationReadReceiptDto> = apiExecutor.execute {
         teamNotificationApiService.markNotificationRead(notificationId)
-            .data ?: error("알림 읽음 처리 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 
     override suspend fun markAllNotificationsRead(): ApiResult<NotificationReadAllReceiptDto> = apiExecutor.execute {
         teamNotificationApiService.markAllNotificationsRead()
-            .data ?: error("알림 모두 읽음 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 }

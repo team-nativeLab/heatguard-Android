@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.inquiry.remote
 
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.inquiry.dto.InquiryListPageDto
 import com.nativelap.heartguard.data.inquiry.dto.InquirySubmissionResponseDto
 import com.nativelap.heartguard.data.inquiry.dto.SubmitInquiryRequestDto
@@ -15,24 +16,22 @@ class InquiryRemoteDataSourceImpl @Inject constructor(
         title: String,
         content: String,
     ): ApiResult<InquirySubmissionResponseDto> = apiExecutor.execute {
-        val envelope = inquiryApiService.submitInquiry(
+        inquiryApiService.submitInquiry(
             SubmitInquiryRequestDto(
                 title = title,
                 content = content,
             ),
         )
-        envelope.data ?: error("문의 등록 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 
     /** 문의 목록 한 페이지를 조회한다. 첫 페이지는 [cursor]를 null로 보낸다. */
     override suspend fun getInquiryPage(
         cursor: String?,
         limit: Int,
     ): ApiResult<InquiryListPageDto> = apiExecutor.execute {
-        val envelope = inquiryApiService.getInquiries(
+        inquiryApiService.getInquiries(
             cursor = cursor,
             limit = limit,
         )
-        envelope.data ?: error("문의 목록 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 }

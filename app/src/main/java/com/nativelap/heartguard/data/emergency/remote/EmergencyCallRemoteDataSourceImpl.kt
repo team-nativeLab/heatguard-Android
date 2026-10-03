@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.emergency.remote
 
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.emergency.dto.EmergencyCallRequestDto
 import com.nativelap.heartguard.data.emergency.dto.EmergencyCallResponseDto
 import com.nativelap.heartguard.data.emergency.dto.UpdateEmergencyCallStatusRequestDto
@@ -21,31 +22,28 @@ class EmergencyCallRemoteDataSourceImpl @Inject constructor(
         clientOccurredAt: Instant,
         message: String?,
     ): ApiResult<EmergencyCallResponseDto> = apiExecutor.execute {
-        val envelope = emergencyCallApiService.registerEmergencyCall(
+        emergencyCallApiService.registerEmergencyCall(
             idempotencyKey = idempotencyKey,
             request = EmergencyCallRequestDto(
                 message = message,
                 clientOccurredAt = clientOccurredAt.toString(),
             ),
         )
-        envelope.data ?: error("긴급호출 등록 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 
     override suspend fun getCurrentEmergencyCall(): ApiResult<EmergencyCallResponseDto> = apiExecutor.execute {
-        val envelope = emergencyCallApiService.getCurrentEmergencyCall()
-        envelope.data ?: error("긴급호출 상태 응답에 data가 없습니다.")
-    }
+        emergencyCallApiService.getCurrentEmergencyCall()
+    }.requireSuccessData()
 
     override suspend fun updateEmergencyCallStatus(
         callId: String,
         status: EmergencyCallUpdateStatus,
     ): ApiResult<EmergencyCallResponseDto> = apiExecutor.execute {
-        val envelope = emergencyCallApiService.updateEmergencyCallStatus(
+        emergencyCallApiService.updateEmergencyCallStatus(
             callId = callId,
             request = UpdateEmergencyCallStatusRequestDto(
                 status = status.name,
             ),
         )
-        envelope.data ?: error("긴급호출 변경 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 }
