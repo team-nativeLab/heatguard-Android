@@ -1,10 +1,20 @@
 package com.nativelap.heartguard.viewmodel.emergency
 
-/** 긴급호출 흐름에서 화면 이동처럼 한 번만 처리해야 하는 결과다. */
+/** 호출과 로그인 세션이 같은 경우에만 소비하는 화면 이동 결과다. */
 sealed interface EmergencyEffect {
-    // 호출이 등록되었거나 진행 중인 호출을 이어받았다. 호출 중 화면으로 이동한다.
-    data object CallStarted : EmergencyEffect
+    val flowGeneration: Long
+    val sessionGeneration: Long
+    val callId: String
 
-    // 작업자가 취소·종료했거나 관리자 쪽에서 호출을 끝냈다. 홈으로 돌아간다.
-    data object CallClosed : EmergencyEffect
+    data class CallStarted(
+        override val flowGeneration: Long,
+        override val sessionGeneration: Long,
+        override val callId: String,
+    ) : EmergencyEffect
+
+    data class CallClosed(
+        override val flowGeneration: Long,
+        override val sessionGeneration: Long,
+        override val callId: String,
+    ) : EmergencyEffect
 }

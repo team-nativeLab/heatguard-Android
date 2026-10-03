@@ -18,6 +18,9 @@ import com.nativelap.heartguard.domain.emergency.usecase.UpdateEmergencyCallStat
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -65,12 +68,12 @@ class EmergencyViewModelTest {
         advanceTimeBy(POLLING_INTERVAL_MS + 1)
         runCurrent()
         assertNull(viewModel.uiState.value.callId)
-        assertEquals(1, receivedEffects.count { it == EmergencyEffect.CallClosed })
+        assertEquals(1, receivedEffects.count { it is EmergencyEffect.CallClosed })
         val completedRequestCount = repository.currentRequestCount
         advanceTimeBy(POLLING_INTERVAL_MS * 3)
         runCurrent()
         assertEquals(completedRequestCount, repository.currentRequestCount)
-        assertEquals(1, receivedEffects.count { it == EmergencyEffect.CallClosed })
+        assertEquals(1, receivedEffects.count { it is EmergencyEffect.CallClosed })
         viewModel.reset()
     }
 
@@ -112,7 +115,7 @@ class EmergencyViewModelTest {
 
         assertEquals("call_new", viewModel.uiState.value.callId)
         assertEquals(true, viewModel.uiState.value.statusUpdateFailed)
-        assertEquals(0, receivedEffects.count { it == EmergencyEffect.CallClosed })
+        assertEquals(0, receivedEffects.count { it is EmergencyEffect.CallClosed })
         viewModel.reset()
     }
 
@@ -133,6 +136,86 @@ class EmergencyViewModelTest {
         viewModel.reset()
     }
 
+    @Test
+    fun lateCancellationResultCannotCloseReenteredCall() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        viewModel.startEmergencyCall()
+        runCurrent()
+        val deferredUpdate = CompletableDeferred<EmergencyCallUpdateResult>()
+        repository.delayedUpdate = deferredUpdate
+        viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        runCurrent()
+        repository.currentCall = callStatus("call_new", EmergencyCallState.COMPLETED)
+        advanceTimeBy(POLLING_INTERVAL_MS + 1)
+        runCurrent()
+        assertNull(viewModel.uiState.value.callId)
+        repository.currentCall = callStatus("call_new", EmergencyCallState.ACTIVE)
+        viewModel.startEmergencyCall()
+        runCurrent()
+        deferredUpdate.complete(EmergencyCallUpdateResult.AlreadyClosed)
+        runCurrent()
+        assertEquals("call_new", viewModel.uiState.value.callId)
+        assertFalse(viewModel.uiState.value.isUpdatingStatus)
+        viewModel.reset()
+    }
+
+    @Test
+    fun queuedClosedEffectIsIgnoredAfterNewCallIntentTwentyTimes() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        repeat(20) {
+            viewModel.startEmergencyCall()
+            runCurrent()
+            viewModel.effects.first()
+            viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+            runCurrent()
+            val oldClosedEffect = viewModel.effects.first()
+            assertTrue(viewModel.isCurrentEffect(oldClosedEffect))
+            viewModel.startEmergencyCall()
+            runCurrent()
+            assertFalse(viewModel.isCurrentEffect(oldClosedEffect))
+            assertEquals("call_new", viewModel.uiState.value.callId)
+            viewModel.effects.first()
+            viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+            runCurrent()
+            viewModel.effects.first()
+        }
+        viewModel.reset()
+    }
+
+    @Test
+    fun lateRegistrationCannotRestoreCallAfterReset() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        val viewModel = createViewModel(repository)
+        val deferredRegistration = CompletableDeferred<ApiResult<EmergencyCallStatus>>()
+        repository.delayedRegistration = deferredRegistration
+        viewModel.startEmergencyCall()
+        runCurrent()
+        viewModel.reset()
+        deferredRegistration.complete(ApiResult.Success(callStatus("old_call", EmergencyCallState.ACTIVE)))
+        runCurrent()
+        assertNull(viewModel.uiState.value.callId)
+        assertFalse(viewModel.uiState.value.isRegistering)
+        assertEquals(0, repository.currentRequestCount)
+    }
+
+    @Test
+    fun closedRegistrationResponseAllowsFreshIntentOnNextTap() = runTest {
+        val repository = FakeEmergencyCallRepository()
+        repository.registerResults += ApiResult.Success(callStatus("closed", EmergencyCallState.CANCELLED))
+        val viewModel = createViewModel(repository)
+        viewModel.startEmergencyCall()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.hasRegistrationFailed)
+        assertNull(viewModel.uiState.value.callId)
+        viewModel.startEmergencyCall()
+        runCurrent()
+        assertTrue(repository.requestedIdempotencyKeys[0] != repository.requestedIdempotencyKeys[1])
+        assertEquals("call_new", viewModel.uiState.value.callId)
+        viewModel.reset()
+    }
+
     private suspend fun TestScope.assertConflictRefreshFailure(error: ApiError) {
         val repository = FakeEmergencyCallRepository()
         val viewModel = createViewModel(repository)
@@ -149,7 +232,7 @@ class EmergencyViewModelTest {
         assertEquals(EmergencyCallState.ACTIVE, viewModel.uiState.value.callState)
         assertFalse(viewModel.uiState.value.isUpdatingStatus)
         assertTrue(viewModel.uiState.value.statusUpdateFailed)
-        assertFalse(EmergencyEffect.CallClosed in receivedEffects)
+        assertFalse(receivedEffects.any { it is EmergencyEffect.CallClosed })
         repository.currentCallResult = null
         repository.currentCall = callStatus("call_new", EmergencyCallState.ACKNOWLEDGED)
         advanceTimeBy(POLLING_INTERVAL_MS + 1)
@@ -172,7 +255,7 @@ class EmergencyViewModelTest {
         viewModel.startEmergencyCall()
         runCurrent()
 
-        assertEquals(EmergencyEffect.CallStarted, viewModel.effects.first())
+        assertTrue(viewModel.effects.first() is EmergencyEffect.CallStarted)
         assertEquals("call_new", viewModel.uiState.value.callId)
         assertTrue(viewModel.uiState.value.isConnected)
         viewModel.reset()
@@ -211,7 +294,7 @@ class EmergencyViewModelTest {
         runCurrent()
 
         assertEquals("call_existing", viewModel.uiState.value.callId)
-        assertEquals(EmergencyEffect.CallStarted, viewModel.effects.first())
+        assertTrue(viewModel.effects.first() is EmergencyEffect.CallStarted)
         viewModel.reset()
     }
 
@@ -230,7 +313,7 @@ class EmergencyViewModelTest {
         repository.currentCall = callStatus("call_new", EmergencyCallState.COMPLETED)
         advanceTimeBy(POLLING_INTERVAL_MS + 1)
 
-        assertEquals(EmergencyEffect.CallClosed, viewModel.effects.first())
+        assertTrue(viewModel.effects.first() is EmergencyEffect.CallClosed)
         assertNull(viewModel.uiState.value.callId)
     }
 
@@ -310,6 +393,8 @@ class EmergencyViewModelTest {
     }
 
     private class FakeEmergencyCallRepository : EmergencyCallRepository {
+        var delayedUpdate: CompletableDeferred<EmergencyCallUpdateResult>? = null
+        var delayedRegistration: CompletableDeferred<ApiResult<EmergencyCallStatus>>? = null
         val registerResults = ArrayDeque<ApiResult<EmergencyCallStatus>>()
         val requestedIdempotencyKeys = mutableListOf<String>()
         val requestedUpdates = mutableListOf<EmergencyCallUpdateStatus>()
@@ -327,6 +412,11 @@ class EmergencyViewModelTest {
             message: String?,
         ): ApiResult<EmergencyCallStatus> {
             requestedIdempotencyKeys += idempotencyKey
+            val registration = delayedRegistration
+            delayedRegistration = null
+            if (registration != null) {
+                return withContext(NonCancellable) { registration.await() }
+            }
             return registerResults.removeFirstOrNull() ?: ApiResult.Success(
                 EmergencyCallStatus(
                     callId = "call_new",
@@ -348,6 +438,11 @@ class EmergencyViewModelTest {
             status: EmergencyCallUpdateStatus,
         ): EmergencyCallUpdateResult {
             requestedUpdates += status
+            val update = delayedUpdate
+            delayedUpdate = null
+            if (update != null) {
+                return withContext(NonCancellable) { update.await() }
+            }
             return updateResult ?: EmergencyCallUpdateResult.Updated(
                 EmergencyCallStatus(
                     callId = callId,
