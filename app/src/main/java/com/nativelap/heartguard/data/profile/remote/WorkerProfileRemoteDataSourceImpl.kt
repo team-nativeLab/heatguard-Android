@@ -24,14 +24,13 @@ class WorkerProfileRemoteDataSourceImpl @Inject constructor(
         name: String,
         version: Long?,
     ): ApiResult<WorkerProfileResponseDto> = apiExecutor.execute {
-        val envelope = workerProfileApiService.updateWorkerProfile(
+        workerProfileApiService.updateWorkerProfile(
             UpdateWorkerProfileRequestDto(
                 name = name,
                 version = version,
             ),
         )
-        envelope.data ?: error("작업자 정보 수정 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData { workerProfile -> workerProfile.userId.isNotBlank() }
 
     /** 현재 비밀번호를 확인한 뒤 새 비밀번호로 바꾼다. 비밀번호 확인 요청 태그를 붙여 401이 세션 만료로 처리되지 않게 한다. */
     override suspend fun changePassword(
@@ -45,6 +44,10 @@ class WorkerProfileRemoteDataSourceImpl @Inject constructor(
             ),
             passwordConfirmationRequest = PasswordConfirmationRequest,
         )
-        envelope.data ?: ChangeWorkerPasswordResponseDto()
-    }
+        if (envelope.success && envelope.error == null && envelope.data == null) {
+            envelope.copy(data = ChangeWorkerPasswordResponseDto())
+        } else {
+            envelope
+        }
+    }.requireSuccessData()
 }

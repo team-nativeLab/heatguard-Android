@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.record.remote
 
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.record.dto.RecordHistoryItemDto
 import com.nativelap.heartguard.data.record.dto.RecordHistoryPageDto
 import javax.inject.Inject
@@ -16,17 +17,15 @@ class RecordHistoryRemoteDataSourceImpl @Inject constructor(
         cursor: String?,
         limit: Int,
     ): ApiResult<RecordHistoryPageDto> = apiExecutor.execute {
-        val envelope = recordHistoryApiService.getRecords(
+        recordHistoryApiService.getRecords(
             date = date,
             cursor = cursor,
             limit = limit,
         )
-        envelope.data ?: error("기록 목록 응답에 data가 없습니다.")
-    }
+    }.requireSuccessData()
 
     /** 기록 한 건의 상세(사진 서명 URL 포함)를 조회한다. */
     override suspend fun getRecordDetail(recordId: String): ApiResult<RecordHistoryItemDto> = apiExecutor.execute {
-        val envelope = recordHistoryApiService.getRecordDetail(recordId)
-        envelope.data ?: error("기록 상세 응답에 data가 없습니다.")
-    }
+        recordHistoryApiService.getRecordDetail(recordId)
+    }.requireSuccessData()
 }
