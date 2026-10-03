@@ -104,6 +104,6 @@ class WithdrawResponsiveTest {
             .performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(R.string.withdraw_failure_message))
             .performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("탈퇴하기").assertIsDisplayed()
+        composeTestRule.onNodeWithText("탈퇴하기").performScrollTo().assertIsDisplayed()
     }
 }

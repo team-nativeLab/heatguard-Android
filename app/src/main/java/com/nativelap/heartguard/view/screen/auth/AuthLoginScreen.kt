@@ -59,6 +59,9 @@ fun AuthLoginScreen(
     statusMessage: String? = null,
     isSubmitting: Boolean = false,
 ) {
+    val isKeyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val pageScrollState = rememberScrollState()
+    val formScrollState = rememberScrollState()
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.authBackground,
@@ -70,18 +73,31 @@ fun AuthLoginScreen(
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding)
                 .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
-            // 입력 폼과 로그인 동작을 화면 위아래로 분리해 키보드가 열려도 입력 흐름을 유지한다.
+                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                .then(
+                    if (isKeyboardVisible) {
+                        Modifier.verticalScroll(pageScrollState)
+                    } else {
+                        Modifier
+                    },
+                ),
+            // 키보드가 열리면 폼과 액션을 함께 스크롤해 큰 글꼴에서도 입력칸을 완전히 볼 수 있게 한다.
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .then(
+                        if (isKeyboardVisible) {
+                            Modifier
+                        } else {
+                            Modifier.weight(1f)
+                        },
+                    ),
             ) {
                 var formContentHeight by remember { mutableIntStateOf(0) }
-                val topSpacing = if (formContentHeight == 0) {
+                val topSpacing = if (isKeyboardVisible || formContentHeight == 0) {
                     0.dp
                 } else {
                     with(LocalDensity.current) {
@@ -93,7 +109,13 @@ fun AuthLoginScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                        .then(
+                            if (isKeyboardVisible) {
+                                Modifier
+                            } else {
+                                Modifier.verticalScroll(formScrollState)
+                            },
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(modifier = Modifier.height(topSpacing))
@@ -148,6 +170,13 @@ fun AuthLoginScreen(
 
             Column(
                 modifier = Modifier
+                    .padding(
+                        top = if (isKeyboardVisible) {
+                            HeartGuardSpacing.Item
+                        } else {
+                            0.dp
+                        },
+                    )
                     .widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,

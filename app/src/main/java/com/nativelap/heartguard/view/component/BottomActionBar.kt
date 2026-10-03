@@ -23,6 +23,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 @Composable
 fun BottomActionBar(
     modifier: Modifier = Modifier,
+    applyWindowInsets: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
@@ -33,7 +34,13 @@ fun BottomActionBar(
             modifier = Modifier
                 .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                .then(
+                    if (applyWindowInsets) {
+                        Modifier.windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                    } else {
+                        Modifier
+                    },
+                )
                 .padding(
                     horizontal = HeartGuardSpacing.BottomActionHorizontal,
                     vertical = HeartGuardSpacing.Item,
