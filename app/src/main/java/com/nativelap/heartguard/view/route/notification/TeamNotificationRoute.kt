@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -16,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.view.screen.notification.TeamNotificationScreen
+import com.nativelap.heartguard.viewmodel.notification.NotificationOpenTarget
 import com.nativelap.heartguard.viewmodel.notification.TeamNotificationScreenEvent
 import com.nativelap.heartguard.viewmodel.notification.TeamNotificationViewEffect
 import com.nativelap.heartguard.viewmodel.notification.TeamNotificationViewModel
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.collect
 @Composable
 internal fun HeartGuardTeamNotificationsRoute(
     onBackClick: () -> Unit,
+    onOpenTarget: (NotificationOpenTarget) -> Unit,
     viewModel: TeamNotificationViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -33,6 +36,7 @@ internal fun HeartGuardTeamNotificationsRoute(
     val refreshErrorMessage = stringResource(R.string.notification_refresh_error)
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasResumed by remember(viewModel) { mutableStateOf(false) }
+    val currentOnOpenTarget by rememberUpdatedState(onOpenTarget)
 
     LifecycleResumeEffect(viewModel) {
         if (hasResumed) {
@@ -58,6 +62,9 @@ internal fun HeartGuardTeamNotificationsRoute(
                     TeamNotificationViewEffect.RefreshFailed -> {
                         snackbarHostState.showSnackbar(refreshErrorMessage)
                     }
+                    is TeamNotificationViewEffect.OpenTarget -> {
+                        currentOnOpenTarget(effect.target)
+                    }
                 }
             }
         }
@@ -70,7 +77,7 @@ internal fun HeartGuardTeamNotificationsRoute(
             when (event) {
                 TeamNotificationScreenEvent.BackClicked -> onBackClick()
                 is TeamNotificationScreenEvent.CategorySelected -> viewModel.selectCategory(event.category)
-                is TeamNotificationScreenEvent.NotificationClicked -> viewModel.markRead(event.notificationId)
+                is TeamNotificationScreenEvent.NotificationClicked -> viewModel.openNotification(event.notificationId)
                 TeamNotificationScreenEvent.MarkAllReadClicked -> viewModel.markAllRead()
                 TeamNotificationScreenEvent.RetryInitialLoad -> viewModel.retryInitialLoad()
                 TeamNotificationScreenEvent.RetryRefresh -> viewModel.retryRefresh()

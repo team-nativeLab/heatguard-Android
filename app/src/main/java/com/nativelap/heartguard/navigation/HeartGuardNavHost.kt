@@ -50,6 +50,7 @@ import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
+import com.nativelap.heartguard.viewmodel.notification.NotificationOpenTarget
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 
@@ -243,6 +244,26 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
         }
     }
 
+    // 알림에서 연 화면이 연타로 중복해 쌓이지 않도록 맨 위와 같은 목적지는 다시 추가하지 않는다.
+    fun openFromNotification(target: NotificationOpenTarget) {
+        val destination = when (target) {
+            is NotificationOpenTarget.RecordDetail -> HeartGuardDestination.RecordHistoryDetail(target.recordId)
+            NotificationOpenTarget.Inquiry -> HeartGuardDestination.Inquiry
+            // 진행 중인 호출이 없으면 새 호출을 시작하는 화면으로 보내지 않고 알림 목록에 머문다.
+            NotificationOpenTarget.ActiveEmergencyCall -> {
+                val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
+                if (hasActiveEmergencyCall) {
+                    HeartGuardDestination.Calling
+                } else {
+                    null
+                }
+            }
+        }
+        if (destination != null && backStack.lastOrNull() != destination) {
+            backStack.add(destination)
+        }
+    }
+
     val sceneStrategies: List<SceneStrategy<NavKey>> = listOf(
         DialogSceneStrategy(),
         HeartGuardBottomSheetSceneStrategy(),
@@ -329,7 +350,10 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 HeartGuardInquiryRoute(onBackClick = ::goBack)
             }
             entry<HeartGuardDestination.TeamNotifications> {
-                HeartGuardTeamNotificationsRoute(onBackClick = ::goBack)
+                HeartGuardTeamNotificationsRoute(
+                    onBackClick = ::goBack,
+                    onOpenTarget = ::openFromNotification,
+                )
             }
             entry<HeartGuardDestination.RecordHistory> {
                 HeartGuardRecordHistoryRoute(

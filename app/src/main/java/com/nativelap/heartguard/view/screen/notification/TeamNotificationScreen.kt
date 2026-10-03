@@ -208,8 +208,6 @@ fun TeamNotificationScreen(
                                 NotificationGroupCard(
                                     notifications = notifications,
                                     markingReadIds = uiState.markingReadIds,
-                                    isMarkingAllRead = uiState.isMarkingAllRead ||
-                                        uiState.isRefreshing || uiState.hasRefreshError,
                                     onNotificationClick = { notification ->
                                         onEvent(TeamNotificationScreenEvent.NotificationClicked(notification.notificationId))
                                     },
@@ -315,7 +313,6 @@ private fun NotificationFilterChip(
 private fun NotificationGroupCard(
     notifications: List<TeamNotification>,
     markingReadIds: Set<String>,
-    isMarkingAllRead: Boolean,
     onNotificationClick: (TeamNotification) -> Unit,
 ) {
     Column(
@@ -332,7 +329,6 @@ private fun NotificationGroupCard(
             NotificationRow(
                 notification = notification,
                 isMarkingRead = notification.notificationId in markingReadIds,
-                isMarkingAllRead = isMarkingAllRead,
                 onClick = { onNotificationClick(notification) },
             )
         }
@@ -343,7 +339,6 @@ private fun NotificationGroupCard(
 private fun NotificationRow(
     notification: TeamNotification,
     isMarkingRead: Boolean,
-    isMarkingAllRead: Boolean,
     onClick: () -> Unit,
 ) {
     val unreadStatus = stringResource(R.string.notification_unread)
@@ -358,10 +353,8 @@ private fun NotificationRow(
                 if (isUnread) MaterialTheme.extraColors.notificationUnreadSurface
                 else MaterialTheme.colorScheme.surface,
             )
-            .clickable(
-                enabled = isUnread && !isMarkingRead && !isMarkingAllRead,
-                onClick = onClick,
-            )
+            // 읽은 알림도 관련 화면으로 이동할 수 있도록 항상 누를 수 있다. 읽음 요청 여부는 ViewModel이 정한다.
+            .clickable(onClick = onClick)
             .semantics { stateDescription = if (isUnread) unreadStatus else readStatus }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
