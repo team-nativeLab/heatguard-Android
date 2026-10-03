@@ -1,5 +1,11 @@
 package com.nativelap.heartguard.view.screen.account
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -47,15 +53,17 @@ fun WithdrawNoticeScreen(
     onEvent: (WithdrawNoticeScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isKeyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val pageScrollState = rememberScrollState()
+    val formScrollState = rememberScrollState()
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
         bottomBar = {
-            BottomActionBar {
-                WithdrawDangerButton(
-                    title = stringResource(R.string.withdraw_action),
-                    onClick = { onEvent(WithdrawNoticeScreenEvent.WithdrawClicked) },
-                    isEnabled = uiState.canSubmit,
+            if (!isKeyboardVisible) {
+                WithdrawSubmitAction(
+                    uiState = uiState,
+                    onEvent = onEvent,
                 )
             }
         },
@@ -64,7 +72,16 @@ fun WithdrawNoticeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
+                .consumeWindowInsets(innerPadding)
+                .then(
+                    if (isKeyboardVisible) {
+                        Modifier
+                            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                            .verticalScroll(pageScrollState)
+                    } else {
+                        Modifier
+                    },
+                ),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
@@ -75,9 +92,14 @@ fun WithdrawNoticeScreen(
 
             Column(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .then(
+                        if (isKeyboardVisible) {
+                            Modifier
+                        } else {
+                            Modifier.weight(1f).verticalScroll(formScrollState)
+                        },
+                    )
                     .padding(
                         horizontal = HeartGuardSpacing.AccountContentHorizontal,
                         vertical = HeartGuardSpacing.Section,
@@ -151,7 +173,29 @@ fun WithdrawNoticeScreen(
                 }
             }
 
+            if (isKeyboardVisible) {
+                WithdrawSubmitAction(
+                    uiState = uiState,
+                    onEvent = onEvent,
+                    applyWindowInsets = false,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun WithdrawSubmitAction(
+    uiState: WithdrawUiState,
+    onEvent: (WithdrawNoticeScreenEvent) -> Unit,
+    applyWindowInsets: Boolean = true,
+) {
+    BottomActionBar(applyWindowInsets = applyWindowInsets) {
+        WithdrawDangerButton(
+            title = stringResource(R.string.withdraw_action),
+            onClick = { onEvent(WithdrawNoticeScreenEvent.WithdrawClicked) },
+            isEnabled = uiState.canSubmit,
+        )
     }
 }
 

@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -14,10 +18,17 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,6 +56,14 @@ fun AuthTextField(
     trailingIcon: (@Composable () -> Unit)? = null,
 ) {
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
+    val inputViewportRequester = remember { BringIntoViewRequester() }
+    var isInputFocused by remember { mutableStateOf(false) }
+    val keyboardBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(isInputFocused, keyboardBottom) {
+        if (isInputFocused && keyboardBottom > 0) {
+            inputViewportRequester.bringIntoView()
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -89,8 +108,15 @@ fun AuthTextField(
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.AuthFieldLabelInput)
                 .heightIn(min = HeartGuardComponentSize.AuthTextFieldHeight)
+                .bringIntoViewRequester(inputViewportRequester)
+                .semantics {
+                    if (isError && supportingText != null) {
+                        error(supportingText)
+                    }
+                }
                 // 포커스를 얻은 직후 IME를 명시적으로 열어 에뮬레이터에서도 입력을 보장한다.
                 .onFocusChanged { focusState ->
+                    isInputFocused = focusState.isFocused
                     if (focusState.isFocused) {
                         softwareKeyboardController?.show()
                     }
@@ -120,14 +146,6 @@ fun AuthTextField(
                             ),
                         )
                     },
-                    supportingText = supportingText?.let { message ->
-                        {
-                            Text(
-                                text = message,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    },
                     colors = textFieldColors,
                     contentPadding = PaddingValues(
                         horizontal = HeartGuardSpacing.ScreenHorizontal,
@@ -146,6 +164,14 @@ fun AuthTextField(
                 )
             },
         )
+        if (supportingText != null) {
+            Text(
+                text = supportingText,
+                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
