@@ -46,6 +46,7 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
@@ -64,9 +65,8 @@ internal fun HeartGuardNavHost(
     val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
 
     when (sessionState) {
-        // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 어느 화면도 그리지 않는다.
-        // TODO: 스플래시 화면이 추가되면 빈 화면 대신 그 화면을 보여준다.
-        SessionState.Initializing -> Unit
+        // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 인트로 로고를 보여 준다.
+        SessionState.Initializing -> IntroScreen()
         SessionState.Authenticated -> HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
         SessionState.Unauthenticated -> HeartGuardAuthNavDisplay()
     }

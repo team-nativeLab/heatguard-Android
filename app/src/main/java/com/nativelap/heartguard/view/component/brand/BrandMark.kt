@@ -13,7 +13,7 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 
-/** 로그인 화면에서 브랜드 이미지를 Figma의 표시 크기로 노출한다. */
+/** 로그인·인트로 화면에서 브랜드 이미지를 Figma의 표시 크기로 노출한다. */
 @Composable
 fun BrandMark(
     brandPainter: Painter,
