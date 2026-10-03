@@ -49,6 +49,8 @@ class EmergencyViewModel @Inject constructor(
     private val effectChannel = Channel<EmergencyEffect>(Channel.BUFFERED)
     val effects: Flow<EmergencyEffect> = effectChannel.receiveAsFlow()
 
+    private var flowGeneration = 0L
+
     private var pollingJob: Job? = null
     private var requestJob: Job? = null
     private var statusUpdateJob: Job? = null
@@ -71,10 +73,11 @@ class EmergencyViewModel @Inject constructor(
             return
         }
         if (currentState.callId != null) {
-            effectChannel.trySend(EmergencyEffect.CallStarted)
+            sendCallStarted()
             return
         }
 
+        val owningFlow = beginFlow()
         val idempotencyKey = pendingIdempotencyKey ?: UUID.randomUUID().toString()
         pendingIdempotencyKey = idempotencyKey
         mutableUiState.value = currentState.copy(
@@ -86,6 +89,9 @@ class EmergencyViewModel @Inject constructor(
                 idempotencyKey = idempotencyKey,
                 clientOccurredAt = clock.instant(),
             )
+            if (!isCurrentFlow(owningFlow)) {
+                return@launch
+            }
             when (registerResult) {
                 is ApiResult.Success -> {
                     adoptCall(
@@ -99,6 +105,7 @@ class EmergencyViewModel @Inject constructor(
                         resumeCurrentCall(
                             shouldOpenCallScreen = true,
                             onNoActiveCall = ::showRegistrationFailure,
+                            owningFlow = owningFlow,
                         )
                     } else {
                         showRegistrationFailure()
@@ -117,10 +124,12 @@ class EmergencyViewModel @Inject constructor(
             return
         }
 
+        val owningFlow = beginFlow()
         requestJob = viewModelScope.launch {
             resumeCurrentCall(
                 shouldOpenCallScreen = false,
                 onNoActiveCall = {},
+                owningFlow = owningFlow,
             )
         }
     }
@@ -133,6 +142,7 @@ class EmergencyViewModel @Inject constructor(
             return
         }
 
+        val owningFlow = currentFlow()
         val allowedStatus = if (currentState.callState == EmergencyCallState.ACKNOWLEDGED) {
             EmergencyCallUpdateStatus.COMPLETED
         } else {
@@ -147,12 +157,15 @@ class EmergencyViewModel @Inject constructor(
                 callId = currentCallId,
                 status = allowedStatus,
             )
+            if (!isCurrentFlow(owningFlow, currentCallId)) {
+                return@launch
+            }
             when (updateResult) {
                 is EmergencyCallUpdateResult.Updated,
                 EmergencyCallUpdateResult.AlreadyClosed,
                 -> closeCallFlow()
 
-                EmergencyCallUpdateResult.InvalidTransition -> refreshCallAfterInvalidTransition(currentCallId)
+                EmergencyCallUpdateResult.InvalidTransition -> refreshCallAfterInvalidTransition(currentCallId, owningFlow)
 
                 EmergencyCallUpdateResult.Failure -> {
                     mutableUiState.value = mutableUiState.value.copy(
@@ -165,8 +178,12 @@ class EmergencyViewModel @Inject constructor(
     }
 
     // 요청 사이 관리자가 호출을 확인하는 등 상태가 바뀐 경우다. 최신 상태로 화면을 맞춰 사용자가 다시 누를 수 있게 한다.
-    private suspend fun refreshCallAfterInvalidTransition(callId: String) {
-        val currentCall = when (val currentCallResult = getCurrentEmergencyCallUseCase()) {
+    private suspend fun refreshCallAfterInvalidTransition(callId: String, owningFlow: CallFlow) {
+        val currentCallResult = getCurrentEmergencyCallUseCase()
+        if (!isCurrentFlow(owningFlow, callId)) {
+            return
+        }
+        val currentCall = when (currentCallResult) {
             is ApiResult.Success -> currentCallResult.value
             is ApiResult.Failure -> {
                 mutableUiState.value = mutableUiState.value.copy(
@@ -200,6 +217,7 @@ class EmergencyViewModel @Inject constructor(
 
     /** 세션이 끝나 메인 흐름을 벗어날 때 폴링과 진행 중인 요청을 멈추고 상태를 비운다. 서버 호출 상태는 바꾸지 않는다. */
     fun reset() {
+        flowGeneration += 1
         pollingJob?.cancel()
         pollingJob = null
         requestJob?.cancel()
@@ -209,6 +227,9 @@ class EmergencyViewModel @Inject constructor(
         pendingIdempotencyKey = null
         consecutivePollingFailureCount = 0
         mutableUiState.value = EmergencyUiState()
+        while (effectChannel.tryReceive().isSuccess) {
+            // 이전 세션의 이동 결과를 제거한다.
+        }
     }
 
     // 현재 호출을 조회해 진행 중(ACTIVE·ACKNOWLEDGED)이면 이어받고, 아니면 [onNoActiveCall]을 실행한다.
@@ -216,8 +237,12 @@ class EmergencyViewModel @Inject constructor(
     private suspend fun resumeCurrentCall(
         shouldOpenCallScreen: Boolean,
         onNoActiveCall: () -> Unit,
+        owningFlow: CallFlow,
     ) {
         val currentCallResult = getCurrentEmergencyCallUseCase()
+        if (!isCurrentFlow(owningFlow)) {
+            return
+        }
         val currentCall = (currentCallResult as? ApiResult.Success)?.value
         if (currentCall != null && currentCall.callId != null && currentCall.state.isInProgress()) {
             adoptCall(
@@ -233,6 +258,15 @@ class EmergencyViewModel @Inject constructor(
         callStatus: EmergencyCallStatus,
         shouldOpenCallScreen: Boolean,
     ) {
+        if (callStatus.state.isClosed() && !callStatus.callId.isNullOrBlank()) {
+            pendingIdempotencyKey = null
+            showRegistrationFailure()
+            return
+        }
+        if (callStatus.callId.isNullOrBlank() || !callStatus.state.isInProgress()) {
+            showRegistrationFailure()
+            return
+        }
         pendingIdempotencyKey = null
         mutableUiState.value = mutableUiState.value.copy(
             callId = callStatus.callId,
@@ -242,7 +276,7 @@ class EmergencyViewModel @Inject constructor(
         )
         startPolling()
         if (shouldOpenCallScreen) {
-            effectChannel.trySend(EmergencyEffect.CallStarted)
+            sendCallStarted()
         }
     }
 
@@ -256,8 +290,13 @@ class EmergencyViewModel @Inject constructor(
     private fun startPolling() {
         pollingJob?.cancel()
         consecutivePollingFailureCount = 0
+        val owningFlow = currentFlow()
+        val owningCallId = mutableUiState.value.callId ?: return
         pollingJob = observeEmergencyCallStatusUseCase()
             .onEach { statusResult ->
+                if (!isCurrentFlow(owningFlow, owningCallId)) {
+                    return@onEach
+                }
                 when (statusResult) {
                     is ApiResult.Success -> applyPolledStatus(statusResult.value)
                     is ApiResult.Failure -> {
@@ -305,12 +344,60 @@ class EmergencyViewModel @Inject constructor(
     }
 
     private fun closeCallFlow() {
-        pollingJob?.cancel()
-        pollingJob = null
-        pendingIdempotencyKey = null
-        mutableUiState.value = EmergencyUiState()
-        effectChannel.trySend(EmergencyEffect.CallClosed)
+        val closedCallId = mutableUiState.value.callId ?: return
+        reset()
+        effectChannel.trySend(
+            EmergencyEffect.CallClosed(
+                flowGeneration = flowGeneration,
+                sessionGeneration = sessionManager.getSnapshot().generation,
+                callId = closedCallId,
+            ),
+        )
     }
+
+    fun isCurrentEffect(effect: EmergencyEffect): Boolean {
+        if (effect.flowGeneration != flowGeneration ||
+            effect.sessionGeneration != sessionManager.getSnapshot().generation
+        ) {
+            return false
+        }
+        return when (effect) {
+            is EmergencyEffect.CallStarted -> effect.callId == mutableUiState.value.callId
+            is EmergencyEffect.CallClosed -> mutableUiState.value.callId == null
+        }
+    }
+
+    private fun sendCallStarted() {
+        val startedCallId = mutableUiState.value.callId ?: return
+        effectChannel.trySend(
+            EmergencyEffect.CallStarted(
+                flowGeneration = flowGeneration,
+                sessionGeneration = sessionManager.getSnapshot().generation,
+                callId = startedCallId,
+            ),
+        )
+    }
+
+    private fun currentFlow(): CallFlow {
+        return CallFlow(flowGeneration, sessionManager.getSnapshot().generation)
+    }
+
+    private fun beginFlow(): CallFlow {
+        flowGeneration += 1
+        requestJob?.cancel()
+        return currentFlow()
+    }
+
+    private fun isCurrentFlow(owningFlow: CallFlow, callId: String? = null): Boolean {
+        return owningFlow.generation == flowGeneration &&
+            owningFlow.sessionGeneration == sessionManager.getSnapshot().generation &&
+            (callId == null || callId == mutableUiState.value.callId)
+    }
+
+    private data class CallFlow(
+        val generation: Long,
+        val sessionGeneration: Long,
+    )
 
     private fun EmergencyCallState.isInProgress(): Boolean =
         this == EmergencyCallState.ACTIVE || this == EmergencyCallState.ACKNOWLEDGED
