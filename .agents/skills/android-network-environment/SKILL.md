@@ -159,6 +159,8 @@ ViewModel ──────┘
 - Repository별로 401 재시도 코드를 복제하지 않는다.
 - 동시 401에서 중복 refresh가 발생하지 않도록 기존 동기화 정책을 확인한다.
 - refresh 실패 시 토큰 정리와 로그아웃 상태 전달 경로를 분명히 한다.
+- Authenticator는 401 응답 요청에 붙은 세션 스냅샷이 현재 세션과 같을 때만 세션을 만료한다(`expireSessionForRequest`). 이미 바뀐 세션의 늦은 401이 새 로그인을 지우지 않게 한다.
+- 인증 클라이언트는 Retrofit `callFactory`로 요청 생성 시점의 세션 스냅샷을 태그로 붙이고, Interceptor는 그 스냅샷의 토큰을 붙인다. 전송 직전 세션이 바뀌었으면 `IOException` 하위 예외로 중단하고 `ApiError`에서 네트워크 오류와 구분한다.
 
 ## Retrofit과 직렬화
 
