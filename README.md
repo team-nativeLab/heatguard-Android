@@ -209,7 +209,7 @@ Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면
 
 앞서 실패했던 로그인·탈퇴 IME 계측 2건은 에뮬레이터의 하드웨어 키보드 설정을 끄고 Cold Boot한 환경에서 재검증했습니다. 실제 IME 표시와 짧은 화면·확대 글꼴에서 입력칸 및 동작 버튼의 접근성을 확인했습니다. 입력 포커스 콜백과 입력칸 전체 표시, 키보드를 숨겼다가 다시 열었을 때의 입력칸 전체 표시·포커스 유지도 계측 테스트로 확인했습니다. 알림을 포함한 남은 응답 검증도 완료했으나 자동 테스트 통과를 전체 제품 실서버 검증 완료로 간주하지 않습니다. 이번 작업의 실서버 검증은 테스트 자격증명 사용에 대한 자동 승인 검토 차단으로 확인을 기다리고 있으며, 관리자 웹 URL도 제공되지 않아 관리자 목록·알림·확인·종료·문의 답변 연동 검증은 남아 있습니다. 과거 실서버 검증 결과는 위의 해당 날짜 기준입니다.
 
-자세한 기능별 PASS·BLOCKED·NOT_RUN 범위와 설치 앱 캡처는 [2026-10-04 회귀 검증 보고서](docs/verification/2026-10-04-functional-regression.md)를 참고하세요. 기록·호출·UI 변경의 [PR #103](https://github.com/team-nativeLab/heatguard-Android/pull/103)·[PR #105](https://github.com/team-nativeLab/heatguard-Android/pull/105)·[PR #106](https://github.com/team-nativeLab/heatguard-Android/pull/106)은 의존 브랜치에 연결된 Draft이며 병합하지 않았습니다. 마지막 응답 검증(Issue #107)은 아직 게시 전입니다.
+자세한 기능별 PASS·BLOCKED·NOT_RUN 범위와 설치 앱 캡처는 [2026-10-04 회귀 검증 보고서](docs/verification/2026-10-04-functional-regression.md)를 참고하세요. 기록·호출·UI 변경의 [PR #103](https://github.com/team-nativeLab/heatguard-Android/pull/103)·[PR #105](https://github.com/team-nativeLab/heatguard-Android/pull/105)·[PR #106](https://github.com/team-nativeLab/heatguard-Android/pull/106)은 의존 브랜치에 연결된 Draft이며 병합하지 않았습니다. 마지막 응답 검증과 보고서는 [PR #108](https://github.com/team-nativeLab/heatguard-Android/pull/108)에 Draft로 게시했으며 Issue #107을 `Refs #107`로 연결합니다. 선행 PR을 포함하고 기본 브랜치는 dev이며, 병합하지 않았습니다.
 
 ## 개발 워크플로
 - 코드 작업 전 `AGENTS.md`와 `.agents/skills/**/SKILL.md`를 먼저 확인하고 규칙을 따릅니다.

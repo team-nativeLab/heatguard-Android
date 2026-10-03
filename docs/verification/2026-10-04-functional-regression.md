@@ -89,6 +89,6 @@ AVD `test` (Android 17/API 37, arm64)에서 물리 키보드를 끄고 cold boot
 1. [PR #103](https://github.com/team-nativeLab/heatguard-Android/pull/103): 기록 제출 안전성, Issue #102.
 2. [PR #105](https://github.com/team-nativeLab/heatguard-Android/pull/105): 호출 재진입·취소 버튼, Issue #104.
 3. [PR #106](https://github.com/team-nativeLab/heatguard-Android/pull/106): PNG 로고·IME, 기존 Issue #58 일부.
-4. Issue #107: 남은 API 응답 검증·이 보고서. 최종 PR은 게시 후 README에 연결한다.
+4. [PR #108](https://github.com/team-nativeLab/heatguard-Android/pull/108): 남은 API 응답 검증·이 보고서, Issue #107.
 
 후속 PR은 선행 변경을 포함하므로 위 순서로 검토·적용해야 한다. 성공/차단/미실행 범위를 구분하며, 관리자 E2E가 필요한 Issue를 전체 완료로 닫지 않는다. AGENTS·SKILL 규칙 파일은 이번 앱 수정에서 편집하지 않았다.
