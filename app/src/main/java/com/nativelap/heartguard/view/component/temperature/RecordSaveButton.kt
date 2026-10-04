@@ -33,7 +33,9 @@ fun RecordSaveButton(
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            disabledContainerColor = MaterialTheme.extraColors.disabledContent,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.extraColors.primaryDisabledContainer,
+            disabledContentColor = MaterialTheme.colorScheme.onPrimary,
         ),
     ) {
         Text(
@@ -48,5 +50,13 @@ fun RecordSaveButton(
 private fun RecordSaveButtonPreview() {
     HeartGuardTheme {
         RecordSaveButton(title = "저장하기", onClick = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecordSaveButtonDisabledPreview() {
+    HeartGuardTheme {
+        RecordSaveButton(title = "변경하기", onClick = {}, enabled = false)
     }
 }

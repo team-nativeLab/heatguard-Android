@@ -136,6 +136,7 @@ fun ProfileEditScreen(
                         value = loadedProfile?.email,
                         trailingText = stringResource(R.string.profile_email_uneditable),
                         supportingText = stringResource(R.string.profile_email_note),
+                        isDisabled = true,
                     )
 
                     ProfilePasswordChangeRow(

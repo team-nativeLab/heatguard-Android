@@ -40,7 +40,8 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 로그인 화면에서 라벨·입력값·오류 안내를 함께 표시하는 입력 Component다. */
+/** 라벨·입력값·오류 안내를 함께 표시하는 입력 Component다.
+ * [errorContainerColor]는 오류 시 입력칸 배경이다. 기본값은 로그인 Figma의 분홍 채움이다. */
 @Composable
 fun AuthTextField(
     label: String,
@@ -54,6 +55,7 @@ fun AuthTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     // 비밀번호 보기 토글처럼 입력칸 오른쪽에 두는 아이콘이다. 없으면 표시하지 않는다.
     trailingIcon: (@Composable () -> Unit)? = null,
+    errorContainerColor: Color = MaterialTheme.extraColors.alertContainer,
 ) {
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     val inputViewportRequester = remember { BringIntoViewRequester() }
@@ -82,7 +84,7 @@ fun AuthTextField(
         val textFieldColors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
             unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
-            errorContainerColor = MaterialTheme.extraColors.alertContainer,
+            errorContainerColor = errorContainerColor,
             focusedBorderColor = if (isError) {
                 MaterialTheme.colorScheme.error
             } else {
