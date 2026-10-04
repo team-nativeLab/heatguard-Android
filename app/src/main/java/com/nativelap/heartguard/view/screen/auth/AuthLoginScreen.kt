@@ -23,11 +23,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -59,7 +61,10 @@ fun AuthLoginScreen(
     statusMessage: String? = null,
     isSubmitting: Boolean = false,
 ) {
-    val isKeyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    // 이전 앱에서 열려 있던 키보드 inset이 진입 직후 잠깐 남아도 키보드 레이아웃으로 바뀌지 않도록
+    // 로그인 입력칸에 포커스가 있을 때만 키보드가 열린 것으로 본다.
+    var hasFormFocus by remember { mutableStateOf(false) }
+    val isKeyboardVisible = hasFormFocus && WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val pageScrollState = rememberScrollState()
     val formScrollState = rememberScrollState()
     Scaffold(
@@ -73,7 +78,14 @@ fun AuthLoginScreen(
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding)
                 .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                .windowInsetsPadding(
+                    if (hasFormFocus) {
+                        WindowInsets.navigationBars.union(WindowInsets.ime)
+                    } else {
+                        WindowInsets.navigationBars
+                    },
+                )
+                .onFocusChanged { focusState -> hasFormFocus = focusState.hasFocus }
                 .then(
                     if (isKeyboardVisible) {
                         Modifier.verticalScroll(pageScrollState)
