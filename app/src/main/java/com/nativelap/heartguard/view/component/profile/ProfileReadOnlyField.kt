@@ -23,7 +23,8 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
 /** 내 정보 수정 화면에서 편집할 수 없는 값(회사명·이메일)을 입력칸 모양으로 보여준다.
- * [value]가 null이면 서버가 제공하지 않은 값이므로 "--"를 표시한다. */
+ * [value]가 null이면 서버가 제공하지 않은 값이므로 "--"를 표시한다.
+ * [isDisabled]이면 Figma 24 이메일칸처럼 비활성 회색 배경과 흐린 글자로 표시한다. */
 @Composable
 fun ProfileReadOnlyField(
     label: String,
@@ -31,6 +32,7 @@ fun ProfileReadOnlyField(
     modifier: Modifier = Modifier,
     trailingText: String? = null,
     supportingText: String? = null,
+    isDisabled: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -43,7 +45,11 @@ fun ProfileReadOnlyField(
                 .fillMaxWidth()
                 .padding(top = HeartGuardSpacing.Compact),
             shape = RoundedCornerShape(HeartGuardRadius.InputBox),
-            color = MaterialTheme.extraColors.authInputBackground,
+            color = if (isDisabled) {
+                MaterialTheme.extraColors.disabledInputBackground
+            } else {
+                MaterialTheme.extraColors.authInputBackground
+            },
         ) {
             Row(
                 modifier = Modifier
@@ -54,7 +60,11 @@ fun ProfileReadOnlyField(
                 Text(
                     text = value ?: stringResource(R.string.common_empty_value),
                     modifier = Modifier.weight(1f),
-                    color = MaterialTheme.extraColors.secondaryText,
+                    color = if (isDisabled) {
+                        MaterialTheme.extraColors.tertiaryText
+                    } else {
+                        MaterialTheme.extraColors.secondaryText
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (trailingText != null) {
@@ -85,6 +95,7 @@ private fun ProfileReadOnlyFieldPreview() {
             label = "이메일",
             value = "worker01",
             trailingText = "변경 불가",
+            isDisabled = true,
         )
     }
 }

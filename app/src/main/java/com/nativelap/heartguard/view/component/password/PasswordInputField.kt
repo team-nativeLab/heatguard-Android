@@ -40,6 +40,8 @@ fun PasswordInputField(
         placeholder = placeholder,
         modifier = modifier,
         isError = isError,
+        // Figma 27: 비밀번호 변경 오류는 배경을 유지하고 빨간 테두리만 표시한다.
+        errorContainerColor = MaterialTheme.extraColors.authInputBackground,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
             imeAction = imeAction,

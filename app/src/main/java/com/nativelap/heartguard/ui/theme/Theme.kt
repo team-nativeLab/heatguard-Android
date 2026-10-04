@@ -19,6 +19,8 @@ data class HeartGuardExtraColors(
     val cameraContainer: Color,
     val disabledContent: Color,
     val disabledText: Color,
+    val primaryDisabledContainer: Color,
+    val disabledInputBackground: Color,
     val authInputBackground: Color,
     val sheetBackground: Color,
     val photoContainer: Color,
@@ -105,6 +107,9 @@ private val infoContainerColor = Color(0xFFEAF3FF)
 private val cameraContainerColor = Color(0xFFEAF3FF)
 private val disabledContentColor = Color(0xFFCCCCCC)
 private val disabledTextColor = Color(0xFFAEB3C4)
+// Figma 26·27 비활성 "변경하기" 버튼: primary(#2879EA) 35% 불투명도.
+private val primaryDisabledContainerColor = Color(0x592879EA)
+private val disabledInputBackgroundColor = Color(0xFFEDF0F5)
 private val authInputBackgroundColor = Color(0xFFF8FAFF)
 private val sheetBackgroundColor = Color.White
 private val photoContainerColor = Color(0xFFE7F2FF)
@@ -192,6 +197,8 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     cameraContainer = cameraContainerColor,
     disabledContent = disabledContentColor,
     disabledText = disabledTextColor,
+    primaryDisabledContainer = primaryDisabledContainerColor,
+    disabledInputBackground = disabledInputBackgroundColor,
     authInputBackground = authInputBackgroundColor,
     sheetBackground = sheetBackgroundColor,
     photoContainer = photoContainerColor,
