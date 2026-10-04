@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.runtime.mutableStateOf
 import com.nativelap.heartguard.domain.notification.model.NotificationCategory
+import com.nativelap.heartguard.domain.notification.model.NotificationTarget
 import com.nativelap.heartguard.domain.notification.model.NotificationType
 import com.nativelap.heartguard.domain.notification.model.TeamNotification
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -26,7 +27,7 @@ class TeamNotificationScreenTest {
             type = NotificationType.RECORD_CREATED,
             category = NotificationCategory.RECORD,
             title = "휴식 사진이 저장됐어요",
-            resourceId = "rec_01",
+            target = NotificationTarget.Record("rec_01"),
             isRead = false,
             createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
             updatedAt = null,
@@ -120,7 +121,7 @@ class TeamNotificationScreenTest {
             type = NotificationType.RECORD_CREATED,
             category = NotificationCategory.RECORD,
             title = "휴식 사진이 저장됐어요",
-            resourceId = "rec_01",
+            target = NotificationTarget.Record("rec_01"),
             isRead = false,
             createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
             updatedAt = null,
@@ -152,7 +153,7 @@ class TeamNotificationScreenTest {
             type = NotificationType.INQUIRY_ANSWERED,
             category = NotificationCategory.NOTICE,
             title = "문의에 답변이 등록됐어요",
-            resourceId = "inq_01",
+            target = NotificationTarget.InquiryAnswer("inq_01"),
             isRead = true,
             createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
             updatedAt = null,
