@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
@@ -127,6 +128,61 @@ class TeamNotificationViewModelTest {
         assertEquals(1, viewModel.uiState.value.unreadCount)
         assertEquals(1, viewModel.uiState.value.filteredUnreadCount)
         assertTrue(viewModel.uiState.value.markingReadIds.isEmpty())
+    }
+
+    @Test
+    fun `안 읽은 기록 알림을 열면 읽음 요청 후 기록 상세 이동을 한 번 요청한다`() = runTest {
+        val repository = FakeTeamNotificationRepository()
+        repository.pages[NotificationCategory.ALL to null] = ApiResult.Success(
+            page(items = listOf(notification("n1", "2026-09-30T12:00:00+09:00")), unreadCount = 1, filteredUnreadCount = 1),
+        )
+        val viewModel = createViewModel(repository)
+        val openedTargets = mutableListOf<NotificationOpenTarget>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.viewEffects.collect { effect ->
+                if (effect is TeamNotificationViewEffect.OpenTarget) {
+                    openedTargets += effect.target
+                }
+            }
+        }
+        viewModel.openNotifications()
+        advanceUntilIdle()
+
+        viewModel.openNotification("n1")
+        advanceUntilIdle()
+
+        assertEquals(listOf("n1"), repository.readRequests)
+        assertEquals(listOf(NotificationOpenTarget.RecordDetail("record-n1")), openedTargets)
+    }
+
+    @Test
+    fun `이미 읽은 알림은 읽음 요청 없이 관련 화면 이동만 요청한다`() = runTest {
+        val repository = FakeTeamNotificationRepository()
+        val readNotification = notification("n1", "2026-09-30T12:00:00+09:00").copy(
+            type = NotificationType.INQUIRY_ANSWERED,
+            category = NotificationCategory.NOTICE,
+            isRead = true,
+        )
+        repository.pages[NotificationCategory.ALL to null] = ApiResult.Success(
+            page(items = listOf(readNotification), unreadCount = 0, filteredUnreadCount = 0),
+        )
+        val viewModel = createViewModel(repository)
+        val openedTargets = mutableListOf<NotificationOpenTarget>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.viewEffects.collect { effect ->
+                if (effect is TeamNotificationViewEffect.OpenTarget) {
+                    openedTargets += effect.target
+                }
+            }
+        }
+        viewModel.openNotifications()
+        advanceUntilIdle()
+
+        viewModel.openNotification("n1")
+        advanceUntilIdle()
+
+        assertTrue(repository.readRequests.isEmpty())
+        assertEquals(listOf(NotificationOpenTarget.Inquiry), openedTargets)
     }
 
     @Test
@@ -579,7 +635,7 @@ class TeamNotificationViewModelTest {
         val viewModel = createViewModel(repository)
         val finishSnackbar = CompletableDeferred<Unit>()
         val receivedEffects = mutableListOf<TeamNotificationViewEffect>()
-        backgroundScope.launch {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.viewEffects.collect { effect ->
                 receivedEffects += effect
                 finishSnackbar.await()

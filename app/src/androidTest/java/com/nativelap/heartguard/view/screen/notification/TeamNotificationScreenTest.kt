@@ -143,4 +143,37 @@ class TeamNotificationScreenTest {
             assertEquals(TeamNotificationScreenEvent.NotificationClicked("ntf_01"), receivedEvent)
         }
     }
+
+    @Test
+    fun readNotificationCanStillBeClickedToOpenRelatedScreen() {
+        var receivedEvent: TeamNotificationScreenEvent? = null
+        val notification = TeamNotification(
+            notificationId = "ntf_02",
+            type = NotificationType.INQUIRY_ANSWERED,
+            category = NotificationCategory.NOTICE,
+            title = "문의에 답변이 등록됐어요",
+            resourceId = "inq_01",
+            isRead = true,
+            createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
+            updatedAt = null,
+        )
+        composeTestRule.setContent {
+            HeartGuardTheme {
+                TeamNotificationScreen(
+                    uiState = TeamNotificationUiState(
+                        notifications = listOf(notification),
+                        hasLoaded = true,
+                        isRefreshing = true,
+                    ),
+                    onEvent = { event -> receivedEvent = event },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("문의에 답변이 등록됐어요").performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(TeamNotificationScreenEvent.NotificationClicked("ntf_02"), receivedEvent)
+        }
+    }
 }

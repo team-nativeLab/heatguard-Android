@@ -156,6 +156,18 @@ class TeamNotificationViewModel @Inject constructor(
         loadNextPage()
     }
 
+    /** 알림 탭을 처리한다. 안 읽은 알림은 읽음 요청을 보내고, 읽음 결과와 관계없이 관련 화면 이동을 요청한다. */
+    fun openNotification(notificationId: String) {
+        val notification = _uiState.value.notifications.firstOrNull { candidate ->
+            candidate.notificationId == notificationId
+        } ?: return
+        if (!notification.isRead) {
+            markRead(notificationId)
+        }
+        val openTarget = notification.toOpenTarget() ?: return
+        _viewEffects.tryEmit(TeamNotificationViewEffect.OpenTarget(openTarget))
+    }
+
     /** 아직 읽지 않은 한 건을 처리하고 서버 결과를 목록에 반영한다. */
     fun markRead(notificationId: String) {
         val currentState = _uiState.value
