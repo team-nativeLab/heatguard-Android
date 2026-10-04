@@ -4,6 +4,7 @@ import com.nativelap.heartguard.data.notification.dto.TeamNotificationCursorDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationItemDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationPageDto
 import com.nativelap.heartguard.domain.notification.model.NotificationCategory
+import com.nativelap.heartguard.domain.notification.model.NotificationTarget
 import com.nativelap.heartguard.domain.notification.model.NotificationType
 import java.time.OffsetDateTime
 import org.junit.Assert.assertEquals
@@ -39,6 +40,45 @@ class TeamNotificationMapperTest {
         assertEquals(4, page.unreadCount)
         assertEquals(2, page.filteredUnreadCount)
         assertEquals(OffsetDateTime.parse("2026-09-30T10:20:00+09:00"), page.items.first().createdAt)
+    }
+
+    @Test
+    fun `알림 유형별로 resourceId를 대상 ID로 구분해 매핑한다`() {
+        assertEquals(
+            NotificationTarget.Record("rec_01"),
+            item("n1", "RECORD_CREATED", "RECORD").copy(resourceId = " rec_01 ").toDomain().target,
+        )
+        assertEquals(
+            NotificationTarget.EmergencyCall("call_01"),
+            item("n2", "EMERGENCY_ACKNOWLEDGED", "EMERGENCY").copy(resourceId = "call_01").toDomain().target,
+        )
+        assertEquals(
+            NotificationTarget.InquiryAnswer("inq_01"),
+            item("n3", "INQUIRY_ANSWERED", "NOTICE").copy(resourceId = "inq_01").toDomain().target,
+        )
+    }
+
+    @Test
+    fun `resourceId가 비면 기록 알림은 대상이 없고 문의·긴급 알림은 ID 없이 유지한다`() {
+        assertEquals(
+            NotificationTarget.None,
+            item("n1", "RECORD_CREATED", "RECORD").copy(resourceId = "  ").toDomain().target,
+        )
+        assertEquals(
+            NotificationTarget.InquiryAnswer(inquiryId = null),
+            item("n2", "INQUIRY_ANSWERED", "NOTICE").copy(resourceId = null).toDomain().target,
+        )
+        assertEquals(
+            NotificationTarget.EmergencyCall(callId = null),
+            item("n3", "EMERGENCY_ACKNOWLEDGED", "EMERGENCY").copy(resourceId = "").toDomain().target,
+        )
+    }
+
+    @Test
+    fun `미지 유형은 카테고리가 같아도 대상을 만들지 않는다`() {
+        assertEquals(NotificationTarget.None, item("n1", "RECORD_DELETED", "RECORD").toDomain().target)
+        assertEquals(NotificationTarget.None, item("n2", "EMERGENCY_CREATED", "EMERGENCY").toDomain().target)
+        assertEquals(NotificationTarget.None, item("n3", "NOTICE_POSTED", "NOTICE").toDomain().target)
     }
 
     @Test

@@ -19,12 +19,25 @@ enum class NotificationType {
     UNKNOWN,
 }
 
+/** 알림이 가리키는 대상이다. 서버 응답의 type과 resourceId를 데이터 계층에서 구분해 만든다. */
+sealed interface NotificationTarget {
+    data class Record(val recordId: String) : NotificationTarget
+
+    /** 긴급호출 확인 알림이다. [callId]는 서버 계약이 확인되지 않아 이동 판단에 쓰지 않고 보관만 한다. */
+    data class EmergencyCall(val callId: String?) : NotificationTarget
+
+    /** 문의 답변 알림이다. 문의 상세 화면이 없어 [inquiryId]가 없어도 문의 목록으로 이동할 수 있다. */
+    data class InquiryAnswer(val inquiryId: String?) : NotificationTarget
+
+    data object None : NotificationTarget
+}
+
 data class TeamNotification(
     val notificationId: String,
     val type: NotificationType,
     val category: NotificationCategory,
     val title: String,
-    val resourceId: String?,
+    val target: NotificationTarget,
     val isRead: Boolean,
     val createdAt: OffsetDateTime?,
     val updatedAt: OffsetDateTime?,

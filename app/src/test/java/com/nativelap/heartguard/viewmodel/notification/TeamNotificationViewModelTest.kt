@@ -8,6 +8,7 @@ import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.notification.model.NotificationCategory
 import com.nativelap.heartguard.domain.notification.model.NotificationReadAllReceipt
 import com.nativelap.heartguard.domain.notification.model.NotificationReadReceipt
+import com.nativelap.heartguard.domain.notification.model.NotificationTarget
 import com.nativelap.heartguard.domain.notification.model.NotificationType
 import com.nativelap.heartguard.domain.notification.model.TeamNotification
 import com.nativelap.heartguard.domain.notification.model.TeamNotificationPage
@@ -161,6 +162,7 @@ class TeamNotificationViewModelTest {
         val readNotification = notification("n1", "2026-09-30T12:00:00+09:00").copy(
             type = NotificationType.INQUIRY_ANSWERED,
             category = NotificationCategory.NOTICE,
+            target = NotificationTarget.InquiryAnswer(inquiryId = null),
             isRead = true,
         )
         repository.pages[NotificationCategory.ALL to null] = ApiResult.Success(
@@ -756,7 +758,7 @@ class TeamNotificationViewModelTest {
         type = NotificationType.RECORD_CREATED,
         category = NotificationCategory.RECORD,
         title = id,
-        resourceId = "record-$id",
+        target = NotificationTarget.Record("record-$id"),
         isRead = false,
         createdAt = OffsetDateTime.parse(createdAt),
         updatedAt = null,
