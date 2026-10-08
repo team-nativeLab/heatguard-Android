@@ -35,31 +35,31 @@ data class RecordHistoryUiState(
 
     /** 지금까지 불러온 기록의 유형별 건수 요약이다. 앱이 모르는 유형은 전체 건수에만 포함된다. */
     val recordCounts: RecordHistoryCounts
-        get() = RecordHistoryCounts(
-            total = loadedEntries.size,
-            thermometer = loadedEntries.count { recordEntry -> recordEntry.type == FieldRecordType.THERMOMETER },
-            work = loadedEntries.count { recordEntry -> recordEntry.type == FieldRecordType.WORK },
-            rest = loadedEntries.count { recordEntry -> recordEntry.type == FieldRecordType.REST },
-        )
+        get() =
+            RecordHistoryCounts(
+                total = loadedEntries.size,
+                thermometer = loadedEntries.count { recordEntry -> recordEntry.type == FieldRecordType.THERMOMETER },
+                work = loadedEntries.count { recordEntry -> recordEntry.type == FieldRecordType.WORK },
+                rest = loadedEntries.count { recordEntry -> recordEntry.type == FieldRecordType.REST },
+            )
 
     /** 선택한 필터를 적용해 측정 날짜별(최신 날짜 먼저)로 묶은 목록이다. 측정 시각이 없는 기록은 제외하지 않고 맨 뒤 그룹에 둔다. */
     val dayGroups: List<RecordHistoryDayGroup>
-        get() = loadedEntries
-            .filter { recordEntry ->
-                selectedFilter.recordType == null || recordEntry.type == selectedFilter.recordType
-            }
-            .groupBy { recordEntry -> recordEntry.measuredAt?.toLocalDate() }
-            .map { (measuredDate, dayEntries) ->
-                RecordHistoryDayGroup(
-                    date = measuredDate,
-                    // 같은 날 기록이 여러 페이지로 나뉘어 와도 최신 측정 시각이 위로 오게 한다.
-                    entries = dayEntries.sortedByDescending { recordEntry -> recordEntry.measuredAt },
+        get() =
+            loadedEntries
+                .filter { recordEntry ->
+                    selectedFilter.recordType == null || recordEntry.type == selectedFilter.recordType
+                }.groupBy { recordEntry -> recordEntry.measuredAt?.toLocalDate() }
+                .map { (measuredDate, dayEntries) ->
+                    RecordHistoryDayGroup(
+                        date = measuredDate,
+                        // 같은 날 기록이 여러 페이지로 나뉘어 와도 최신 측정 시각이 위로 오게 한다.
+                        entries = dayEntries.sortedByDescending { recordEntry -> recordEntry.measuredAt },
+                    )
+                }.sortedWith(
+                    compareByDescending<RecordHistoryDayGroup> { dayGroup -> dayGroup.date != null }
+                        .thenByDescending { dayGroup -> dayGroup.date },
                 )
-            }
-            .sortedWith(
-                compareByDescending<RecordHistoryDayGroup> { dayGroup -> dayGroup.date != null }
-                    .thenByDescending { dayGroup -> dayGroup.date },
-            )
 }
 
 /** 기록 조회 결과다. */

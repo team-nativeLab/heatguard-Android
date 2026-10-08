@@ -20,15 +20,17 @@ fun SaveResultTitle(
 ) {
     Text(
         text = title,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardSpacing.ResultTitleHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardSpacing.ResultTitleHeight),
         textAlign = TextAlign.Center,
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.titleLarge.copy(
-            fontSize = HeartGuardFontSize.ResultTitle,
-            lineHeight = HeartGuardFontSize.ResultTitleLineHeight,
-            fontWeight = FontWeight.Bold,
-        ),
+        style =
+            MaterialTheme.typography.titleLarge.copy(
+                fontSize = HeartGuardFontSize.ResultTitle,
+                lineHeight = HeartGuardFontSize.ResultTitleLineHeight,
+                fontWeight = FontWeight.Bold,
+            ),
     )
 }

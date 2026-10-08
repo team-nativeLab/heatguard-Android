@@ -64,6 +64,5 @@ internal fun MenuDrawerHost(
                 },
             )
         }
-
     }
 }

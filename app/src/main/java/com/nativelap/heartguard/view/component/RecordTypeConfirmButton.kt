@@ -12,11 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
-import com.nativelap.heartguard.R
 
 /** 선택 상태에 따라 활성화 여부가 달라지는 기록 유형 확인 버튼이다. */
 @Composable
@@ -29,22 +29,25 @@ fun RecordTypeConfirmButton(
     Button(
         onClick = onClick,
         enabled = isEnabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.extraColors.disabledContent,
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.extraColors.disabledContent,
+                disabledContentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
         )
     }
 }

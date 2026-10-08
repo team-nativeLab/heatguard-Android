@@ -6,20 +6,24 @@ import com.nativelap.heartguard.core.network.PasswordConfirmationRequest
 import com.nativelap.heartguard.data.account.dto.WithdrawAccountRequestDto
 import javax.inject.Inject
 
-class AccountRemoteDataSourceImpl @Inject constructor(
-    private val accountApiService: AccountApiService,
-    private val apiExecutor: ApiExecutor,
-) : AccountRemoteDataSource {
-    override suspend fun withdraw(
-        currentPassword: String,
-        reason: String?,
-    ): ApiResult<Unit> = apiExecutor.execute {
-        accountApiService.withdraw(
-            request = WithdrawAccountRequestDto(
-                currentPassword = currentPassword,
-                reason = reason,
-            ),
-            passwordConfirmationRequest = PasswordConfirmationRequest,
-        )
+class AccountRemoteDataSourceImpl
+    @Inject
+    constructor(
+        private val accountApiService: AccountApiService,
+        private val apiExecutor: ApiExecutor,
+    ) : AccountRemoteDataSource {
+        override suspend fun withdraw(
+            currentPassword: String,
+            reason: String?,
+        ): ApiResult<Unit> =
+            apiExecutor.execute {
+                accountApiService.withdraw(
+                    request =
+                        WithdrawAccountRequestDto(
+                            currentPassword = currentPassword,
+                            reason = reason,
+                        ),
+                    passwordConfirmationRequest = PasswordConfirmationRequest,
+                )
+            }
     }
-}

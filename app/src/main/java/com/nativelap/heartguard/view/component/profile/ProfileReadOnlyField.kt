@@ -41,30 +41,34 @@ fun ProfileReadOnlyField(
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
         )
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.Compact),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = HeartGuardSpacing.Compact),
             shape = RoundedCornerShape(HeartGuardRadius.InputBox),
-            color = if (isDisabled) {
-                MaterialTheme.extraColors.disabledInputBackground
-            } else {
-                MaterialTheme.extraColors.authInputBackground
-            },
+            color =
+                if (isDisabled) {
+                    MaterialTheme.extraColors.disabledInputBackground
+                } else {
+                    MaterialTheme.extraColors.authInputBackground
+                },
         ) {
             Row(
-                modifier = Modifier
-                    .heightIn(min = HeartGuardComponentSize.TextFieldHeight)
-                    .padding(horizontal = HeartGuardSpacing.Item),
+                modifier =
+                    Modifier
+                        .heightIn(min = HeartGuardComponentSize.TextFieldHeight)
+                        .padding(horizontal = HeartGuardSpacing.Item),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = value ?: stringResource(R.string.common_empty_value),
                     modifier = Modifier.weight(1f),
-                    color = if (isDisabled) {
-                        MaterialTheme.extraColors.tertiaryText
-                    } else {
-                        MaterialTheme.extraColors.secondaryText
-                    },
+                    color =
+                        if (isDisabled) {
+                            MaterialTheme.extraColors.tertiaryText
+                        } else {
+                            MaterialTheme.extraColors.secondaryText
+                        },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (trailingText != null) {

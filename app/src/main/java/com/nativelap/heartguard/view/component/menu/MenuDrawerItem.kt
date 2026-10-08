@@ -31,24 +31,25 @@ fun MenuDrawerItem(
     showsChevron: Boolean = true,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.TouchTarget)
-            .clickable(
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .padding(vertical = HeartGuardSpacing.MenuItemVertical),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                .clickable(
+                    role = Role.Button,
+                    onClick = onClick,
+                ).padding(vertical = HeartGuardSpacing.MenuItemVertical),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
             modifier = Modifier.weight(1f),
             color = MaterialTheme.extraColors.strongText,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = HeartGuardFontSize.MenuItem,
-                fontWeight = FontWeight.Medium,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = HeartGuardFontSize.MenuItem,
+                    fontWeight = FontWeight.Medium,
+                ),
         )
 
         if (showsChevron) {

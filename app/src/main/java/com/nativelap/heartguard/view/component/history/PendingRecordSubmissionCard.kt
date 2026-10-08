@@ -11,23 +11,25 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun PendingRecordSubmissionCard(submission: PendingRecordSubmission) {
-    val recordTypeTitle = stringResource(
-        when (submission.type) {
-            FieldRecordType.THERMOMETER -> R.string.history_type_thermometer
-            FieldRecordType.WORK -> R.string.history_type_work
-            FieldRecordType.REST -> R.string.history_type_rest
-        },
-    )
+    val recordTypeTitle =
+        stringResource(
+            when (submission.type) {
+                FieldRecordType.THERMOMETER -> R.string.history_type_thermometer
+                FieldRecordType.WORK -> R.string.history_type_work
+                FieldRecordType.REST -> R.string.history_type_rest
+            },
+        )
     SaveErrorDetailCard(
         title = stringResource(R.string.save_unknown_title),
-        details = listOf(
-            stringResource(
-                R.string.pending_submission_format,
-                recordTypeTitle,
-                submission.measuredAt.atZoneSameInstant(KOREA_ZONE).format(SUBMISSION_TIME_FORMAT),
+        details =
+            listOf(
+                stringResource(
+                    R.string.pending_submission_format,
+                    recordTypeTitle,
+                    submission.measuredAt.atZoneSameInstant(KOREA_ZONE).format(SUBMISSION_TIME_FORMAT),
+                ),
+                stringResource(R.string.save_unknown_detail),
             ),
-            stringResource(R.string.save_unknown_detail),
-        ),
     )
 }
 

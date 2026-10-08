@@ -33,44 +33,50 @@ fun TemperatureInputSummaryCard(
     feelsLikeTemperature: String,
     modifier: Modifier = Modifier,
 ) {
-    val summaryRows = listOf(
-        TemperatureInputSummaryRow(currentTemperatureLabel, currentTemperature),
-        TemperatureInputSummaryRow(humidityLabel, humidity),
-        TemperatureInputSummaryRow(feelsLikeLabel, feelsLikeTemperature),
-    )
+    val summaryRows =
+        listOf(
+            TemperatureInputSummaryRow(currentTemperatureLabel, currentTemperature),
+            TemperatureInputSummaryRow(humidityLabel, humidity),
+            TemperatureInputSummaryRow(feelsLikeLabel, feelsLikeTemperature),
+        )
 
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        border = BorderStroke(
-            width = HeartGuardSpacing.Hairline,
-            color = MaterialTheme.extraColors.cardBorder,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        border =
+            BorderStroke(
+                width = HeartGuardSpacing.Hairline,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(HeartGuardSpacing.Item),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(HeartGuardSpacing.Item),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
         ) {
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
             summaryRows.forEachIndexed { index, summaryRow ->
                 if (index > 0) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = HeartGuardSpacing.Tight),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = HeartGuardSpacing.Tight),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(

@@ -23,10 +23,11 @@ fun HeartGuardSheetSurface(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(
-            topStart = HeartGuardRadius.Sheet,
-            topEnd = HeartGuardRadius.Sheet,
-        ),
+        shape =
+            RoundedCornerShape(
+                topStart = HeartGuardRadius.Sheet,
+                topEnd = HeartGuardRadius.Sheet,
+            ),
         color = MaterialTheme.extraColors.pageBackground,
     ) {
         Box(
@@ -34,9 +35,10 @@ fun HeartGuardSheetSurface(
             contentAlignment = Alignment.TopCenter,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
+                        .fillMaxWidth(),
                 content = content,
             )
         }

@@ -49,16 +49,17 @@ fun MenuDrawerOverlay(
             exit = fadeOut(),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.extraColors.overlayScrim)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClickLabel = closeDescription,
-                        role = Role.Button,
-                        onClick = onDismissRequest,
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.extraColors.overlayScrim)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClickLabel = closeDescription,
+                            role = Role.Button,
+                            onClick = onDismissRequest,
+                        ),
             )
         }
 
@@ -68,18 +69,18 @@ fun MenuDrawerOverlay(
             exit = slideOutHorizontally { fullWidth -> -fullWidth },
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(HeartGuardComponentSize.MenuDrawerWidth)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .semantics {
-                        paneTitle = paneDescription
-                    }
-                    .windowInsetsPadding(WindowInsets.systemBars)
-                    .padding(
-                        horizontal = HeartGuardSpacing.MenuDrawerHorizontal,
-                        vertical = HeartGuardSpacing.MenuDrawerVertical,
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(HeartGuardComponentSize.MenuDrawerWidth)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .semantics {
+                            paneTitle = paneDescription
+                        }.windowInsetsPadding(WindowInsets.systemBars)
+                        .padding(
+                            horizontal = HeartGuardSpacing.MenuDrawerHorizontal,
+                            vertical = HeartGuardSpacing.MenuDrawerVertical,
+                        ),
             ) {
                 content()
             }

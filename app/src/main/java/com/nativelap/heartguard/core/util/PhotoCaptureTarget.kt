@@ -19,21 +19,23 @@ internal fun createPhotoCaptureTarget(context: Context): PhotoCaptureTarget? {
         return null
     }
 
-    val captureFile = File(
-        photoDirectory,
-        "$PHOTO_CAPTURE_FILE_PREFIX${UUID.randomUUID()}.jpg",
-    )
+    val captureFile =
+        File(
+            photoDirectory,
+            "$PHOTO_CAPTURE_FILE_PREFIX${UUID.randomUUID()}.jpg",
+        )
 
     return try {
         if (!captureFile.createNewFile()) {
             return null
         }
 
-        val captureUri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            captureFile,
-        )
+        val captureUri =
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                captureFile,
+            )
         PhotoCaptureTarget(
             file = captureFile,
             uri = captureUri,

@@ -18,14 +18,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(
-                scrim = android.graphics.Color.TRANSPARENT,
-                darkScrim = android.graphics.Color.TRANSPARENT,
-            ),
-            navigationBarStyle = SystemBarStyle.light(
-                scrim = android.graphics.Color.TRANSPARENT,
-                darkScrim = android.graphics.Color.TRANSPARENT,
-            ),
+            statusBarStyle =
+                SystemBarStyle.light(
+                    scrim = android.graphics.Color.TRANSPARENT,
+                    darkScrim = android.graphics.Color.TRANSPARENT,
+                ),
+            navigationBarStyle =
+                SystemBarStyle.light(
+                    scrim = android.graphics.Color.TRANSPARENT,
+                    darkScrim = android.graphics.Color.TRANSPARENT,
+                ),
         )
         setContent {
             HeartGuardTheme {

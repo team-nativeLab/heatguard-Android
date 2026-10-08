@@ -33,8 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -88,37 +88,41 @@ private fun SelectedPhotoItem(
     index: Int,
 ) {
     val context = LocalContext.current
-    val photoBitmap = produceState<Bitmap?>(
-        initialValue = null,
-        key1 = uri,
-    ) {
-        value = try {
-            withContext(Dispatchers.IO) {
-                decodeSampledBitmap(uri, context.contentResolver)
-            }
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (_: Exception) {
-            null
-        }
-    }.value
+    val photoBitmap =
+        produceState<Bitmap?>(
+            initialValue = null,
+            key1 = uri,
+        ) {
+            value =
+                try {
+                    withContext(Dispatchers.IO) {
+                        decodeSampledBitmap(uri, context.contentResolver)
+                    }
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (_: Exception) {
+                    null
+                }
+        }.value
 
     val photoDescription = stringResource(R.string.photo_selected_accessibility, index)
     val removeDescription = stringResource(R.string.photo_remove_accessibility, index)
 
     Surface(
-        modifier = modifier
-            .aspectRatio(1f)
-            .semantics { contentDescription = photoDescription },
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .semantics { contentDescription = photoDescription },
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Box {
             if (photoBitmap == null) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -145,9 +149,10 @@ private fun SelectedPhotoItem(
 
             IconButton(
                 onClick = onRemoveClick,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .semantics { contentDescription = removeDescription },
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .semantics { contentDescription = removeDescription },
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Close,

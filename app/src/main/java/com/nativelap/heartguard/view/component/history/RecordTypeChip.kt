@@ -25,23 +25,26 @@ fun RecordTypeChip(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
-        color = if (isRestRecord) {
-            MaterialTheme.extraColors.successContainer
-        } else {
-            MaterialTheme.extraColors.infoContainer
-        },
-        contentColor = if (isRestRecord) {
-            MaterialTheme.extraColors.success
-        } else {
-            MaterialTheme.colorScheme.primary
-        },
+        color =
+            if (isRestRecord) {
+                MaterialTheme.extraColors.successContainer
+            } else {
+                MaterialTheme.extraColors.infoContainer
+            },
+        contentColor =
+            if (isRestRecord) {
+                MaterialTheme.extraColors.success
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
     ) {
         Text(
             text = recordTypeTitleText(recordType),
-            modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.BadgeHorizontal,
-                vertical = HeartGuardSpacing.Tight,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = HeartGuardSpacing.BadgeHorizontal,
+                    vertical = HeartGuardSpacing.Tight,
+                ),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
         )
     }

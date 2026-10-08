@@ -1,7 +1,7 @@
 package com.nativelap.heartguard.view.route.photo
 
-import android.app.Activity
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -20,8 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,9 +50,10 @@ internal fun HeartGuardPhotoCameraRoute(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraWindow = remember(context) {
-        context.findActivity()?.window
-    }
+    val cameraWindow =
+        remember(context) {
+            context.findActivity()?.window
+        }
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -82,17 +83,19 @@ internal fun HeartGuardPhotoCameraRoute(
     var imageCapture by remember {
         mutableStateOf<ImageCapture?>(null)
     }
-    val isRouteDisposed = remember {
-        AtomicBoolean(false)
-    }
+    val isRouteDisposed =
+        remember {
+            AtomicBoolean(false)
+        }
     val latestOnBackClick by rememberUpdatedState(onBackClick)
     val latestPendingCaptureUriString by rememberUpdatedState(pendingCaptureUriString)
-    val previewView = remember(context) {
-        PreviewView(context).apply {
-            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            scaleType = PreviewView.ScaleType.FILL_CENTER
+    val previewView =
+        remember(context) {
+            PreviewView(context).apply {
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
         }
-    }
 
     DisposableEffect(cameraWindow) {
         val window = cameraWindow
@@ -112,16 +115,18 @@ internal fun HeartGuardPhotoCameraRoute(
         }
     }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isPermissionGranted ->
-        hasCameraPermission = isPermissionGranted
-        cameraErrorResourceId = if (isPermissionGranted) {
-            null
-        } else {
-            R.string.photo_camera_permission_denied
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isPermissionGranted ->
+            hasCameraPermission = isPermissionGranted
+            cameraErrorResourceId =
+                if (isPermissionGranted) {
+                    null
+                } else {
+                    R.string.photo_camera_permission_denied
+                }
         }
-    }
 
     LaunchedEffect(hasCameraPermission, hasRequestedCameraPermission) {
         if (!hasCameraPermission && !hasRequestedCameraPermission) {
@@ -131,18 +136,20 @@ internal fun HeartGuardPhotoCameraRoute(
     }
 
     DisposableEffect(lifecycleOwner, context) {
-        val permissionObserver = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                val isPermissionGranted = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.CAMERA,
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                hasCameraPermission = isPermissionGranted
-                if (isPermissionGranted) {
-                    cameraErrorResourceId = null
+        val permissionObserver =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    val isPermissionGranted =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA,
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    hasCameraPermission = isPermissionGranted
+                    if (isPermissionGranted) {
+                        cameraErrorResourceId = null
+                    }
                 }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(permissionObserver)
 
         onDispose {
@@ -178,12 +185,15 @@ internal fun HeartGuardPhotoCameraRoute(
 
                         try {
                             val cameraProvider = cameraProviderFuture.get()
-                            val previewUseCase = Preview.Builder().build().also { preview ->
-                                preview.setSurfaceProvider(previewView.surfaceProvider)
-                            }
-                            val imageCaptureUseCase = ImageCapture.Builder()
-                                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                                .build()
+                            val previewUseCase =
+                                Preview.Builder().build().also { preview ->
+                                    preview.setSurfaceProvider(previewView.surfaceProvider)
+                                }
+                            val imageCaptureUseCase =
+                                ImageCapture
+                                    .Builder()
+                                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                                    .build()
 
                             boundCameraProvider = cameraProvider
                             boundPreview = previewUseCase
@@ -233,20 +243,23 @@ internal fun HeartGuardPhotoCameraRoute(
         }
     }
 
-    val screenTitle = when (recordType) {
-        RecordType.TEMPERATURE -> stringResource(R.string.photo_camera_field_title)
-        RecordType.WORK -> stringResource(R.string.photo_camera_work_title)
-        RecordType.REST -> stringResource(R.string.photo_camera_rest_title)
-    }
+    val screenTitle =
+        when (recordType) {
+            RecordType.TEMPERATURE -> stringResource(R.string.photo_camera_field_title)
+            RecordType.WORK -> stringResource(R.string.photo_camera_work_title)
+            RecordType.REST -> stringResource(R.string.photo_camera_rest_title)
+        }
     val isPermissionDenied = !hasCameraPermission && hasRequestedCameraPermission
-    val errorMessageResourceId = if (isPermissionDenied) {
-        R.string.photo_camera_permission_denied
-    } else {
-        cameraErrorResourceId
-    }
-    val errorMessage = errorMessageResourceId?.let { messageResourceId ->
-        stringResource(messageResourceId)
-    }
+    val errorMessageResourceId =
+        if (isPermissionDenied) {
+            R.string.photo_camera_permission_denied
+        } else {
+            cameraErrorResourceId
+        }
+    val errorMessage =
+        errorMessageResourceId?.let { messageResourceId ->
+            stringResource(messageResourceId)
+        }
 
     PhotoCameraScreen(
         previewView = previewView,
@@ -261,10 +274,11 @@ internal fun HeartGuardPhotoCameraRoute(
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         },
         onOpenSettingsClick = {
-            val settingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", context.packageName, null)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            val settingsIntent =
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
             try {
                 context.startActivity(settingsIntent)
             } catch (_: Exception) {
@@ -291,9 +305,7 @@ internal fun HeartGuardPhotoCameraRoute(
                             ImageCapture.OutputFileOptions.Builder(captureTarget.file).build(),
                             ContextCompat.getMainExecutor(context),
                             object : ImageCapture.OnImageSavedCallback {
-                                override fun onImageSaved(
-                                    outputFileResults: ImageCapture.OutputFileResults,
-                                ) {
+                                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                                     if (isRouteDisposed.get()) {
                                         deleteCaptureFile(context, captureTarget.uri)
                                         return
@@ -306,10 +318,11 @@ internal fun HeartGuardPhotoCameraRoute(
                                         return
                                     }
 
-                                    val isPhotoAccepted = recordDraftViewModel.addPhoto(
-                                        recordType,
-                                        captureUri,
-                                    )
+                                    val isPhotoAccepted =
+                                        recordDraftViewModel.addPhoto(
+                                            recordType,
+                                            captureUri,
+                                        )
                                     pendingCaptureUriString = null
                                     isCapturing = false
 

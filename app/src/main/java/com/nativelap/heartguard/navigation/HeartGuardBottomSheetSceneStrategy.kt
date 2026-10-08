@@ -33,9 +33,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardOverlayBlur
 
 /** 바텀시트 목적지(기록 유형 선택·저장 결과·긴급 호출)를 Material 3 ModalBottomSheet overlay로 표시한다. */
 internal class HeartGuardBottomSheetSceneStrategy : SceneStrategy<NavKey> {
-    override fun SceneStrategyScope<NavKey>.calculateScene(
-        entries: List<NavEntry<NavKey>>,
-    ): Scene<NavKey>? {
+    override fun SceneStrategyScope<NavKey>.calculateScene(entries: List<NavEntry<NavKey>>): Scene<NavKey>? {
         val lastEntry = entries.lastOrNull() ?: return null
 
         val isDismissible = lastEntry.metadata.get(BottomSheetKey)
@@ -64,14 +62,13 @@ internal class HeartGuardBottomSheetSceneStrategy : SceneStrategy<NavKey> {
         fun bottomSheet(
             isDismissible: Boolean = true,
             onDismissAttempt: (() -> Unit)? = null,
-        ): Map<String, Any> {
-            return metadata {
+        ): Map<String, Any> =
+            metadata {
                 put(BottomSheetKey, isDismissible)
                 if (onDismissAttempt != null) {
                     put(DismissAttemptKey, onDismissAttempt)
                 }
             }
-        }
     }
 }
 
@@ -91,17 +88,18 @@ private data class HeartGuardBottomSheetScene(
 
     override val content: @Composable () -> Unit = {
         // 닫을 수 없는 시트는 사용자 드래그로 Hidden이 되지 않게 막는다. back stack 제거 시의 hide()는 그대로 동작한다.
-        val currentSheetState = rememberModalBottomSheetState(
-            skipPartiallyExpanded = true,
-            confirmValueChange = { targetValue ->
-                if (targetValue != SheetValue.Hidden || isBeingRemoved || isDismissible) {
-                    true
-                } else {
-                    onDismissAttempt?.invoke()
-                    false
-                }
-            },
-        )
+        val currentSheetState =
+            rememberModalBottomSheetState(
+                skipPartiallyExpanded = true,
+                confirmValueChange = { targetValue ->
+                    if (targetValue != SheetValue.Hidden || isBeingRemoved || isDismissible) {
+                        true
+                    } else {
+                        onDismissAttempt?.invoke()
+                        false
+                    }
+                },
+            )
 
         DisposableEffect(currentSheetState) {
             sheetState = currentSheetState
@@ -127,9 +125,10 @@ private data class HeartGuardBottomSheetScene(
                     onDismissAttempt?.invoke()
                 }
             },
-            properties = ModalBottomSheetProperties(
-                shouldDismissOnBackPress = isDismissible,
-            ),
+            properties =
+                ModalBottomSheetProperties(
+                    shouldDismissOnBackPress = isDismissible,
+                ),
             sheetState = currentSheetState,
             shape = RectangleShape,
             containerColor = Color.Transparent,

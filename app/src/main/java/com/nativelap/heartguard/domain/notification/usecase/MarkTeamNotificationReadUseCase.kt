@@ -5,9 +5,11 @@ import com.nativelap.heartguard.domain.notification.model.NotificationReadReceip
 import com.nativelap.heartguard.domain.notification.repository.TeamNotificationRepository
 import javax.inject.Inject
 
-class MarkTeamNotificationReadUseCase @Inject constructor(
-    private val teamNotificationRepository: TeamNotificationRepository,
-) {
-    suspend operator fun invoke(notificationId: String): ApiResult<NotificationReadReceipt> =
-        teamNotificationRepository.markNotificationRead(notificationId)
-}
+class MarkTeamNotificationReadUseCase
+    @Inject
+    constructor(
+        private val teamNotificationRepository: TeamNotificationRepository,
+    ) {
+        suspend operator fun invoke(notificationId: String): ApiResult<NotificationReadReceipt> =
+            teamNotificationRepository.markNotificationRead(notificationId)
+    }

@@ -13,21 +13,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.performTextInput
-import androidx.test.espresso.Espresso
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.test.espresso.Espresso
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -113,6 +113,7 @@ class AuthLoginResponsiveTest {
         composeTestRule.onNodeWithText(statusMessage).performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("로그인").performScrollTo().assertIsDisplayed()
     }
+
     @Test
     fun keyboardTransitionPreservesFocusAndAutomaticallyRevealsPassword() {
         var keyboardVisible = false
@@ -159,5 +160,4 @@ class AuthLoginResponsiveTest {
         }
         passwordField.assertIsFocused().assertIsDisplayed()
     }
-
 }

@@ -6,16 +6,19 @@ import com.nativelap.heartguard.domain.record.repository.RecordRepository
 import javax.inject.Inject
 
 /** 사진 업로드 URL 발급과 실제 업로드를 한 번에 묶는다. ViewModel은 이 순서를 직접 조립하지 않는다. */
-class UploadFieldPhotosUseCase @Inject constructor(
-    private val recordRepository: RecordRepository,
-) {
-    suspend operator fun invoke(
-        photoUris: List<Uri>,
-        alreadyUploadedPhotoKeys: Map<Uri, String> = emptyMap(),
-        onPhotoUploaded: (Uri, String) -> Unit = { _, _ -> },
-    ): ApiResult<List<String>> = recordRepository.uploadFieldPhotos(
-        photoUris = photoUris,
-        alreadyUploadedPhotoKeys = alreadyUploadedPhotoKeys,
-        onPhotoUploaded = onPhotoUploaded,
-    )
-}
+class UploadFieldPhotosUseCase
+    @Inject
+    constructor(
+        private val recordRepository: RecordRepository,
+    ) {
+        suspend operator fun invoke(
+            photoUris: List<Uri>,
+            alreadyUploadedPhotoKeys: Map<Uri, String> = emptyMap(),
+            onPhotoUploaded: (Uri, String) -> Unit = { _, _ -> },
+        ): ApiResult<List<String>> =
+            recordRepository.uploadFieldPhotos(
+                photoUris = photoUris,
+                alreadyUploadedPhotoKeys = alreadyUploadedPhotoKeys,
+                onPhotoUploaded = onPhotoUploaded,
+            )
+    }

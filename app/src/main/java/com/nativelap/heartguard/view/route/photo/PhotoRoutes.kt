@@ -35,11 +35,12 @@ internal fun HeartGuardFieldPhotoRoute(
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
-    val submitRecord = rememberRecordSubmitter(
-        recordDraftViewModel = recordDraftViewModel,
-        onSaveSuccess = onSaveSuccess,
-        onSaveFailure = onSaveFailure,
-    )
+    val submitRecord =
+        rememberRecordSubmitter(
+            recordDraftViewModel = recordDraftViewModel,
+            onSaveSuccess = onSaveSuccess,
+            onSaveFailure = onSaveFailure,
+        )
     var showSaveError by rememberSaveable {
         mutableStateOf(false)
     }
@@ -64,12 +65,14 @@ internal fun HeartGuardFieldPhotoRoute(
         FieldPhotoScreen(
             onMenuClick = onMenuClick,
             onNotificationClick = onNotificationClick,
-            manualTemperature = valueOrEmptyText(
-                draftState.temperatureText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
-            ),
-            manualHumidity = valueOrEmptyText(
-                draftState.humidityText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
-            ),
+            manualTemperature =
+                valueOrEmptyText(
+                    draftState.temperatureText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
+                ),
+            manualHumidity =
+                valueOrEmptyText(
+                    draftState.humidityText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() },
+                ),
             selectedPhotoUris = selectedPhotoUris,
             showSaveError = showSaveError,
             isSaveEnabled = submissionState.canAttemptSubmission,
@@ -100,11 +103,12 @@ internal fun HeartGuardWorkPhotoRoute(
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
-    val submitRecord = rememberRecordSubmitter(
-        recordDraftViewModel = recordDraftViewModel,
-        onSaveSuccess = onSaveSuccess,
-        onSaveFailure = onSaveFailure,
-    )
+    val submitRecord =
+        rememberRecordSubmitter(
+            recordDraftViewModel = recordDraftViewModel,
+            onSaveSuccess = onSaveSuccess,
+            onSaveFailure = onSaveFailure,
+        )
 
     PhotoSelectionFlow(
         selectedPhotoUris = draftState.workPhotoUris,
@@ -128,8 +132,9 @@ internal fun HeartGuardWorkPhotoRoute(
             onRetakeClick = onClearPhotos,
             onMemoChange = recordDraftViewModel::updateWorkMemo,
             onUploadClick = submitRecord,
-            isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
-                submissionState.canAttemptSubmission,
+            isSaveEnabled =
+                selectedPhotoUris.isNotEmpty() &&
+                    submissionState.canAttemptSubmission,
         )
     }
 }
@@ -147,32 +152,35 @@ internal fun HeartGuardRestPhotoRoute(
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
-    val submitRecord = rememberRecordSubmitter(
-        recordDraftViewModel = recordDraftViewModel,
-        onSaveSuccess = onSaveSuccess,
-        onSaveFailure = onSaveFailure,
-    )
+    val submitRecord =
+        rememberRecordSubmitter(
+            recordDraftViewModel = recordDraftViewModel,
+            onSaveSuccess = onSaveSuccess,
+            onSaveFailure = onSaveFailure,
+        )
     var isSelectingRestStart by rememberSaveable { mutableStateOf(false) }
     var isSelectingRestEnd by rememberSaveable { mutableStateOf(false) }
     var hasRestTimeError by rememberSaveable { mutableStateOf(false) }
     val restStartTime = draftState.restStartTime
     val restEndTime = draftState.restEndTime
-    val restTimeDisplay = if (restStartTime != null && restEndTime != null) {
-        val displayResource = if (restEndTime <= restStartTime) {
-            R.string.photo_rest_time_next_day
+    val restTimeDisplay =
+        if (restStartTime != null && restEndTime != null) {
+            val displayResource =
+                if (restEndTime <= restStartTime) {
+                    R.string.photo_rest_time_next_day
+                } else {
+                    R.string.photo_rest_time_range
+                }
+            stringResource(
+                displayResource,
+                restStartTime.hour,
+                restStartTime.minute,
+                restEndTime.hour,
+                restEndTime.minute,
+            )
         } else {
-            R.string.photo_rest_time_range
+            stringResource(R.string.photo_rest_time_prompt)
         }
-        stringResource(
-            displayResource,
-            restStartTime.hour,
-            restStartTime.minute,
-            restEndTime.hour,
-            restEndTime.minute,
-        )
-    } else {
-        stringResource(R.string.photo_rest_time_prompt)
-    }
 
     LaunchedEffect(draftState.hasValidRestTimeRange) {
         if (draftState.hasValidRestTimeRange) {
@@ -211,8 +219,9 @@ internal fun HeartGuardRestPhotoRoute(
                     hasRestTimeError = true
                 }
             },
-            isSaveEnabled = selectedPhotoUris.isNotEmpty() &&
-                submissionState.canAttemptSubmission,
+            isSaveEnabled =
+                selectedPhotoUris.isNotEmpty() &&
+                    submissionState.canAttemptSubmission,
         )
     }
 

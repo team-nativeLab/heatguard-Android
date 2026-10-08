@@ -1,18 +1,17 @@
 package com.nativelap.heartguard.view.screen.account
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,19 +69,20 @@ fun WithdrawNoticeScreen(
         },
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
-                .then(
-                    if (isKeyboardVisible) {
-                        Modifier
-                            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-                            .verticalScroll(pageScrollState)
-                    } else {
-                        Modifier
-                    },
-                ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
+                    .then(
+                        if (isKeyboardVisible) {
+                            Modifier
+                                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                                .verticalScroll(pageScrollState)
+                        } else {
+                            Modifier
+                        },
+                    ),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
@@ -91,19 +92,19 @@ fun WithdrawNoticeScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (isKeyboardVisible) {
-                            Modifier
-                        } else {
-                            Modifier.weight(1f).verticalScroll(formScrollState)
-                        },
-                    )
-                    .padding(
-                        horizontal = HeartGuardSpacing.AccountContentHorizontal,
-                        vertical = HeartGuardSpacing.Section,
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (isKeyboardVisible) {
+                                Modifier
+                            } else {
+                                Modifier.weight(1f).verticalScroll(formScrollState)
+                            },
+                        ).padding(
+                            horizontal = HeartGuardSpacing.AccountContentHorizontal,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
             ) {
                 WithdrawHeadline(
                     title = stringResource(R.string.withdraw_notice_headline),
@@ -114,11 +115,12 @@ fun WithdrawNoticeScreen(
 
                 WithdrawNoticeCard(
                     title = stringResource(R.string.withdraw_notice_card_title),
-                    noticeLines = listOf(
-                        stringResource(R.string.withdraw_notice_account_deleted),
-                        stringResource(R.string.withdraw_notice_records_retained),
-                        stringResource(R.string.withdraw_notice_records_not_linked),
-                    ),
+                    noticeLines =
+                        listOf(
+                            stringResource(R.string.withdraw_notice_account_deleted),
+                            stringResource(R.string.withdraw_notice_records_retained),
+                            stringResource(R.string.withdraw_notice_records_not_linked),
+                        ),
                 )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Card))
@@ -139,17 +141,19 @@ fun WithdrawNoticeScreen(
                         onEvent(WithdrawNoticeScreenEvent.PasswordChanged(changedPassword))
                     },
                     placeholder = stringResource(R.string.withdraw_password_placeholder),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done,
-                    ),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
                     visualTransformation = PasswordVisualTransformation(),
                     isError = uiState.submissionState == WithdrawSubmissionState.InvalidPassword,
-                    supportingText = if (uiState.submissionState == WithdrawSubmissionState.InvalidPassword) {
-                        stringResource(R.string.auth_password_error)
-                    } else {
-                        null
-                    },
+                    supportingText =
+                        if (uiState.submissionState == WithdrawSubmissionState.InvalidPassword) {
+                            stringResource(R.string.auth_password_error)
+                        } else {
+                            null
+                        },
                 )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
@@ -204,9 +208,10 @@ private fun WithdrawSubmitAction(
 private fun WithdrawNoticeScreenPreview() {
     HeartGuardTheme {
         WithdrawNoticeScreen(
-            uiState = WithdrawUiState(
-                selectedReason = WithdrawReason.FIELD_WORK_ENDED,
-            ),
+            uiState =
+                WithdrawUiState(
+                    selectedReason = WithdrawReason.FIELD_WORK_ENDED,
+                ),
             password = "",
             onEvent = {},
         )

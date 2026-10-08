@@ -21,7 +21,10 @@ class RequireSuccessDataTest {
     fun `거절 코드를 보존하고 빈 ID 검증을 통과시키지 않는다`() {
         assertEquals(
             ApiResult.Failure(ApiError.ServerRejected("VALIDATION_ERROR")),
-            ApiResult.Success(ApiEnvelope<String>(false, error = ApiEnvelopeError("VALIDATION_ERROR"))).requireSuccessData(),
+            ApiResult
+                .Success(
+                    ApiEnvelope<String>(false, error = ApiEnvelopeError("VALIDATION_ERROR")),
+                ).requireSuccessData(),
         )
         assertEquals(
             ApiResult.Failure(ApiError.Serialization),

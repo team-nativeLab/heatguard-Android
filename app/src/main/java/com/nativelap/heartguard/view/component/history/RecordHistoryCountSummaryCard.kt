@@ -45,17 +45,21 @@ fun RecordHistoryCountSummaryCard(
         // 좁은 화면·큰 글꼴에서는 네 칸을 한 줄에 두면 라벨과 건수가 쪼개지므로 두 줄(2×2)로 나눈다.
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val fontScale = LocalDensity.current.fontScale
-            val countColumns = listOf(
-                RecordHistoryFilter.ALL to recordCounts.total,
-                RecordHistoryFilter.THERMOMETER to recordCounts.thermometer,
-                RecordHistoryFilter.WORK to recordCounts.work,
-                RecordHistoryFilter.REST to recordCounts.rest,
-            )
-            val columnsPerRow = if (maxWidth.value / fontScale < HeartGuardComponentSize.HistoryCountRowMinWidth.value) {
-                COMPACT_COLUMNS_PER_ROW
-            } else {
-                countColumns.size
-            }
+            val countColumns =
+                listOf(
+                    RecordHistoryFilter.ALL to recordCounts.total,
+                    RecordHistoryFilter.THERMOMETER to recordCounts.thermometer,
+                    RecordHistoryFilter.WORK to recordCounts.work,
+                    RecordHistoryFilter.REST to recordCounts.rest,
+                )
+            val columnsPerRow =
+                if (maxWidth.value / fontScale <
+                    HeartGuardComponentSize.HistoryCountRowMinWidth.value
+                ) {
+                    COMPACT_COLUMNS_PER_ROW
+                } else {
+                    countColumns.size
+                }
             Column(
                 modifier = Modifier.padding(vertical = HeartGuardSpacing.Card),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
@@ -98,11 +102,12 @@ private fun RecordCountColumn(
             style = MaterialTheme.typography.labelSmall,
         )
         Text(
-            text = if (hasMoreRecords) {
-                stringResource(R.string.list_partial_count_format, recordCount)
-            } else {
-                stringResource(R.string.history_count_format, recordCount)
-            },
+            text =
+                if (hasMoreRecords) {
+                    stringResource(R.string.list_partial_count_format, recordCount)
+                } else {
+                    stringResource(R.string.history_count_format, recordCount)
+                },
             color = MaterialTheme.extraColors.strongText,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
         )
@@ -123,12 +128,13 @@ private fun CountDivider() {
 private fun RecordHistoryCountSummaryCardPreview() {
     HeartGuardTheme {
         RecordHistoryCountSummaryCard(
-            recordCounts = RecordHistoryCounts(
-                total = 25,
-                thermometer = 12,
-                work = 8,
-                rest = 5,
-            ),
+            recordCounts =
+                RecordHistoryCounts(
+                    total = 25,
+                    thermometer = 12,
+                    work = 8,
+                    rest = 5,
+                ),
         )
     }
 }

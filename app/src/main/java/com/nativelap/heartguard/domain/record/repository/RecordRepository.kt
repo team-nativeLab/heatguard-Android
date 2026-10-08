@@ -7,7 +7,6 @@ import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import java.time.OffsetDateTime
 
 interface RecordRepository {
-
     /** 사진을 presigned URL 발급 → 실제 업로드 순서로 처리하고, 기록 등록에 쓸 objectKey 목록을 돌려준다. */
     suspend fun uploadFieldPhotos(
         photoUris: List<Uri>,

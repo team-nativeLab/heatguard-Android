@@ -23,14 +23,16 @@ fun PasswordGuideText(
 ) {
     Text(
         text = guideText,
-        modifier = modifier
-            .padding(top = HeartGuardSpacing.Tight)
-            .semantics { liveRegion = LiveRegionMode.Polite },
-        color = when (guideState) {
-            PasswordGuideState.NEUTRAL -> MaterialTheme.extraColors.secondaryText
-            PasswordGuideState.SATISFIED -> MaterialTheme.colorScheme.primary
-            PasswordGuideState.ERROR -> MaterialTheme.colorScheme.error
-        },
+        modifier =
+            modifier
+                .padding(top = HeartGuardSpacing.Tight)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        color =
+            when (guideState) {
+                PasswordGuideState.NEUTRAL -> MaterialTheme.extraColors.secondaryText
+                PasswordGuideState.SATISFIED -> MaterialTheme.colorScheme.primary
+                PasswordGuideState.ERROR -> MaterialTheme.colorScheme.error
+            },
         style = MaterialTheme.typography.bodySmall,
     )
 }

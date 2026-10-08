@@ -12,11 +12,16 @@ import java.io.File
 internal const val PHOTO_CAPTURE_FILE_PREFIX = "heartguard_capture_"
 internal const val PHOTO_CACHE_DIRECTORY = "photos"
 
-internal fun isCameraCaptureUri(context: Context, uri: Uri): Boolean =
-    uri.authority == "${context.packageName}.fileprovider"
+internal fun isCameraCaptureUri(
+    context: Context,
+    uri: Uri,
+): Boolean = uri.authority == "${context.packageName}.fileprovider"
 
 /** 갤러리에서 선택한 사진은 부여받은 읽기 권한을 해제하고, 카메라로 촬영한 임시 파일은 캐시에서 삭제한다. */
-internal fun releasePhoto(context: Context, uri: Uri) {
+internal fun releasePhoto(
+    context: Context,
+    uri: Uri,
+) {
     if (isCameraCaptureUri(context, uri)) {
         deleteCaptureFile(context, uri)
         return
@@ -32,7 +37,10 @@ internal fun releasePhoto(context: Context, uri: Uri) {
     }
 }
 
-internal fun deleteCaptureFile(context: Context, uri: Uri) {
+internal fun deleteCaptureFile(
+    context: Context,
+    uri: Uri,
+) {
     if (!isCameraCaptureUri(context, uri)) {
         return
     }

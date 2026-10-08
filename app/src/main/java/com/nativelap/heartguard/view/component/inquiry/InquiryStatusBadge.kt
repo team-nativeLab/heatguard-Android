@@ -23,19 +23,30 @@ fun InquiryStatusBadge(
     inquiryStatus: InquiryStatus,
     modifier: Modifier = Modifier,
 ) {
-    val (containerColor, labelColor) = when (inquiryStatus) {
-        InquiryStatus.ANSWERED -> MaterialTheme.extraColors.successContainer to MaterialTheme.extraColors.success
-        InquiryStatus.OPEN -> MaterialTheme.extraColors.warningContainer to MaterialTheme.extraColors.onWarningContainer
-        InquiryStatus.CLOSED,
-        InquiryStatus.UNKNOWN,
-        -> MaterialTheme.extraColors.photoContainer to MaterialTheme.extraColors.secondaryText
-    }
-    val statusText = when (inquiryStatus) {
-        InquiryStatus.OPEN -> stringResource(R.string.inquiry_status_open)
-        InquiryStatus.ANSWERED -> stringResource(R.string.inquiry_status_answered)
-        InquiryStatus.CLOSED -> stringResource(R.string.inquiry_status_closed)
-        InquiryStatus.UNKNOWN -> stringResource(R.string.common_empty_value)
-    }
+    val (containerColor, labelColor) =
+        when (inquiryStatus) {
+            InquiryStatus.ANSWERED -> {
+                MaterialTheme.extraColors.successContainer to MaterialTheme.extraColors.success
+            }
+
+            InquiryStatus.OPEN -> {
+                MaterialTheme.extraColors.warningContainer to
+                    MaterialTheme.extraColors.onWarningContainer
+            }
+
+            InquiryStatus.CLOSED,
+            InquiryStatus.UNKNOWN,
+            -> {
+                MaterialTheme.extraColors.photoContainer to MaterialTheme.extraColors.secondaryText
+            }
+        }
+    val statusText =
+        when (inquiryStatus) {
+            InquiryStatus.OPEN -> stringResource(R.string.inquiry_status_open)
+            InquiryStatus.ANSWERED -> stringResource(R.string.inquiry_status_answered)
+            InquiryStatus.CLOSED -> stringResource(R.string.inquiry_status_closed)
+            InquiryStatus.UNKNOWN -> stringResource(R.string.common_empty_value)
+        }
 
     Surface(
         modifier = modifier,
@@ -45,10 +56,11 @@ fun InquiryStatusBadge(
     ) {
         Text(
             text = statusText,
-            modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.Compact,
-                vertical = HeartGuardSpacing.Hairline,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = HeartGuardSpacing.Compact,
+                    vertical = HeartGuardSpacing.Hairline,
+                ),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
         )
     }

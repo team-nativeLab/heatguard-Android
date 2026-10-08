@@ -20,9 +20,10 @@ fun RecordHistoryFilterRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
     ) {
         RecordHistoryFilter.entries.forEach { filter ->

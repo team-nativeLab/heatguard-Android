@@ -82,11 +82,12 @@ internal fun HeartGuardHomeRoute(
     // 홈 조회에 실패하면 모든 값이 "--"로 남으므로, 빈 값과 구분되도록 실패를 알리고 재시도할 수 있게 한다.
     LaunchedEffect(homeUiState) {
         if (homeUiState is HomeUiState.Error) {
-            val snackbarResult = snackbarHostState.showSnackbar(
-                message = loadFailureMessage,
-                actionLabel = retryActionLabel,
-                duration = SnackbarDuration.Indefinite,
-            )
+            val snackbarResult =
+                snackbarHostState.showSnackbar(
+                    message = loadFailureMessage,
+                    actionLabel = retryActionLabel,
+                    duration = SnackbarDuration.Indefinite,
+                )
             if (snackbarResult == SnackbarResult.ActionPerformed) {
                 homeViewModel.loadTeamSiteOverview()
             }
@@ -167,10 +168,11 @@ internal fun HeartGuardHomeRoute(
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
         )
     }
 }
@@ -178,43 +180,48 @@ internal fun HeartGuardHomeRoute(
 // 온도를 받지 못했으면 Figma 홈의 관측값 없음 표기("--.- °C")를 쓴다.
 @Composable
 @ReadOnlyComposable
-private fun homeTemperatureText(temperature: String?): String {
-    return if (temperature == null) {
+private fun homeTemperatureText(temperature: String?): String =
+    if (temperature == null) {
         stringResource(R.string.home_temperature_empty)
     } else {
         temperatureValueText(temperature)
     }
-}
 
 @Composable
 @ReadOnlyComposable
-private fun skyStatusText(skyStatus: SkyStatus?): String {
-    return when (skyStatus) {
+private fun skyStatusText(skyStatus: SkyStatus?): String =
+    when (skyStatus) {
         SkyStatus.CLEAR -> stringResource(R.string.home_sky_clear)
+
         SkyStatus.PARTLY_CLOUDY -> stringResource(R.string.home_sky_partly_cloudy)
+
         SkyStatus.CLOUDY -> stringResource(R.string.home_sky_cloudy)
+
         SkyStatus.RAIN -> stringResource(R.string.home_sky_rain)
+
         SkyStatus.SNOW -> stringResource(R.string.home_sky_snow)
+
         SkyStatus.UNKNOWN,
         null,
         -> emptyValueText()
     }
-}
 
 // 눈 전용 이미지가 없어 눈·미입력은 기본 홈 날씨 이미지를 쓴다.
 @DrawableRes
-private fun skyStatusImageRes(skyStatus: SkyStatus?): Int {
-    return when (skyStatus) {
+private fun skyStatusImageRes(skyStatus: SkyStatus?): Int =
+    when (skyStatus) {
         SkyStatus.CLEAR -> R.drawable.weather_sunny
+
         SkyStatus.CLOUDY -> R.drawable.weather_cloud
+
         SkyStatus.RAIN -> R.drawable.weather_rain
+
         SkyStatus.PARTLY_CLOUDY,
         SkyStatus.SNOW,
         SkyStatus.UNKNOWN,
         null,
         -> R.drawable.heartguard_home_weather
     }
-}
 
 private val nextCheckTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -272,12 +279,11 @@ private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelin
 // 정시는 "09시", 그 외에는 "09:30"처럼 보여준다.
 @Composable
 @ReadOnlyComposable
-private fun checkTimeLabelText(checkTime: LocalTime): String {
-    return if (checkTime.minute == 0) {
+private fun checkTimeLabelText(checkTime: LocalTime): String =
+    if (checkTime.minute == 0) {
         stringResource(R.string.home_check_time_hour_format, checkTime.hour)
     } else {
         checkTime.format(nextCheckTimeFormatter)
     }
-}
 
 private const val MINUTES_PER_HOUR = 60L

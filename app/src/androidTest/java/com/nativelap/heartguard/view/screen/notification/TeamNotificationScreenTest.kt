@@ -1,9 +1,9 @@
 package com.nativelap.heartguard.view.screen.notification
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.runtime.mutableStateOf
 import com.nativelap.heartguard.domain.notification.model.NotificationCategory
 import com.nativelap.heartguard.domain.notification.model.NotificationTarget
 import com.nativelap.heartguard.domain.notification.model.NotificationType
@@ -11,10 +11,10 @@ import com.nativelap.heartguard.domain.notification.model.TeamNotification
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.viewmodel.notification.TeamNotificationScreenEvent
 import com.nativelap.heartguard.viewmodel.notification.TeamNotificationUiState
-import java.time.OffsetDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.time.OffsetDateTime
 
 class TeamNotificationScreenTest {
     @get:Rule
@@ -22,23 +22,27 @@ class TeamNotificationScreenTest {
 
     @Test
     fun reachingListEndDuringReadResumesAutomaticPaginationAfterReadCompletes() {
-        val notification = TeamNotification(
-            notificationId = "ntf_01",
-            type = NotificationType.RECORD_CREATED,
-            category = NotificationCategory.RECORD,
-            title = "휴식 사진이 저장됐어요",
-            target = NotificationTarget.Record("rec_01"),
-            isRead = false,
-            createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
-            updatedAt = null,
-        )
-        val screenState = mutableStateOf(TeamNotificationUiState(
-            notifications = listOf(notification),
-            hasLoaded = true,
-            hasMore = true,
-            nextCursor = "next",
-            markingReadIds = setOf(notification.notificationId),
-        ))
+        val notification =
+            TeamNotification(
+                notificationId = "ntf_01",
+                type = NotificationType.RECORD_CREATED,
+                category = NotificationCategory.RECORD,
+                title = "휴식 사진이 저장됐어요",
+                target = NotificationTarget.Record("rec_01"),
+                isRead = false,
+                createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
+                updatedAt = null,
+            )
+        val screenState =
+            mutableStateOf(
+                TeamNotificationUiState(
+                    notifications = listOf(notification),
+                    hasLoaded = true,
+                    hasMore = true,
+                    nextCursor = "next",
+                    markingReadIds = setOf(notification.notificationId),
+                ),
+            )
         var loadMoreRequests = 0
         composeTestRule.setContent {
             HeartGuardTheme {
@@ -52,11 +56,12 @@ class TeamNotificationScreenTest {
         composeTestRule.runOnIdle {
             assertEquals(0, loadMoreRequests)
         }
-        val blockedStates = listOf(
-            screenState.value.copy(markingReadIds = emptySet(), isMarkingAllRead = true),
-            screenState.value.copy(markingReadIds = emptySet(), isRefreshing = true),
-            screenState.value.copy(markingReadIds = emptySet(), hasRefreshError = true),
-        )
+        val blockedStates =
+            listOf(
+                screenState.value.copy(markingReadIds = emptySet(), isMarkingAllRead = true),
+                screenState.value.copy(markingReadIds = emptySet(), isRefreshing = true),
+                screenState.value.copy(markingReadIds = emptySet(), hasRefreshError = true),
+            )
         blockedStates.forEach { blockedState ->
             composeTestRule.runOnIdle { screenState.value = blockedState }
             composeTestRule.waitForIdle()
@@ -116,23 +121,25 @@ class TeamNotificationScreenTest {
     @Test
     fun unreadNotificationShowsTitleAndClickRequestsRead() {
         var receivedEvent: TeamNotificationScreenEvent? = null
-        val notification = TeamNotification(
-            notificationId = "ntf_01",
-            type = NotificationType.RECORD_CREATED,
-            category = NotificationCategory.RECORD,
-            title = "휴식 사진이 저장됐어요",
-            target = NotificationTarget.Record("rec_01"),
-            isRead = false,
-            createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
-            updatedAt = null,
-        )
+        val notification =
+            TeamNotification(
+                notificationId = "ntf_01",
+                type = NotificationType.RECORD_CREATED,
+                category = NotificationCategory.RECORD,
+                title = "휴식 사진이 저장됐어요",
+                target = NotificationTarget.Record("rec_01"),
+                isRead = false,
+                createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
+                updatedAt = null,
+            )
         composeTestRule.setContent {
             HeartGuardTheme {
                 TeamNotificationScreen(
-                    uiState = TeamNotificationUiState(
-                        notifications = listOf(notification),
-                        hasLoaded = true,
-                    ),
+                    uiState =
+                        TeamNotificationUiState(
+                            notifications = listOf(notification),
+                            hasLoaded = true,
+                        ),
                     onEvent = { event -> receivedEvent = event },
                 )
             }
@@ -148,24 +155,26 @@ class TeamNotificationScreenTest {
     @Test
     fun readNotificationCanStillBeClickedToOpenRelatedScreen() {
         var receivedEvent: TeamNotificationScreenEvent? = null
-        val notification = TeamNotification(
-            notificationId = "ntf_02",
-            type = NotificationType.INQUIRY_ANSWERED,
-            category = NotificationCategory.NOTICE,
-            title = "문의에 답변이 등록됐어요",
-            target = NotificationTarget.InquiryAnswer("inq_01"),
-            isRead = true,
-            createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
-            updatedAt = null,
-        )
+        val notification =
+            TeamNotification(
+                notificationId = "ntf_02",
+                type = NotificationType.INQUIRY_ANSWERED,
+                category = NotificationCategory.NOTICE,
+                title = "문의에 답변이 등록됐어요",
+                target = NotificationTarget.InquiryAnswer("inq_01"),
+                isRead = true,
+                createdAt = OffsetDateTime.parse("2026-09-30T10:20:00+09:00"),
+                updatedAt = null,
+            )
         composeTestRule.setContent {
             HeartGuardTheme {
                 TeamNotificationScreen(
-                    uiState = TeamNotificationUiState(
-                        notifications = listOf(notification),
-                        hasLoaded = true,
-                        isRefreshing = true,
-                    ),
+                    uiState =
+                        TeamNotificationUiState(
+                            notifications = listOf(notification),
+                            hasLoaded = true,
+                            isRefreshing = true,
+                        ),
                     onEvent = { event -> receivedEvent = event },
                 )
             }

@@ -38,21 +38,23 @@ fun MenuDrawerProfile(
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {
         Box(
-            modifier = Modifier
-                .size(HeartGuardIconSize.MenuAvatar)
-                .background(
-                    color = MaterialTheme.extraColors.photoContainer,
-                    shape = CircleShape,
-                ),
+            modifier =
+                Modifier
+                    .size(HeartGuardIconSize.MenuAvatar)
+                    .background(
+                        color = MaterialTheme.extraColors.photoContainer,
+                        shape = CircleShape,
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = valueOrEmptyText(profile.avatarInitial),
                 color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = HeartGuardFontSize.MenuProfileName,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontSize = HeartGuardFontSize.MenuProfileName,
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
         }
 
@@ -60,32 +62,36 @@ fun MenuDrawerProfile(
             Text(
                 text = valueOrEmptyText(profile.userName),
                 color = MaterialTheme.extraColors.strongText,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = HeartGuardFontSize.MenuProfileName,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontSize = HeartGuardFontSize.MenuProfileName,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = stringResource(
-                    R.string.menu_profile_affiliation_format,
-                    valueOrEmptyText(profile.companyName),
-                    stringResource(R.string.profile_worker_role),
-                ),
+                text =
+                    stringResource(
+                        R.string.menu_profile_affiliation_format,
+                        valueOrEmptyText(profile.companyName),
+                        stringResource(R.string.profile_worker_role),
+                    ),
                 color = MaterialTheme.extraColors.secondaryText,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = HeartGuardFontSize.SmallLabel,
-                ),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontSize = HeartGuardFontSize.SmallLabel,
+                    ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = valueOrEmptyText(profile.email),
                 color = MaterialTheme.extraColors.tertiaryText,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = HeartGuardFontSize.MenuProfileEmail,
-                ),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontSize = HeartGuardFontSize.MenuProfileEmail,
+                    ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -98,11 +104,12 @@ fun MenuDrawerProfile(
 private fun MenuDrawerProfilePreview() {
     HeartGuardTheme {
         MenuDrawerProfile(
-            profile = MenuDrawerProfileUiModel(
-                userName = "김현장",
-                companyName = "이음산업건설",
-                email = "worker@ieum.co.kr",
-            ),
+            profile =
+                MenuDrawerProfileUiModel(
+                    userName = "김현장",
+                    companyName = "이음산업건설",
+                    email = "worker@ieum.co.kr",
+                ),
         )
     }
 }

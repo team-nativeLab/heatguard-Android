@@ -24,15 +24,16 @@ class BearerTokenAuthenticatorTest {
             val sessionManager = SessionManager(storage, Dispatchers.IO)
             runBlocking { sessionManager.initialize() }
             val previousGeneration = sessionManager.getSnapshot().generation
-            val client = OkHttpClient.Builder()
-                .addInterceptor(BearerTokenInterceptor(sessionManager))
-                .addNetworkInterceptor { chain ->
-                    val response = chain.proceed(chain.request())
-                    runBlocking { sessionManager.onLoginSucceeded(SessionToken("same-token")) }
-                    response
-                }
-                .authenticator(BearerTokenAuthenticator(sessionManager))
-                .build()
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(BearerTokenInterceptor(sessionManager))
+                    .addNetworkInterceptor { chain ->
+                        val response = chain.proceed(chain.request())
+                        runBlocking { sessionManager.onLoginSucceeded(SessionToken("same-token")) }
+                        response
+                    }.authenticator(BearerTokenAuthenticator(sessionManager))
+                    .build()
             client.newCall(Request.Builder().url(server.url("/protected")).build()).execute().use {
                 assertEquals(401, it.code)
             }
@@ -54,9 +55,11 @@ class BearerTokenAuthenticatorTest {
             val storage = FakeTokenStorage("token")
             val sessionManager = SessionManager(storage, Dispatchers.IO)
             runBlocking { sessionManager.initialize() }
-            val client = OkHttpClient.Builder()
-                .authenticator(BearerTokenAuthenticator(sessionManager))
-                .build()
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .authenticator(BearerTokenAuthenticator(sessionManager))
+                    .build()
             client.newCall(Request.Builder().url(server.url("/public")).build()).execute().close()
             assertEquals("token", storage.accessToken)
             assertEquals(SessionState.Authenticated, sessionManager.sessionState.value)
@@ -73,18 +76,23 @@ class BearerTokenAuthenticatorTest {
             mockWebServer.enqueue(MockResponse.Builder().code(401).build())
 
             val tokenStorage = FakeTokenStorage(accessToken = "expired-access-token")
-            val sessionManager = SessionManager(
-                tokenStorage = tokenStorage,
-                ioDispatcher = Dispatchers.IO,
-            )
+            val sessionManager =
+                SessionManager(
+                    tokenStorage = tokenStorage,
+                    ioDispatcher = Dispatchers.IO,
+                )
             runBlocking { sessionManager.initialize() }
-            val client = OkHttpClient.Builder()
-                .addInterceptor(BearerTokenInterceptor(sessionManager))
-                .authenticator(BearerTokenAuthenticator(sessionManager))
-                .build()
-            val request = Request.Builder()
-                .url(mockWebServer.url("/protected"))
-                .build()
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(BearerTokenInterceptor(sessionManager))
+                    .authenticator(BearerTokenAuthenticator(sessionManager))
+                    .build()
+            val request =
+                Request
+                    .Builder()
+                    .url(mockWebServer.url("/protected"))
+                    .build()
 
             // 401 응답을 받으면 Authenticator가 재시도 Request를 만들지 않고 그대로 실패를 반환해야 한다.
             client.newCall(request).execute().use { response ->

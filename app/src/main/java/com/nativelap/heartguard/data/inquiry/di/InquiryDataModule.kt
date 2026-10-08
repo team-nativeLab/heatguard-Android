@@ -20,25 +20,20 @@ import javax.inject.Singleton
 abstract class InquiryDataModule {
     @Binds
     @Singleton
-    abstract fun bindInquiryRemoteDataSource(
-        implementation: InquiryRemoteDataSourceImpl,
-    ): InquiryRemoteDataSource
+    abstract fun bindInquiryRemoteDataSource(implementation: InquiryRemoteDataSourceImpl): InquiryRemoteDataSource
 
     @Binds
     @Singleton
-    abstract fun bindInquiryRepository(
-        implementation: InquiryRepositoryImpl,
-    ): InquiryRepository
+    abstract fun bindInquiryRepository(implementation: InquiryRepositoryImpl): InquiryRepository
 
     companion object {
         @Provides
         @Singleton
-        fun provideInquiryApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): InquiryApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = InquiryApiService::class.java,
-            authentication = ApiAuthentication.BEARER,
-        )
+        fun provideInquiryApiService(apiRetrofitFactory: ApiRetrofitFactory): InquiryApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = InquiryApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+            )
     }
 }

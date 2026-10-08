@@ -85,22 +85,21 @@ private fun HomeContactRow(
     isEnabled: Boolean = true,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.HomeContactHeight / 2)
-            .clickable(
-                enabled = isEnabled,
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .alpha(
-                if (isEnabled) {
-                    ENABLED_ALPHA
-                } else {
-                    DISABLED_ALPHA
-                },
-            )
-            .padding(horizontal = HeartGuardSpacing.Section),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.HomeContactHeight / 2)
+                .clickable(
+                    enabled = isEnabled,
+                    role = Role.Button,
+                    onClick = onClick,
+                ).alpha(
+                    if (isEnabled) {
+                        ENABLED_ALPHA
+                    } else {
+                        DISABLED_ALPHA
+                    },
+                ).padding(horizontal = HeartGuardSpacing.Section),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {

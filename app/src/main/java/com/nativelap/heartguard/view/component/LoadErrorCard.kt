@@ -32,9 +32,10 @@ fun LoadErrorCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.extraColors.alertContainer,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.extraColors.alertContainer,
+            ),
     ) {
         Column(
             modifier = Modifier.padding(HeartGuardSpacing.Item),

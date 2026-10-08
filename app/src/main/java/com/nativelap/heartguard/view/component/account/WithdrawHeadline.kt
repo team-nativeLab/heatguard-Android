@@ -31,10 +31,11 @@ fun WithdrawHeadline(
             text = title,
             modifier = Modifier.semantics { heading() },
             color = MaterialTheme.extraColors.strongText,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontSize = HeartGuardFontSize.WithdrawTitle,
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = HeartGuardFontSize.WithdrawTitle,
+                    fontWeight = FontWeight.Bold,
+                ),
         )
         Text(
             text = subtitle,

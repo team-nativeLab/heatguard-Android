@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,8 +23,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,75 +73,79 @@ fun AuthLoginScreen(
         contentWindowInsets = WindowInsets.statusBars,
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
-                .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
-                .windowInsetsPadding(
-                    if (hasFormFocus) {
-                        WindowInsets.navigationBars.union(WindowInsets.ime)
-                    } else {
-                        WindowInsets.navigationBars
-                    },
-                )
-                .onFocusChanged { focusState -> hasFormFocus = focusState.hasFocus }
-                .then(
-                    if (isKeyboardVisible) {
-                        Modifier.verticalScroll(pageScrollState)
-                    } else {
-                        Modifier
-                    },
-                ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
+                    .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
+                    .windowInsetsPadding(
+                        if (hasFormFocus) {
+                            WindowInsets.navigationBars.union(WindowInsets.ime)
+                        } else {
+                            WindowInsets.navigationBars
+                        },
+                    ).onFocusChanged { focusState -> hasFormFocus = focusState.hasFocus }
+                    .then(
+                        if (isKeyboardVisible) {
+                            Modifier.verticalScroll(pageScrollState)
+                        } else {
+                            Modifier
+                        },
+                    ),
             // 키보드가 열리면 폼과 액션을 함께 스크롤해 큰 글꼴에서도 입력칸을 완전히 볼 수 있게 한다.
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (isKeyboardVisible) {
-                            Modifier
-                        } else {
-                            Modifier.weight(1f)
-                        },
-                    ),
-            ) {
-                var formContentHeight by remember { mutableIntStateOf(0) }
-                val topSpacing = if (isKeyboardVisible || formContentHeight == 0) {
-                    0.dp
-                } else {
-                    with(LocalDensity.current) {
-                        val maximumTopSpacing = (HeartGuardSpacing.AuthTop - innerPadding.calculateTopPadding())
-                            .coerceAtLeast(0.dp)
-                        (maxHeight - formContentHeight.toDp()).coerceIn(0.dp, maximumTopSpacing)
-                    }
-                }
-                Column(
-                    modifier = Modifier
+                modifier =
+                    Modifier
                         .fillMaxWidth()
                         .then(
                             if (isKeyboardVisible) {
                                 Modifier
                             } else {
-                                Modifier.verticalScroll(formScrollState)
+                                Modifier.weight(1f)
                             },
                         ),
+            ) {
+                var formContentHeight by remember { mutableIntStateOf(0) }
+                val topSpacing =
+                    if (isKeyboardVisible || formContentHeight == 0) {
+                        0.dp
+                    } else {
+                        with(LocalDensity.current) {
+                            val maximumTopSpacing =
+                                (HeartGuardSpacing.AuthTop - innerPadding.calculateTopPadding())
+                                    .coerceAtLeast(0.dp)
+                            (maxHeight - formContentHeight.toDp()).coerceIn(0.dp, maximumTopSpacing)
+                        }
+                    }
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (isKeyboardVisible) {
+                                    Modifier
+                                } else {
+                                    Modifier.verticalScroll(formScrollState)
+                                },
+                            ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(modifier = Modifier.height(topSpacing))
 
                     Column(
-                        modifier = Modifier
-                            .widthIn(max = HeartGuardComponentSize.AuthContentMaxWidth)
-                            .fillMaxWidth()
-                            .onSizeChanged { contentSize ->
-                                if (formContentHeight != contentSize.height) {
-                                    formContentHeight = contentSize.height
-                                }
-                            }
-                            .padding(bottom = HeartGuardSpacing.Item),
+                        modifier =
+                            Modifier
+                                .widthIn(max = HeartGuardComponentSize.AuthContentMaxWidth)
+                                .fillMaxWidth()
+                                .onSizeChanged { contentSize ->
+                                    if (formContentHeight != contentSize.height) {
+                                        formContentHeight = contentSize.height
+                                    }
+                                }.padding(bottom = HeartGuardSpacing.Item),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         BrandMark(
@@ -181,16 +185,17 @@ fun AuthLoginScreen(
             }
 
             Column(
-                modifier = Modifier
-                    .padding(
-                        top = if (isKeyboardVisible) {
-                            HeartGuardSpacing.Item
-                        } else {
-                            0.dp
-                        },
-                    )
-                    .widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(
+                            top =
+                                if (isKeyboardVisible) {
+                                    HeartGuardSpacing.Item
+                                } else {
+                                    0.dp
+                                },
+                        ).widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
+                        .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 AuthPrimaryButton(

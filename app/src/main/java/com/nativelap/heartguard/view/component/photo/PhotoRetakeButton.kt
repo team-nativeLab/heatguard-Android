@@ -21,17 +21,19 @@ fun PhotoRetakeButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
     ) {
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
         )
     }
 }

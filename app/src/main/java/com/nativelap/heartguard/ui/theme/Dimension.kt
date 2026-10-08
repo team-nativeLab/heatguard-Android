@@ -120,10 +120,13 @@ object HeartGuardIconSize {
 object HeartGuardComponentSize {
     // 목록 끝에서 다음 페이지를 받는 동안 보이는 작은 진행 표시다.
     val ListLoadingIndicator = 24.dp
+
     // 스크롤 Column에서 끝까지 이만큼 남았을 때 다음 페이지를 미리 요청한다.
     val ListLoadMorePrefetchDistance = 200.dp
+
     // 홈 날씨 지표 3개를 가로로 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 세로로 쌓는다.
     val HomeMetricRowMinWidth = 260.dp
+
     // 기록 건수 4칸을 한 줄에 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 2×2로 나눈다.
     val HistoryCountRowMinWidth = 240.dp
     val PageContentMaxWidth = 600.dp
@@ -135,6 +138,7 @@ object HeartGuardComponentSize {
     val TextFieldHeight = 48.dp
     val CompactInputHeight = 40.dp
     val TouchTarget = 48.dp
+
     // Figma 카드의 콘텐츠가 잘리지 않도록 최소 높이만 제공하고, 긴 텍스트에는 높이를 열어 둔다.
     val RecordOptionMinHeight = 110.dp
     val CameraAction = 64.dp
@@ -149,6 +153,7 @@ object HeartGuardComponentSize {
     val TemperatureErrorMessageMaxWidth = 180.dp
     val PhotoSelectionTitleMaxWidth = 200.dp
     val PhotoCaptureTextMaxWidth = 220.dp
+
     // 온도 기록 화면의 현장 사진 선택 영역은 작업·휴식 사진 카드보다 낮은 Figma 컴포넌트다.
     val FieldPhotoSelectionHeight = 104.dp
     val PhotoMemoMinHeight = 114.dp
@@ -172,6 +177,7 @@ object HeartGuardComponentSize {
     val TemperatureDeltaMinWidth = 72.dp
     val ResultMessageHeight = 218.dp
     val ResultErrorDetailHeight = 123.dp
+
     // Figma 22 기록 상세 정보 카드의 행 높이다.
     val DetailInfoRowHeight = 45.dp
 }

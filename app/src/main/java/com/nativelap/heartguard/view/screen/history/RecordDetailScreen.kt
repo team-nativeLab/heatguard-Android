@@ -54,9 +54,10 @@ fun RecordDetailScreen(
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.history_detail_title),
@@ -66,20 +67,22 @@ fun RecordDetailScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-                    .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
+                        .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
                 when (uiState) {
                     RecordDetailUiState.Loading -> {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = HeartGuardSpacing.LargeSection),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = HeartGuardSpacing.LargeSection),
                             contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator()
@@ -97,11 +100,12 @@ fun RecordDetailScreen(
                     is RecordDetailUiState.Loaded -> {
                         RecordDetailContent(
                             recordEntry = uiState.entry,
-                            locationText = stringResource(
-                                R.string.history_detail_location_format,
-                                valueOrEmptyText(uiState.entry.workplace),
-                                valueOrEmptyText(uiState.entry.teamName),
-                            ),
+                            locationText =
+                                stringResource(
+                                    R.string.history_detail_location_format,
+                                    valueOrEmptyText(uiState.entry.workplace),
+                                    valueOrEmptyText(uiState.entry.teamName),
+                                ),
                         )
                     }
                 }
@@ -117,9 +121,10 @@ private val restClockFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern(
 @ReadOnlyComposable
 private fun restTimeText(recordEntry: RecordHistoryEntry): String {
     val restMinutes = recordEntry.restMinutes ?: return emptyValueText()
-    val restEndedAt = recordEntry.restEndedAt
-        ?: recordEntry.measuredAt
-        ?: return stringResource(R.string.history_detail_rest_minutes_format, restMinutes)
+    val restEndedAt =
+        recordEntry.restEndedAt
+            ?: recordEntry.measuredAt
+            ?: return stringResource(R.string.history_detail_rest_minutes_format, restMinutes)
     val restStartedAt = recordEntry.restStartedAt ?: restEndedAt.minusMinutes(restMinutes.toLong())
 
     return stringResource(
@@ -135,9 +140,10 @@ private fun RecordDetailContent(
     recordEntry: RecordHistoryEntry,
     locationText: String,
 ) {
-    val measuredAtText = recordEntry.measuredAt
-        ?.format(koreanDateFormatter(stringResource(R.string.history_detail_datetime_format)))
-        ?: emptyValueText()
+    val measuredAtText =
+        recordEntry.measuredAt
+            ?.format(koreanDateFormatter(stringResource(R.string.history_detail_datetime_format)))
+            ?: emptyValueText()
 
     if (recordEntry.type == FieldRecordType.THERMOMETER) {
         RecordDetailSummaryCard(
@@ -186,20 +192,22 @@ private fun RecordDetailContent(
 private fun RecordDetailScreenThermometerPreview() {
     HeartGuardTheme {
         RecordDetailScreen(
-            uiState = RecordDetailUiState.Loaded(
-                entry = RecordHistoryEntry(
-                    recordId = "rec_01",
-                    type = FieldRecordType.THERMOMETER,
-                    temperature = 36.2,
-                    humidity = 65.0,
-                    apparentTemperature = 38.7,
-                    heatLevel = 1,
-                    photoCount = 1,
-                    photoUrls = emptyList(),
-                    memo = "그늘막 설치 완료",
-                    measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
+            uiState =
+                RecordDetailUiState.Loaded(
+                    entry =
+                        RecordHistoryEntry(
+                            recordId = "rec_01",
+                            type = FieldRecordType.THERMOMETER,
+                            temperature = 36.2,
+                            humidity = 65.0,
+                            apparentTemperature = 38.7,
+                            heatLevel = 1,
+                            photoCount = 1,
+                            photoUrls = emptyList(),
+                            memo = "그늘막 설치 완료",
+                            measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
+                        ),
                 ),
-            ),
             onEvent = {},
         )
     }

@@ -30,36 +30,41 @@ fun RecordHistoryFilterChip(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.semantics {
-            role = Role.Tab
-            selected = isSelected
-        },
+        modifier =
+            modifier.semantics {
+                role = Role.Tab
+                selected = isSelected
+            },
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
-        color = if (isSelected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        border = if (isSelected) {
-            null
-        } else {
-            BorderStroke(
-                width = HeartGuardBorderWidth.Divider,
-                color = MaterialTheme.extraColors.cardBorder,
-            )
-        },
+        color =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        border =
+            if (isSelected) {
+                null
+            } else {
+                BorderStroke(
+                    width = HeartGuardBorderWidth.Divider,
+                    color = MaterialTheme.extraColors.cardBorder,
+                )
+            },
     ) {
         Text(
             text = title,
-            modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.Item,
-                vertical = HeartGuardSpacing.Compact,
-            ),
-            color = if (isSelected) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.extraColors.secondaryText
-            },
+            modifier =
+                Modifier.padding(
+                    horizontal = HeartGuardSpacing.Item,
+                    vertical = HeartGuardSpacing.Compact,
+                ),
+            color =
+                if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.extraColors.secondaryText
+                },
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
         )
     }

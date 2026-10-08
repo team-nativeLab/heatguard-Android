@@ -5,7 +5,9 @@ import com.nativelap.heartguard.domain.notification.model.TeamNotification
 
 /** 알림을 눌렀을 때 열 화면이다. 실제 목적지 전환은 Navigation 계층이 담당한다. */
 sealed interface NotificationOpenTarget {
-    data class RecordDetail(val recordId: String) : NotificationOpenTarget
+    data class RecordDetail(
+        val recordId: String,
+    ) : NotificationOpenTarget
 
     data object Inquiry : NotificationOpenTarget
 

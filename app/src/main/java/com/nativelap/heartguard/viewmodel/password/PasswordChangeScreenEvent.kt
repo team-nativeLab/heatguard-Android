@@ -4,11 +4,17 @@ package com.nativelap.heartguard.viewmodel.password
 sealed interface PasswordChangeScreenEvent {
     data object BackClicked : PasswordChangeScreenEvent
 
-    data class CurrentPasswordChanged(val password: String) : PasswordChangeScreenEvent
+    data class CurrentPasswordChanged(
+        val password: String,
+    ) : PasswordChangeScreenEvent
 
-    data class NewPasswordChanged(val password: String) : PasswordChangeScreenEvent
+    data class NewPasswordChanged(
+        val password: String,
+    ) : PasswordChangeScreenEvent
 
-    data class ConfirmPasswordChanged(val password: String) : PasswordChangeScreenEvent
+    data class ConfirmPasswordChanged(
+        val password: String,
+    ) : PasswordChangeScreenEvent
 
     data object CurrentPasswordVisibilityClicked : PasswordChangeScreenEvent
 

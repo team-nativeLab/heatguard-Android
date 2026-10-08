@@ -27,10 +27,11 @@ data class PasswordChangeUiState(
         get() = confirmPassword.isNotEmpty() && confirmPassword == newPassword
 
     val canSubmit: Boolean
-        get() = !isSubmitting &&
-            currentPassword.isNotEmpty() &&
-            isNewPasswordValid &&
-            isConfirmMatched
+        get() =
+            !isSubmitting &&
+                currentPassword.isNotEmpty() &&
+                isNewPasswordValid &&
+                isConfirmMatched
 }
 
 /** 서버 요청 실패 종류다. 화면은 이 값으로 안내 문구를 고른다. */

@@ -43,9 +43,10 @@ fun TemperatureInputField(
             // 기본 상하 padding(16dp)을 줄일 수 없으므로, HeartGuardComponentSize.CompactInputHeight
             // (Figma InputBox 실측 40dp) 고정 높이를 강제하지 않는다 — 강제하면 텍스트가 위아래로
             // 잘린다. bodySmall 텍스트 스타일로 필드가 필요한 최소 높이만큼만 자라도록 둔다.
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.Tight),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = HeartGuardSpacing.Tight),
             textStyle = MaterialTheme.typography.bodySmall,
             singleLine = true,
             placeholder = {
@@ -55,26 +56,28 @@ fun TemperatureInputField(
                 )
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            trailingIcon = if (unitLabel.isNotEmpty()) {
-                {
-                    Text(
-                        text = unitLabel,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            } else {
-                null
-            },
+            trailingIcon =
+                if (unitLabel.isNotEmpty()) {
+                    {
+                        Text(
+                            text = unitLabel,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                } else {
+                    null
+                },
             shape = RoundedCornerShape(HeartGuardRadius.InputBox),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
-                focusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
-                disabledContainerColor = MaterialTheme.extraColors.inputFieldBackground,
-                unfocusedBorderColor = MaterialTheme.extraColors.inputFieldBackground,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                disabledBorderColor = MaterialTheme.extraColors.inputFieldBackground,
-            ),
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
+                    focusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
+                    disabledContainerColor = MaterialTheme.extraColors.inputFieldBackground,
+                    unfocusedBorderColor = MaterialTheme.extraColors.inputFieldBackground,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    disabledBorderColor = MaterialTheme.extraColors.inputFieldBackground,
+                ),
         )
     }
 }

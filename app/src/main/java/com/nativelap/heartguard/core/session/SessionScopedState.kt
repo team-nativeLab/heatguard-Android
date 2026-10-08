@@ -24,11 +24,15 @@ fun ViewModel.clearStateWhenSessionEnds(
             currentSessionState to currentSnapshot.generation
         }.collect { (currentSessionState, currentGeneration) ->
             when (currentSessionState) {
-                SessionState.Initializing -> Unit
+                SessionState.Initializing -> {
+                    Unit
+                }
+
                 SessionState.Unauthenticated -> {
                     ownedGeneration = null
                     clearState()
                 }
+
                 SessionState.Authenticated -> {
                     val previousGeneration = ownedGeneration
                     ownedGeneration = currentGeneration

@@ -8,7 +8,11 @@ sealed interface RecordSubmitResult {
         val pendingCleanup: RecordSubmissionCleanup? = null,
     ) : RecordSubmitResult
 
-    data class NotSaved(val error: ApiError) : RecordSubmitResult
+    data class NotSaved(
+        val error: ApiError,
+    ) : RecordSubmitResult
 
-    data class Unknown(val error: ApiError) : RecordSubmitResult
+    data class Unknown(
+        val error: ApiError,
+    ) : RecordSubmitResult
 }

@@ -93,11 +93,12 @@ fun RecordDetailMeasurementCard(
                 )
                 MeasurementValue(
                     label = stringResource(R.string.history_detail_thermometer),
-                    valueText = if (temperature != null) {
-                        stringResource(R.string.history_detail_thermometer_installed)
-                    } else {
-                        stringResource(R.string.history_detail_thermometer_not_installed)
-                    },
+                    valueText =
+                        if (temperature != null) {
+                            stringResource(R.string.history_detail_thermometer_installed)
+                        } else {
+                            stringResource(R.string.history_detail_thermometer_not_installed)
+                        },
                     modifier = Modifier.weight(1f),
                 )
             }

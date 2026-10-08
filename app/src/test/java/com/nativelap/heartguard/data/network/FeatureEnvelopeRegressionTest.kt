@@ -19,7 +19,6 @@ import com.nativelap.heartguard.data.record.remote.RecordHistoryRemoteDataSource
 import com.nativelap.heartguard.data.site.remote.TeamSiteApiService
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSourceImpl
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
-import java.time.Instant
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import mockwebserver3.MockResponse
@@ -30,9 +29,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.time.Instant
 
 @RunWith(Parameterized::class)
-class FeatureEnvelopeRegressionTest(private val endpoint: Endpoint) {
+class FeatureEnvelopeRegressionTest(
+    private val endpoint: Endpoint,
+) {
     @Test
     fun successfulPayloadIncludesEmptyListsAndNoneCall() {
         assertTrue(call("""{"success":true,"data":${endpoint.payload},"error":null}""") is ApiResult.Success)
@@ -72,116 +74,167 @@ class FeatureEnvelopeRegressionTest(private val endpoint: Endpoint) {
         )
     }
 
-    private fun call(responseBody: String): ApiResult<*> = runBlocking {
-        val server = MockWebServer()
-        server.start()
-        try {
-            server.enqueue(MockResponse.Builder().code(200).body(responseBody).build())
-            val factory = ApiRetrofitFactory(
-                authenticatedApiClient = OkHttpClient(),
-                unauthenticatedApiClient = OkHttpClient(),
-                sessionManager = createUnauthenticatedTestSessionManager(),
-                json = Json { ignoreUnknownKeys = true },
-            )
-            val executor = ApiExecutor()
-            fun <Service : Any> service(serviceClass: Class<Service>): Service {
-                return factory.createService(
-                    baseUrl = server.url("/").toString(),
-                    serviceClass = serviceClass,
-                    authentication = ApiAuthentication.BEARER,
+    private fun call(responseBody: String): ApiResult<*> =
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            try {
+                server.enqueue(
+                    MockResponse
+                        .Builder()
+                        .code(200)
+                        .body(responseBody)
+                        .build(),
                 )
-            }
-            when (endpoint) {
-                Endpoint.NOTIFICATION_LIST -> TeamNotificationRemoteDataSourceImpl(
-                    service(TeamNotificationApiService::class.java),
-                    executor,
-                ).getNotifications(
-                    category = "ALL",
-                    cursor = null,
-                    limit = 20,
-                )
-                Endpoint.NOTIFICATION_READ -> TeamNotificationRemoteDataSourceImpl(
-                    service(TeamNotificationApiService::class.java),
-                    executor,
-                ).markNotificationRead("notification")
-                Endpoint.NOTIFICATION_READ_ALL -> TeamNotificationRemoteDataSourceImpl(
-                    service(TeamNotificationApiService::class.java),
-                    executor,
-                ).markAllNotificationsRead()
-                Endpoint.HISTORY_LIST -> RecordHistoryRemoteDataSourceImpl(
-                    service(RecordHistoryApiService::class.java),
-                    executor,
-                ).getRecordPage(
-                    date = "2026-10-04",
-                    cursor = null,
-                    limit = 20,
-                )
-                Endpoint.HISTORY_DETAIL -> RecordHistoryRemoteDataSourceImpl(
-                    service(RecordHistoryApiService::class.java),
-                    executor,
-                ).getRecordDetail("record")
-                Endpoint.HOME -> TeamSiteRemoteDataSourceImpl(
-                    service(TeamSiteApiService::class.java),
-                    executor,
-                ).getTeamSite()
-                Endpoint.CALL_REGISTER -> EmergencyCallRemoteDataSourceImpl(
-                    service(EmergencyCallApiService::class.java),
-                    executor,
-                ).registerEmergencyCall(
-                    idempotencyKey = "intent",
-                    clientOccurredAt = Instant.parse("2026-10-04T01:00:00Z"),
-                    message = null,
-                )
-                Endpoint.CALL_CURRENT -> EmergencyCallRemoteDataSourceImpl(
-                    service(EmergencyCallApiService::class.java),
-                    executor,
-                ).getCurrentEmergencyCall()
-                Endpoint.CALL_UPDATE -> EmergencyCallRemoteDataSourceImpl(
-                    service(EmergencyCallApiService::class.java),
-                    executor,
-                ).updateEmergencyCallStatus(
-                    callId = "call",
-                    status = EmergencyCallUpdateStatus.CANCELLED,
-                )
-                Endpoint.INQUIRY_LIST -> InquiryRemoteDataSourceImpl(
-                    service(InquiryApiService::class.java),
-                    executor,
-                ).getInquiryPage(
-                    cursor = null,
-                    limit = 20,
-                )
-                Endpoint.INQUIRY_SUBMIT -> InquiryRemoteDataSourceImpl(
-                    service(InquiryApiService::class.java),
-                    executor,
-                ).submitInquiry(
-                    title = "test",
-                    content = "test",
-                )
-                Endpoint.PROFILE_GET -> WorkerProfileRemoteDataSourceImpl(
-                    service(WorkerProfileApiService::class.java),
-                    executor,
-                ).getWorkerProfile()
-                Endpoint.PROFILE_UPDATE -> WorkerProfileRemoteDataSourceImpl(
-                    service(WorkerProfileApiService::class.java),
-                    executor,
-                ).updateWorkerName(
-                    name = "test",
-                    version = null,
-                )
-                Endpoint.PASSWORD_CHANGE -> WorkerProfileRemoteDataSourceImpl(
-                    service(WorkerProfileApiService::class.java),
-                    executor,
-                ).changePassword(
-                    currentPassword = "test-current",
-                    newPassword = "test-new",
-                )
-            }
-        } finally {
-            server.close()
-        }
-    }
+                val factory =
+                    ApiRetrofitFactory(
+                        authenticatedApiClient = OkHttpClient(),
+                        unauthenticatedApiClient = OkHttpClient(),
+                        sessionManager = createUnauthenticatedTestSessionManager(),
+                        json = Json { ignoreUnknownKeys = true },
+                    )
+                val executor = ApiExecutor()
 
-    enum class Endpoint(val payload: String) {
+                fun <Service : Any> service(serviceClass: Class<Service>): Service =
+                    factory.createService(
+                        baseUrl = server.url("/").toString(),
+                        serviceClass = serviceClass,
+                        authentication = ApiAuthentication.BEARER,
+                    )
+                when (endpoint) {
+                    Endpoint.NOTIFICATION_LIST -> {
+                        TeamNotificationRemoteDataSourceImpl(
+                            service(TeamNotificationApiService::class.java),
+                            executor,
+                        ).getNotifications(
+                            category = "ALL",
+                            cursor = null,
+                            limit = 20,
+                        )
+                    }
+
+                    Endpoint.NOTIFICATION_READ -> {
+                        TeamNotificationRemoteDataSourceImpl(
+                            service(TeamNotificationApiService::class.java),
+                            executor,
+                        ).markNotificationRead("notification")
+                    }
+
+                    Endpoint.NOTIFICATION_READ_ALL -> {
+                        TeamNotificationRemoteDataSourceImpl(
+                            service(TeamNotificationApiService::class.java),
+                            executor,
+                        ).markAllNotificationsRead()
+                    }
+
+                    Endpoint.HISTORY_LIST -> {
+                        RecordHistoryRemoteDataSourceImpl(
+                            service(RecordHistoryApiService::class.java),
+                            executor,
+                        ).getRecordPage(
+                            date = "2026-10-04",
+                            cursor = null,
+                            limit = 20,
+                        )
+                    }
+
+                    Endpoint.HISTORY_DETAIL -> {
+                        RecordHistoryRemoteDataSourceImpl(
+                            service(RecordHistoryApiService::class.java),
+                            executor,
+                        ).getRecordDetail("record")
+                    }
+
+                    Endpoint.HOME -> {
+                        TeamSiteRemoteDataSourceImpl(
+                            service(TeamSiteApiService::class.java),
+                            executor,
+                        ).getTeamSite()
+                    }
+
+                    Endpoint.CALL_REGISTER -> {
+                        EmergencyCallRemoteDataSourceImpl(
+                            service(EmergencyCallApiService::class.java),
+                            executor,
+                        ).registerEmergencyCall(
+                            idempotencyKey = "intent",
+                            clientOccurredAt = Instant.parse("2026-10-04T01:00:00Z"),
+                            message = null,
+                        )
+                    }
+
+                    Endpoint.CALL_CURRENT -> {
+                        EmergencyCallRemoteDataSourceImpl(
+                            service(EmergencyCallApiService::class.java),
+                            executor,
+                        ).getCurrentEmergencyCall()
+                    }
+
+                    Endpoint.CALL_UPDATE -> {
+                        EmergencyCallRemoteDataSourceImpl(
+                            service(EmergencyCallApiService::class.java),
+                            executor,
+                        ).updateEmergencyCallStatus(
+                            callId = "call",
+                            status = EmergencyCallUpdateStatus.CANCELLED,
+                        )
+                    }
+
+                    Endpoint.INQUIRY_LIST -> {
+                        InquiryRemoteDataSourceImpl(
+                            service(InquiryApiService::class.java),
+                            executor,
+                        ).getInquiryPage(
+                            cursor = null,
+                            limit = 20,
+                        )
+                    }
+
+                    Endpoint.INQUIRY_SUBMIT -> {
+                        InquiryRemoteDataSourceImpl(
+                            service(InquiryApiService::class.java),
+                            executor,
+                        ).submitInquiry(
+                            title = "test",
+                            content = "test",
+                        )
+                    }
+
+                    Endpoint.PROFILE_GET -> {
+                        WorkerProfileRemoteDataSourceImpl(
+                            service(WorkerProfileApiService::class.java),
+                            executor,
+                        ).getWorkerProfile()
+                    }
+
+                    Endpoint.PROFILE_UPDATE -> {
+                        WorkerProfileRemoteDataSourceImpl(
+                            service(WorkerProfileApiService::class.java),
+                            executor,
+                        ).updateWorkerName(
+                            name = "test",
+                            version = null,
+                        )
+                    }
+
+                    Endpoint.PASSWORD_CHANGE -> {
+                        WorkerProfileRemoteDataSourceImpl(
+                            service(WorkerProfileApiService::class.java),
+                            executor,
+                        ).changePassword(
+                            currentPassword = "test-current",
+                            newPassword = "test-new",
+                        )
+                    }
+                }
+            } finally {
+                server.close()
+            }
+        }
+
+    enum class Endpoint(
+        val payload: String,
+    ) {
         NOTIFICATION_LIST("""{"items":[],"unreadCount":0}"""),
         NOTIFICATION_READ("""{"notificationId":"notification","read":true}"""),
         NOTIFICATION_READ_ALL("""{"updatedCount":0,"unreadCount":0}"""),
@@ -192,7 +245,9 @@ class FeatureEnvelopeRegressionTest(private val endpoint: Endpoint) {
         CALL_CURRENT("""{"callId":null,"status":"NONE"}"""),
         CALL_UPDATE("""{"callId":"call","status":"CANCELLED"}"""),
         INQUIRY_LIST("""{"items":[]}"""),
-        INQUIRY_SUBMIT("""{"inquiryId":"inquiry","status":"OPEN","deliveryStatus":"PENDING","createdAt":"2026-10-04T01:00:00Z"}"""),
+        INQUIRY_SUBMIT(
+            """{"inquiryId":"inquiry","status":"OPEN","deliveryStatus":"PENDING","createdAt":"2026-10-04T01:00:00Z"}""",
+        ),
         PROFILE_GET("""{"userId":"worker"}"""),
         PROFILE_UPDATE("""{"userId":"worker"}"""),
         PASSWORD_CHANGE("""{"changedAt":"2026-10-04T01:00:00Z"}"""),
@@ -201,8 +256,6 @@ class FeatureEnvelopeRegressionTest(private val endpoint: Endpoint) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun endpoints(): List<Array<Any>> {
-            return Endpoint.entries.map { endpoint -> arrayOf<Any>(endpoint) }
-        }
+        fun endpoints(): List<Array<Any>> = Endpoint.entries.map { endpoint -> arrayOf<Any>(endpoint) }
     }
 }

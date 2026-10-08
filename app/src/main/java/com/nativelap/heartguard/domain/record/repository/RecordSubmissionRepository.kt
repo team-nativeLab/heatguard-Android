@@ -6,7 +6,13 @@ import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
 interface RecordSubmissionRepository {
     suspend fun getPendingSubmissions(userId: String): ApiResult<List<PendingRecordSubmission>>
 
-    suspend fun beginSubmission(userId: String, submission: PendingRecordSubmission): ApiResult<Boolean>
+    suspend fun beginSubmission(
+        userId: String,
+        submission: PendingRecordSubmission,
+    ): ApiResult<Boolean>
 
-    suspend fun completeSubmission(userId: String, submissionId: String): ApiResult<Unit>
+    suspend fun completeSubmission(
+        userId: String,
+        submissionId: String,
+    ): ApiResult<Unit>
 }

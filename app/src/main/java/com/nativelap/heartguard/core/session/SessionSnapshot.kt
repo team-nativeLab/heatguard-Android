@@ -5,7 +5,6 @@ data class SessionSnapshot(
     val generation: Long,
     val accessToken: String?,
 ) {
-    override fun toString(): String {
-        return "SessionSnapshot(generation=$generation, hasAccessToken=${!accessToken.isNullOrBlank()})"
-    }
+    override fun toString(): String =
+        "SessionSnapshot(generation=$generation, hasAccessToken=${!accessToken.isNullOrBlank()})"
 }

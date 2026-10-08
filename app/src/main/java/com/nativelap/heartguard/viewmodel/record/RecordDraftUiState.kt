@@ -30,23 +30,26 @@ data class RecordDraftUiState(
 ) {
     // 직접 입력한 온도·습도가 모두 숫자로 해석될 때만 true다.
     val isManualTemperatureValid: Boolean
-        get() = temperatureText.toDoubleOrNull() != null &&
-            humidityText.toDoubleOrNull() != null
+        get() =
+            temperatureText.toDoubleOrNull() != null &&
+                humidityText.toDoubleOrNull() != null
 
     // 직접 입력한 경우 온도·습도가 필요하다. 사진은 입력 방식과 관계없이 별도로 필수다.
     val canSubmitTemperatureRecord: Boolean
-        get() = if (isManualInputEnabled) {
-            isManualTemperatureValid
-        } else {
-            fieldPhotoUris.isNotEmpty()
-        }
+        get() =
+            if (isManualInputEnabled) {
+                isManualTemperatureValid
+            } else {
+                fieldPhotoUris.isNotEmpty()
+            }
 
     val restStartedAt: OffsetDateTime?
-        get() = restDate?.let { selectedDate ->
-            restStartTime?.let { selectedTime ->
-                selectedDate.atTime(selectedTime).atZone(REST_ZONE).toOffsetDateTime()
+        get() =
+            restDate?.let { selectedDate ->
+                restStartTime?.let { selectedTime ->
+                    selectedDate.atTime(selectedTime).atZone(REST_ZONE).toOffsetDateTime()
+                }
             }
-        }
 
     val restEndedAt: OffsetDateTime?
         get() {

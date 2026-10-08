@@ -45,25 +45,55 @@ internal fun HeartGuardRecordHistoryRoute(
         temporaryDraftSavedAt = draftState.temporarilySavedAt,
         onEvent = { event ->
             when (event) {
-                RecordHistoryScreenEvent.BackClicked -> onBackClick()
-                RecordHistoryScreenEvent.DateRangeClicked -> viewModel.showDateRangePicker()
-                RecordHistoryScreenEvent.DateRangeDismissed -> viewModel.hideDateRangePicker()
-                is RecordHistoryScreenEvent.DateRangeSelected -> viewModel.selectDateRange(
-                    startDate = event.startDate,
-                    endDate = event.endDate,
-                )
-                is RecordHistoryScreenEvent.FilterSelected -> viewModel.selectFilter(event.filter)
-                is RecordHistoryScreenEvent.RecordClicked -> onRecordClick(event.recordId)
+                RecordHistoryScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
+                RecordHistoryScreenEvent.DateRangeClicked -> {
+                    viewModel.showDateRangePicker()
+                }
+
+                RecordHistoryScreenEvent.DateRangeDismissed -> {
+                    viewModel.hideDateRangePicker()
+                }
+
+                is RecordHistoryScreenEvent.DateRangeSelected -> {
+                    viewModel.selectDateRange(
+                        startDate = event.startDate,
+                        endDate = event.endDate,
+                    )
+                }
+
+                is RecordHistoryScreenEvent.FilterSelected -> {
+                    viewModel.selectFilter(event.filter)
+                }
+
+                is RecordHistoryScreenEvent.RecordClicked -> {
+                    onRecordClick(event.recordId)
+                }
+
                 RecordHistoryScreenEvent.TemporaryDraftClicked -> {
                     draftState.selectedRecordType?.let { recordType ->
                         recordDraftViewModel.resumeTemporarilySavedDraft()
                         onResumeDraftClick(recordType)
                     }
                 }
-                RecordHistoryScreenEvent.PendingSubmissionsRetryClicked -> recordDraftViewModel.refreshPendingSubmissions()
-                RecordHistoryScreenEvent.RetryClicked -> viewModel.loadRecords()
-                RecordHistoryScreenEvent.LoadMore -> viewModel.loadMoreRecords()
-                RecordHistoryScreenEvent.CreateRecordClicked -> onCreateRecordClick()
+
+                RecordHistoryScreenEvent.PendingSubmissionsRetryClicked -> {
+                    recordDraftViewModel.refreshPendingSubmissions()
+                }
+
+                RecordHistoryScreenEvent.RetryClicked -> {
+                    viewModel.loadRecords()
+                }
+
+                RecordHistoryScreenEvent.LoadMore -> {
+                    viewModel.loadMoreRecords()
+                }
+
+                RecordHistoryScreenEvent.CreateRecordClicked -> {
+                    onCreateRecordClick()
+                }
             }
         },
     )

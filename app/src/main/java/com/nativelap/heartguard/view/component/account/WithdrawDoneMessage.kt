@@ -38,27 +38,30 @@ fun WithdrawDoneMessage(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.ResultMessageHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.ResultMessageHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.Section,
-                vertical = HeartGuardSpacing.ResultMessageTopBottom,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = HeartGuardSpacing.Section,
+                    vertical = HeartGuardSpacing.ResultMessageTopBottom,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.Result)
-                    .background(
-                        color = MaterialTheme.extraColors.photoContainer,
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.Result)
+                        .background(
+                            color = MaterialTheme.extraColors.photoContainer,
+                            shape = CircleShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -73,20 +76,22 @@ fun WithdrawDoneMessage(
                 text = title,
                 modifier = Modifier.padding(top = HeartGuardSpacing.Item),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = HeartGuardFontSize.ResultMessageTitle,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontSize = HeartGuardFontSize.ResultMessageTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 textAlign = TextAlign.Center,
             )
 
             Text(
                 text = description,
                 color = MaterialTheme.extraColors.tertiaryText,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = HeartGuardFontSize.ResultMessageDescription,
-                    fontWeight = FontWeight.Medium,
-                ),
+                style =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = HeartGuardFontSize.ResultMessageDescription,
+                        fontWeight = FontWeight.Medium,
+                    ),
                 textAlign = TextAlign.Center,
             )
         }

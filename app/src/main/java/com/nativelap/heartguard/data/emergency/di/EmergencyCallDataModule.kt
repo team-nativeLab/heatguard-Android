@@ -18,7 +18,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class EmergencyCallDataModule {
-
     @Binds
     @Singleton
     abstract fun bindEmergencyCallRemoteDataSource(
@@ -27,19 +26,16 @@ abstract class EmergencyCallDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindEmergencyCallRepository(
-        impl: EmergencyCallRepositoryImpl,
-    ): EmergencyCallRepository
+    abstract fun bindEmergencyCallRepository(impl: EmergencyCallRepositoryImpl): EmergencyCallRepository
 
     companion object {
         @Provides
         @Singleton
-        fun provideEmergencyCallApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): EmergencyCallApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = EmergencyCallApiService::class.java,
-            authentication = ApiAuthentication.BEARER,
-        )
+        fun provideEmergencyCallApiService(apiRetrofitFactory: ApiRetrofitFactory): EmergencyCallApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = EmergencyCallApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+            )
     }
 }

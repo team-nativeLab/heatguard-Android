@@ -56,12 +56,15 @@ internal fun HeartGuardTeamNotificationsRoute(
                     TeamNotificationViewEffect.ReadFailed -> {
                         snackbarHostState.showSnackbar(readErrorMessage)
                     }
+
                     TeamNotificationViewEffect.ReadAllFailed -> {
                         snackbarHostState.showSnackbar(readAllErrorMessage)
                     }
+
                     TeamNotificationViewEffect.RefreshFailed -> {
                         snackbarHostState.showSnackbar(refreshErrorMessage)
                     }
+
                     is TeamNotificationViewEffect.OpenTarget -> {
                         currentOnOpenTarget(effect.target)
                     }

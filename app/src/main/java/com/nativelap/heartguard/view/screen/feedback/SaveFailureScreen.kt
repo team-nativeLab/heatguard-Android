@@ -33,11 +33,12 @@ fun SaveFailureScreen(
 ) {
     HeartGuardSheetSurface(modifier = modifier) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
         ) {
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultTitleTop))
             SaveResultTitle(
@@ -46,8 +47,14 @@ fun SaveFailureScreen(
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultTitleMessageGap))
 
             SaveResultMessage(
-                title = stringResource(if (isResultUnknown) R.string.save_unknown_title else R.string.save_failure_title),
-                description = stringResource(if (isResultUnknown) R.string.save_unknown_description else R.string.save_failure_description),
+                title =
+                    stringResource(
+                        if (isResultUnknown) R.string.save_unknown_title else R.string.save_failure_title,
+                    ),
+                description =
+                    stringResource(
+                        if (isResultUnknown) R.string.save_unknown_description else R.string.save_failure_description,
+                    ),
                 isSuccess = false,
             )
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
@@ -76,10 +83,11 @@ fun SaveFailureScreen(
 private fun SaveFailureScreenPreview() {
     HeartGuardTheme {
         SaveFailureScreen(
-            errorDetails = listOf(
-                stringResource(R.string.save_error_network),
-                stringResource(R.string.save_error_retry),
-            ),
+            errorDetails =
+                listOf(
+                    stringResource(R.string.save_error_network),
+                    stringResource(R.string.save_error_retry),
+                ),
             onRetryClick = {},
             onSaveDraftAndExitClick = {},
         )

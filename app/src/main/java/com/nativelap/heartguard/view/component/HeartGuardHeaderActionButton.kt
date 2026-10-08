@@ -26,11 +26,12 @@ fun HeartGuardHeaderActionButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier
-            .size(HeartGuardComponentSize.TouchTarget)
-            .semantics(mergeDescendants = true) {
-                contentDescription = iconContentDescription
-            },
+        modifier =
+            modifier
+                .size(HeartGuardComponentSize.TouchTarget)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = iconContentDescription
+                },
     ) {
         Image(
             painter = iconPainter,
