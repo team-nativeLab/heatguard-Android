@@ -52,23 +52,26 @@ fun HomeCheckTimeline(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.HomeTimelineMinHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.HomeTimelineMinHeight),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(HeartGuardSpacing.Section),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(HeartGuardSpacing.Section),
         ) {
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
 
             Spacer(modifier = Modifier.height(HeartGuardSpacing.Tight))
@@ -97,42 +100,42 @@ private fun HomeTimelineRail(
     val activeColor = MaterialTheme.extraColors.homeTimelineActive
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .drawBehind {
-                if (items.size < 2) {
-                    return@drawBehind
-                }
-
-                val cellWidth = size.width / items.size
-                val railCenterY = HeartGuardIconSize.TimelineCurrentRing.toPx() / 2
-                val railStroke = HeartGuardBorderWidth.TimelineRail.toPx()
-
-                fun cellCenterX(index: Int): Float {
-                    return cellWidth * (index + 0.5f)
-                }
-
-                drawLine(
-                    color = trackColor,
-                    start = Offset(cellCenterX(0), railCenterY),
-                    end = Offset(cellCenterX(items.lastIndex), railCenterY),
-                    strokeWidth = railStroke,
-                )
-
-                items.zipWithNext().forEachIndexed { segmentIndex, (startItem, endItem) ->
-                    val isSegmentActive = startItem.isCompleted &&
-                        (endItem.isCompleted || endItem.isCurrent)
-
-                    if (isSegmentActive) {
-                        drawLine(
-                            color = activeColor,
-                            start = Offset(cellCenterX(segmentIndex), railCenterY),
-                            end = Offset(cellCenterX(segmentIndex + 1), railCenterY),
-                            strokeWidth = railStroke,
-                        )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    if (items.size < 2) {
+                        return@drawBehind
                     }
-                }
-            },
+
+                    val cellWidth = size.width / items.size
+                    val railCenterY = HeartGuardIconSize.TimelineCurrentRing.toPx() / 2
+                    val railStroke = HeartGuardBorderWidth.TimelineRail.toPx()
+
+                    fun cellCenterX(index: Int): Float = cellWidth * (index + 0.5f)
+
+                    drawLine(
+                        color = trackColor,
+                        start = Offset(cellCenterX(0), railCenterY),
+                        end = Offset(cellCenterX(items.lastIndex), railCenterY),
+                        strokeWidth = railStroke,
+                    )
+
+                    items.zipWithNext().forEachIndexed { segmentIndex, (startItem, endItem) ->
+                        val isSegmentActive =
+                            startItem.isCompleted &&
+                                (endItem.isCompleted || endItem.isCurrent)
+
+                        if (isSegmentActive) {
+                            drawLine(
+                                color = activeColor,
+                                start = Offset(cellCenterX(segmentIndex), railCenterY),
+                                end = Offset(cellCenterX(segmentIndex + 1), railCenterY),
+                                strokeWidth = railStroke,
+                            )
+                        }
+                    }
+                },
         verticalAlignment = Alignment.Top,
     ) {
         items.forEach { timelineItem ->
@@ -151,14 +154,16 @@ private fun HomeTimelineRail(
                 Text(
                     text = timelineItem.timeLabel,
                     color = timelineLabelColor(timelineItem),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = HeartGuardFontSize.TimelineLabel,
-                        fontWeight = if (timelineItem.isCurrent) {
-                            FontWeight.Bold
-                        } else {
-                            FontWeight.Normal
-                        },
-                    ),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontSize = HeartGuardFontSize.TimelineLabel,
+                            fontWeight =
+                                if (timelineItem.isCurrent) {
+                                    FontWeight.Bold
+                                } else {
+                                    FontWeight.Normal
+                                },
+                        ),
                 )
             }
         }
@@ -171,62 +176,64 @@ private fun HomeTimelineDot(timelineItem: CheckTimelineItem) {
     when {
         timelineItem.isCurrent -> {
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.TimelineCurrentRing)
-                    .background(
-                        color = MaterialTheme.extraColors.homeTimelineCurrentRing,
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.TimelineCurrentRing)
+                        .background(
+                            color = MaterialTheme.extraColors.homeTimelineCurrentRing,
+                            shape = CircleShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(HeartGuardIconSize.TimelineCurrentDot)
-                        .background(
-                            color = MaterialTheme.extraColors.homeTimelineActive,
-                            shape = CircleShape,
-                        ),
+                    modifier =
+                        Modifier
+                            .size(HeartGuardIconSize.TimelineCurrentDot)
+                            .background(
+                                color = MaterialTheme.extraColors.homeTimelineActive,
+                                shape = CircleShape,
+                            ),
                 )
             }
         }
 
         timelineItem.isCompleted -> {
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.TimelineDot)
-                    .background(
-                        color = MaterialTheme.extraColors.homeTimelineActive,
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.TimelineDot)
+                        .background(
+                            color = MaterialTheme.extraColors.homeTimelineActive,
+                            shape = CircleShape,
+                        ),
             )
         }
 
         else -> {
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.TimelineDot)
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = CircleShape,
-                    )
-                    .border(
-                        width = HeartGuardBorderWidth.TimelineDot,
-                        color = MaterialTheme.extraColors.homeTimelineDotBorder,
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.TimelineDot)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = CircleShape,
+                        ).border(
+                            width = HeartGuardBorderWidth.TimelineDot,
+                            color = MaterialTheme.extraColors.homeTimelineDotBorder,
+                            shape = CircleShape,
+                        ),
             )
         }
     }
 }
 
 @Composable
-private fun timelineLabelColor(timelineItem: CheckTimelineItem): Color {
-    return when {
+private fun timelineLabelColor(timelineItem: CheckTimelineItem): Color =
+    when {
         timelineItem.isCurrent -> MaterialTheme.extraColors.homeTimelineActive
         timelineItem.isCompleted -> MaterialTheme.extraColors.homeMutedText
         else -> MaterialTheme.extraColors.homeTimelineInactive
     }
-}
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable
@@ -235,16 +242,17 @@ private fun HomeCheckTimelinePreview() {
         HomeCheckTimeline(
             title = "오늘 체크 시간",
             nextCheckDescription = "다음 체크까지 57분 · 22:00 예정",
-            items = listOf(
-                CheckTimelineItem("08시", true),
-                CheckTimelineItem("10시", true),
-                CheckTimelineItem("12시", false),
-                CheckTimelineItem("14시", true),
-                CheckTimelineItem("16시", false),
-                CheckTimelineItem("18시", true),
-                CheckTimelineItem("20시", true, true),
-                CheckTimelineItem("22시", false),
-            ),
+            items =
+                listOf(
+                    CheckTimelineItem("08시", true),
+                    CheckTimelineItem("10시", true),
+                    CheckTimelineItem("12시", false),
+                    CheckTimelineItem("14시", true),
+                    CheckTimelineItem("16시", false),
+                    CheckTimelineItem("18시", true),
+                    CheckTimelineItem("20시", true, true),
+                    CheckTimelineItem("22시", false),
+                ),
         )
     }
 }

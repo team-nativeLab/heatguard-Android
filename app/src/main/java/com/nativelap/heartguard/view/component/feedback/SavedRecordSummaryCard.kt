@@ -2,14 +2,13 @@ package com.nativelap.heartguard.view.component.feedback
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -21,12 +20,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -52,27 +52,30 @@ fun SavedRecordSummaryCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(
-            width = HeartGuardSpacing.Hairline,
-            color = MaterialTheme.extraColors.cardBorder,
-        ),
+        border =
+            BorderStroke(
+                width = HeartGuardSpacing.Hairline,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = HeartGuardSpacing.ResultSummaryHorizontal,
-                    end = HeartGuardSpacing.ResultErrorDetailHorizontal,
-                    top = HeartGuardSpacing.Item,
-                    bottom = HeartGuardSpacing.Section,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = HeartGuardSpacing.ResultSummaryHorizontal,
+                        end = HeartGuardSpacing.ResultErrorDetailHorizontal,
+                        top = HeartGuardSpacing.Item,
+                        bottom = HeartGuardSpacing.Section,
+                    ),
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = HeartGuardFontSize.ResultSummaryTitle,
-                    fontWeight = FontWeight.ExtraBold,
-                ),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontSize = HeartGuardFontSize.ResultSummaryTitle,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
             )
             Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
             HorizontalDivider(
@@ -82,41 +85,44 @@ fun SavedRecordSummaryCard(
             records.forEachIndexed { index, record ->
                 val rowDetailsClick = onDetailsClick.takeIf { record.hasDetails }
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = HeartGuardSpacing.ResultSummaryRowHeight)
-                        .then(
-                            if (rowDetailsClick != null) {
-                                Modifier.clickable(
-                                    role = Role.Button,
-                                    onClick = rowDetailsClick,
-                                )
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .padding(start = HeartGuardSpacing.ResultSummaryRowIndent),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = HeartGuardSpacing.ResultSummaryRowHeight)
+                            .then(
+                                if (rowDetailsClick != null) {
+                                    Modifier.clickable(
+                                        role = Role.Button,
+                                        onClick = rowDetailsClick,
+                                    )
+                                } else {
+                                    Modifier
+                                },
+                            ).padding(start = HeartGuardSpacing.ResultSummaryRowIndent),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = record.label,
                             color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = HeartGuardFontSize.ResultSummaryLabel,
-                                fontWeight = FontWeight.Bold,
-                            ),
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = HeartGuardFontSize.ResultSummaryLabel,
+                                    fontWeight = FontWeight.Bold,
+                                ),
                         )
                         Text(
                             text = listOfNotNull(record.value, record.detail).joinToString(" "),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = HeartGuardSpacing.RecordFieldInset),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = HeartGuardSpacing.RecordFieldInset),
                             color = MaterialTheme.extraColors.mutedText,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = HeartGuardFontSize.ResultSummaryValue,
-                                fontWeight = FontWeight.SemiBold,
-                            ),
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = HeartGuardFontSize.ResultSummaryValue,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
                         )
                     }
                     if (rowDetailsClick != null) {
@@ -144,11 +150,12 @@ private fun SavedRecordSummaryCardPreview() {
     HeartGuardTheme {
         SavedRecordSummaryCard(
             title = "온도 기록",
-            records = listOf(
-                SavedRecordSummaryItem("현재 온도", "37℃"),
-                SavedRecordSummaryItem("체감온도", "40℃"),
-                SavedRecordSummaryItem("습도", "65%"),
-            ),
+            records =
+                listOf(
+                    SavedRecordSummaryItem("현재 온도", "37℃"),
+                    SavedRecordSummaryItem("체감온도", "40℃"),
+                    SavedRecordSummaryItem("습도", "65%"),
+                ),
         )
     }
 }

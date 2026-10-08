@@ -2,10 +2,10 @@ package com.nativelap.heartguard.core.network
 
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionSnapshot
-import java.io.IOException
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
 
 /** 인증 API 요청이 만들어진 시점의 세션을 태그로 붙여, 전송 시점에 세션이 바뀌었는지 판단하게 한다.
  * Retrofit은 suspend 호출을 시작한 코루틴에서 동기로 [newCall]을 부르므로 이 시점이 요청 생성 시점이다. */
@@ -19,9 +19,11 @@ class SessionBoundCallFactory(
         if (expectedGeneration != null && expectedGeneration != owningSnapshot.generation) {
             throw SessionChangedException()
         }
-        val sessionBoundRequest = request.newBuilder()
-            .tag(SessionSnapshot::class.java, owningSnapshot)
-            .build()
+        val sessionBoundRequest =
+            request
+                .newBuilder()
+                .tag(SessionSnapshot::class.java, owningSnapshot)
+                .build()
         return delegateClient.newCall(sessionBoundRequest)
     }
 }

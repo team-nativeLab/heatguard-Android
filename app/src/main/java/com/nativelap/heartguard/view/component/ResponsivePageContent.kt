@@ -23,10 +23,11 @@ fun ResponsivePageContent(
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
-            modifier = Modifier
-                .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
-                .fillMaxWidth()
-                .fillMaxHeight(),
+            modifier =
+                Modifier
+                    .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
             content = content,
         )
     }

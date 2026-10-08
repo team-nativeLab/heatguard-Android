@@ -41,14 +41,15 @@ class NotificationOpenTargetTest {
         assertNull(notification(NotificationTarget.None).toOpenTarget())
     }
 
-    private fun notification(target: NotificationTarget) = TeamNotification(
-        notificationId = "ntf_01",
-        type = NotificationType.UNKNOWN,
-        category = NotificationCategory.UNKNOWN,
-        title = "알림",
-        target = target,
-        isRead = false,
-        createdAt = null,
-        updatedAt = null,
-    )
+    private fun notification(target: NotificationTarget) =
+        TeamNotification(
+            notificationId = "ntf_01",
+            type = NotificationType.UNKNOWN,
+            category = NotificationCategory.UNKNOWN,
+            title = "알림",
+            target = target,
+            isRead = false,
+            createdAt = null,
+            updatedAt = null,
+        )
 }

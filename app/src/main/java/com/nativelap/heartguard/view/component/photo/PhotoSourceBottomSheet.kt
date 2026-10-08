@@ -34,10 +34,11 @@ internal fun PhotoSourceBottomSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = HeartGuardSpacing.Section)
-                .padding(bottom = HeartGuardSpacing.Section),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HeartGuardSpacing.Section)
+                    .padding(bottom = HeartGuardSpacing.Section),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Text(

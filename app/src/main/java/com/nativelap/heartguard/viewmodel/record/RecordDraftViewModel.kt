@@ -11,25 +11,18 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.core.util.releasePhoto
-import com.nativelap.heartguard.domain.record.model.RecordSubmissionCleanup
-import com.nativelap.heartguard.domain.record.usecase.RetryRecordSubmissionCleanupUseCase
-import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
-import com.nativelap.heartguard.domain.record.model.RecordSubmitResult
-import com.nativelap.heartguard.domain.record.usecase.GetPendingRecordSubmissionsUseCase
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
+import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
+import com.nativelap.heartguard.domain.record.model.RecordSubmissionCleanup
+import com.nativelap.heartguard.domain.record.model.RecordSubmitResult
+import com.nativelap.heartguard.domain.record.usecase.GetPendingRecordSubmissionsUseCase
+import com.nativelap.heartguard.domain.record.usecase.RetryRecordSubmissionCleanupUseCase
 import com.nativelap.heartguard.domain.record.usecase.SubmitFieldRecordUseCase
 import com.nativelap.heartguard.domain.record.usecase.UploadFieldPhotosUseCase
 import com.nativelap.heartguard.view.component.RecordType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Clock
-import java.util.UUID
-import java.time.OffsetDateTime
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -40,6 +33,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Clock
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.util.UUID
+import javax.inject.Inject
 
 /** 기록유형선택 → 온도기록/사진촬영 → 저장 전 확인까지, 여러 NavKey가 공유해야 하는 임시 입력값 저장소다.
  * [com.nativelap.heartguard.navigation.HeartGuardNavHost]의 메인 흐름 상위에서 인자 없는 hiltViewModel()로
@@ -47,511 +47,562 @@ import kotlinx.coroutines.launch
  * 다만 그 스킬이 예시로 든 수동 ViewModelStoreOwner는 이 프로젝트의 hilt-navigation-compose 버전에서
  * Hilt 팩토리를 찾지 못해 대신 기본 ViewModelStoreOwner를 그대로 쓴다). */
 @HiltViewModel
-class RecordDraftViewModel @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-    private val clock: Clock,
-    private val savedStateHandle: SavedStateHandle,
-    private val sessionManager: SessionManager,
-    private val uploadFieldPhotosUseCase: UploadFieldPhotosUseCase,
-    private val submitFieldRecordUseCase: SubmitFieldRecordUseCase,
-    private val getPendingRecordSubmissionsUseCase: GetPendingRecordSubmissionsUseCase,
-    private val retryRecordSubmissionCleanupUseCase: RetryRecordSubmissionCleanupUseCase,
-) : ViewModel() {
+class RecordDraftViewModel
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        private val clock: Clock,
+        private val savedStateHandle: SavedStateHandle,
+        private val sessionManager: SessionManager,
+        private val uploadFieldPhotosUseCase: UploadFieldPhotosUseCase,
+        private val submitFieldRecordUseCase: SubmitFieldRecordUseCase,
+        private val getPendingRecordSubmissionsUseCase: GetPendingRecordSubmissionsUseCase,
+        private val retryRecordSubmissionCleanupUseCase: RetryRecordSubmissionCleanupUseCase,
+    ) : ViewModel() {
+        private val mutableUiState = MutableStateFlow(restoreDraftOfCurrentSession())
+        val uiState: StateFlow<RecordDraftUiState> = mutableUiState.asStateFlow()
 
-    private val mutableUiState = MutableStateFlow(restoreDraftOfCurrentSession())
-    val uiState: StateFlow<RecordDraftUiState> = mutableUiState.asStateFlow()
+        private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
+        val submissionState: StateFlow<RecordSubmissionState> = mutableSubmissionState.asStateFlow()
 
-    private val mutableSubmissionState = MutableStateFlow<RecordSubmissionState>(RecordSubmissionState.Idle)
-    val submissionState: StateFlow<RecordSubmissionState> = mutableSubmissionState.asStateFlow()
+        private val submissionEffectChannel = Channel<RecordSubmissionEffect>(Channel.BUFFERED)
+        val submissionEffects: Flow<RecordSubmissionEffect> = submissionEffectChannel.receiveAsFlow()
 
-    private val submissionEffectChannel = Channel<RecordSubmissionEffect>(Channel.BUFFERED)
-    val submissionEffects: Flow<RecordSubmissionEffect> = submissionEffectChannel.receiveAsFlow()
+        private var submitJob: Job? = null
+        private var pendingLoadJob: Job? = null
+        private var draftGeneration = 0L
+        private val pendingCleanups = mutableListOf<RecordSubmissionCleanup>()
+        private val _hasPendingCleanup = MutableStateFlow(false)
+        val hasPendingCleanup: StateFlow<Boolean> = _hasPendingCleanup.asStateFlow()
+        private var submissionId: String? = savedStateHandle[KEY_SUBMISSION_ID]
+        private var submissionMeasuredAt: OffsetDateTime? =
+            savedStateHandle
+                .get<String>(KEY_SUBMISSION_MEASURED_AT)
+                ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() }
+        private val _pendingSubmissions = MutableStateFlow<List<PendingRecordSubmission>>(emptyList())
+        val pendingSubmissions: StateFlow<List<PendingRecordSubmission>> = _pendingSubmissions.asStateFlow()
+        private val _hasPendingLoadFailed = MutableStateFlow(false)
+        val hasPendingLoadFailed: StateFlow<Boolean> = _hasPendingLoadFailed.asStateFlow()
 
-    private var submitJob: Job? = null
-    private var pendingLoadJob: Job? = null
-    private var draftGeneration = 0L
-    private val pendingCleanups = mutableListOf<RecordSubmissionCleanup>()
-    private val _hasPendingCleanup = MutableStateFlow(false)
-    val hasPendingCleanup: StateFlow<Boolean> = _hasPendingCleanup.asStateFlow()
-    private var submissionId: String? = savedStateHandle[KEY_SUBMISSION_ID]
-    private var submissionMeasuredAt: OffsetDateTime? = savedStateHandle.get<String>(KEY_SUBMISSION_MEASURED_AT)
-        ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() }
-    private val _pendingSubmissions = MutableStateFlow<List<PendingRecordSubmission>>(emptyList())
-    val pendingSubmissions: StateFlow<List<PendingRecordSubmission>> = _pendingSubmissions.asStateFlow()
-    private val _hasPendingLoadFailed = MutableStateFlow(false)
-    val hasPendingLoadFailed: StateFlow<Boolean> = _hasPendingLoadFailed.asStateFlow()
-
-    fun refreshPendingSubmissions() {
-        pendingLoadJob?.cancel()
-        val owningGeneration = sessionManager.getSnapshot().generation
-        pendingLoadJob = viewModelScope.launch {
-            for (cleanup in pendingCleanups.toList()) {
-                val cleanupResult = retryRecordSubmissionCleanupUseCase(cleanup)
-                if (owningGeneration != sessionManager.getSnapshot().generation) {
-                    return@launch
-                }
-                if (cleanupResult is ApiResult.Success) {
-                    pendingCleanups.remove(cleanup)
-                }
-            }
-            _hasPendingCleanup.value = pendingCleanups.isNotEmpty()
-            val pendingResult = getPendingRecordSubmissionsUseCase()
-            if (owningGeneration != sessionManager.getSnapshot().generation) {
-                return@launch
-            }
-            when (pendingResult) {
-                is ApiResult.Success -> {
-                    val knownSavedIds = pendingCleanups.map { cleanup -> cleanup.submissionId }.toSet()
-                    _pendingSubmissions.value = pendingResult.value.filterNot { pending ->
-                        pending.submissionId in knownSavedIds
-                    }
-                    _hasPendingLoadFailed.value = false
-                }
-                is ApiResult.Failure -> {
-                    if (pendingResult.error != ApiError.SessionChanged) {
-                        _hasPendingLoadFailed.value = true
-                    }
-                }
-            }
-        }
-    }
-
-    // 부분 업로드 성공을 기록해 재시도 시 성공한 사진의 URL 발급과 업로드를 건너뛴다(메모리에만 둔다).
-    private val uploadedPhotoKeysByUri = mutableMapOf<Uri, String>()
-
-    init {
-        clearStateWhenSessionEnds(sessionManager) {
-            reset()
+        fun refreshPendingSubmissions() {
             pendingLoadJob?.cancel()
-            pendingCleanups.clear()
-            _hasPendingCleanup.value = false
-            _pendingSubmissions.value = emptyList()
-            _hasPendingLoadFailed.value = false
-        }
-    }
-
-    /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. [submit]이 어떤 종류의
-     * 기록(THERMOMETER/WORK/REST)을 서버에 보낼지 이 값으로 판단한다. */
-    fun selectRecordType(recordType: RecordType) {
-        updateDraft { it.copy(selectedRecordType = recordType) }
-    }
-
-    /** 홈의 "현장 사진"처럼 기록유형 선택 없이 특정 기록을 새로 시작할 때 호출한다.
-     * 이전 시도의 입력값·임시 사진을 정리한 뒤 [recordType]으로 기록 종류를 정한다. */
-    fun startRecord(recordType: RecordType) {
-        reset()
-        selectRecordType(recordType)
-    }
-
-    fun updateTemperatureText(temperatureText: String) {
-        updateDraft { it.copy(temperatureText = temperatureText) }
-    }
-
-    fun updateHumidityText(humidityText: String) {
-        updateDraft { it.copy(humidityText = humidityText) }
-    }
-
-    fun updateManualInputEnabled(isManualInputEnabled: Boolean) {
-        updateDraft { it.copy(isManualInputEnabled = isManualInputEnabled) }
-    }
-
-    /** 카메라 촬영이나 앨범 선택 결과를 해당 기록의 사진 목록에 추가한다. */
-    fun addPhoto(recordType: RecordType, photoUri: Uri): Boolean {
-        var wasAdded = false
-        mutableUiState.update { state ->
-            val currentPhotoUris = state.photoUrisFor(recordType)
-            if (currentPhotoUris.size >= MAX_RECORD_PHOTO_COUNT || photoUri in currentPhotoUris) {
-                state
-            } else {
-                wasAdded = true
-                state.withPhotoUris(recordType, currentPhotoUris + photoUri)
-            }
-        }
-        return wasAdded
-    }
-
-    /** 사진 목록에서 URI를 제거하고 연결된 캐시 파일 또는 앨범 권한을 백그라운드에서 정리한다. */
-    fun removePhoto(recordType: RecordType, uri: Uri) {
-        uploadedPhotoKeysByUri.remove(uri)
-        mutableUiState.update { state ->
-            state.withPhotoUris(recordType, state.photoUrisFor(recordType) - uri)
-        }
-        viewModelScope.launch(ioDispatcher) {
-            releasePhoto(context, uri)
-        }
-    }
-
-    /** 다시 촬영을 시작할 때 현재 사진 목록과 로컬 자원을 함께 정리한다. */
-    fun clearPhotos(recordType: RecordType) {
-        val photoUrisToRelease = mutableUiState.value.photoUrisFor(recordType)
-        photoUrisToRelease.forEach(uploadedPhotoKeysByUri::remove)
-        mutableUiState.update { state ->
-            state.withPhotoUris(recordType, emptyList())
-        }
-        viewModelScope.launch(ioDispatcher) {
-            photoUrisToRelease.forEach { photoUri ->
-                releasePhoto(context, photoUri)
-            }
-        }
-    }
-
-    fun updateWorkMemo(memo: String) {
-        updateDraft { it.copy(workMemo = memo) }
-    }
-
-    fun updateRestMemo(memo: String) {
-        updateDraft { it.copy(restMemo = memo) }
-    }
-
-    fun updateRestStartTime(startTime: LocalTime) {
-        updateDraft { state ->
-            state.copy(
-                restDate = LocalDate.now(clock.withZone(REST_ZONE)),
-                restStartTime = startTime.withSecond(0).withNano(0),
-                restEndTime = null,
-            )
-        }
-    }
-
-    fun updateRestEndTime(endTime: LocalTime) {
-        updateDraft { state ->
-            state.copy(restEndTime = endTime.withSecond(0).withNano(0))
-        }
-    }
-
-    /** 저장 실패 화면에서 보관을 선택한 초안을 현재 세션의 기록 내역에 표시한다. */
-    fun markDraftTemporarilySaved() {
-        if (mutableUiState.value.selectedRecordType == null) {
-            return
-        }
-
-        updateDraft { state ->
-            state.copy(
-                isTemporarilySaved = true,
-                temporarilySavedAt = OffsetDateTime.now(clock),
-            )
-        }
-    }
-
-    fun resumeTemporarilySavedDraft() {
-        updateDraft { state ->
-            state.copy(
-                isTemporarilySaved = false,
-                temporarilySavedAt = null,
-            )
-        }
-    }
-
-    /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형의 사진을 먼저
-     * 업로드하고, 그 objectKey로 현장 기록을 저장한다. 결과는 [submissionState](SaveSuccess·SaveFailure 화면이 읽음)와
-     * [submissionEffects](저장 화면의 이동)로 알린다.
-     * 저장은 화면이 아니라 viewModelScope에서 돌아, 화면을 벗어나거나 회전해도 요청이 끊기지 않는다.
-     * 진행 중이면 연타를 무시하고(같은 프레임의 두 번 입력도 [submitJob]으로 막는다), 요청이 취소되면 저장 전 상태로 되돌린다. */
-    fun submit() {
-        if (submitJob?.isActive == true ||
-            mutableSubmissionState.value is RecordSubmissionState.Unknown ||
-            mutableSubmissionState.value is RecordSubmissionState.Success
-        ) {
-            return
-        }
-
-        val state = mutableUiState.value
-        val recordType = state.selectedRecordType ?: return
-        // 버튼 활성 조건과 같은 규칙으로 한 번 더 막아, 필수 값 없이 서버에 요청하지 않게 한다.
-        if (!state.canSubmit(recordType)) {
-            return
-        }
-
-        val owningGeneration = sessionManager.getSnapshot().generation
-        val owningDraft = draftGeneration
-        val hasPreviousAttempt = submissionId != null
-        val intentionId = submissionId ?: UUID.randomUUID().toString().also {
-            submissionId = it
-            savedStateHandle[KEY_SUBMISSION_ID] = it
-        }
-        val intentionMeasuredAt = submissionMeasuredAt ?: OffsetDateTime.now(clock).also {
-            submissionMeasuredAt = it
-            savedStateHandle[KEY_SUBMISSION_MEASURED_AT] = it.toString()
-        }
-        mutableSubmissionState.value = RecordSubmissionState.Submitting
-        submitJob = viewModelScope.launch {
-            try {
-                val submitResult = uploadAndSubmit(
-                    state = state,
-                    recordType = recordType,
-                    intentionId = intentionId,
-                    intentionMeasuredAt = intentionMeasuredAt,
-                    owningGeneration = owningGeneration,
-                    owningDraft = owningDraft,
-                    hasPreviousAttempt = hasPreviousAttempt,
-                )
-                if (owningGeneration != sessionManager.getSnapshot().generation || owningDraft != draftGeneration) {
-                    return@launch
-                }
-                // 세션 전환으로 멈춘 저장은 새 계정 화면에 실패로 보여주지 않는다. 초안 정리는 세션 연결이 맡는다.
-                if (submitResult is RecordSubmitResult.NotSaved && submitResult.error == ApiError.SessionChanged) {
-                    return@launch
-                }
-                mutableSubmissionState.value = when (submitResult) {
-                    is RecordSubmitResult.Saved -> {
-                        submitResult.pendingCleanup?.let { cleanup -> pendingCleanups.add(cleanup) }
-                        _hasPendingCleanup.value = pendingCleanups.isNotEmpty()
-                        clearSavedDraft()
-                        RecordSubmissionState.Success(submitResult.record)
+            val owningGeneration = sessionManager.getSnapshot().generation
+            pendingLoadJob =
+                viewModelScope.launch {
+                    for (cleanup in pendingCleanups.toList()) {
+                        val cleanupResult = retryRecordSubmissionCleanupUseCase(cleanup)
+                        if (owningGeneration != sessionManager.getSnapshot().generation) {
+                            return@launch
+                        }
+                        if (cleanupResult is ApiResult.Success) {
+                            pendingCleanups.remove(cleanup)
+                        }
                     }
-                    is RecordSubmitResult.NotSaved -> RecordSubmissionState.Failure(submitResult.error)
-                    is RecordSubmitResult.Unknown -> RecordSubmissionState.Unknown(submitResult.error)
+                    _hasPendingCleanup.value = pendingCleanups.isNotEmpty()
+                    val pendingResult = getPendingRecordSubmissionsUseCase()
+                    if (owningGeneration != sessionManager.getSnapshot().generation) {
+                        return@launch
+                    }
+                    when (pendingResult) {
+                        is ApiResult.Success -> {
+                            val knownSavedIds = pendingCleanups.map { cleanup -> cleanup.submissionId }.toSet()
+                            _pendingSubmissions.value =
+                                pendingResult.value.filterNot { pending ->
+                                    pending.submissionId in knownSavedIds
+                                }
+                            _hasPendingLoadFailed.value = false
+                        }
+
+                        is ApiResult.Failure -> {
+                            if (pendingResult.error != ApiError.SessionChanged) {
+                                _hasPendingLoadFailed.value = true
+                            }
+                        }
+                    }
                 }
-                refreshPendingSubmissions()
-                submissionEffectChannel.send(
-                    if (submitResult is RecordSubmitResult.Saved) {
-                        RecordSubmissionEffect.Succeeded
-                    } else {
-                        RecordSubmissionEffect.Failed
+        }
+
+        // 부분 업로드 성공을 기록해 재시도 시 성공한 사진의 URL 발급과 업로드를 건너뛴다(메모리에만 둔다).
+        private val uploadedPhotoKeysByUri = mutableMapOf<Uri, String>()
+
+        init {
+            clearStateWhenSessionEnds(sessionManager) {
+                reset()
+                pendingLoadJob?.cancel()
+                pendingCleanups.clear()
+                _hasPendingCleanup.value = false
+                _pendingSubmissions.value = emptyList()
+                _hasPendingLoadFailed.value = false
+            }
+        }
+
+        /** 기록유형선택 화면에서 선택을 확정할 때 호출한다. [submit]이 어떤 종류의
+         * 기록(THERMOMETER/WORK/REST)을 서버에 보낼지 이 값으로 판단한다. */
+        fun selectRecordType(recordType: RecordType) {
+            updateDraft { it.copy(selectedRecordType = recordType) }
+        }
+
+        /** 홈의 "현장 사진"처럼 기록유형 선택 없이 특정 기록을 새로 시작할 때 호출한다.
+         * 이전 시도의 입력값·임시 사진을 정리한 뒤 [recordType]으로 기록 종류를 정한다. */
+        fun startRecord(recordType: RecordType) {
+            reset()
+            selectRecordType(recordType)
+        }
+
+        fun updateTemperatureText(temperatureText: String) {
+            updateDraft { it.copy(temperatureText = temperatureText) }
+        }
+
+        fun updateHumidityText(humidityText: String) {
+            updateDraft { it.copy(humidityText = humidityText) }
+        }
+
+        fun updateManualInputEnabled(isManualInputEnabled: Boolean) {
+            updateDraft { it.copy(isManualInputEnabled = isManualInputEnabled) }
+        }
+
+        /** 카메라 촬영이나 앨범 선택 결과를 해당 기록의 사진 목록에 추가한다. */
+        fun addPhoto(
+            recordType: RecordType,
+            photoUri: Uri,
+        ): Boolean {
+            var wasAdded = false
+            mutableUiState.update { state ->
+                val currentPhotoUris = state.photoUrisFor(recordType)
+                if (currentPhotoUris.size >= MAX_RECORD_PHOTO_COUNT || photoUri in currentPhotoUris) {
+                    state
+                } else {
+                    wasAdded = true
+                    state.withPhotoUris(recordType, currentPhotoUris + photoUri)
+                }
+            }
+            return wasAdded
+        }
+
+        /** 사진 목록에서 URI를 제거하고 연결된 캐시 파일 또는 앨범 권한을 백그라운드에서 정리한다. */
+        fun removePhoto(
+            recordType: RecordType,
+            uri: Uri,
+        ) {
+            uploadedPhotoKeysByUri.remove(uri)
+            mutableUiState.update { state ->
+                state.withPhotoUris(recordType, state.photoUrisFor(recordType) - uri)
+            }
+            viewModelScope.launch(ioDispatcher) {
+                releasePhoto(context, uri)
+            }
+        }
+
+        /** 다시 촬영을 시작할 때 현재 사진 목록과 로컬 자원을 함께 정리한다. */
+        fun clearPhotos(recordType: RecordType) {
+            val photoUrisToRelease = mutableUiState.value.photoUrisFor(recordType)
+            photoUrisToRelease.forEach(uploadedPhotoKeysByUri::remove)
+            mutableUiState.update { state ->
+                state.withPhotoUris(recordType, emptyList())
+            }
+            viewModelScope.launch(ioDispatcher) {
+                photoUrisToRelease.forEach { photoUri ->
+                    releasePhoto(context, photoUri)
+                }
+            }
+        }
+
+        fun updateWorkMemo(memo: String) {
+            updateDraft { it.copy(workMemo = memo) }
+        }
+
+        fun updateRestMemo(memo: String) {
+            updateDraft { it.copy(restMemo = memo) }
+        }
+
+        fun updateRestStartTime(startTime: LocalTime) {
+            updateDraft { state ->
+                state.copy(
+                    restDate = LocalDate.now(clock.withZone(REST_ZONE)),
+                    restStartTime = startTime.withSecond(0).withNano(0),
+                    restEndTime = null,
+                )
+            }
+        }
+
+        fun updateRestEndTime(endTime: LocalTime) {
+            updateDraft { state ->
+                state.copy(restEndTime = endTime.withSecond(0).withNano(0))
+            }
+        }
+
+        /** 저장 실패 화면에서 보관을 선택한 초안을 현재 세션의 기록 내역에 표시한다. */
+        fun markDraftTemporarilySaved() {
+            if (mutableUiState.value.selectedRecordType == null) {
+                return
+            }
+
+            updateDraft { state ->
+                state.copy(
+                    isTemporarilySaved = true,
+                    temporarilySavedAt = OffsetDateTime.now(clock),
+                )
+            }
+        }
+
+        fun resumeTemporarilySavedDraft() {
+            updateDraft { state ->
+                state.copy(
+                    isTemporarilySaved = false,
+                    temporarilySavedAt = null,
+                )
+            }
+        }
+
+        /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형의 사진을 먼저
+         * 업로드하고, 그 objectKey로 현장 기록을 저장한다. 결과는 [submissionState](SaveSuccess·SaveFailure 화면이 읽음)와
+         * [submissionEffects](저장 화면의 이동)로 알린다.
+         * 저장은 화면이 아니라 viewModelScope에서 돌아, 화면을 벗어나거나 회전해도 요청이 끊기지 않는다.
+         * 진행 중이면 연타를 무시하고(같은 프레임의 두 번 입력도 [submitJob]으로 막는다), 요청이 취소되면 저장 전 상태로 되돌린다. */
+        fun submit() {
+            if (submitJob?.isActive == true ||
+                mutableSubmissionState.value is RecordSubmissionState.Unknown ||
+                mutableSubmissionState.value is RecordSubmissionState.Success
+            ) {
+                return
+            }
+
+            val state = mutableUiState.value
+            val recordType = state.selectedRecordType ?: return
+            // 버튼 활성 조건과 같은 규칙으로 한 번 더 막아, 필수 값 없이 서버에 요청하지 않게 한다.
+            if (!state.canSubmit(recordType)) {
+                return
+            }
+
+            val owningGeneration = sessionManager.getSnapshot().generation
+            val owningDraft = draftGeneration
+            val hasPreviousAttempt = submissionId != null
+            val intentionId =
+                submissionId ?: UUID.randomUUID().toString().also {
+                    submissionId = it
+                    savedStateHandle[KEY_SUBMISSION_ID] = it
+                }
+            val intentionMeasuredAt =
+                submissionMeasuredAt ?: OffsetDateTime.now(clock).also {
+                    submissionMeasuredAt = it
+                    savedStateHandle[KEY_SUBMISSION_MEASURED_AT] = it.toString()
+                }
+            mutableSubmissionState.value = RecordSubmissionState.Submitting
+            submitJob =
+                viewModelScope.launch {
+                    try {
+                        val submitResult =
+                            uploadAndSubmit(
+                                state = state,
+                                recordType = recordType,
+                                intentionId = intentionId,
+                                intentionMeasuredAt = intentionMeasuredAt,
+                                owningGeneration = owningGeneration,
+                                owningDraft = owningDraft,
+                                hasPreviousAttempt = hasPreviousAttempt,
+                            )
+                        if (owningGeneration != sessionManager.getSnapshot().generation ||
+                            owningDraft != draftGeneration
+                        ) {
+                            return@launch
+                        }
+                        // 세션 전환으로 멈춘 저장은 새 계정 화면에 실패로 보여주지 않는다. 초안 정리는 세션 연결이 맡는다.
+                        if (submitResult is RecordSubmitResult.NotSaved &&
+                            submitResult.error == ApiError.SessionChanged
+                        ) {
+                            return@launch
+                        }
+                        mutableSubmissionState.value =
+                            when (submitResult) {
+                                is RecordSubmitResult.Saved -> {
+                                    submitResult.pendingCleanup?.let { cleanup -> pendingCleanups.add(cleanup) }
+                                    _hasPendingCleanup.value = pendingCleanups.isNotEmpty()
+                                    clearSavedDraft()
+                                    RecordSubmissionState.Success(submitResult.record)
+                                }
+
+                                is RecordSubmitResult.NotSaved -> {
+                                    RecordSubmissionState.Failure(submitResult.error)
+                                }
+
+                                is RecordSubmitResult.Unknown -> {
+                                    RecordSubmissionState.Unknown(submitResult.error)
+                                }
+                            }
+                        refreshPendingSubmissions()
+                        submissionEffectChannel.send(
+                            if (submitResult is RecordSubmitResult.Saved) {
+                                RecordSubmissionEffect.Succeeded
+                            } else {
+                                RecordSubmissionEffect.Failed
+                            },
+                        )
+                    } finally {
+                        if (owningDraft == draftGeneration &&
+                            owningGeneration == sessionManager.getSnapshot().generation &&
+                            mutableSubmissionState.value == RecordSubmissionState.Submitting
+                        ) {
+                            mutableSubmissionState.value = RecordSubmissionState.Idle
+                        }
+                    }
+                }
+        }
+
+        private suspend fun uploadAndSubmit(
+            state: RecordDraftUiState,
+            recordType: RecordType,
+            intentionId: String,
+            intentionMeasuredAt: OffsetDateTime,
+            owningGeneration: Long,
+            owningDraft: Long,
+            hasPreviousAttempt: Boolean,
+        ): RecordSubmitResult {
+            if (hasPreviousAttempt) {
+                when (val pending = getPendingRecordSubmissionsUseCase()) {
+                    is ApiResult.Failure -> {
+                        return RecordSubmitResult.Unknown(pending.error)
+                    }
+
+                    is ApiResult.Success -> {
+                        if (pending.value.any { pendingSubmission ->
+                                pendingSubmission.submissionId == intentionId
+                            }
+                        ) {
+                            return RecordSubmitResult.Unknown(ApiError.Unknown)
+                        }
+                    }
+                }
+            }
+            if (owningGeneration != sessionManager.getSnapshot().generation || owningDraft != draftGeneration) {
+                return RecordSubmitResult.NotSaved(ApiError.SessionChanged)
+            }
+            val photoUris = state.photoUrisFor(recordType)
+            val uploadResult =
+                uploadFieldPhotosUseCase(
+                    photoUris = photoUris,
+                    alreadyUploadedPhotoKeys = uploadedPhotoKeysByUri.toMap(),
+                    onPhotoUploaded = { photoUri, objectKey ->
+                        if (owningGeneration == sessionManager.getSnapshot().generation &&
+                            owningDraft == draftGeneration &&
+                            photoUri in mutableUiState.value.photoUrisFor(recordType)
+                        ) {
+                            uploadedPhotoKeysByUri[photoUri] = objectKey
+                        }
                     },
                 )
-            } finally {
-                if (owningDraft == draftGeneration && owningGeneration == sessionManager.getSnapshot().generation &&
-                    mutableSubmissionState.value == RecordSubmissionState.Submitting
-                ) {
-                    mutableSubmissionState.value = RecordSubmissionState.Idle
+            val photoKeys =
+                when (uploadResult) {
+                    is ApiResult.Success -> uploadResult.value
+                    is ApiResult.Failure -> return RecordSubmitResult.NotSaved(uploadResult.error)
                 }
+            // 업로드 중 계정이 바뀌었으면 이전 계정의 사진·메모가 새 계정 기록으로 저장되지 않게 멈춘다.
+            if (owningGeneration != sessionManager.getSnapshot().generation) {
+                return RecordSubmitResult.NotSaved(ApiError.SessionChanged)
+            }
+
+            val isManualTemperature = recordType == RecordType.TEMPERATURE && state.isManualInputEnabled
+            val submitResult =
+                submitFieldRecordUseCase(
+                    submissionId = intentionId,
+                    expectedSessionGeneration = owningGeneration,
+                    type = recordType.toFieldRecordType(),
+                    photoKeys = photoKeys,
+                    measuredAt = intentionMeasuredAt,
+                    temperature =
+                        if (isManualTemperature) {
+                            state.temperatureText.toDoubleOrNull()
+                        } else {
+                            null
+                        },
+                    humidity =
+                        if (isManualTemperature) {
+                            state.humidityText.toDoubleOrNull()
+                        } else {
+                            null
+                        },
+                    memo = state.memoFor(recordType),
+                    restStartedAt = if (recordType == RecordType.REST) state.restStartedAt else null,
+                    restEndedAt = if (recordType == RecordType.REST) state.restEndedAt else null,
+                )
+            // 이미 사용된 키는 저장 결과 불명으로 보관하고 재업로드하지 않는다.
+            if (owningDraft == draftGeneration && owningGeneration == sessionManager.getSnapshot().generation &&
+                submitResult is RecordSubmitResult.NotSaved && submitResult.error.isStaleUploadKey()
+            ) {
+                photoUris.forEach(uploadedPhotoKeysByUri::remove)
+            }
+            return submitResult
+        }
+
+        private fun ApiError.isStaleUploadKey(): Boolean {
+            val errorCode =
+                when (this) {
+                    is ApiError.Http -> errorCode
+                    is ApiError.ServerRejected -> errorCode
+                    else -> null
+                }
+            return errorCode == UPLOAD_NOT_FOUND_CODE
+        }
+
+        // 모든 기록 유형은 사진 1~2장이 필요하며, 온도계 수기 입력 시에도 사진을 함께 첨부한다.
+        private fun RecordDraftUiState.canSubmit(recordType: RecordType): Boolean =
+            when (recordType) {
+                RecordType.TEMPERATURE -> canSubmitTemperatureRecord && fieldPhotoUris.isNotEmpty()
+                RecordType.WORK -> workPhotoUris.isNotEmpty()
+                RecordType.REST -> restPhotoUris.isNotEmpty() && hasValidRestTimeRange
+            }
+
+        private fun RecordDraftUiState.photoUrisFor(recordType: RecordType): List<Uri> =
+            when (recordType) {
+                RecordType.TEMPERATURE -> fieldPhotoUris
+                RecordType.WORK -> workPhotoUris
+                RecordType.REST -> restPhotoUris
+            }
+
+        private fun RecordDraftUiState.withPhotoUris(
+            recordType: RecordType,
+            photoUris: List<Uri>,
+        ): RecordDraftUiState =
+            when (recordType) {
+                RecordType.TEMPERATURE -> copy(fieldPhotoUris = photoUris)
+                RecordType.WORK -> copy(workPhotoUris = photoUris)
+                RecordType.REST -> copy(restPhotoUris = photoUris)
+            }
+
+        private fun RecordDraftUiState.memoFor(recordType: RecordType): String? =
+            when (recordType) {
+                RecordType.TEMPERATURE -> null
+                RecordType.WORK -> workMemo.ifBlank { null }
+                RecordType.REST -> restMemo.ifBlank { null }
+            }
+
+        private fun RecordType.toFieldRecordType(): FieldRecordType =
+            when (this) {
+                RecordType.TEMPERATURE -> FieldRecordType.THERMOMETER
+                RecordType.WORK -> FieldRecordType.WORK
+                RecordType.REST -> FieldRecordType.REST
+            }
+
+        /** 기록 유형을 새로 선택하기 시작할 때(RecordTypeSelection 진입) 또는 이 흐름을 완전히 벗어날 때
+         * (로그아웃·세션 만료로 HeartGuardMainNavDisplay가 컴포지션에서 사라질 때) 호출한다. 이전 시도의
+         * 입력값과, 아직 서버에 올리지 않아 로컬에만 남아 있던 임시 사진 파일을 모두 정리한다.
+         * UI 상태는 즉시 초기화하고, 파일 I/O는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
+        fun reset() {
+            draftGeneration += 1L
+            submitJob?.cancel()
+            submitJob = null
+            val photoUrisToRelease = currentPhotoUris()
+            mutableUiState.value = RecordDraftUiState()
+            uploadedPhotoKeysByUri.clear()
+            clearSavedDraft()
+            submissionId = null
+            submissionMeasuredAt = null
+            while (submissionEffectChannel.tryReceive().isSuccess) {
+                // 종료된 초안의 화면 이동 효과를 다음 초안에 전달하지 않는다.
+            }
+            mutableSubmissionState.value = RecordSubmissionState.Idle
+            viewModelScope.launch(ioDispatcher) {
+                photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
             }
         }
-    }
 
-    private suspend fun uploadAndSubmit(
-        state: RecordDraftUiState,
-        recordType: RecordType,
-        intentionId: String,
-        intentionMeasuredAt: OffsetDateTime,
-        owningGeneration: Long,
-        owningDraft: Long,
-        hasPreviousAttempt: Boolean,
-    ): RecordSubmitResult {
-        if (hasPreviousAttempt) {
-            when (val pending = getPendingRecordSubmissionsUseCase()) {
-                is ApiResult.Failure -> return RecordSubmitResult.Unknown(pending.error)
-                is ApiResult.Success -> if (pending.value.any { pendingSubmission ->
-                    pendingSubmission.submissionId == intentionId
-                }) {
-                    return RecordSubmitResult.Unknown(ApiError.Unknown)
-                }
+        override fun onCleared() {
+            // viewModelScope는 이 시점에 이미 취소되므로 여기서는 동기적으로 정리한다.
+            currentPhotoUris().forEach { uri -> releasePhoto(context, uri) }
+        }
+
+        private fun currentPhotoUris(): List<Uri> {
+            val state = mutableUiState.value
+            return (state.fieldPhotoUris + state.workPhotoUris + state.restPhotoUris).distinct()
+        }
+
+        private fun updateDraft(transform: (RecordDraftUiState) -> RecordDraftUiState) {
+            mutableUiState.update(transform)
+            saveDraft(mutableUiState.value)
+        }
+
+        private fun saveDraft(state: RecordDraftUiState) {
+            savedStateHandle[KEY_SELECTED_RECORD_TYPE] = state.selectedRecordType?.name
+            savedStateHandle[KEY_TEMPERATURE_TEXT] = state.temperatureText
+            savedStateHandle[KEY_HUMIDITY_TEXT] = state.humidityText
+            savedStateHandle[KEY_MANUAL_INPUT_ENABLED] = state.isManualInputEnabled
+            savedStateHandle[KEY_WORK_MEMO] = state.workMemo
+            savedStateHandle[KEY_REST_MEMO] = state.restMemo
+            savedStateHandle[KEY_REST_DATE] = state.restDate?.toString()
+            savedStateHandle[KEY_REST_START_TIME] = state.restStartTime?.toString()
+            savedStateHandle[KEY_REST_END_TIME] = state.restEndTime?.toString()
+            savedStateHandle[KEY_TEMPORARILY_SAVED] = state.isTemporarilySaved
+            savedStateHandle[KEY_TEMPORARILY_SAVED_AT] = state.temporarilySavedAt?.toString()
+        }
+
+        /** 프로세스 재생성 뒤 남은 초안은 같은 작업자의 복원 세션일 때만 되살린다.
+         * 저장 토큰을 읽지 못해 새로 로그인한 경우에는 다른 작업자일 수 있으므로 초안을 버린다. */
+        private fun restoreDraftOfCurrentSession(): RecordDraftUiState {
+            if (sessionManager.isRestoredSession()) {
+                return savedStateHandle.restoreRecordDraft()
             }
-        }
-        if (owningGeneration != sessionManager.getSnapshot().generation || owningDraft != draftGeneration) {
-            return RecordSubmitResult.NotSaved(ApiError.SessionChanged)
-        }
-        val photoUris = state.photoUrisFor(recordType)
-        val uploadResult = uploadFieldPhotosUseCase(
-            photoUris = photoUris,
-            alreadyUploadedPhotoKeys = uploadedPhotoKeysByUri.toMap(),
-            onPhotoUploaded = { photoUri, objectKey ->
-                if (owningGeneration == sessionManager.getSnapshot().generation && owningDraft == draftGeneration &&
-                    photoUri in mutableUiState.value.photoUrisFor(recordType)
-                ) {
-                    uploadedPhotoKeysByUri[photoUri] = objectKey
-                }
-            },
-        )
-        val photoKeys = when (uploadResult) {
-            is ApiResult.Success -> uploadResult.value
-            is ApiResult.Failure -> return RecordSubmitResult.NotSaved(uploadResult.error)
-        }
-        // 업로드 중 계정이 바뀌었으면 이전 계정의 사진·메모가 새 계정 기록으로 저장되지 않게 멈춘다.
-        if (owningGeneration != sessionManager.getSnapshot().generation) {
-            return RecordSubmitResult.NotSaved(ApiError.SessionChanged)
+            clearSavedDraft()
+            return RecordDraftUiState()
         }
 
-        val isManualTemperature = recordType == RecordType.TEMPERATURE && state.isManualInputEnabled
-        val submitResult = submitFieldRecordUseCase(
-            submissionId = intentionId,
-            expectedSessionGeneration = owningGeneration,
-            type = recordType.toFieldRecordType(),
-            photoKeys = photoKeys,
-            measuredAt = intentionMeasuredAt,
-            temperature = if (isManualTemperature) {
-                state.temperatureText.toDoubleOrNull()
-            } else {
-                null
-            },
-            humidity = if (isManualTemperature) {
-                state.humidityText.toDoubleOrNull()
-            } else {
-                null
-            },
-            memo = state.memoFor(recordType),
-            restStartedAt = if (recordType == RecordType.REST) state.restStartedAt else null,
-            restEndedAt = if (recordType == RecordType.REST) state.restEndedAt else null,
-        )
-        // 이미 사용된 키는 저장 결과 불명으로 보관하고 재업로드하지 않는다.
-        if (owningDraft == draftGeneration && owningGeneration == sessionManager.getSnapshot().generation &&
-            submitResult is RecordSubmitResult.NotSaved && submitResult.error.isStaleUploadKey()
-        ) {
-            photoUris.forEach(uploadedPhotoKeysByUri::remove)
+        private fun clearSavedDraft() {
+            savedStateHandle.remove<String>(KEY_SUBMISSION_ID)
+            savedStateHandle.remove<String>(KEY_SUBMISSION_MEASURED_AT)
+            savedStateHandle.remove<String>(KEY_SELECTED_RECORD_TYPE)
+            savedStateHandle.remove<String>(KEY_TEMPERATURE_TEXT)
+            savedStateHandle.remove<String>(KEY_HUMIDITY_TEXT)
+            savedStateHandle.remove<Boolean>(KEY_MANUAL_INPUT_ENABLED)
+            savedStateHandle.remove<String>(KEY_WORK_MEMO)
+            savedStateHandle.remove<String>(KEY_REST_MEMO)
+            savedStateHandle.remove<String>(KEY_REST_DATE)
+            savedStateHandle.remove<String>(KEY_REST_START_TIME)
+            savedStateHandle.remove<String>(KEY_REST_END_TIME)
+            savedStateHandle.remove<Boolean>(KEY_TEMPORARILY_SAVED)
+            savedStateHandle.remove<String>(KEY_TEMPORARILY_SAVED_AT)
         }
-        return submitResult
-    }
 
-    private fun ApiError.isStaleUploadKey(): Boolean {
-        val errorCode = when (this) {
-            is ApiError.Http -> errorCode
-            is ApiError.ServerRejected -> errorCode
-            else -> null
+        private fun SavedStateHandle.restoreRecordDraft(): RecordDraftUiState {
+            val selectedRecordType =
+                get<String>(KEY_SELECTED_RECORD_TYPE)
+                    ?.let { name -> runCatching { RecordType.valueOf(name) }.getOrNull() }
+            return RecordDraftUiState(
+                selectedRecordType = selectedRecordType,
+                temperatureText = get<String>(KEY_TEMPERATURE_TEXT).orEmpty(),
+                humidityText = get<String>(KEY_HUMIDITY_TEXT).orEmpty(),
+                isManualInputEnabled = get<Boolean>(KEY_MANUAL_INPUT_ENABLED) ?: false,
+                workMemo = get<String>(KEY_WORK_MEMO).orEmpty(),
+                restMemo = get<String>(KEY_REST_MEMO).orEmpty(),
+                restDate =
+                    get<String>(KEY_REST_DATE)
+                        ?.let { savedDate -> runCatching { LocalDate.parse(savedDate) }.getOrNull() },
+                restStartTime =
+                    get<String>(KEY_REST_START_TIME)
+                        ?.let { savedTime -> runCatching { LocalTime.parse(savedTime) }.getOrNull() },
+                restEndTime =
+                    get<String>(KEY_REST_END_TIME)
+                        ?.let { savedTime -> runCatching { LocalTime.parse(savedTime) }.getOrNull() },
+                isTemporarilySaved = get<Boolean>(KEY_TEMPORARILY_SAVED) ?: false,
+                temporarilySavedAt =
+                    get<String>(KEY_TEMPORARILY_SAVED_AT)
+                        ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() },
+            )
         }
-        return errorCode == UPLOAD_NOT_FOUND_CODE
-    }
 
-    // 모든 기록 유형은 사진 1~2장이 필요하며, 온도계 수기 입력 시에도 사진을 함께 첨부한다.
-    private fun RecordDraftUiState.canSubmit(recordType: RecordType): Boolean = when (recordType) {
-        RecordType.TEMPERATURE -> canSubmitTemperatureRecord && fieldPhotoUris.isNotEmpty()
-        RecordType.WORK -> workPhotoUris.isNotEmpty()
-        RecordType.REST -> restPhotoUris.isNotEmpty() && hasValidRestTimeRange
-    }
-
-    private fun RecordDraftUiState.photoUrisFor(recordType: RecordType): List<Uri> = when (recordType) {
-        RecordType.TEMPERATURE -> fieldPhotoUris
-        RecordType.WORK -> workPhotoUris
-        RecordType.REST -> restPhotoUris
-    }
-
-    private fun RecordDraftUiState.withPhotoUris(
-        recordType: RecordType,
-        photoUris: List<Uri>,
-    ): RecordDraftUiState = when (recordType) {
-        RecordType.TEMPERATURE -> copy(fieldPhotoUris = photoUris)
-        RecordType.WORK -> copy(workPhotoUris = photoUris)
-        RecordType.REST -> copy(restPhotoUris = photoUris)
-    }
-
-    private fun RecordDraftUiState.memoFor(recordType: RecordType): String? = when (recordType) {
-        RecordType.TEMPERATURE -> null
-        RecordType.WORK -> workMemo.ifBlank { null }
-        RecordType.REST -> restMemo.ifBlank { null }
-    }
-
-    private fun RecordType.toFieldRecordType(): FieldRecordType = when (this) {
-        RecordType.TEMPERATURE -> FieldRecordType.THERMOMETER
-        RecordType.WORK -> FieldRecordType.WORK
-        RecordType.REST -> FieldRecordType.REST
-    }
-
-    /** 기록 유형을 새로 선택하기 시작할 때(RecordTypeSelection 진입) 또는 이 흐름을 완전히 벗어날 때
-     * (로그아웃·세션 만료로 HeartGuardMainNavDisplay가 컴포지션에서 사라질 때) 호출한다. 이전 시도의
-     * 입력값과, 아직 서버에 올리지 않아 로컬에만 남아 있던 임시 사진 파일을 모두 정리한다.
-     * UI 상태는 즉시 초기화하고, 파일 I/O는 메인 스레드를 막지 않도록 백그라운드에서 한다. */
-    fun reset() {
-        draftGeneration += 1L
-        submitJob?.cancel()
-        submitJob = null
-        val photoUrisToRelease = currentPhotoUris()
-        mutableUiState.value = RecordDraftUiState()
-        uploadedPhotoKeysByUri.clear()
-        clearSavedDraft()
-        submissionId = null
-        submissionMeasuredAt = null
-        while (submissionEffectChannel.tryReceive().isSuccess) {
-            // 종료된 초안의 화면 이동 효과를 다음 초안에 전달하지 않는다.
-        }
-        mutableSubmissionState.value = RecordSubmissionState.Idle
-        viewModelScope.launch(ioDispatcher) {
-            photoUrisToRelease.forEach { uri -> releasePhoto(context, uri) }
+        private companion object {
+            const val KEY_SELECTED_RECORD_TYPE = "record_draft.selected_record_type"
+            const val KEY_TEMPERATURE_TEXT = "record_draft.temperature_text"
+            const val KEY_HUMIDITY_TEXT = "record_draft.humidity_text"
+            const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
+            const val KEY_WORK_MEMO = "record_draft.work_memo"
+            const val KEY_REST_MEMO = "record_draft.rest_memo"
+            const val KEY_REST_DATE = "record_draft.rest_date"
+            const val KEY_REST_START_TIME = "record_draft.rest_start_time"
+            const val KEY_REST_END_TIME = "record_draft.rest_end_time"
+            const val KEY_TEMPORARILY_SAVED = "record_draft.temporarily_saved"
+            const val KEY_TEMPORARILY_SAVED_AT = "record_draft.temporarily_saved_at"
+            const val UPLOAD_NOT_FOUND_CODE = "UPLOAD_NOT_FOUND"
+            const val KEY_SUBMISSION_ID = "record_draft.submission_id"
+            const val KEY_SUBMISSION_MEASURED_AT = "record_draft.submission_measured_at"
+            val REST_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
         }
     }
-
-    override fun onCleared() {
-        // viewModelScope는 이 시점에 이미 취소되므로 여기서는 동기적으로 정리한다.
-        currentPhotoUris().forEach { uri -> releasePhoto(context, uri) }
-    }
-
-    private fun currentPhotoUris(): List<Uri> {
-        val state = mutableUiState.value
-        return (state.fieldPhotoUris + state.workPhotoUris + state.restPhotoUris).distinct()
-    }
-
-    private fun updateDraft(transform: (RecordDraftUiState) -> RecordDraftUiState) {
-        mutableUiState.update(transform)
-        saveDraft(mutableUiState.value)
-    }
-
-    private fun saveDraft(state: RecordDraftUiState) {
-        savedStateHandle[KEY_SELECTED_RECORD_TYPE] = state.selectedRecordType?.name
-        savedStateHandle[KEY_TEMPERATURE_TEXT] = state.temperatureText
-        savedStateHandle[KEY_HUMIDITY_TEXT] = state.humidityText
-        savedStateHandle[KEY_MANUAL_INPUT_ENABLED] = state.isManualInputEnabled
-        savedStateHandle[KEY_WORK_MEMO] = state.workMemo
-        savedStateHandle[KEY_REST_MEMO] = state.restMemo
-        savedStateHandle[KEY_REST_DATE] = state.restDate?.toString()
-        savedStateHandle[KEY_REST_START_TIME] = state.restStartTime?.toString()
-        savedStateHandle[KEY_REST_END_TIME] = state.restEndTime?.toString()
-        savedStateHandle[KEY_TEMPORARILY_SAVED] = state.isTemporarilySaved
-        savedStateHandle[KEY_TEMPORARILY_SAVED_AT] = state.temporarilySavedAt?.toString()
-    }
-
-    /** 프로세스 재생성 뒤 남은 초안은 같은 작업자의 복원 세션일 때만 되살린다.
-     * 저장 토큰을 읽지 못해 새로 로그인한 경우에는 다른 작업자일 수 있으므로 초안을 버린다. */
-    private fun restoreDraftOfCurrentSession(): RecordDraftUiState {
-        if (sessionManager.isRestoredSession()) {
-            return savedStateHandle.restoreRecordDraft()
-        }
-        clearSavedDraft()
-        return RecordDraftUiState()
-    }
-
-    private fun clearSavedDraft() {
-        savedStateHandle.remove<String>(KEY_SUBMISSION_ID)
-        savedStateHandle.remove<String>(KEY_SUBMISSION_MEASURED_AT)
-        savedStateHandle.remove<String>(KEY_SELECTED_RECORD_TYPE)
-        savedStateHandle.remove<String>(KEY_TEMPERATURE_TEXT)
-        savedStateHandle.remove<String>(KEY_HUMIDITY_TEXT)
-        savedStateHandle.remove<Boolean>(KEY_MANUAL_INPUT_ENABLED)
-        savedStateHandle.remove<String>(KEY_WORK_MEMO)
-        savedStateHandle.remove<String>(KEY_REST_MEMO)
-        savedStateHandle.remove<String>(KEY_REST_DATE)
-        savedStateHandle.remove<String>(KEY_REST_START_TIME)
-        savedStateHandle.remove<String>(KEY_REST_END_TIME)
-        savedStateHandle.remove<Boolean>(KEY_TEMPORARILY_SAVED)
-        savedStateHandle.remove<String>(KEY_TEMPORARILY_SAVED_AT)
-    }
-
-    private fun SavedStateHandle.restoreRecordDraft(): RecordDraftUiState {
-        val selectedRecordType = get<String>(KEY_SELECTED_RECORD_TYPE)
-            ?.let { name -> runCatching { RecordType.valueOf(name) }.getOrNull() }
-        return RecordDraftUiState(
-            selectedRecordType = selectedRecordType,
-            temperatureText = get<String>(KEY_TEMPERATURE_TEXT).orEmpty(),
-            humidityText = get<String>(KEY_HUMIDITY_TEXT).orEmpty(),
-            isManualInputEnabled = get<Boolean>(KEY_MANUAL_INPUT_ENABLED) ?: false,
-            workMemo = get<String>(KEY_WORK_MEMO).orEmpty(),
-            restMemo = get<String>(KEY_REST_MEMO).orEmpty(),
-            restDate = get<String>(KEY_REST_DATE)
-                ?.let { savedDate -> runCatching { LocalDate.parse(savedDate) }.getOrNull() },
-            restStartTime = get<String>(KEY_REST_START_TIME)
-                ?.let { savedTime -> runCatching { LocalTime.parse(savedTime) }.getOrNull() },
-            restEndTime = get<String>(KEY_REST_END_TIME)
-                ?.let { savedTime -> runCatching { LocalTime.parse(savedTime) }.getOrNull() },
-            isTemporarilySaved = get<Boolean>(KEY_TEMPORARILY_SAVED) ?: false,
-            temporarilySavedAt = get<String>(KEY_TEMPORARILY_SAVED_AT)
-                ?.let { savedAt -> runCatching { OffsetDateTime.parse(savedAt) }.getOrNull() },
-        )
-    }
-
-    private companion object {
-        const val KEY_SELECTED_RECORD_TYPE = "record_draft.selected_record_type"
-        const val KEY_TEMPERATURE_TEXT = "record_draft.temperature_text"
-        const val KEY_HUMIDITY_TEXT = "record_draft.humidity_text"
-        const val KEY_MANUAL_INPUT_ENABLED = "record_draft.manual_input_enabled"
-        const val KEY_WORK_MEMO = "record_draft.work_memo"
-        const val KEY_REST_MEMO = "record_draft.rest_memo"
-        const val KEY_REST_DATE = "record_draft.rest_date"
-        const val KEY_REST_START_TIME = "record_draft.rest_start_time"
-        const val KEY_REST_END_TIME = "record_draft.rest_end_time"
-        const val KEY_TEMPORARILY_SAVED = "record_draft.temporarily_saved"
-        const val KEY_TEMPORARILY_SAVED_AT = "record_draft.temporarily_saved_at"
-        const val UPLOAD_NOT_FOUND_CODE = "UPLOAD_NOT_FOUND"
-        const val KEY_SUBMISSION_ID = "record_draft.submission_id"
-        const val KEY_SUBMISSION_MEASURED_AT = "record_draft.submission_measured_at"
-        val REST_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
-    }
-}

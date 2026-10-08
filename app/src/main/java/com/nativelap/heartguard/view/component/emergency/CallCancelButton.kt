@@ -27,24 +27,28 @@ fun CallCancelButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-        border = BorderStroke(
-            width = HeartGuardBorderWidth.Divider,
-            color = MaterialTheme.extraColors.cardBorder,
-        ),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
+        border =
+            BorderStroke(
+                width = HeartGuardBorderWidth.Divider,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
+        colors =
+            ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
     ) {
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
         )
     }
 }

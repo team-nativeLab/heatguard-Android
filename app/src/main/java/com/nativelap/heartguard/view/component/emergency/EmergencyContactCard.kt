@@ -45,50 +45,55 @@ fun EmergencyContactCard(
     Card(
         onClick = onCallClick,
         enabled = isCallEnabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.EmergencyContactHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.EmergencyContactHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            disabledContainerColor = MaterialTheme.colorScheme.surface,
-        ),
-        border = BorderStroke(
-            width = HeartGuardSpacing.Hairline,
-            color = MaterialTheme.extraColors.cardBorder,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface,
+            ),
+        border =
+            BorderStroke(
+                width = HeartGuardSpacing.Hairline,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = HeartGuardSpacing.LargeSection,
-                    top = HeartGuardSpacing.LargeSection,
-                    end = HeartGuardSpacing.LargeSection,
-                    bottom = HeartGuardSpacing.Section,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = HeartGuardSpacing.LargeSection,
+                        top = HeartGuardSpacing.LargeSection,
+                        end = HeartGuardSpacing.LargeSection,
+                        bottom = HeartGuardSpacing.Section,
+                    ),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
             Text(
                 text = contactTitle,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontSize = HeartGuardFontSize.EmergencyContactTitle,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontSize = HeartGuardFontSize.EmergencyContactTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(
-                        if (isCallEnabled) {
-                            ENABLED_ALPHA
-                        } else {
-                            DISABLED_ALPHA
-                        },
-                    )
-                    .padding(start = HeartGuardSpacing.EmergencyContactIndent),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .alpha(
+                            if (isCallEnabled) {
+                                ENABLED_ALPHA
+                            } else {
+                                DISABLED_ALPHA
+                            },
+                        ).padding(start = HeartGuardSpacing.EmergencyContactIndent),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
@@ -96,16 +101,18 @@ fun EmergencyContactCard(
                     Text(
                         text = contactName,
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                        ),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                            ),
                     )
                     Text(
                         text = phoneNumber,
                         color = MaterialTheme.extraColors.emergencyContactPhone,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                        ),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                            ),
                     )
                 }
 

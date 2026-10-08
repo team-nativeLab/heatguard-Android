@@ -22,25 +22,26 @@ fun RecordHistoryDayHeader(
     today: LocalDate,
     modifier: Modifier = Modifier,
 ) {
-    val dayText = if (date == null) {
-        stringResource(R.string.history_day_unknown)
-    } else {
-        val formattedDate = date.format(koreanDateFormatter(stringResource(R.string.history_day_format)))
-        when (date) {
-            today -> stringResource(R.string.history_day_today_format, formattedDate)
-            today.minusDays(1) -> stringResource(R.string.history_day_yesterday_format, formattedDate)
-            else -> formattedDate
+    val dayText =
+        if (date == null) {
+            stringResource(R.string.history_day_unknown)
+        } else {
+            val formattedDate = date.format(koreanDateFormatter(stringResource(R.string.history_day_format)))
+            when (date) {
+                today -> stringResource(R.string.history_day_today_format, formattedDate)
+                today.minusDays(1) -> stringResource(R.string.history_day_yesterday_format, formattedDate)
+                else -> formattedDate
+            }
         }
-    }
 
     Text(
         text = dayText,
-        modifier = modifier
-            .padding(
-                start = HeartGuardSpacing.Tight,
-                top = HeartGuardSpacing.Compact,
-            )
-            .semantics { heading() },
+        modifier =
+            modifier
+                .padding(
+                    start = HeartGuardSpacing.Tight,
+                    top = HeartGuardSpacing.Compact,
+                ).semantics { heading() },
         color = MaterialTheme.extraColors.secondaryText,
         style = MaterialTheme.typography.labelLarge,
     )

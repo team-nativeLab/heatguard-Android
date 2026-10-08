@@ -42,10 +42,11 @@ fun WithdrawDoneScreen(
         },
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
@@ -53,14 +54,15 @@ fun WithdrawDoneScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        horizontal = HeartGuardSpacing.ResultHorizontal,
-                        vertical = HeartGuardSpacing.Section,
-                    ),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            horizontal = HeartGuardSpacing.ResultHorizontal,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
             ) {
                 WithdrawDoneMessage(
                     title = stringResource(R.string.withdraw_done_title),

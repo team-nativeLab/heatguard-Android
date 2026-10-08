@@ -24,15 +24,17 @@ fun PhotoScreenIntro(
             text = title,
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
         )
         Text(
             text = description,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.Compact),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = HeartGuardSpacing.Compact),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
         )

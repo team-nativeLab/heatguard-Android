@@ -24,21 +24,23 @@ fun MenuDrawerWithdrawLink(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .heightIn(min = HeartGuardComponentSize.TouchTarget)
-            .clickable(
-                role = Role.Button,
-                onClick = onClick,
-            ),
+        modifier =
+            modifier
+                .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                .clickable(
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
             text = title,
             color = MaterialTheme.extraColors.tertiaryText,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = HeartGuardFontSize.SmallLabel,
-                textDecoration = TextDecoration.Underline,
-            ),
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontSize = HeartGuardFontSize.SmallLabel,
+                    textDecoration = TextDecoration.Underline,
+                ),
         )
     }
 }

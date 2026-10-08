@@ -19,9 +19,7 @@ import com.nativelap.heartguard.view.component.brand.BrandMark
 
 /** 저장된 세션을 확인하는 동안 시스템 스플래시에 이어 로그인 화면과 같은 로고를 화면 중앙에 보여 주는 인트로 화면이다. */
 @Composable
-internal fun IntroScreen(
-    modifier: Modifier = Modifier,
-) {
+internal fun IntroScreen(modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.authBackground,
@@ -29,9 +27,10 @@ internal fun IntroScreen(
         contentWindowInsets = WindowInsets(0),
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             contentAlignment = Alignment.Center,
         ) {
             BrandMark(

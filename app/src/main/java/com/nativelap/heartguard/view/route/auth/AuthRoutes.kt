@@ -16,9 +16,7 @@ import com.nativelap.heartguard.viewmodel.auth.TeamLoginViewModel
 
 /** 사전 발급된 작업자 계정의 로그인 요청과 화면 상태를 연결하는 Route이다. */
 @Composable
-internal fun HeartGuardLoginRoute(
-    viewModel: TeamLoginViewModel = hiltViewModel(),
-) {
+internal fun HeartGuardLoginRoute(viewModel: TeamLoginViewModel = hiltViewModel()) {
     var email by rememberSaveable {
         mutableStateOf("")
     }
@@ -26,13 +24,14 @@ internal fun HeartGuardLoginRoute(
         mutableStateOf("")
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val statusMessage = when (uiState.failure) {
-        null -> null
-        TeamLoginFailure.INVALID_CREDENTIALS -> null
-        TeamLoginFailure.ACCOUNT_DISABLED -> stringResource(R.string.auth_login_account_disabled)
-        TeamLoginFailure.RATE_LIMITED -> stringResource(R.string.auth_login_rate_limited)
-        TeamLoginFailure.GENERIC -> stringResource(R.string.auth_login_generic_error)
-    }
+    val statusMessage =
+        when (uiState.failure) {
+            null -> null
+            TeamLoginFailure.INVALID_CREDENTIALS -> null
+            TeamLoginFailure.ACCOUNT_DISABLED -> stringResource(R.string.auth_login_account_disabled)
+            TeamLoginFailure.RATE_LIMITED -> stringResource(R.string.auth_login_rate_limited)
+            TeamLoginFailure.GENERIC -> stringResource(R.string.auth_login_generic_error)
+        }
 
     AuthLoginScreen(
         email = email,
@@ -47,11 +46,12 @@ internal fun HeartGuardLoginRoute(
         },
         statusMessage = statusMessage,
         isPasswordError = uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS,
-        passwordErrorMessage = if (uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS) {
-            stringResource(R.string.auth_login_invalid_credentials)
-        } else {
-            null
-        },
+        passwordErrorMessage =
+            if (uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS) {
+                stringResource(R.string.auth_login_invalid_credentials)
+            } else {
+                null
+            },
         isSubmitting = uiState.isSubmitting,
     )
 }

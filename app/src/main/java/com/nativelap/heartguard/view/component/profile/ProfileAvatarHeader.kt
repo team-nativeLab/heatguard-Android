@@ -34,24 +34,27 @@ fun ProfileAvatarHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier
-                .size(HeartGuardComponentSize.ProfileAvatar)
-                .background(
-                    color = MaterialTheme.extraColors.photoContainer,
-                    shape = CircleShape,
-                ),
+            modifier =
+                Modifier
+                    .size(HeartGuardComponentSize.ProfileAvatar)
+                    .background(
+                        color = MaterialTheme.extraColors.photoContainer,
+                        shape = CircleShape,
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = userName
-                    ?.firstOrNull()
-                    ?.toString()
-                    ?: stringResource(R.string.common_empty_value),
+                text =
+                    userName
+                        ?.firstOrNull()
+                        ?.toString()
+                        ?: stringResource(R.string.common_empty_value),
                 color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = HeartGuardFontSize.ProfileAvatar,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontSize = HeartGuardFontSize.ProfileAvatar,
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
         }
 

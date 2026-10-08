@@ -41,50 +41,64 @@ internal fun HeartGuardSaveSuccessRoute(
 
     // 시스템 뒤로가기도 "확인"과 같이 기록을 마치고 홈으로 간다(입력 화면으로 돌아가 중복 저장하지 않게).
     BackHandler(onBack = completeRecord)
-    val recordSummaryItems = when (draftState.selectedRecordType) {
-        RecordType.TEMPERATURE -> temperatureRecordSummaryItems(
-            draftState = draftState,
-            apparentTemperature = record?.apparentTemperature,
-        )
+    val recordSummaryItems =
+        when (draftState.selectedRecordType) {
+            RecordType.TEMPERATURE -> {
+                temperatureRecordSummaryItems(
+                    draftState = draftState,
+                    apparentTemperature = record?.apparentTemperature,
+                )
+            }
 
-        RecordType.WORK -> listOf(
-            SavedRecordSummaryItem(
-                label = stringResource(R.string.save_work_photo_summary),
-                value = stringResource(R.string.save_photo_count_format, draftState.workPhotoUris.size),
-                hasDetails = true,
-            ),
-        )
+            RecordType.WORK -> {
+                listOf(
+                    SavedRecordSummaryItem(
+                        label = stringResource(R.string.save_work_photo_summary),
+                        value = stringResource(R.string.save_photo_count_format, draftState.workPhotoUris.size),
+                        hasDetails = true,
+                    ),
+                )
+            }
 
-        RecordType.REST -> listOf(
-            SavedRecordSummaryItem(
-                label = stringResource(R.string.save_rest_photo_summary),
-                value = stringResource(R.string.save_photo_count_format, draftState.restPhotoUris.size),
-                hasDetails = true,
-            ),
-        )
+            RecordType.REST -> {
+                listOf(
+                    SavedRecordSummaryItem(
+                        label = stringResource(R.string.save_rest_photo_summary),
+                        value = stringResource(R.string.save_photo_count_format, draftState.restPhotoUris.size),
+                        hasDetails = true,
+                    ),
+                )
+            }
 
-        null -> emptyList()
-    }
+            null -> {
+                emptyList()
+            }
+        }
 
     SaveSuccessScreen(
         hasPendingCleanup = hasPendingCleanup,
-        records = recordSummaryItems + SavedRecordSummaryItem(
-            label = stringResource(R.string.save_time_summary),
-            // 서버 createdAt은 UTC(+00:00)로 오므로 한국 시각으로 바꿔 표시한다.
-            value = valueOrEmptyText(
-                record?.createdAt
-                    ?.atZoneSameInstant(KOREA_ZONE)
-                    ?.format(savedAtFormatter),
-            ),
-        ),
+        records =
+            recordSummaryItems +
+                SavedRecordSummaryItem(
+                    label = stringResource(R.string.save_time_summary),
+                    // 서버 createdAt은 UTC(+00:00)로 오므로 한국 시각으로 바꿔 표시한다.
+                    value =
+                        valueOrEmptyText(
+                            record
+                                ?.createdAt
+                                ?.atZoneSameInstant(KOREA_ZONE)
+                                ?.format(savedAtFormatter),
+                        ),
+                ),
         // 기록 완료 후 홈으로 돌아가기 전에 draft(임시 사진 파일 포함)를 정리한다.
         onCompleteClick = completeRecord,
-        onDetailsClick = savedRecordId?.let { recordId ->
-            {
-                recordDraftViewModel.reset()
-                onRecordDetailClick(recordId)
-            }
-        },
+        onDetailsClick =
+            savedRecordId?.let { recordId ->
+                {
+                    recordDraftViewModel.reset()
+                    onRecordDetailClick(recordId)
+                }
+            },
     )
 }
 
@@ -96,16 +110,18 @@ private fun temperatureRecordSummaryItems(
 ): List<SavedRecordSummaryItem> {
     val manualTemperature = draftState.temperatureText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() }
     val manualHumidity = draftState.humidityText.takeIf { draftState.isManualInputEnabled && it.isNotBlank() }
-    val temperatureSummary = SavedRecordSummaryItem(
-        label = stringResource(R.string.save_temperature_summary),
-        value = temperatureValueText(manualTemperature),
-        hasDetails = true,
-        detail = stringResource(
-            R.string.save_temperature_detail_format,
-            humidityValueText(manualHumidity),
-            temperatureValueText(apparentTemperature?.toDisplayNumber()),
-        ),
-    )
+    val temperatureSummary =
+        SavedRecordSummaryItem(
+            label = stringResource(R.string.save_temperature_summary),
+            value = temperatureValueText(manualTemperature),
+            hasDetails = true,
+            detail =
+                stringResource(
+                    R.string.save_temperature_detail_format,
+                    humidityValueText(manualHumidity),
+                    temperatureValueText(apparentTemperature?.toDisplayNumber()),
+                ),
+        )
 
     if (draftState.fieldPhotoUris.isEmpty()) {
         return listOf(temperatureSummary)
@@ -143,11 +159,12 @@ internal fun HeartGuardSaveFailureRoute(
 
     SaveFailureScreen(
         isResultUnknown = isResultUnknown,
-        errorDetails = if (isResultUnknown) {
-            listOf(stringResource(R.string.save_unknown_detail))
-        } else {
-            listOf(error?.toDisplayMessage() ?: stringResource(R.string.save_error_unknown))
-        },
+        errorDetails =
+            if (isResultUnknown) {
+                listOf(stringResource(R.string.save_unknown_detail))
+            } else {
+                listOf(error?.toDisplayMessage() ?: stringResource(R.string.save_error_unknown))
+            },
         onRetryClick = if (isResultUnknown) onCheckHistoryClick else onRetryClick,
         onSaveDraftAndExitClick = if (isResultUnknown) onUnknownExitClick else onSaveDraftAndExitClick,
     )
@@ -155,30 +172,52 @@ internal fun HeartGuardSaveFailureRoute(
 
 // 명세에 정의된 기록·업로드 오류 코드는 작업자가 할 수 있는 조치를 알려 주고, 그 밖의 HTTP 오류는 상태 코드를 보여준다.
 @Composable
-private fun ApiError.toDisplayMessage(): String = when (this) {
-    is ApiError.Http -> when (errorCode) {
-        "WEATHER_BASELINE_REQUIRED" -> stringResource(R.string.save_error_weather_baseline_required)
-        "UPLOAD_NOT_FOUND",
-        "UPLOAD_ALREADY_USED",
-        -> stringResource(R.string.save_error_upload_expired)
-        "FILE_TOO_LARGE" -> stringResource(R.string.save_error_file_too_large)
-        "UNSUPPORTED_MEDIA_TYPE" -> stringResource(R.string.save_error_unsupported_media_type)
-        "RATE_LIMITED" -> stringResource(R.string.save_error_rate_limited)
-        else -> stringResource(R.string.save_error_http, statusCode)
+private fun ApiError.toDisplayMessage(): String =
+    when (this) {
+        is ApiError.Http -> {
+            when (errorCode) {
+                "WEATHER_BASELINE_REQUIRED" -> stringResource(R.string.save_error_weather_baseline_required)
+
+                "UPLOAD_NOT_FOUND",
+                "UPLOAD_ALREADY_USED",
+                -> stringResource(R.string.save_error_upload_expired)
+
+                "FILE_TOO_LARGE" -> stringResource(R.string.save_error_file_too_large)
+
+                "UNSUPPORTED_MEDIA_TYPE" -> stringResource(R.string.save_error_unsupported_media_type)
+
+                "RATE_LIMITED" -> stringResource(R.string.save_error_rate_limited)
+
+                else -> stringResource(R.string.save_error_http, statusCode)
+            }
+        }
+
+        is ApiError.ServerRejected -> {
+            serverRejectionMessage(errorCode)
+        }
+
+        ApiError.LocalStorage -> {
+            stringResource(R.string.save_error_local_storage)
+        }
+
+        ApiError.Network -> {
+            stringResource(R.string.save_error_network)
+        }
+
+        ApiError.Serialization -> {
+            stringResource(R.string.save_error_serialization)
+        }
+
+        ApiError.SessionChanged,
+        ApiError.Unknown,
+        -> {
+            stringResource(R.string.save_error_unknown)
+        }
     }
 
-    is ApiError.ServerRejected -> serverRejectionMessage(errorCode)
-    ApiError.LocalStorage -> stringResource(R.string.save_error_local_storage)
-    ApiError.Network -> stringResource(R.string.save_error_network)
-    ApiError.Serialization -> stringResource(R.string.save_error_serialization)
-    ApiError.SessionChanged,
-    ApiError.Unknown,
-    -> stringResource(R.string.save_error_unknown)
-}
-
 @Composable
-private fun serverRejectionMessage(errorCode: String): String {
-    return when (errorCode) {
+private fun serverRejectionMessage(errorCode: String): String =
+    when (errorCode) {
         "WEATHER_BASELINE_REQUIRED" -> stringResource(R.string.save_error_weather_baseline_required)
         "UPLOAD_NOT_FOUND" -> stringResource(R.string.save_error_upload_expired)
         "FILE_TOO_LARGE" -> stringResource(R.string.save_error_file_too_large)
@@ -186,4 +225,3 @@ private fun serverRejectionMessage(errorCode: String): String {
         "RATE_LIMITED" -> stringResource(R.string.save_error_rate_limited)
         else -> stringResource(R.string.save_error_unknown)
     }
-}

@@ -42,28 +42,32 @@ fun PasswordInputField(
         isError = isError,
         // Figma 27: 비밀번호 변경 오류는 배경을 유지하고 빨간 테두리만 표시한다.
         errorContainerColor = MaterialTheme.extraColors.authInputBackground,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Password,
-            imeAction = imeAction,
-        ),
-        visualTransformation = if (isPasswordVisible) {
-            VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = imeAction,
+            ),
+        visualTransformation =
+            if (isPasswordVisible) {
+                VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
         trailingIcon = {
             IconButton(onClick = onVisibilityClick) {
                 Icon(
-                    imageVector = if (isPasswordVisible) {
-                        Icons.Outlined.VisibilityOff
-                    } else {
-                        Icons.Outlined.Visibility
-                    },
-                    contentDescription = if (isPasswordVisible) {
-                        stringResource(R.string.password_hide)
-                    } else {
-                        stringResource(R.string.password_show)
-                    },
+                    imageVector =
+                        if (isPasswordVisible) {
+                            Icons.Outlined.VisibilityOff
+                        } else {
+                            Icons.Outlined.Visibility
+                        },
+                    contentDescription =
+                        if (isPasswordVisible) {
+                            stringResource(R.string.password_hide)
+                        } else {
+                            stringResource(R.string.password_show)
+                        },
                     tint = MaterialTheme.extraColors.tertiaryText,
                 )
             }

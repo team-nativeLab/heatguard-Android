@@ -7,9 +7,10 @@ import org.junit.Test
 class ApiErrorCodeReaderTest {
     @Test
     fun readsErrorCodeFromCommonErrorEnvelope() {
-        val errorBody = """
+        val errorBody =
+            """
             {"success":false,"data":null,"error":{"code":"INVALID_CREDENTIALS","message":"비밀번호 불일치"},"meta":{"requestId":"req_01"}}
-        """.trimIndent()
+            """.trimIndent()
 
         assertEquals("INVALID_CREDENTIALS", ApiErrorCodeReader.read(errorBody))
     }

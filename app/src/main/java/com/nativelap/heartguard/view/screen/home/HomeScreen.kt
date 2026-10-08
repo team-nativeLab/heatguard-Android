@@ -13,8 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,140 +59,148 @@ fun HomeScreen(
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             contentAlignment = Alignment.TopCenter,
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top = HeartGuardSpacing.PageContentTop,
-                    bottom = HeartGuardSpacing.LargeSection,
-                ),
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxSize(),
+                contentPadding =
+                    PaddingValues(
+                        top = HeartGuardSpacing.PageContentTop,
+                        bottom = HeartGuardSpacing.LargeSection,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
             ) {
-            item {
-                HeartGuardHeader(
-                    title = stringResource(R.string.brand_name),
-                    menuPainter = painterResource(R.drawable.menu_hamburger),
-                    notificationPainter = painterResource(R.drawable.notification_bell),
-                    onMenuClick = onMenuClick,
-                    onNotificationClick = onNotificationClick,
-                )
-            }
+                item {
+                    HeartGuardHeader(
+                        title = stringResource(R.string.brand_name),
+                        menuPainter = painterResource(R.drawable.menu_hamburger),
+                        notificationPainter = painterResource(R.drawable.notification_bell),
+                        onMenuClick = onMenuClick,
+                        onNotificationClick = onNotificationClick,
+                    )
+                }
 
-            item {
-                WeatherStatusCard(
-                    modifier = Modifier.padding(
-                        top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                    ),
-                    weatherPainter = painterResource(weatherImageRes),
-                    weatherContentDescription = null,
-                    statusTitle = stringResource(R.string.home_weather_status),
-                    currentTemperature = currentTemperature,
-                    feelsLikeTemperature = feelsLikeTemperature,
-                    feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),
-                    humidity = humidity,
-                    humidityLabel = stringResource(R.string.home_humidity),
-                    weatherValue = weatherValue,
-                    weatherLabel = stringResource(R.string.home_weather_label),
-                    temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
-                    temperatureDelta = temperatureDelta,
-                    riskLabel = riskLabel,
-                    isTemperatureIncreasing = isTemperatureIncreasing,
-                )
-            }
+                item {
+                    WeatherStatusCard(
+                        modifier =
+                            Modifier.padding(
+                                top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                            ),
+                        weatherPainter = painterResource(weatherImageRes),
+                        weatherContentDescription = null,
+                        statusTitle = stringResource(R.string.home_weather_status),
+                        currentTemperature = currentTemperature,
+                        feelsLikeTemperature = feelsLikeTemperature,
+                        feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),
+                        humidity = humidity,
+                        humidityLabel = stringResource(R.string.home_humidity),
+                        weatherValue = weatherValue,
+                        weatherLabel = stringResource(R.string.home_weather_label),
+                        temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
+                        temperatureDelta = temperatureDelta,
+                        riskLabel = riskLabel,
+                        isTemperatureIncreasing = isTemperatureIncreasing,
+                    )
+                }
 
-            item {
-                Text(
-                    text = stringResource(R.string.home_data_records),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = HeartGuardSpacing.SectionTitleHorizontal,
-                            top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                            end = HeartGuardSpacing.SectionTitleHorizontal,
-                        ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+                item {
+                    Text(
+                        text = stringResource(R.string.home_data_records),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = HeartGuardSpacing.SectionTitleHorizontal,
+                                    top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                                    end = HeartGuardSpacing.SectionTitleHorizontal,
+                                ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
 
-            item {
-                HomeCheckTimeline(
-                    title = stringResource(R.string.home_today_check_title),
-                    nextCheckDescription = nextCheckDescription,
-                    items = checkTimelineItems,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                )
-            }
+                item {
+                    HomeCheckTimeline(
+                        title = stringResource(R.string.home_today_check_title),
+                        nextCheckDescription = nextCheckDescription,
+                        items = checkTimelineItems,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    )
+                }
 
-            item {
-                HomeContactCard(
-                    managerTitle = stringResource(R.string.home_manager_call),
-                    managerDescription = stringResource(R.string.home_manager_call_description),
-                    emergencyTitle = stringResource(R.string.home_emergency_call),
-                    emergencyDescription = stringResource(R.string.home_emergency_call_description),
-                    onManagerClick = onManagerCallClick,
-                    onEmergencyClick = onEmergencyClick,
-                    isEmergencyCallEnabled = isEmergencyCallEnabled,
-                    modifier = Modifier.padding(
-                        start = HeartGuardSpacing.HomeContentHorizontal,
-                        top = HeartGuardSpacing.Compact,
-                        end = HeartGuardSpacing.HomeContentHorizontal,
-                    ),
-                )
-            }
+                item {
+                    HomeContactCard(
+                        managerTitle = stringResource(R.string.home_manager_call),
+                        managerDescription = stringResource(R.string.home_manager_call_description),
+                        emergencyTitle = stringResource(R.string.home_emergency_call),
+                        emergencyDescription = stringResource(R.string.home_emergency_call_description),
+                        onManagerClick = onManagerCallClick,
+                        onEmergencyClick = onEmergencyClick,
+                        isEmergencyCallEnabled = isEmergencyCallEnabled,
+                        modifier =
+                            Modifier.padding(
+                                start = HeartGuardSpacing.HomeContentHorizontal,
+                                top = HeartGuardSpacing.Compact,
+                                end = HeartGuardSpacing.HomeContentHorizontal,
+                            ),
+                    )
+                }
 
-            item {
-                Text(
-                    text = stringResource(R.string.home_additional_records),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = HeartGuardSpacing.SectionTitleHorizontal,
-                            top = HeartGuardSpacing.Compact,
-                            end = HeartGuardSpacing.SectionTitleHorizontal,
-                        ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+                item {
+                    Text(
+                        text = stringResource(R.string.home_additional_records),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = HeartGuardSpacing.SectionTitleHorizontal,
+                                    top = HeartGuardSpacing.Compact,
+                                    end = HeartGuardSpacing.SectionTitleHorizontal,
+                                ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
 
-            item {
-                HomeAdditionalRecordCard(
-                    title = stringResource(R.string.home_field_photo),
-                    description = stringResource(R.string.home_field_photo_description),
-                    iconPainter = painterResource(R.drawable.home_photo),
-                    onClick = onFieldPhotoClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                )
-            }
+                item {
+                    HomeAdditionalRecordCard(
+                        title = stringResource(R.string.home_field_photo),
+                        description = stringResource(R.string.home_field_photo_description),
+                        iconPainter = painterResource(R.drawable.home_photo),
+                        onClick = onFieldPhotoClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    )
+                }
 
-            item {
-                HomeAdditionalRecordCard(
-                    title = stringResource(R.string.home_record_history),
-                    description = stringResource(R.string.home_record_history_description),
-                    iconPainter = painterResource(R.drawable.home_history),
-                    onClick = onRecordHistoryClick,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                )
-            }
+                item {
+                    HomeAdditionalRecordCard(
+                        title = stringResource(R.string.home_record_history),
+                        description = stringResource(R.string.home_record_history_description),
+                        iconPainter = painterResource(R.drawable.home_history),
+                        onClick = onRecordHistoryClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    )
+                }
 
-            item {
-                RecordSaveButton(
-                    title = stringResource(R.string.home_record_action),
-                    onClick = onRecordClick,
-                    modifier = Modifier.padding(
-                        start = HeartGuardSpacing.HomeContentHorizontal,
-                        top = HeartGuardSpacing.Tight / 2,
-                        end = HeartGuardSpacing.HomeContentHorizontal,
-                    ),
-                )
-            }
+                item {
+                    RecordSaveButton(
+                        title = stringResource(R.string.home_record_action),
+                        onClick = onRecordClick,
+                        modifier =
+                            Modifier.padding(
+                                start = HeartGuardSpacing.HomeContentHorizontal,
+                                top = HeartGuardSpacing.Tight / 2,
+                                end = HeartGuardSpacing.HomeContentHorizontal,
+                            ),
+                    )
+                }
             }
         }
     }
@@ -212,12 +220,13 @@ private fun HomeScreenPreview() {
             weatherImageRes = R.drawable.weather_sunny,
             riskLabel = "폭염 주의 단계",
             nextCheckDescription = "다음 체크까지 57분 · 22:00 예정",
-            checkTimelineItems = listOf(
-                CheckTimelineItem("08시", isCompleted = false),
-                CheckTimelineItem("10시", isCompleted = false),
-                CheckTimelineItem("12시", isCompleted = false, isCurrent = true),
-                CheckTimelineItem("14시", isCompleted = false),
-            ),
+            checkTimelineItems =
+                listOf(
+                    CheckTimelineItem("08시", isCompleted = false),
+                    CheckTimelineItem("10시", isCompleted = false),
+                    CheckTimelineItem("12시", isCompleted = false, isCurrent = true),
+                    CheckTimelineItem("14시", isCompleted = false),
+                ),
             isEmergencyCallEnabled = true,
             onMenuClick = {},
             onNotificationClick = {},

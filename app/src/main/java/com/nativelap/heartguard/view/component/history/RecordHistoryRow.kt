@@ -44,12 +44,13 @@ fun RecordHistoryRow(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
-            modifier = Modifier
-                .heightIn(min = HeartGuardComponentSize.TouchTarget)
-                .padding(
-                    horizontal = HeartGuardSpacing.Card,
-                    vertical = HeartGuardSpacing.Item,
-                ),
+            modifier =
+                Modifier
+                    .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                    .padding(
+                        horizontal = HeartGuardSpacing.Card,
+                        vertical = HeartGuardSpacing.Item,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
@@ -88,33 +89,36 @@ private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:m
 @Composable
 private fun recordSubtitleText(recordEntry: RecordHistoryEntry): String {
     val separator = stringResource(R.string.history_subtitle_separator)
-    val subtitleParts = buildList {
-        add(valueOrEmptyText(recordEntry.workplace))
-        when (recordEntry.type) {
-            FieldRecordType.THERMOMETER -> {
-                add(temperatureValueText(recordEntry.temperature.toDisplayNumber()))
-                add(
-                    stringResource(
-                        R.string.history_humidity_format,
-                        valueOrEmptyText(recordEntry.humidity.toDisplayNumber()),
-                    ),
-                )
-            }
+    val subtitleParts =
+        buildList {
+            add(valueOrEmptyText(recordEntry.workplace))
+            when (recordEntry.type) {
+                FieldRecordType.THERMOMETER -> {
+                    add(temperatureValueText(recordEntry.temperature.toDisplayNumber()))
+                    add(
+                        stringResource(
+                            R.string.history_humidity_format,
+                            valueOrEmptyText(recordEntry.humidity.toDisplayNumber()),
+                        ),
+                    )
+                }
 
-            FieldRecordType.REST -> {
-                add(
-                    stringResource(
-                        R.string.history_rest_minutes_format,
-                        valueOrEmptyText(recordEntry.restMinutes?.toString()),
-                    ),
-                )
-            }
+                FieldRecordType.REST -> {
+                    add(
+                        stringResource(
+                            R.string.history_rest_minutes_format,
+                            valueOrEmptyText(recordEntry.restMinutes?.toString()),
+                        ),
+                    )
+                }
 
-            FieldRecordType.WORK,
-            null,
-            -> Unit
+                FieldRecordType.WORK,
+                null,
+                -> {
+                    Unit
+                }
+            }
         }
-    }
     return subtitleParts.joinToString(separator = separator)
 }
 
@@ -123,18 +127,19 @@ private fun recordSubtitleText(recordEntry: RecordHistoryEntry): String {
 private fun RecordHistoryRowPreview() {
     HeartGuardTheme {
         RecordHistoryRow(
-            recordEntry = RecordHistoryEntry(
-                recordId = "rec_01",
-                type = FieldRecordType.THERMOMETER,
-                temperature = 36.2,
-                humidity = 65.0,
-                apparentTemperature = 38.7,
-                heatLevel = 1,
-                photoCount = 1,
-                photoUrls = emptyList(),
-                memo = null,
-                measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
-            ),
+            recordEntry =
+                RecordHistoryEntry(
+                    recordId = "rec_01",
+                    type = FieldRecordType.THERMOMETER,
+                    temperature = 36.2,
+                    humidity = 65.0,
+                    apparentTemperature = 38.7,
+                    heatLevel = 1,
+                    photoCount = 1,
+                    photoUrls = emptyList(),
+                    memo = null,
+                    measuredAt = OffsetDateTime.parse("2026-09-27T14:02:00+09:00"),
+                ),
             onClick = {},
         )
     }

@@ -13,7 +13,5 @@ import javax.inject.Singleton
 abstract class SessionStorageModule {
     @Binds
     @Singleton
-    abstract fun bindTokenStorage(
-        tokenStorage: AndroidKeystoreTokenStorage,
-    ): TokenStorage
+    abstract fun bindTokenStorage(tokenStorage: AndroidKeystoreTokenStorage): TokenStorage
 }

@@ -3,75 +3,87 @@ package com.nativelap.heartguard.core.network
 import com.nativelap.heartguard.core.network.di.AuthenticatedApiClient
 import com.nativelap.heartguard.core.network.di.UnauthenticatedApiClient
 import com.nativelap.heartguard.core.session.SessionManager
-import javax.inject.Inject
+import kotlinx.serialization.json.Json
 import okhttp3.Call
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
 /** 실제 서버 주소가 확정된 뒤 인증 정책별 Retrofit API를 생성한다. */
-class ApiRetrofitFactory @Inject constructor(
-    @param:AuthenticatedApiClient private val authenticatedApiClient: OkHttpClient,
-    @param:UnauthenticatedApiClient private val unauthenticatedApiClient: OkHttpClient,
-    private val sessionManager: SessionManager,
-    private val json: Json,
-) {
-    private val singleAttemptClient by lazy {
-        authenticatedApiClient.newBuilder()
-            .retryOnConnectionFailure(false)
-            .followRedirects(false)
-            .followSslRedirects(false)
-            .addInterceptor { chain ->
-                val originalRequest = chain.request()
-                val originalBody = originalRequest.body
-                val singleAttemptRequest = if (originalBody != null) {
-                    originalRequest.newBuilder()
-                        .method(originalRequest.method, SingleAttemptRequestBody(originalBody))
-                        .build()
-                } else {
-                    originalRequest
+class ApiRetrofitFactory
+    @Inject
+    constructor(
+        @param:AuthenticatedApiClient private val authenticatedApiClient: OkHttpClient,
+        @param:UnauthenticatedApiClient private val unauthenticatedApiClient: OkHttpClient,
+        private val sessionManager: SessionManager,
+        private val json: Json,
+    ) {
+        private val singleAttemptClient by lazy {
+            authenticatedApiClient
+                .newBuilder()
+                .retryOnConnectionFailure(false)
+                .followRedirects(false)
+                .followSslRedirects(false)
+                .addInterceptor { chain ->
+                    val originalRequest = chain.request()
+                    val originalBody = originalRequest.body
+                    val singleAttemptRequest =
+                        if (originalBody != null) {
+                            originalRequest
+                                .newBuilder()
+                                .method(originalRequest.method, SingleAttemptRequestBody(originalBody))
+                                .build()
+                        } else {
+                            originalRequest
+                        }
+                    chain.proceed(singleAttemptRequest)
+                }.build()
+        }
+
+        fun <ApiService : Any> createService(
+            baseUrl: String,
+            serviceClass: Class<ApiService>,
+            authentication: ApiAuthentication,
+            allowRequestReplay: Boolean = true,
+        ): ApiService {
+            val callFactory: Call.Factory =
+                when (authentication) {
+                    ApiAuthentication.NONE -> {
+                        unauthenticatedApiClient
+                    }
+
+                    ApiAuthentication.BEARER -> {
+                        SessionBoundCallFactory(
+                            delegateClient =
+                                if (allowRequestReplay) {
+                                    authenticatedApiClient
+                                } else {
+                                    singleAttemptClient
+                                },
+                            sessionManager = sessionManager,
+                        )
+                    }
                 }
-                chain.proceed(singleAttemptRequest)
+            val contentType = JSON_MEDIA_TYPE.toMediaType()
+
+            val parsedBaseUrl = baseUrl.toHttpUrl()
+            require(parsedBaseUrl.encodedPath.endsWith('/')) {
+                "Retrofit base URL must end with a slash."
             }
-            .build()
-    }
 
-    fun <ApiService : Any> createService(
-        baseUrl: String,
-        serviceClass: Class<ApiService>,
-        authentication: ApiAuthentication,
-        allowRequestReplay: Boolean = true,
-    ): ApiService {
-        val callFactory: Call.Factory = when (authentication) {
-            ApiAuthentication.NONE -> unauthenticatedApiClient
-            ApiAuthentication.BEARER -> SessionBoundCallFactory(
-                delegateClient = if (allowRequestReplay) {
-                    authenticatedApiClient
-                } else {
-                    singleAttemptClient
-                },
-                sessionManager = sessionManager,
-            )
-        }
-        val contentType = JSON_MEDIA_TYPE.toMediaType()
-
-        val parsedBaseUrl = baseUrl.toHttpUrl()
-        require(parsedBaseUrl.encodedPath.endsWith('/')) {
-            "Retrofit base URL must end with a slash."
+            return Retrofit
+                .Builder()
+                .baseUrl(parsedBaseUrl)
+                .callFactory(callFactory)
+                .addConverterFactory(json.asConverterFactory(contentType))
+                .build()
+                .create(serviceClass)
         }
 
-        return Retrofit.Builder()
-            .baseUrl(parsedBaseUrl)
-            .callFactory(callFactory)
-            .addConverterFactory(json.asConverterFactory(contentType))
-            .build()
-            .create(serviceClass)
+        private companion object {
+            const val JSON_MEDIA_TYPE = "application/json; charset=UTF-8"
+        }
     }
-
-    private companion object {
-        const val JSON_MEDIA_TYPE = "application/json; charset=UTF-8"
-    }
-}

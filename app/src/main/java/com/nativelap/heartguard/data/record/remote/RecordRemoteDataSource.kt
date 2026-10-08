@@ -16,5 +16,8 @@ interface RecordRemoteDataSource {
         photoContent: RequestBody,
     ): ApiResult<Unit>
 
-    suspend fun submitRecord(request: RecordRequestDto, expectedSessionGeneration: Long): ApiResult<RecordResponseDto>
+    suspend fun submitRecord(
+        request: RecordRequestDto,
+        expectedSessionGeneration: Long,
+    ): ApiResult<RecordResponseDto>
 }

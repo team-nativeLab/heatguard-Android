@@ -48,30 +48,38 @@ fun PagedListFooter(
     modifier: Modifier = Modifier,
 ) {
     when {
-        isLoadingMore -> Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(HeartGuardSpacing.Item),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(modifier = Modifier.size(HeartGuardComponentSize.ListLoadingIndicator))
+        isLoadingMore -> {
+            Box(
+                modifier =
+                    modifier
+                        .fillMaxWidth()
+                        .padding(HeartGuardSpacing.Item),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(HeartGuardComponentSize.ListLoadingIndicator))
+            }
         }
 
-        hasLoadMoreError && canRetry -> TextButton(
-            onClick = onRetryClick,
-            modifier = modifier.fillMaxWidth(),
-        ) {
-            Text(text = stringResource(R.string.list_load_more_retry))
+        hasLoadMoreError && canRetry -> {
+            TextButton(
+                onClick = onRetryClick,
+                modifier = modifier.fillMaxWidth(),
+            ) {
+                Text(text = stringResource(R.string.list_load_more_retry))
+            }
         }
 
-        hasLoadMoreError -> Text(
-            text = stringResource(R.string.list_load_more_failed),
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(HeartGuardSpacing.Item),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        hasLoadMoreError -> {
+            Text(
+                text = stringResource(R.string.list_load_more_failed),
+                modifier =
+                    modifier
+                        .fillMaxWidth()
+                        .padding(HeartGuardSpacing.Item),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }

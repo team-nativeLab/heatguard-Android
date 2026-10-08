@@ -35,30 +35,34 @@ fun PhotoPreviewPlaceholder(
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val clickModifier = if (onClick == null) {
-        Modifier
-    } else {
-        Modifier.clickable(role = Role.Button, onClick = onClick)
-    }
+    val clickModifier =
+        if (onClick == null) {
+            Modifier
+        } else {
+            Modifier.clickable(role = Role.Button, onClick = onClick)
+        }
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(HeartGuardComponentSize.PhotoPreviewHeight)
-            .then(clickModifier),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(HeartGuardComponentSize.PhotoPreviewHeight)
+                .then(clickModifier),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.extraColors.photoContainer,
     ) {
         if (message != null) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(HeartGuardSpacing.Section),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(HeartGuardSpacing.Section),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(
-                    space = HeartGuardSpacing.Item,
-                    alignment = Alignment.CenterVertically,
-                ),
+                verticalArrangement =
+                    Arrangement.spacedBy(
+                        space = HeartGuardSpacing.Item,
+                        alignment = Alignment.CenterVertically,
+                    ),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Cancel,
@@ -68,14 +72,16 @@ fun PhotoPreviewPlaceholder(
                 )
                 Text(
                     text = message,
-                    modifier = Modifier.widthIn(
-                        max = HeartGuardComponentSize.TemperatureErrorMessageMaxWidth,
-                    ),
+                    modifier =
+                        Modifier.widthIn(
+                            max = HeartGuardComponentSize.TemperatureErrorMessageMaxWidth,
+                        ),
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
             }
         }

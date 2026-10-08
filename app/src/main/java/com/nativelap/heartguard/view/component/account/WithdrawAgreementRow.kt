@@ -37,18 +37,20 @@ fun WithdrawAgreementRow(
 
         Text(
             text = agreementText,
-            modifier = Modifier
-                .weight(1f)
-                .clearAndSetSemantics {}
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { onAgreementChange(!isAgreed) },
-                ),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .clearAndSetSemantics {}
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onAgreementChange(!isAgreed) },
+                    ),
             color = MaterialTheme.extraColors.strongText,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Medium,
-            ),
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Medium,
+                ),
         )
     }
 }

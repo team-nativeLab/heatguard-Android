@@ -41,15 +41,16 @@ fun EmergencyCallIndicator(
         verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {
         Box(
-            modifier = Modifier
-                .size(HeartGuardIconSize.EmergencyCall)
-                .then(
-                    if (onClick == null) {
-                        Modifier
-                    } else {
-                        Modifier.clickable(role = Role.Button, onClick = onClick)
-                    },
-                ),
+            modifier =
+                Modifier
+                    .size(HeartGuardIconSize.EmergencyCall)
+                    .then(
+                        if (onClick == null) {
+                            Modifier
+                        } else {
+                            Modifier.clickable(role = Role.Button, onClick = onClick)
+                        },
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             // emergency_outer/emergency_inner 에셋은 투명 배경이 아니라 캔버스 전체를 불투명
@@ -57,28 +58,32 @@ fun EmergencyCallIndicator(
             // 색상의 원을 직접 그린다. isCalling 상태에 따라 title 텍스트와 같은 색상 규칙
             // (빨강/주황)을 적용해 원 색상도 함께 바뀌도록 한다.
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.EmergencyCall)
-                    .background(
-                        color = if (isCalling) {
-                            MaterialTheme.extraColors.emergencyCallContainer
-                        } else {
-                            MaterialTheme.extraColors.emergencyCallingContainer
-                        },
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.EmergencyCall)
+                        .background(
+                            color =
+                                if (isCalling) {
+                                    MaterialTheme.extraColors.emergencyCallContainer
+                                } else {
+                                    MaterialTheme.extraColors.emergencyCallingContainer
+                                },
+                            shape = CircleShape,
+                        ),
             )
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.EmergencyCallInner)
-                    .background(
-                        color = if (isCalling) {
-                            MaterialTheme.extraColors.emergencyCall
-                        } else {
-                            MaterialTheme.extraColors.emergencyCalling
-                        },
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.EmergencyCallInner)
+                        .background(
+                            color =
+                                if (isCalling) {
+                                    MaterialTheme.extraColors.emergencyCall
+                                } else {
+                                    MaterialTheme.extraColors.emergencyCalling
+                                },
+                            shape = CircleShape,
+                        ),
             )
             Icon(
                 imageVector = Icons.Filled.ReportProblem,
@@ -89,21 +94,23 @@ fun EmergencyCallIndicator(
         }
         Text(
             text = title,
-            color = if (isCalling) {
-                MaterialTheme.extraColors.emergencyCall
-            } else {
-                MaterialTheme.extraColors.emergencyCalling
-            },
+            color =
+                if (isCalling) {
+                    MaterialTheme.extraColors.emergencyCall
+                } else {
+                    MaterialTheme.extraColors.emergencyCalling
+                },
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         )
         Text(
             text = description,
             color = MaterialTheme.extraColors.tertiaryText,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = HeartGuardFontSize.EmergencyDescription,
-                fontWeight = FontWeight.SemiBold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = HeartGuardFontSize.EmergencyDescription,
+                    fontWeight = FontWeight.SemiBold,
+                ),
         )
     }
 }

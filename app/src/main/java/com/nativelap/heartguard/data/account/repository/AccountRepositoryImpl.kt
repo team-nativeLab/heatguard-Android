@@ -9,44 +9,51 @@ import com.nativelap.heartguard.domain.account.model.WithdrawReason
 import com.nativelap.heartguard.domain.account.repository.AccountRepository
 import javax.inject.Inject
 
-class AccountRepositoryImpl @Inject constructor(
-    private val accountRemoteDataSource: AccountRemoteDataSource,
-) : AccountRepository {
-
-    override suspend fun withdraw(
-        currentPassword: String,
-        reason: WithdrawReason?,
-    ): WithdrawAccountResult {
-        val withdrawResult = accountRemoteDataSource.withdraw(
-            currentPassword = currentPassword,
-            reason = reason?.toRequestReason(),
-        )
-        return when (val result = withdrawResult) {
-            is ApiResult.Success -> WithdrawAccountResult.Success
-            is ApiResult.Failure -> result.toWithdrawResult()
-        }
-    }
-
-    private fun ApiResult.Failure.toWithdrawResult(): WithdrawAccountResult = when (val apiError = error) {
-        is ApiError.Http -> if (
-            apiError.statusCode == HTTP_UNAUTHORIZED && apiError.errorCode == INVALID_CREDENTIALS_CODE
-        ) {
-            WithdrawAccountResult.InvalidPassword
-        } else {
-            WithdrawAccountResult.Failure
+class AccountRepositoryImpl
+    @Inject
+    constructor(
+        private val accountRemoteDataSource: AccountRemoteDataSource,
+    ) : AccountRepository {
+        override suspend fun withdraw(
+            currentPassword: String,
+            reason: WithdrawReason?,
+        ): WithdrawAccountResult {
+            val withdrawResult =
+                accountRemoteDataSource.withdraw(
+                    currentPassword = currentPassword,
+                    reason = reason?.toRequestReason(),
+                )
+            return when (val result = withdrawResult) {
+                is ApiResult.Success -> WithdrawAccountResult.Success
+                is ApiResult.Failure -> result.toWithdrawResult()
+            }
         }
 
-        ApiError.Network,
-        ApiError.SessionChanged,
-        ApiError.Serialization,
-        ApiError.Unknown,
-        ApiError.LocalStorage,
-        is ApiError.ServerRejected,
-        -> WithdrawAccountResult.Failure
-    }
+        private fun ApiResult.Failure.toWithdrawResult(): WithdrawAccountResult =
+            when (val apiError = error) {
+                is ApiError.Http -> {
+                    if (
+                        apiError.statusCode == HTTP_UNAUTHORIZED && apiError.errorCode == INVALID_CREDENTIALS_CODE
+                    ) {
+                        WithdrawAccountResult.InvalidPassword
+                    } else {
+                        WithdrawAccountResult.Failure
+                    }
+                }
 
-    private companion object {
-        const val HTTP_UNAUTHORIZED = 401
-        const val INVALID_CREDENTIALS_CODE = "INVALID_CREDENTIALS"
+                ApiError.Network,
+                ApiError.SessionChanged,
+                ApiError.Serialization,
+                ApiError.Unknown,
+                ApiError.LocalStorage,
+                is ApiError.ServerRejected,
+                -> {
+                    WithdrawAccountResult.Failure
+                }
+            }
+
+        private companion object {
+            const val HTTP_UNAUTHORIZED = 401
+            const val INVALID_CREDENTIALS_CODE = "INVALID_CREDENTIALS"
+        }
     }
-}

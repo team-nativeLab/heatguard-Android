@@ -66,9 +66,10 @@ data class HeartGuardExtraColors(
     val notificationNeutralIcon: Color,
 )
 
-val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
-    error("HeartGuardExtraColors is not provided.")
-}
+val LocalHeartGuardExtraColors =
+    staticCompositionLocalOf<HeartGuardExtraColors> {
+        error("HeartGuardExtraColors is not provided.")
+    }
 
 val MaterialTheme.extraColors: HeartGuardExtraColors
     @Composable
@@ -107,6 +108,7 @@ private val infoContainerColor = Color(0xFFEAF3FF)
 private val cameraContainerColor = Color(0xFFEAF3FF)
 private val disabledContentColor = Color(0xFFCCCCCC)
 private val disabledTextColor = Color(0xFFAEB3C4)
+
 // Figma 26·27 비활성 "변경하기" 버튼: primary(#2879EA) 35% 불투명도.
 private val primaryDisabledContainerColor = Color(0x592879EA)
 private val disabledInputBackgroundColor = Color(0xFFEDF0F5)
@@ -127,28 +129,35 @@ private val homeTimelineTrackColor = Color(0xFFE8EBF2)
 private val homeTimelineActiveColor = Color(0xFF4470ED)
 private val homeTimelineInactiveColor = Color(0xFFA6A8B2)
 private val homeTimelineDotBorderColor = Color(0xFFBFC2CC)
+
 // 현재 체크 시점 링은 활성 파랑(#4470ED)의 16% 투명도다.
 private val homeTimelineCurrentRingColor = Color(0x294470ED)
 private val homeContactAlertContainerColor = Color(0xFFFEE2E2)
+
 // 흰 카드가 배경과 구분되도록 Figma 홈 리디자인·회원탈퇴 화면에서 쓰는 옅은 회청색 페이지 배경이다.
 private val pageBackgroundColor = Color(0xFFF6F9FC)
 private val temperatureRiseContainerColor = Color(0xFFFFDDE2)
 private val onTemperatureRiseContainerColor = Color(0xFFFF6172)
+
 // 메뉴 드로어·회원탈퇴 화면에서 공통으로 쓰는 본문 강조/보조/3차 텍스트 색이다.
 private val strongTextColor = Color(0xFF1F2633)
 private val secondaryTextColor = Color(0xFF788294)
 private val tertiaryTextColor = Color(0xFFAEB3C4)
 private val subtleDividerColor = Color(0xFFE5EBF2)
+
 // 드로어 뒤 화면을 가리는 딤으로, Figma의 검정 40% 투명도다.
 private val overlayScrimColor = Color(0x66000000)
+
 // 회원탈퇴 경고 아이콘 배지처럼 되돌릴 수 없는 동작을 알리는 옅은 빨강 배경이다.
 private val dangerContainerColor = Color(0xFFFDEBEB)
+
 // Figma 03_긴급상황(호출 전)·04_호출중의 원형 호출 버튼과 바깥 링, 연락처 전화번호 색이다.
 private val emergencyCallColor = Color(0xFFFA463F)
 private val emergencyCallContainerColor = Color(0xFFF9D7D7)
 private val emergencyCallingColor = Color(0xFFFAA33F)
 private val emergencyCallingContainerColor = Color(0xFFF9EBD7)
 private val emergencyContactPhoneColor = Color(0xFF1169FA)
+
 // Figma 온도계 데이터 직접 입력 카드의 입력칸 배경(중립 회색)이다.
 private val inputFieldBackgroundColor = Color(0xFFF6F6F7)
 private val notificationBorderColor = Color(0xFFE8EBF5)
@@ -161,97 +170,97 @@ private val notificationMetaColor = Color(0xFF6B7280)
 private val notificationRecordIconColor = Color(0xFF20A15D)
 private val notificationNeutralIconColor = Color(0xFF373B45)
 
-private val HeartGuardColorScheme = lightColorScheme(
-    primary = primaryBlueColor,
-    onPrimary = onPrimaryColor,
-    primaryContainer = primaryContainerColor,
-    onPrimaryContainer = onPrimaryContainerColor,
-    secondary = secondaryColor,
-    onSecondary = onSecondaryColor,
-    secondaryContainer = secondaryContainerColor,
-    onSecondaryContainer = onSecondaryContainerColor,
-    tertiary = tertiaryColor,
-    onTertiary = onTertiaryColor,
-    tertiaryContainer = tertiaryContainerColor,
-    onTertiaryContainer = onTertiaryContainerColor,
-    background = backgroundColor,
-    onBackground = onBackgroundColor,
-    surface = surfaceColor,
-    onSurface = onSurfaceColor,
-    surfaceVariant = surfaceVariantColor,
-    onSurfaceVariant = onSurfaceVariantColor,
-    outline = outlineColor,
-    outlineVariant = outlineVariantColor,
-    error = errorColor,
-    onError = onErrorColor,
-    errorContainer = errorContainerColor,
-    onErrorContainer = onErrorContainerColor,
-)
+private val HeartGuardColorScheme =
+    lightColorScheme(
+        primary = primaryBlueColor,
+        onPrimary = onPrimaryColor,
+        primaryContainer = primaryContainerColor,
+        onPrimaryContainer = onPrimaryContainerColor,
+        secondary = secondaryColor,
+        onSecondary = onSecondaryColor,
+        secondaryContainer = secondaryContainerColor,
+        onSecondaryContainer = onSecondaryContainerColor,
+        tertiary = tertiaryColor,
+        onTertiary = onTertiaryColor,
+        tertiaryContainer = tertiaryContainerColor,
+        onTertiaryContainer = onTertiaryContainerColor,
+        background = backgroundColor,
+        onBackground = onBackgroundColor,
+        surface = surfaceColor,
+        onSurface = onSurfaceColor,
+        surfaceVariant = surfaceVariantColor,
+        onSurfaceVariant = onSurfaceVariantColor,
+        outline = outlineColor,
+        outlineVariant = outlineVariantColor,
+        error = errorColor,
+        onError = onErrorColor,
+        errorContainer = errorContainerColor,
+        onErrorContainer = onErrorContainerColor,
+    )
 
-private val heartGuardExtraColors = HeartGuardExtraColors(
-    success = successColor,
-    warning = warningColor,
-    mutedText = mutedTextColor,
-    cardBorder = cardBorderColor,
-    infoContainer = infoContainerColor,
-    cameraContainer = cameraContainerColor,
-    disabledContent = disabledContentColor,
-    disabledText = disabledTextColor,
-    primaryDisabledContainer = primaryDisabledContainerColor,
-    disabledInputBackground = disabledInputBackgroundColor,
-    authInputBackground = authInputBackgroundColor,
-    sheetBackground = sheetBackgroundColor,
-    photoContainer = photoContainerColor,
-    alertContainer = alertContainerColor,
-    successContainer = successContainerColor,
-    warningContainer = warningContainerColor,
-    onWarningContainer = onWarningContainerColor,
-    authBackground = authBackgroundColor,
-    authPrimary = authPrimaryColor,
-    authOnSurface = authOnSurfaceColor,
-    authOnSurfaceVariant = authOnSurfaceVariantColor,
-    homeMetricContainer = homeMetricContainerColor,
-    homeMutedText = homeMutedTextColor,
-    homeTimelineTrack = homeTimelineTrackColor,
-    homeTimelineActive = homeTimelineActiveColor,
-    homeTimelineInactive = homeTimelineInactiveColor,
-    homeTimelineDotBorder = homeTimelineDotBorderColor,
-    homeTimelineCurrentRing = homeTimelineCurrentRingColor,
-    homeContactAlertContainer = homeContactAlertContainerColor,
-    pageBackground = pageBackgroundColor,
-    temperatureRiseContainer = temperatureRiseContainerColor,
-    onTemperatureRiseContainer = onTemperatureRiseContainerColor,
-    strongText = strongTextColor,
-    secondaryText = secondaryTextColor,
-    tertiaryText = tertiaryTextColor,
-    subtleDivider = subtleDividerColor,
-    overlayScrim = overlayScrimColor,
-    dangerContainer = dangerContainerColor,
-    emergencyCall = emergencyCallColor,
-    emergencyCallContainer = emergencyCallContainerColor,
-    emergencyCalling = emergencyCallingColor,
-    emergencyCallingContainer = emergencyCallingContainerColor,
-    emergencyContactPhone = emergencyContactPhoneColor,
-    inputFieldBackground = inputFieldBackgroundColor,
-    notificationBorder = notificationBorderColor,
-    notificationUnreadSurface = notificationUnreadSurfaceColor,
-    notificationIconSurface = notificationIconSurfaceColor,
-    notificationAlertSurface = notificationAlertSurfaceColor,
-    notificationNeutralSurface = notificationNeutralSurfaceColor,
-    notificationBody = notificationBodyColor,
-    notificationMeta = notificationMetaColor,
-    notificationRecordIcon = notificationRecordIconColor,
-    notificationNeutralIcon = notificationNeutralIconColor,
-)
+private val heartGuardExtraColors =
+    HeartGuardExtraColors(
+        success = successColor,
+        warning = warningColor,
+        mutedText = mutedTextColor,
+        cardBorder = cardBorderColor,
+        infoContainer = infoContainerColor,
+        cameraContainer = cameraContainerColor,
+        disabledContent = disabledContentColor,
+        disabledText = disabledTextColor,
+        primaryDisabledContainer = primaryDisabledContainerColor,
+        disabledInputBackground = disabledInputBackgroundColor,
+        authInputBackground = authInputBackgroundColor,
+        sheetBackground = sheetBackgroundColor,
+        photoContainer = photoContainerColor,
+        alertContainer = alertContainerColor,
+        successContainer = successContainerColor,
+        warningContainer = warningContainerColor,
+        onWarningContainer = onWarningContainerColor,
+        authBackground = authBackgroundColor,
+        authPrimary = authPrimaryColor,
+        authOnSurface = authOnSurfaceColor,
+        authOnSurfaceVariant = authOnSurfaceVariantColor,
+        homeMetricContainer = homeMetricContainerColor,
+        homeMutedText = homeMutedTextColor,
+        homeTimelineTrack = homeTimelineTrackColor,
+        homeTimelineActive = homeTimelineActiveColor,
+        homeTimelineInactive = homeTimelineInactiveColor,
+        homeTimelineDotBorder = homeTimelineDotBorderColor,
+        homeTimelineCurrentRing = homeTimelineCurrentRingColor,
+        homeContactAlertContainer = homeContactAlertContainerColor,
+        pageBackground = pageBackgroundColor,
+        temperatureRiseContainer = temperatureRiseContainerColor,
+        onTemperatureRiseContainer = onTemperatureRiseContainerColor,
+        strongText = strongTextColor,
+        secondaryText = secondaryTextColor,
+        tertiaryText = tertiaryTextColor,
+        subtleDivider = subtleDividerColor,
+        overlayScrim = overlayScrimColor,
+        dangerContainer = dangerContainerColor,
+        emergencyCall = emergencyCallColor,
+        emergencyCallContainer = emergencyCallContainerColor,
+        emergencyCalling = emergencyCallingColor,
+        emergencyCallingContainer = emergencyCallingContainerColor,
+        emergencyContactPhone = emergencyContactPhoneColor,
+        inputFieldBackground = inputFieldBackgroundColor,
+        notificationBorder = notificationBorderColor,
+        notificationUnreadSurface = notificationUnreadSurfaceColor,
+        notificationIconSurface = notificationIconSurfaceColor,
+        notificationAlertSurface = notificationAlertSurfaceColor,
+        notificationNeutralSurface = notificationNeutralSurfaceColor,
+        notificationBody = notificationBodyColor,
+        notificationMeta = notificationMetaColor,
+        notificationRecordIcon = notificationRecordIconColor,
+        notificationNeutralIcon = notificationNeutralIconColor,
+    )
 
 /**
  * Figma 현장앱 Light 화면을 기반으로 정리한 semantic color와 Pretendard typography를 앱 전체에 제공합니다.
  * 이번 디자인 베이스 단계에서는 Android Dynamic Color와 Dark UI를 사용하지 않습니다.
  */
 @Composable
-fun HeartGuardTheme(
-    content: @Composable () -> Unit,
-) {
+fun HeartGuardTheme(content: @Composable () -> Unit) {
     CompositionLocalProvider(
         LocalHeartGuardExtraColors provides heartGuardExtraColors,
     ) {

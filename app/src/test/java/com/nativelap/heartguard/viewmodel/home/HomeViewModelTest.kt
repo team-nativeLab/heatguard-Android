@@ -14,16 +14,10 @@ import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
-import java.time.Clock
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -34,6 +28,12 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
@@ -46,72 +46,78 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `처음 조회에 실패하면 Error 상태가 된다`() = runTest {
-        val teamSiteRepository = FakeTeamSiteRepository(ApiResult.Failure(ApiError.Network))
-        val viewModel = createViewModel(teamSiteRepository)
+    fun `처음 조회에 실패하면 Error 상태가 된다`() =
+        runTest {
+            val teamSiteRepository = FakeTeamSiteRepository(ApiResult.Failure(ApiError.Network))
+            val viewModel = createViewModel(teamSiteRepository)
 
-        viewModel.loadTeamSiteOverview()
-        advanceUntilIdle()
+            viewModel.loadTeamSiteOverview()
+            advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value is HomeUiState.Error)
-    }
-
-    @Test
-    fun `이미 값이 있을 때 새로고침만 실패하면 이전 값을 유지한다`() = runTest {
-        val teamSiteRepository = FakeTeamSiteRepository(ApiResult.Success(overview()))
-        val viewModel = createViewModel(teamSiteRepository)
-        viewModel.loadTeamSiteOverview()
-        advanceUntilIdle()
-
-        teamSiteRepository.overviewResult = ApiResult.Failure(ApiError.Network)
-        viewModel.refresh()
-        advanceUntilIdle()
-
-        assertEquals(HomeUiState.Success(overview()), viewModel.uiState.value)
-    }
+            assertTrue(viewModel.uiState.value is HomeUiState.Error)
+        }
 
     @Test
-    fun `오늘 기록 측정 시각으로 체크 완료를 표시한다`() = runTest {
-        val viewModel = createViewModel(FakeTeamSiteRepository(ApiResult.Success(overview())))
+    fun `이미 값이 있을 때 새로고침만 실패하면 이전 값을 유지한다`() =
+        runTest {
+            val teamSiteRepository = FakeTeamSiteRepository(ApiResult.Success(overview()))
+            val viewModel = createViewModel(teamSiteRepository)
+            viewModel.loadTeamSiteOverview()
+            advanceUntilIdle()
 
-        viewModel.loadTeamSiteOverview()
-        advanceUntilIdle()
+            teamSiteRepository.overviewResult = ApiResult.Failure(ApiError.Network)
+            viewModel.refresh()
+            advanceUntilIdle()
 
-        val checkSchedule = viewModel.checkSchedule.filterNotNull().first()
-        assertEquals(setOf(LocalTime.of(9, 0)), checkSchedule.completedCheckTimes)
-    }
-
-    private fun overview() = TeamSiteOverview(
-        teamName = "철근팀",
-        workplace = "3층 외벽",
-        siteName = "서울현장",
-        managerPhoneNumber = null,
-        currentTemperature = null,
-        humidity = null,
-        apparentTemperature = null,
-        heatLevel = null,
-        checkTimes = listOf("09:00", "11:00"),
-        hasActiveEmergencyCall = false,
-    )
+            assertEquals(HomeUiState.Success(overview()), viewModel.uiState.value)
+        }
 
     @Test
-    fun quickReloginWithAnotherAccountClearsPreviousHomeValues() = runTest {
-        val sessionManager = createTestSessionManager(StandardTestDispatcher(testScheduler))
-        sessionManager.onLoginSucceeded(SessionToken("first-account-token"))
-        val viewModel = createViewModel(
-            teamSiteRepository = FakeTeamSiteRepository(ApiResult.Success(overview())),
-            sessionManager = sessionManager,
+    fun `오늘 기록 측정 시각으로 체크 완료를 표시한다`() =
+        runTest {
+            val viewModel = createViewModel(FakeTeamSiteRepository(ApiResult.Success(overview())))
+
+            viewModel.loadTeamSiteOverview()
+            advanceUntilIdle()
+
+            val checkSchedule = viewModel.checkSchedule.filterNotNull().first()
+            assertEquals(setOf(LocalTime.of(9, 0)), checkSchedule.completedCheckTimes)
+        }
+
+    private fun overview() =
+        TeamSiteOverview(
+            teamName = "철근팀",
+            workplace = "3층 외벽",
+            siteName = "서울현장",
+            managerPhoneNumber = null,
+            currentTemperature = null,
+            humidity = null,
+            apparentTemperature = null,
+            heatLevel = null,
+            checkTimes = listOf("09:00", "11:00"),
+            hasActiveEmergencyCall = false,
         )
-        viewModel.loadTeamSiteOverview()
-        advanceUntilIdle()
-        assertTrue(viewModel.uiState.value is HomeUiState.Success)
 
-        sessionManager.expireSession()
-        sessionManager.onLoginSucceeded(SessionToken("second-account-token"))
-        advanceUntilIdle()
+    @Test
+    fun quickReloginWithAnotherAccountClearsPreviousHomeValues() =
+        runTest {
+            val sessionManager = createTestSessionManager(StandardTestDispatcher(testScheduler))
+            sessionManager.onLoginSucceeded(SessionToken("first-account-token"))
+            val viewModel =
+                createViewModel(
+                    teamSiteRepository = FakeTeamSiteRepository(ApiResult.Success(overview())),
+                    sessionManager = sessionManager,
+                )
+            viewModel.loadTeamSiteOverview()
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value is HomeUiState.Success)
 
-        assertEquals(HomeUiState.Loading, viewModel.uiState.value)
-    }
+            sessionManager.expireSession()
+            sessionManager.onLoginSucceeded(SessionToken("second-account-token"))
+            advanceUntilIdle()
+
+            assertEquals(HomeUiState.Loading, viewModel.uiState.value)
+        }
 
     private fun TestScope.createViewModel(
         teamSiteRepository: FakeTeamSiteRepository,
@@ -134,22 +140,23 @@ class HomeViewModelTest {
 
     // 오늘 09:30(KST)에 기록 1건이 있다.
     private class FakeRecordHistoryRepository : RecordHistoryRepository {
-        override suspend fun getRecordsOfDate(date: LocalDate): ApiResult<List<RecordHistoryEntry>> = ApiResult.Success(
-            listOf(
-                RecordHistoryEntry(
-                    recordId = "rec_01",
-                    type = FieldRecordType.WORK,
-                    temperature = null,
-                    humidity = null,
-                    apparentTemperature = null,
-                    heatLevel = null,
-                    photoCount = 1,
-                    photoUrls = emptyList(),
-                    memo = null,
-                    measuredAt = OffsetDateTime.parse("${date}T09:30:00+09:00"),
+        override suspend fun getRecordsOfDate(date: LocalDate): ApiResult<List<RecordHistoryEntry>> =
+            ApiResult.Success(
+                listOf(
+                    RecordHistoryEntry(
+                        recordId = "rec_01",
+                        type = FieldRecordType.WORK,
+                        temperature = null,
+                        humidity = null,
+                        apparentTemperature = null,
+                        heatLevel = null,
+                        photoCount = 1,
+                        photoUrls = emptyList(),
+                        memo = null,
+                        measuredAt = OffsetDateTime.parse("${date}T09:30:00+09:00"),
+                    ),
                 ),
-            ),
-        )
+            )
 
         override suspend fun getRecordPage(
             date: LocalDate,

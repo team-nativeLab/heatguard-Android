@@ -8,12 +8,12 @@ import kotlinx.serialization.json.Json
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import mockwebserver3.SocketEffect
-import java.io.IOException
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import retrofit2.HttpException
+import java.io.IOException
 
 class RecordSingleAttemptTest {
     @Test
@@ -36,7 +36,8 @@ class RecordSingleAttemptTest {
         server.start()
         try {
             server.enqueue(
-                MockResponse.Builder()
+                MockResponse
+                    .Builder()
                     .onResponseStart(SocketEffect.CloseSocket())
                     .build(),
             )
@@ -75,22 +76,25 @@ class RecordSingleAttemptTest {
         server.start()
         try {
             server.enqueue(
-                MockResponse.Builder()
+                MockResponse
+                    .Builder()
                     .code(statusCode)
                     .addHeader("Retry-After", "0")
                     .addHeader("Location", server.url("/redirect"))
                     .build(),
             )
             server.enqueue(
-                MockResponse.Builder()
+                MockResponse
+                    .Builder()
                     .code(500)
                     .build(),
             )
-            val failure = assertThrows(HttpException::class.java) {
-                runBlocking {
-                    createService(server).submitRecord(request())
+            val failure =
+                assertThrows(HttpException::class.java) {
+                    runBlocking {
+                        createService(server).submitRecord(request())
+                    }
                 }
-            }
             assertEquals(statusCode, failure.code())
             assertEquals(1, server.requestCount)
             assertEquals("/api/v1/team/records", server.takeRequest().url.encodedPath)
@@ -99,8 +103,8 @@ class RecordSingleAttemptTest {
         }
     }
 
-    private fun createService(server: MockWebServer): RecordApiService {
-        return ApiRetrofitFactory(
+    private fun createService(server: MockWebServer): RecordApiService =
+        ApiRetrofitFactory(
             authenticatedApiClient = OkHttpClient(),
             unauthenticatedApiClient = OkHttpClient(),
             sessionManager = createUnauthenticatedTestSessionManager(),
@@ -111,13 +115,11 @@ class RecordSingleAttemptTest {
             authentication = ApiAuthentication.BEARER,
             allowRequestReplay = false,
         )
-    }
 
-    private fun request(): RecordRequestDto {
-        return RecordRequestDto(
+    private fun request(): RecordRequestDto =
+        RecordRequestDto(
             type = "WORK",
             photoKeys = listOf("upload/photo"),
             measuredAt = "2026-10-04T09:00:00+09:00",
         )
-    }
 }

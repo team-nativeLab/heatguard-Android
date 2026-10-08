@@ -1,8 +1,8 @@
 package com.nativelap.heartguard.core.network
 
-import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionToken
+import com.nativelap.heartguard.core.session.TokenStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
@@ -23,12 +23,16 @@ class BearerTokenInterceptorTest {
 
             val sessionManager = SessionManager(FakeTokenStorage("server-access-token"), Dispatchers.IO)
             runBlocking { sessionManager.initialize() }
-            val client = OkHttpClient.Builder()
-                .addInterceptor(BearerTokenInterceptor(sessionManager))
-                .build()
-            val request = Request.Builder()
-                .url(mockWebServer.url("/protected"))
-                .build()
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(BearerTokenInterceptor(sessionManager))
+                    .build()
+            val request =
+                Request
+                    .Builder()
+                    .url(mockWebServer.url("/protected"))
+                    .build()
 
             client.newCall(request).execute().use { response ->
                 assertEquals(200, response.code)
@@ -51,15 +55,19 @@ class BearerTokenInterceptorTest {
             mockWebServer.enqueue(MockResponse.Builder().body("ok").build())
             val sessionManager = SessionManager(FakeTokenStorage("first-account-token"), Dispatchers.IO)
             runBlocking { sessionManager.initialize() }
-            val client = OkHttpClient.Builder()
-                .addInterceptor(BearerTokenInterceptor(sessionManager))
-                .build()
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(BearerTokenInterceptor(sessionManager))
+                    .build()
             val callFactory = SessionBoundCallFactory(client, sessionManager)
-            val queuedCall = callFactory.newCall(
-                Request.Builder()
-                    .url(mockWebServer.url("/protected"))
-                    .build(),
-            )
+            val queuedCall =
+                callFactory.newCall(
+                    Request
+                        .Builder()
+                        .url(mockWebServer.url("/protected"))
+                        .build(),
+                )
 
             runBlocking {
                 sessionManager.expireSession()
@@ -82,14 +90,18 @@ class BearerTokenInterceptorTest {
         try {
             val sessionManager = SessionManager(FakeTokenStorage("account-token"), Dispatchers.IO)
             runBlocking { sessionManager.initialize() }
-            val client = OkHttpClient.Builder()
-                .addInterceptor(BearerTokenInterceptor(sessionManager))
-                .build()
-            val queuedCall = SessionBoundCallFactory(client, sessionManager).newCall(
-                Request.Builder()
-                    .url(mockWebServer.url("/protected"))
-                    .build(),
-            )
+            val client =
+                OkHttpClient
+                    .Builder()
+                    .addInterceptor(BearerTokenInterceptor(sessionManager))
+                    .build()
+            val queuedCall =
+                SessionBoundCallFactory(client, sessionManager).newCall(
+                    Request
+                        .Builder()
+                        .url(mockWebServer.url("/protected"))
+                        .build(),
+                )
 
             runBlocking { sessionManager.expireSession() }
 
@@ -104,9 +116,10 @@ class BearerTokenInterceptorTest {
 
     @Test
     fun sessionChangedFailureIsNotReportedAsNetworkError() {
-        val apiResult = runBlocking {
-            ApiExecutor().execute<Unit> { throw SessionChangedException() }
-        }
+        val apiResult =
+            runBlocking {
+                ApiExecutor().execute<Unit> { throw SessionChangedException() }
+            }
 
         assertEquals(ApiResult.Failure(ApiError.SessionChanged), apiResult)
     }

@@ -24,23 +24,26 @@ fun buildCheckSchedule(
     now: LocalTime,
     todayRecordTimes: List<LocalTime> = emptyList(),
 ): CheckSchedule {
-    val checkTimes = rawCheckTimes
-        .mapNotNull { rawCheckTime -> rawCheckTime.toCheckTimeOrNull() }
-        .distinct()
-        .sorted()
+    val checkTimes =
+        rawCheckTimes
+            .mapNotNull { rawCheckTime -> rawCheckTime.toCheckTimeOrNull() }
+            .distinct()
+            .sorted()
     val nextCheckTime = checkTimes.firstOrNull { checkTime -> !checkTime.isBefore(now.withSecond(0).withNano(0)) }
-    val minutesUntilNextCheck = nextCheckTime?.let { checkTime ->
-        Duration.between(now.withSecond(0).withNano(0), checkTime).toMinutes()
-    }
+    val minutesUntilNextCheck =
+        nextCheckTime?.let { checkTime ->
+            Duration.between(now.withSecond(0).withNano(0), checkTime).toMinutes()
+        }
 
     return CheckSchedule(
         checkTimes = checkTimes,
         nextCheckTime = nextCheckTime,
         minutesUntilNextCheck = minutesUntilNextCheck,
-        completedCheckTimes = findCompletedCheckTimes(
-            checkTimes = checkTimes,
-            todayRecordTimes = todayRecordTimes,
-        ),
+        completedCheckTimes =
+            findCompletedCheckTimes(
+                checkTimes = checkTimes,
+                todayRecordTimes = todayRecordTimes,
+            ),
     )
 }
 
@@ -50,22 +53,19 @@ fun buildCheckSchedule(
 fun findCompletedCheckTimes(
     checkTimes: List<LocalTime>,
     todayRecordTimes: List<LocalTime>,
-): Set<LocalTime> {
-    return checkTimes
+): Set<LocalTime> =
+    checkTimes
         .filterIndexed { checkIndex, checkTime ->
             val nextCheckTime = checkTimes.getOrNull(checkIndex + 1)
             todayRecordTimes.any { recordTime ->
                 !recordTime.isBefore(checkTime) &&
                     (nextCheckTime == null || recordTime.isBefore(nextCheckTime))
             }
-        }
-        .toSet()
-}
+        }.toSet()
 
-private fun String.toCheckTimeOrNull(): LocalTime? {
-    return try {
+private fun String.toCheckTimeOrNull(): LocalTime? =
+    try {
         LocalTime.parse(trim(), checkTimeFormatter)
     } catch (_: DateTimeParseException) {
         null
     }
-}

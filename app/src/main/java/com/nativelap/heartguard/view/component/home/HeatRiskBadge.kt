@@ -29,14 +29,16 @@ fun HeatRiskBadge(
     ) {
         Text(
             text = riskLabel,
-            modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.BadgeHorizontal,
-                vertical = HeartGuardSpacing.BadgeVertical,
-            ),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = HeartGuardFontSize.Badge,
-                fontWeight = FontWeight.Bold,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = HeartGuardSpacing.BadgeHorizontal,
+                    vertical = HeartGuardSpacing.BadgeVertical,
+                ),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontSize = HeartGuardFontSize.Badge,
+                    fontWeight = FontWeight.Bold,
+                ),
         )
     }
 }

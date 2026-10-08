@@ -6,11 +6,17 @@ import com.nativelap.heartguard.domain.account.model.WithdrawReason
 sealed interface WithdrawNoticeScreenEvent {
     data object BackClicked : WithdrawNoticeScreenEvent
 
-    data class ReasonSelected(val reason: WithdrawReason?) : WithdrawNoticeScreenEvent
+    data class ReasonSelected(
+        val reason: WithdrawReason?,
+    ) : WithdrawNoticeScreenEvent
 
-    data class PasswordChanged(val password: String) : WithdrawNoticeScreenEvent
+    data class PasswordChanged(
+        val password: String,
+    ) : WithdrawNoticeScreenEvent
 
-    data class AgreementChanged(val isAgreed: Boolean) : WithdrawNoticeScreenEvent
+    data class AgreementChanged(
+        val isAgreed: Boolean,
+    ) : WithdrawNoticeScreenEvent
 
     data object WithdrawClicked : WithdrawNoticeScreenEvent
 }

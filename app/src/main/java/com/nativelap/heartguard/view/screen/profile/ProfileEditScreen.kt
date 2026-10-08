@@ -59,9 +59,10 @@ fun ProfileEditScreen(
         },
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.profile_title),
@@ -73,21 +74,23 @@ fun ProfileEditScreen(
             val loadedProfile = loadState as? ProfileLoadState.Loaded
             if (loadState == ProfileLoadState.Loading) {
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
                 }
             } else {
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-                        .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
+                            .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
                     verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
                 ) {
                     ProfileAvatarHeader(
@@ -118,11 +121,12 @@ fun ProfileEditScreen(
                             placeholder = stringResource(R.string.profile_name_placeholder),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             isError = uiState.saveError != null,
-                            supportingText = when (uiState.saveError) {
-                                ProfileSaveError.FAILURE -> stringResource(R.string.profile_save_failure)
-                                ProfileSaveError.CONFLICT -> stringResource(R.string.profile_save_conflict)
-                                null -> null
-                            },
+                            supportingText =
+                                when (uiState.saveError) {
+                                    ProfileSaveError.FAILURE -> stringResource(R.string.profile_save_failure)
+                                    ProfileSaveError.CONFLICT -> stringResource(R.string.profile_save_conflict)
+                                    null -> null
+                                },
                         )
                     } else {
                         ProfileReadOnlyField(
@@ -153,14 +157,16 @@ fun ProfileEditScreen(
 private fun ProfileEditScreenLoadedPreview() {
     HeartGuardTheme {
         ProfileEditScreen(
-            uiState = ProfileEditUiState(
-                loadState = ProfileLoadState.Loaded(
-                    userName = "김현장",
-                    email = "worker01",
-                    companyName = "이음산업건설",
+            uiState =
+                ProfileEditUiState(
+                    loadState =
+                        ProfileLoadState.Loaded(
+                            userName = "김현장",
+                            email = "worker01",
+                            companyName = "이음산업건설",
+                        ),
+                    nameInput = "김현장",
                 ),
-                nameInput = "김현장",
-            ),
             onEvent = {},
         )
     }
@@ -171,9 +177,10 @@ private fun ProfileEditScreenLoadedPreview() {
 private fun ProfileEditScreenFailedPreview() {
     HeartGuardTheme {
         ProfileEditScreen(
-            uiState = ProfileEditUiState(
-                loadState = ProfileLoadState.Failed,
-            ),
+            uiState =
+                ProfileEditUiState(
+                    loadState = ProfileLoadState.Failed,
+                ),
             onEvent = {},
         )
     }

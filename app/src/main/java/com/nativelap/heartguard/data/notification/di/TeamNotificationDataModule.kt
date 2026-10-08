@@ -33,12 +33,11 @@ abstract class TeamNotificationDataModule {
     companion object {
         @Provides
         @Singleton
-        fun provideTeamNotificationApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): TeamNotificationApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = TeamNotificationApiService::class.java,
-            authentication = ApiAuthentication.BEARER,
-        )
+        fun provideTeamNotificationApiService(apiRetrofitFactory: ApiRetrofitFactory): TeamNotificationApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = TeamNotificationApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+            )
     }
 }

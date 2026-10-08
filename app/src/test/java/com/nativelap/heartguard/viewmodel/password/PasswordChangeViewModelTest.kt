@@ -25,72 +25,76 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PasswordChangeViewModelTest {
-
     @After
     fun tearDown() {
         Dispatchers.resetMain()
     }
 
     @Test
-    fun `규칙과 확인 일치를 모두 만족해야 변경할 수 있다`() = runTest {
-        val viewModel = createViewModel(FakeWorkerProfileRepository(PasswordChangeResult.Success))
+    fun `규칙과 확인 일치를 모두 만족해야 변경할 수 있다`() =
+        runTest {
+            val viewModel = createViewModel(FakeWorkerProfileRepository(PasswordChangeResult.Success))
 
-        viewModel.updateCurrentPassword("current1")
-        viewModel.updateNewPassword("abcdefgh")
-        assertFalse(viewModel.uiState.value.isNewPasswordValid)
+            viewModel.updateCurrentPassword("current1")
+            viewModel.updateNewPassword("abcdefgh")
+            assertFalse(viewModel.uiState.value.isNewPasswordValid)
 
-        viewModel.updateNewPassword("abcd1234")
-        viewModel.updateConfirmPassword("abcd1235")
-        assertTrue(viewModel.uiState.value.isConfirmMismatched)
-        assertFalse(viewModel.uiState.value.canSubmit)
+            viewModel.updateNewPassword("abcd1234")
+            viewModel.updateConfirmPassword("abcd1235")
+            assertTrue(viewModel.uiState.value.isConfirmMismatched)
+            assertFalse(viewModel.uiState.value.canSubmit)
 
-        viewModel.updateConfirmPassword("abcd1234")
-        assertTrue(viewModel.uiState.value.isConfirmMatched)
-        assertTrue(viewModel.uiState.value.canSubmit)
-    }
-
-    @Test
-    fun `변경에 성공하면 입력을 비우고 Changed를 알린다`() = runTest {
-        val repository = FakeWorkerProfileRepository(PasswordChangeResult.Success)
-        val viewModel = createViewModel(repository)
-        fillValidInput(viewModel)
-
-        viewModel.submit()
-        advanceUntilIdle()
-
-        assertEquals(listOf("current1" to "abcd1234"), repository.requestedChanges)
-        assertEquals(PasswordChangeEffect.Changed, viewModel.effects.first())
-        assertEquals(PasswordChangeUiState(), viewModel.uiState.value)
-    }
+            viewModel.updateConfirmPassword("abcd1234")
+            assertTrue(viewModel.uiState.value.isConfirmMatched)
+            assertTrue(viewModel.uiState.value.canSubmit)
+        }
 
     @Test
-    fun `현재 비밀번호가 틀리면 입력을 유지하고 오류를 표시한다`() = runTest {
-        val viewModel = createViewModel(FakeWorkerProfileRepository(PasswordChangeResult.InvalidCurrentPassword))
-        fillValidInput(viewModel)
+    fun `변경에 성공하면 입력을 비우고 Changed를 알린다`() =
+        runTest {
+            val repository = FakeWorkerProfileRepository(PasswordChangeResult.Success)
+            val viewModel = createViewModel(repository)
+            fillValidInput(viewModel)
 
-        viewModel.submit()
-        advanceUntilIdle()
+            viewModel.submit()
+            advanceUntilIdle()
 
-        val uiState = viewModel.uiState.value
-        assertEquals(PasswordChangeError.INVALID_CURRENT_PASSWORD, uiState.submitError)
-        assertEquals("current1", uiState.currentPassword)
-        assertFalse(uiState.isSubmitting)
-    }
+            assertEquals(listOf("current1" to "abcd1234"), repository.requestedChanges)
+            assertEquals(PasswordChangeEffect.Changed, viewModel.effects.first())
+            assertEquals(PasswordChangeUiState(), viewModel.uiState.value)
+        }
 
     @Test
-    fun `세션이 끝나면 입력한 비밀번호를 지운다`() = runTest {
-        val sessionManager = createSessionManager()
-        val viewModel = createViewModel(
-            repository = FakeWorkerProfileRepository(PasswordChangeResult.Success),
-            sessionManager = sessionManager,
-        )
-        fillValidInput(viewModel)
+    fun `현재 비밀번호가 틀리면 입력을 유지하고 오류를 표시한다`() =
+        runTest {
+            val viewModel = createViewModel(FakeWorkerProfileRepository(PasswordChangeResult.InvalidCurrentPassword))
+            fillValidInput(viewModel)
 
-        sessionManager.expireSession()
-        advanceUntilIdle()
+            viewModel.submit()
+            advanceUntilIdle()
 
-        assertEquals(PasswordChangeUiState(), viewModel.uiState.value)
-    }
+            val uiState = viewModel.uiState.value
+            assertEquals(PasswordChangeError.INVALID_CURRENT_PASSWORD, uiState.submitError)
+            assertEquals("current1", uiState.currentPassword)
+            assertFalse(uiState.isSubmitting)
+        }
+
+    @Test
+    fun `세션이 끝나면 입력한 비밀번호를 지운다`() =
+        runTest {
+            val sessionManager = createSessionManager()
+            val viewModel =
+                createViewModel(
+                    repository = FakeWorkerProfileRepository(PasswordChangeResult.Success),
+                    sessionManager = sessionManager,
+                )
+            fillValidInput(viewModel)
+
+            sessionManager.expireSession()
+            advanceUntilIdle()
+
+            assertEquals(PasswordChangeUiState(), viewModel.uiState.value)
+        }
 
     @Test
     fun `영문과 숫자를 모두 포함한 8자 이상만 유효하다`() {
@@ -107,10 +111,11 @@ class PasswordChangeViewModelTest {
     }
 
     private suspend fun TestScope.createSessionManager(): SessionManager {
-        val sessionManager = SessionManager(
-            tokenStorage = FakeTokenStorage(),
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val sessionManager =
+            SessionManager(
+                tokenStorage = FakeTokenStorage(),
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
         sessionManager.initialize()
         return sessionManager
     }

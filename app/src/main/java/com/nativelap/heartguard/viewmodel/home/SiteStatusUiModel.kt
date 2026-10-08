@@ -32,8 +32,8 @@ fun HomeUiState.toSiteStatusUiModel(): SiteStatusUiModel {
     return overview.toSiteStatusUiModel()
 }
 
-private fun TeamSiteOverview.toSiteStatusUiModel(): SiteStatusUiModel {
-    return SiteStatusUiModel(
+private fun TeamSiteOverview.toSiteStatusUiModel(): SiteStatusUiModel =
+    SiteStatusUiModel(
         temperature = currentTemperature.toDisplayNumber(),
         humidity = humidity.toDisplayNumber(),
         apparentTemperature = apparentTemperature.toDisplayNumber(),
@@ -46,20 +46,17 @@ private fun TeamSiteOverview.toSiteStatusUiModel(): SiteStatusUiModel {
         temperatureDelta = temperatureDelta?.toSignedDisplayNumber(),
         isTemperatureIncreasing = temperatureDelta?.toIncreasingDirection(),
     )
-}
 
-private fun Double.toSignedDisplayNumber(): String {
-    return if (this > 0.0) {
+private fun Double.toSignedDisplayNumber(): String =
+    if (this > 0.0) {
         "+${toDisplayNumber()}"
     } else {
         toDisplayNumber()
     }
-}
 
-private fun Double.toIncreasingDirection(): Boolean? {
-    return when {
+private fun Double.toIncreasingDirection(): Boolean? =
+    when {
         this > 0.0 -> true
         this < 0.0 -> false
         else -> null
     }
-}

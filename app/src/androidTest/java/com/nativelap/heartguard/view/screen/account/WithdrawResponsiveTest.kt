@@ -65,7 +65,10 @@ class WithdrawResponsiveTest {
                 }
             }
         }
-        val message = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.withdraw_done_message)
+        val message =
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(
+                R.string.withdraw_done_message,
+            )
         composeTestRule.onNodeWithText(message).performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("확인").assertIsDisplayed()
     }
@@ -100,10 +103,14 @@ class WithdrawResponsiveTest {
         val passwordNode = password.fetchSemanticsNode()
         assertTrue(passwordNode.boundsInRoot.height >= passwordNode.size.height - 1f)
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        composeTestRule.onNodeWithContentDescription(context.getString(R.string.withdraw_agree))
-            .performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText(context.getString(R.string.withdraw_failure_message))
-            .performScrollTo().assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription(context.getString(R.string.withdraw_agree))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.withdraw_failure_message))
+            .performScrollTo()
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("탈퇴하기").performScrollTo().assertIsDisplayed()
     }
 }

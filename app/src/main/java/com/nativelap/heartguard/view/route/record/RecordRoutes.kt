@@ -9,16 +9,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.view.component.humidityValueText
-import com.nativelap.heartguard.view.component.temperatureValueText
-import com.nativelap.heartguard.viewmodel.home.HomeViewModel
-import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
-import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.component.RecordTypeSelectionSheet
+import com.nativelap.heartguard.view.component.humidityValueText
 import com.nativelap.heartguard.view.component.recordTypeOptions
+import com.nativelap.heartguard.view.component.temperatureValueText
 import com.nativelap.heartguard.view.screen.temperature.TemperatureRecordScreen
+import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
+import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
+import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 
 /** 기록 유형 선택 overlay의 선택 상태를 관리하고 선택 결과를 상위 Navigation에 전달한다.
  * 새 기록을 시작하는 진입점이므로, 진입 시 [recordDraftViewModel]을 초기화해 이전 시도의
@@ -67,11 +67,12 @@ internal fun HeartGuardTemperatureRecordRoute(
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
-    val submitRecord = rememberRecordSubmitter(
-        recordDraftViewModel = recordDraftViewModel,
-        onSaveSuccess = onSaveSuccess,
-        onSaveFailure = onSaveFailure,
-    )
+    val submitRecord =
+        rememberRecordSubmitter(
+            recordDraftViewModel = recordDraftViewModel,
+            onSaveSuccess = onSaveSuccess,
+            onSaveFailure = onSaveFailure,
+        )
 
     TemperatureRecordScreen(
         onMenuClick = onMenuClick,
@@ -83,9 +84,10 @@ internal fun HeartGuardTemperatureRecordRoute(
         humidityText = draftState.humidityText,
         isManualInputEnabled = draftState.isManualInputEnabled,
         selectedFieldPhotoCount = draftState.fieldPhotoUris.size,
-        isSaveEnabled = draftState.canSubmitTemperatureRecord &&
-            draftState.fieldPhotoUris.isNotEmpty() &&
-            submissionState.canAttemptSubmission,
+        isSaveEnabled =
+            draftState.canSubmitTemperatureRecord &&
+                draftState.fieldPhotoUris.isNotEmpty() &&
+                submissionState.canAttemptSubmission,
         onTemperatureChange = recordDraftViewModel::updateTemperatureText,
         onHumidityChange = recordDraftViewModel::updateHumidityText,
         onManualInputChange = recordDraftViewModel::updateManualInputEnabled,

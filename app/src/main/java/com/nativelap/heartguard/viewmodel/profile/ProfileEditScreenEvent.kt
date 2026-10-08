@@ -4,7 +4,9 @@ package com.nativelap.heartguard.viewmodel.profile
 sealed interface ProfileEditScreenEvent {
     data object BackClicked : ProfileEditScreenEvent
 
-    data class NameChanged(val name: String) : ProfileEditScreenEvent
+    data class NameChanged(
+        val name: String,
+    ) : ProfileEditScreenEvent
 
     data object SaveClicked : ProfileEditScreenEvent
 

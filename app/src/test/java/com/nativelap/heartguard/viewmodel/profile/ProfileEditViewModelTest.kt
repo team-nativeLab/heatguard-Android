@@ -27,132 +27,143 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProfileEditViewModelTest {
-
     @After
     fun tearDown() {
         Dispatchers.resetMain()
     }
 
     @Test
-    fun `조회에 성공하면 이름·이메일을 채우고 이름이 바뀌기 전에는 저장할 수 없다`() = runTest {
-        val viewModel = createViewModel(FakeWorkerProfileRepository())
+    fun `조회에 성공하면 이름·이메일을 채우고 이름이 바뀌기 전에는 저장할 수 없다`() =
+        runTest {
+            val viewModel = createViewModel(FakeWorkerProfileRepository())
 
-        viewModel.loadProfile()
-        advanceUntilIdle()
+            viewModel.loadProfile()
+            advanceUntilIdle()
 
-        val uiState = viewModel.uiState.value
-        assertEquals(
-            ProfileLoadState.Loaded(
-                userName = "홍길동",
-                email = "worker01",
-                companyName = "이음산업건설",
-                version = 3,
-            ),
-            uiState.loadState,
-        )
-        assertEquals("홍길동", uiState.nameInput)
-        assertFalse(uiState.canSave)
+            val uiState = viewModel.uiState.value
+            assertEquals(
+                ProfileLoadState.Loaded(
+                    userName = "홍길동",
+                    email = "worker01",
+                    companyName = "이음산업건설",
+                    version = 3,
+                ),
+                uiState.loadState,
+            )
+            assertEquals("홍길동", uiState.nameInput)
+            assertFalse(uiState.canSave)
 
-        viewModel.updateName("  ")
-        assertFalse(viewModel.uiState.value.canSave)
+            viewModel.updateName("  ")
+            assertFalse(viewModel.uiState.value.canSave)
 
-        viewModel.updateName("김현장")
-        assertTrue(viewModel.uiState.value.canSave)
-    }
-
-    @Test
-    fun `조회에 실패하면 Failed 상태가 된다`() = runTest {
-        val viewModel = createViewModel(
-            FakeWorkerProfileRepository(profileResult = ApiResult.Failure(ApiError.Network)),
-        )
-
-        viewModel.loadProfile()
-        advanceUntilIdle()
-
-        assertEquals(ProfileLoadState.Failed, viewModel.uiState.value.loadState)
-    }
+            viewModel.updateName("김현장")
+            assertTrue(viewModel.uiState.value.canSave)
+        }
 
     @Test
-    fun `이름 저장에 성공하면 앞뒤 공백을 제거해 보내고 Saved를 한 번 알린다`() = runTest {
-        val repository = FakeWorkerProfileRepository()
-        val viewModel = createViewModel(repository)
-        viewModel.loadProfile()
-        advanceUntilIdle()
+    fun `조회에 실패하면 Failed 상태가 된다`() =
+        runTest {
+            val viewModel =
+                createViewModel(
+                    FakeWorkerProfileRepository(profileResult = ApiResult.Failure(ApiError.Network)),
+                )
 
-        viewModel.updateName(" 김현장 ")
-        viewModel.saveProfile()
-        advanceUntilIdle()
+            viewModel.loadProfile()
+            advanceUntilIdle()
 
-        assertEquals(listOf("김현장" to 3L), repository.requestedUpdates)
-        assertEquals(ProfileEditEffect.Saved, viewModel.effects.first())
-        assertEquals("김현장", viewModel.uiState.value.nameInput)
-        assertFalse(viewModel.uiState.value.isSaving)
-    }
+            assertEquals(ProfileLoadState.Failed, viewModel.uiState.value.loadState)
+        }
 
     @Test
-    fun `이름 저장에 실패하면 입력을 유지하고 오류를 표시한다`() = runTest {
-        val repository = FakeWorkerProfileRepository(
-            updateResult = ProfileUpdateResult.Failure,
-        )
-        val viewModel = createViewModel(repository)
-        viewModel.loadProfile()
-        advanceUntilIdle()
+    fun `이름 저장에 성공하면 앞뒤 공백을 제거해 보내고 Saved를 한 번 알린다`() =
+        runTest {
+            val repository = FakeWorkerProfileRepository()
+            val viewModel = createViewModel(repository)
+            viewModel.loadProfile()
+            advanceUntilIdle()
 
-        viewModel.updateName("김현장")
-        viewModel.saveProfile()
-        advanceUntilIdle()
+            viewModel.updateName(" 김현장 ")
+            viewModel.saveProfile()
+            advanceUntilIdle()
 
-        val uiState = viewModel.uiState.value
-        assertEquals("김현장", uiState.nameInput)
-        assertEquals(ProfileSaveError.FAILURE, uiState.saveError)
-        assertFalse(uiState.isSaving)
-    }
-
-    @Test
-    fun `저장이 충돌하면 입력을 유지한 채 최신 버전을 다시 불러오고 충돌을 알린다`() = runTest {
-        val repository = FakeWorkerProfileRepository(
-            updateResult = ProfileUpdateResult.Conflict,
-        )
-        val viewModel = createViewModel(repository)
-        viewModel.loadProfile()
-        advanceUntilIdle()
-        repository.profileResult = ApiResult.Success(
-            workerProfile(name = "홍길순", version = 4),
-        )
-
-        viewModel.updateName("김현장")
-        viewModel.saveProfile()
-        advanceUntilIdle()
-
-        val uiState = viewModel.uiState.value
-        assertEquals("김현장", uiState.nameInput)
-        assertEquals(ProfileSaveError.CONFLICT, uiState.saveError)
-        assertEquals(4L, (uiState.loadState as ProfileLoadState.Loaded).version)
-        assertFalse(uiState.isSaving)
-    }
+            assertEquals(listOf("김현장" to 3L), repository.requestedUpdates)
+            assertEquals(ProfileEditEffect.Saved, viewModel.effects.first())
+            assertEquals("김현장", viewModel.uiState.value.nameInput)
+            assertFalse(viewModel.uiState.value.isSaving)
+        }
 
     @Test
-    fun `세션이 끝나면 이전 작업자 정보와 입력을 지운다`() = runTest {
-        val sessionManager = createSessionManager()
-        val viewModel = createViewModel(
-            repository = FakeWorkerProfileRepository(),
-            sessionManager = sessionManager,
-        )
-        viewModel.loadProfile()
-        advanceUntilIdle()
-        viewModel.updateName("김현장")
+    fun `이름 저장에 실패하면 입력을 유지하고 오류를 표시한다`() =
+        runTest {
+            val repository =
+                FakeWorkerProfileRepository(
+                    updateResult = ProfileUpdateResult.Failure,
+                )
+            val viewModel = createViewModel(repository)
+            viewModel.loadProfile()
+            advanceUntilIdle()
 
-        sessionManager.expireSession()
-        advanceUntilIdle()
+            viewModel.updateName("김현장")
+            viewModel.saveProfile()
+            advanceUntilIdle()
 
-        assertEquals(ProfileEditUiState(), viewModel.uiState.value)
-    }
+            val uiState = viewModel.uiState.value
+            assertEquals("김현장", uiState.nameInput)
+            assertEquals(ProfileSaveError.FAILURE, uiState.saveError)
+            assertFalse(uiState.isSaving)
+        }
+
+    @Test
+    fun `저장이 충돌하면 입력을 유지한 채 최신 버전을 다시 불러오고 충돌을 알린다`() =
+        runTest {
+            val repository =
+                FakeWorkerProfileRepository(
+                    updateResult = ProfileUpdateResult.Conflict,
+                )
+            val viewModel = createViewModel(repository)
+            viewModel.loadProfile()
+            advanceUntilIdle()
+            repository.profileResult =
+                ApiResult.Success(
+                    workerProfile(name = "홍길순", version = 4),
+                )
+
+            viewModel.updateName("김현장")
+            viewModel.saveProfile()
+            advanceUntilIdle()
+
+            val uiState = viewModel.uiState.value
+            assertEquals("김현장", uiState.nameInput)
+            assertEquals(ProfileSaveError.CONFLICT, uiState.saveError)
+            assertEquals(4L, (uiState.loadState as ProfileLoadState.Loaded).version)
+            assertFalse(uiState.isSaving)
+        }
+
+    @Test
+    fun `세션이 끝나면 이전 작업자 정보와 입력을 지운다`() =
+        runTest {
+            val sessionManager = createSessionManager()
+            val viewModel =
+                createViewModel(
+                    repository = FakeWorkerProfileRepository(),
+                    sessionManager = sessionManager,
+                )
+            viewModel.loadProfile()
+            advanceUntilIdle()
+            viewModel.updateName("김현장")
+
+            sessionManager.expireSession()
+            advanceUntilIdle()
+
+            assertEquals(ProfileEditUiState(), viewModel.uiState.value)
+        }
 
     private suspend fun TestScope.createSessionManager(): SessionManager {
-        val sessionManager = SessionManager(
-            tokenStorage = FakeTokenStorage(accessToken = "access-token"),
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val sessionManager =
+            SessionManager(
+                tokenStorage = FakeTokenStorage(accessToken = "access-token"),
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
         sessionManager.initialize()
         return sessionManager
     }

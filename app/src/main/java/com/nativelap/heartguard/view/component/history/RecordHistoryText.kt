@@ -14,36 +14,35 @@ import java.util.Locale
 
 @Composable
 @ReadOnlyComposable
-fun recordTypeTitleText(recordType: FieldRecordType?): String {
-    return when (recordType) {
+fun recordTypeTitleText(recordType: FieldRecordType?): String =
+    when (recordType) {
         FieldRecordType.THERMOMETER -> stringResource(R.string.history_type_thermometer)
         FieldRecordType.WORK -> stringResource(R.string.history_type_work)
         FieldRecordType.REST -> stringResource(R.string.history_type_rest)
         null -> stringResource(R.string.history_type_unknown)
     }
-}
 
 @Composable
 @ReadOnlyComposable
-fun recordHistoryFilterText(filter: RecordHistoryFilter): String {
-    return when (filter) {
+fun recordHistoryFilterText(filter: RecordHistoryFilter): String =
+    when (filter) {
         RecordHistoryFilter.ALL -> stringResource(R.string.history_filter_all)
         RecordHistoryFilter.THERMOMETER -> stringResource(R.string.history_filter_temperature)
         RecordHistoryFilter.WORK -> stringResource(R.string.history_filter_work_photo)
         RecordHistoryFilter.REST -> stringResource(R.string.history_filter_rest_photo)
     }
-}
 
 @DrawableRes
-fun recordTypeIconRes(recordType: FieldRecordType?): Int {
-    return when (recordType) {
+fun recordTypeIconRes(recordType: FieldRecordType?): Int =
+    when (recordType) {
         FieldRecordType.WORK -> R.drawable.record_work_photo
+
         FieldRecordType.REST -> R.drawable.record_rest_photo
+
         FieldRecordType.THERMOMETER,
         null,
         -> R.drawable.record_type_thermometer
     }
-}
 
 /** 앱 문자열이 한국어 하나뿐이라, 요일 이름이 기기 언어(예: 영어 "Mon")로 섞이지 않도록 한국어 로캘로 날짜를 포맷한다. */
 fun koreanDateFormatter(pattern: String): DateTimeFormatter = DateTimeFormatter.ofPattern(pattern, Locale.KOREAN)

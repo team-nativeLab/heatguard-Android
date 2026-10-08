@@ -3,8 +3,8 @@ package com.nativelap.heartguard.view.component.feedback
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -16,9 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -32,50 +32,56 @@ fun SaveErrorDetailCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.ResultErrorDetailHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.ResultErrorDetailHeight),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            width = HeartGuardSpacing.Hairline,
-            color = MaterialTheme.extraColors.cardBorder,
-        ),
+        border =
+            BorderStroke(
+                width = HeartGuardSpacing.Hairline,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
     ) {
         // 서버 오류 문구가 길어도 잘리지 않도록 높이는 Figma 값을 최소로만 두고 내용에 맞춰 늘어난다.
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = HeartGuardSpacing.ResultErrorDetailHorizontal,
-                    end = HeartGuardSpacing.ResultErrorDetailHorizontal,
-                    top = HeartGuardSpacing.ResultErrorDetailTop,
-                    bottom = HeartGuardSpacing.ResultErrorDetailTop,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = HeartGuardSpacing.ResultErrorDetailHorizontal,
+                        end = HeartGuardSpacing.ResultErrorDetailHorizontal,
+                        top = HeartGuardSpacing.ResultErrorDetailTop,
+                        bottom = HeartGuardSpacing.ResultErrorDetailTop,
+                    ),
         ) {
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = HeartGuardFontSize.ResultSummaryTitle,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontSize = HeartGuardFontSize.ResultSummaryTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
             Column(
-                modifier = Modifier
-                    .padding(start = HeartGuardSpacing.ResultErrorDetailTextIndent)
-                    .padding(top = HeartGuardSpacing.Item),
+                modifier =
+                    Modifier
+                        .padding(start = HeartGuardSpacing.ResultErrorDetailTextIndent)
+                        .padding(top = HeartGuardSpacing.Item),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
             ) {
                 details.forEach { detail ->
                     Text(
                         text = detail,
                         color = MaterialTheme.extraColors.disabledText,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = HeartGuardFontSize.ResultMessageDescription,
-                            lineHeight = HeartGuardFontSize.ResultMessageDescriptionLineHeight,
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = HeartGuardFontSize.ResultMessageDescription,
+                                lineHeight = HeartGuardFontSize.ResultMessageDescriptionLineHeight,
+                                fontWeight = FontWeight.Medium,
+                            ),
                     )
                 }
             }

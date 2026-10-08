@@ -19,8 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import java.time.LocalTime
@@ -35,11 +35,12 @@ fun RestTimePickerDialog(
     onDismiss: () -> Unit,
 ) {
     val currentTime = LocalTime.now(ZoneId.of("Asia/Seoul"))
-    val timePickerState = rememberTimePickerState(
-        initialHour = selectedTime?.hour ?: currentTime.hour,
-        initialMinute = selectedTime?.minute ?: currentTime.minute,
-        is24Hour = true,
-    )
+    val timePickerState =
+        rememberTimePickerState(
+            initialHour = selectedTime?.hour ?: currentTime.hour,
+            initialMinute = selectedTime?.minute ?: currentTime.minute,
+            is24Hour = true,
+        )
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -48,10 +49,11 @@ fun RestTimePickerDialog(
             color = MaterialTheme.colorScheme.surface,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(HeartGuardSpacing.Compact),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(HeartGuardSpacing.Compact),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

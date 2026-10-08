@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -17,8 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
-import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -43,10 +43,11 @@ fun RecordTypeSelectionSheet(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(
-            topStart = HeartGuardRadius.Sheet,
-            topEnd = HeartGuardRadius.Sheet,
-        ),
+        shape =
+            RoundedCornerShape(
+                topStart = HeartGuardRadius.Sheet,
+                topEnd = HeartGuardRadius.Sheet,
+            ),
         color = MaterialTheme.extraColors.pageBackground,
     ) {
         Box(
@@ -54,15 +55,16 @@ fun RecordTypeSelectionSheet(
             contentAlignment = Alignment.TopCenter,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        horizontal = HeartGuardSpacing.Section,
-                        vertical = HeartGuardSpacing.LargeSection,
-                    ),
+                modifier =
+                    Modifier
+                        .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            horizontal = HeartGuardSpacing.Section,
+                            vertical = HeartGuardSpacing.LargeSection,
+                        ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
                 RecordTypeSelectionTitle(

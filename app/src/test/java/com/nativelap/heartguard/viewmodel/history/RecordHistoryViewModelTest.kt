@@ -6,15 +6,9 @@ import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
-import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
 import com.nativelap.heartguard.domain.record.model.RecordHistoryPage
+import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistorySliceUseCase
-import java.time.Clock
-import java.time.Instant
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -26,14 +20,21 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecordHistoryViewModelTest {
     // 2026-09-28 12:00 KST 고정 시계
-    private val fixedClock = Clock.fixed(
-        Instant.parse("2026-09-28T03:00:00Z"),
-        ZoneId.of("Asia/Seoul"),
-    )
+    private val fixedClock =
+        Clock.fixed(
+            Instant.parse("2026-09-28T03:00:00Z"),
+            ZoneId.of("Asia/Seoul"),
+        )
 
     @After
     fun tearDown() {
@@ -41,136 +42,147 @@ class RecordHistoryViewModelTest {
     }
 
     @Test
-    fun `처음 열면 최신 날짜 기록만 받고 스크롤로 기간 끝까지 이어 받는다`() = runTest {
-        val repository = FakeRecordHistoryRepository()
-        val viewModel = createViewModel(repository)
+    fun `처음 열면 최신 날짜 기록만 받고 스크롤로 기간 끝까지 이어 받는다`() =
+        runTest {
+            val repository = FakeRecordHistoryRepository()
+            val viewModel = createViewModel(repository)
 
-        viewModel.openHistory()
-        advanceUntilIdle()
+            viewModel.openHistory()
+            advanceUntilIdle()
 
-        assertEquals(listOf(LocalDate.of(2026, 9, 28)), repository.requestedDates)
-        assertEquals(true, viewModel.uiState.value.hasMore)
-        assertEquals(2, viewModel.uiState.value.recordCounts.total)
+            assertEquals(listOf(LocalDate.of(2026, 9, 28)), repository.requestedDates)
+            assertEquals(true, viewModel.uiState.value.hasMore)
+            assertEquals(2, viewModel.uiState.value.recordCounts.total)
 
-        viewModel.loadMoreRecords()
-        advanceUntilIdle()
-        viewModel.loadMoreRecords()
-        advanceUntilIdle()
-
-        val uiState = viewModel.uiState.value
-        assertEquals(LocalDate.of(2026, 9, 22), uiState.startDate)
-        assertEquals(LocalDate.of(2026, 9, 28), uiState.endDate)
-        assertEquals(7, repository.requestedDates.toSet().size)
-        assertEquals(false, uiState.hasMore)
-        assertEquals(RecordHistoryCounts(total = 3, thermometer = 1, work = 1, rest = 1), uiState.recordCounts)
-        assertEquals(
-            listOf(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 9, 27)),
-            uiState.dayGroups.map { dayGroup -> dayGroup.date },
-        )
-    }
-
-    @Test
-    fun `필터를 바꾸면 서버를 다시 부르지 않고 목록만 거른다`() = runTest {
-        val repository = FakeRecordHistoryRepository()
-        val viewModel = createViewModel(repository)
-        viewModel.openHistory()
-        advanceUntilIdle()
-        while (viewModel.uiState.value.hasMore) {
             viewModel.loadMoreRecords()
             advanceUntilIdle()
+            viewModel.loadMoreRecords()
+            advanceUntilIdle()
+
+            val uiState = viewModel.uiState.value
+            assertEquals(LocalDate.of(2026, 9, 22), uiState.startDate)
+            assertEquals(LocalDate.of(2026, 9, 28), uiState.endDate)
+            assertEquals(7, repository.requestedDates.toSet().size)
+            assertEquals(false, uiState.hasMore)
+            assertEquals(RecordHistoryCounts(total = 3, thermometer = 1, work = 1, rest = 1), uiState.recordCounts)
+            assertEquals(
+                listOf(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 9, 27)),
+                uiState.dayGroups.map { dayGroup -> dayGroup.date },
+            )
         }
-        val requestCountBeforeFilter = repository.requestedDates.size
-
-        viewModel.selectFilter(RecordHistoryFilter.REST)
-
-        val restEntries = viewModel.uiState.value.dayGroups.flatMap { dayGroup -> dayGroup.entries }
-        assertEquals(listOf(FieldRecordType.REST), restEntries.map { recordEntry -> recordEntry.type })
-        assertEquals(requestCountBeforeFilter, repository.requestedDates.size)
-    }
 
     @Test
-    fun `기간이 최대치를 넘거나 미래를 포함하면 오늘 기준으로 잘라 조회한다`() = runTest {
-        val viewModel = createViewModel(FakeRecordHistoryRepository())
+    fun `필터를 바꾸면 서버를 다시 부르지 않고 목록만 거른다`() =
+        runTest {
+            val repository = FakeRecordHistoryRepository()
+            val viewModel = createViewModel(repository)
+            viewModel.openHistory()
+            advanceUntilIdle()
+            while (viewModel.uiState.value.hasMore) {
+                viewModel.loadMoreRecords()
+                advanceUntilIdle()
+            }
+            val requestCountBeforeFilter = repository.requestedDates.size
 
-        viewModel.selectDateRange(
-            startDate = LocalDate.of(2026, 7, 1),
-            endDate = LocalDate.of(2026, 10, 5),
-        )
-        advanceUntilIdle()
+            viewModel.selectFilter(RecordHistoryFilter.REST)
 
-        val uiState = viewModel.uiState.value
-        assertEquals(LocalDate.of(2026, 9, 28), uiState.endDate)
-        assertEquals(LocalDate.of(2026, 8, 29), uiState.startDate)
-        assertEquals(false, uiState.isDateRangePickerVisible)
-    }
-
-    @Test
-    fun `같은 날의 다음 커서를 이어 받고 실패하면 받은 목록을 유지한 채 재시도할 수 있다`() = runTest {
-        val repository = FakeRecordHistoryRepository(splitLatestDay = true, failingCursor = "cur_2")
-        val viewModel = createViewModel(repository)
-        viewModel.openHistory()
-        advanceUntilIdle()
-
-        viewModel.loadMoreRecords()
-        advanceUntilIdle()
-
-        assertEquals(1, viewModel.uiState.value.recordCounts.total)
-        assertEquals(true, viewModel.uiState.value.hasLoadMoreError)
-        assertEquals(true, viewModel.uiState.value.hasMore)
-
-        repository.failingCursor = null
-        viewModel.loadMoreRecords()
-        advanceUntilIdle()
-
-        assertEquals(2, viewModel.uiState.value.recordCounts.total)
-        assertEquals(false, viewModel.uiState.value.hasLoadMoreError)
-    }
+            val restEntries =
+                viewModel.uiState.value.dayGroups
+                    .flatMap { dayGroup -> dayGroup.entries }
+            assertEquals(listOf(FieldRecordType.REST), restEntries.map { recordEntry -> recordEntry.type })
+            assertEquals(requestCountBeforeFilter, repository.requestedDates.size)
+        }
 
     @Test
-    fun `서버가 받은 커서를 다시 주면 목록을 끝내고 실패를 알린다`() = runTest {
-        val repository = FakeRecordHistoryRepository(splitLatestDay = true, repeatCursor = true)
-        val viewModel = createViewModel(repository)
-        viewModel.openHistory()
-        advanceUntilIdle()
+    fun `기간이 최대치를 넘거나 미래를 포함하면 오늘 기준으로 잘라 조회한다`() =
+        runTest {
+            val viewModel = createViewModel(FakeRecordHistoryRepository())
 
-        viewModel.loadMoreRecords()
-        advanceUntilIdle()
+            viewModel.selectDateRange(
+                startDate = LocalDate.of(2026, 7, 1),
+                endDate = LocalDate.of(2026, 10, 5),
+            )
+            advanceUntilIdle()
 
-        assertEquals(false, viewModel.uiState.value.hasMore)
-        assertEquals(true, viewModel.uiState.value.hasLoadMoreError)
-    }
-
-    @Test
-    fun `조회에 실패하면 Failed 상태가 된다`() = runTest {
-        val viewModel = createViewModel(FakeRecordHistoryRepository(shouldFail = true))
-
-        viewModel.openHistory()
-        advanceUntilIdle()
-
-        assertEquals(RecordHistoryLoadState.Failed, viewModel.uiState.value.loadState)
-    }
+            val uiState = viewModel.uiState.value
+            assertEquals(LocalDate.of(2026, 9, 28), uiState.endDate)
+            assertEquals(LocalDate.of(2026, 8, 29), uiState.startDate)
+            assertEquals(false, uiState.isDateRangePickerVisible)
+        }
 
     @Test
-    fun `세션이 끝나면 조회 결과를 지운다`() = runTest {
-        val sessionManager = createSessionManager()
-        val viewModel = createViewModel(
-            repository = FakeRecordHistoryRepository(),
-            sessionManager = sessionManager,
-        )
-        viewModel.openHistory()
-        advanceUntilIdle()
+    fun `같은 날의 다음 커서를 이어 받고 실패하면 받은 목록을 유지한 채 재시도할 수 있다`() =
+        runTest {
+            val repository = FakeRecordHistoryRepository(splitLatestDay = true, failingCursor = "cur_2")
+            val viewModel = createViewModel(repository)
+            viewModel.openHistory()
+            advanceUntilIdle()
 
-        sessionManager.expireSession()
-        advanceUntilIdle()
+            viewModel.loadMoreRecords()
+            advanceUntilIdle()
 
-        assertEquals(RecordHistoryLoadState.Loading, viewModel.uiState.value.loadState)
-    }
+            assertEquals(1, viewModel.uiState.value.recordCounts.total)
+            assertEquals(true, viewModel.uiState.value.hasLoadMoreError)
+            assertEquals(true, viewModel.uiState.value.hasMore)
+
+            repository.failingCursor = null
+            viewModel.loadMoreRecords()
+            advanceUntilIdle()
+
+            assertEquals(2, viewModel.uiState.value.recordCounts.total)
+            assertEquals(false, viewModel.uiState.value.hasLoadMoreError)
+        }
+
+    @Test
+    fun `서버가 받은 커서를 다시 주면 목록을 끝내고 실패를 알린다`() =
+        runTest {
+            val repository = FakeRecordHistoryRepository(splitLatestDay = true, repeatCursor = true)
+            val viewModel = createViewModel(repository)
+            viewModel.openHistory()
+            advanceUntilIdle()
+
+            viewModel.loadMoreRecords()
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.uiState.value.hasMore)
+            assertEquals(true, viewModel.uiState.value.hasLoadMoreError)
+        }
+
+    @Test
+    fun `조회에 실패하면 Failed 상태가 된다`() =
+        runTest {
+            val viewModel = createViewModel(FakeRecordHistoryRepository(shouldFail = true))
+
+            viewModel.openHistory()
+            advanceUntilIdle()
+
+            assertEquals(RecordHistoryLoadState.Failed, viewModel.uiState.value.loadState)
+        }
+
+    @Test
+    fun `세션이 끝나면 조회 결과를 지운다`() =
+        runTest {
+            val sessionManager = createSessionManager()
+            val viewModel =
+                createViewModel(
+                    repository = FakeRecordHistoryRepository(),
+                    sessionManager = sessionManager,
+                )
+            viewModel.openHistory()
+            advanceUntilIdle()
+
+            sessionManager.expireSession()
+            advanceUntilIdle()
+
+            assertEquals(RecordHistoryLoadState.Loading, viewModel.uiState.value.loadState)
+        }
 
     private suspend fun TestScope.createSessionManager(): SessionManager {
-        val sessionManager = SessionManager(
-            tokenStorage = FakeTokenStorage(),
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val sessionManager =
+            SessionManager(
+                tokenStorage = FakeTokenStorage(),
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
         sessionManager.initialize()
         return sessionManager
     }
@@ -228,18 +240,25 @@ class RecordHistoryViewModelTest {
         }
 
         private fun dailyEntriesOf(date: LocalDate): List<RecordHistoryEntry> {
-            val dailyEntries = when (date) {
-                LocalDate.of(2026, 9, 28) -> listOf(
-                    recordEntry("rec_1", FieldRecordType.THERMOMETER, date),
-                    recordEntry("rec_2", FieldRecordType.WORK, date),
-                )
+            val dailyEntries =
+                when (date) {
+                    LocalDate.of(2026, 9, 28) -> {
+                        listOf(
+                            recordEntry("rec_1", FieldRecordType.THERMOMETER, date),
+                            recordEntry("rec_2", FieldRecordType.WORK, date),
+                        )
+                    }
 
-                LocalDate.of(2026, 9, 27) -> listOf(
-                    recordEntry("rec_3", FieldRecordType.REST, date),
-                )
+                    LocalDate.of(2026, 9, 27) -> {
+                        listOf(
+                            recordEntry("rec_3", FieldRecordType.REST, date),
+                        )
+                    }
 
-                else -> emptyList()
-            }
+                    else -> {
+                        emptyList()
+                    }
+                }
             return dailyEntries
         }
 

@@ -71,9 +71,10 @@ private fun InfoRow(
     valueContent: @Composable () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.DetailInfoRowHeight),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.DetailInfoRowHeight),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {

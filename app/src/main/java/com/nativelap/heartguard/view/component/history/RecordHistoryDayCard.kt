@@ -63,20 +63,21 @@ fun RecordHistoryDayCard(
 private fun RecordHistoryDayCardPreview() {
     HeartGuardTheme {
         RecordHistoryDayCard(
-            recordEntries = listOf(
-                RecordHistoryEntry(
-                    recordId = "rec_01",
-                    type = FieldRecordType.WORK,
-                    temperature = null,
-                    humidity = null,
-                    apparentTemperature = null,
-                    heatLevel = null,
-                    photoCount = 2,
-                    photoUrls = emptyList(),
-                    memo = null,
-                    measuredAt = OffsetDateTime.parse("2026-09-27T10:30:00+09:00"),
+            recordEntries =
+                listOf(
+                    RecordHistoryEntry(
+                        recordId = "rec_01",
+                        type = FieldRecordType.WORK,
+                        temperature = null,
+                        humidity = null,
+                        apparentTemperature = null,
+                        heatLevel = null,
+                        photoCount = 2,
+                        photoUrls = emptyList(),
+                        memo = null,
+                        measuredAt = OffsetDateTime.parse("2026-09-27T10:30:00+09:00"),
+                    ),
                 ),
-            ),
             onRecordClick = {},
         )
     }
