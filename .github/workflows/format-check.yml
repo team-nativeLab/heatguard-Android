@@ -1,0 +1,41 @@
+# 목적: PR마다 Spotless(ktlint)로 코드 줄바꿈·포맷이 적용됐는지 확인한다.
+# "CI Build & Test"와 분리된 워크플로라 포맷 실패가 ci-autofix-*.yml(workflow_run)을 실행하지 않는다.
+# 실패하면 로컬에서 ./gradlew spotlessApply 를 실행해 커밋한다.
+name: Format Check
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+# 같은 PR 에 새 커밋이 올라오면 이전 실행을 취소한다.
+concurrency:
+  group: format-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# 최소 권한: 코드 읽기만 허용한다.
+permissions:
+  contents: read
+
+jobs:
+  spotless-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      # gradle-daemon-jvm.properties 가 JDK 21 을 요구한다.
+      - name: JDK 21 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gradle 캐시 설정
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x ./gradlew
+
+      - name: 포맷 검사 (Spotless·ktlint)
+        run: ./gradlew spotlessCheck --stacktrace
