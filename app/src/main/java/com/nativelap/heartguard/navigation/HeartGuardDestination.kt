@@ -17,6 +17,9 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object Home : HeartGuardDestination
 
     @Serializable
+    data object Checklist : HeartGuardDestination
+
+    @Serializable
     data object Emergency : HeartGuardDestination
 
     @Serializable
@@ -51,6 +54,9 @@ internal sealed interface HeartGuardDestination : NavKey {
 
     @Serializable
     data object WithdrawConfirm : HeartGuardDestination
+
+    @Serializable
+    data object RecordCancelConfirm : HeartGuardDestination
 
     @Serializable
     data object WithdrawDone : HeartGuardDestination

@@ -1,0 +1,41 @@
+# 작업 인계: Figma 미구현 화면
+
+## 목표와 범위
+
+Figma 파일 `이음산업건설`의 체크리스트 화면과 기록 취소 확인창을 구현했다. 서버 연동은 범위 밖이며, 체크리스트는 데모 상태를 로컬에서만 변경한다.
+
+## 구현 내용
+
+- 홈의 체크리스트 요약 영역에서 체크리스트 화면을 연다.
+- 새 진입은 3/6으로 시작하고, 여섯 항목을 행 전체에서 토글한다. 회전 중에는 상태를 유지하고 홈으로 나갔다가 다시 들어오면 3/6으로 초기화한다.
+- 모든 항목을 확인하면 6/6 완료 스타일과 활성 완료 버튼을 보여주고, 완료 버튼은 홈으로 이동한다.
+- 기록 편집 화면에서 뒤로가기로 기록 흐름 전체를 나갈 때 확인 다이얼로그를 표시한다. 계속 작성·홈으로 나가기, 바깥 탭/뒤로가기 dismiss, 저장 중 홈 나가기 비활성 동작을 지원한다.
+- 다이얼로그 딤은 해당 Window에 0.4를 적용하고 닫힐 때 기존 Window dim 설정을 복원한다.
+- 좁은 화면에서 다이얼로그 좌우 20dp 여백을 보장한다. 표준 폭에서는 최대 322dp를 유지한다.
+- 서버/API/새 dependency는 추가하지 않았다.
+
+## 주요 파일
+
+- 체크리스트: `app/src/main/java/com/nativelap/heartguard/view/screen/checklist/ChecklistScreen.kt`, `view/route/checklist/ChecklistRoute.kt`, `viewmodel/checklist/ChecklistViewModel.kt`, `view/component/checklist/`
+- 기록 취소 확인: `view/route/record/RecordCancelConfirmRoute.kt`, `view/component/record/RecordCancelConfirmDialogContent.kt`
+- 연결·스타일: `navigation/HeartGuardNavHost.kt`, `navigation/HeartGuardDestination.kt`, `view/screen/home/HomeScreen.kt`, `view/route/home/HomeRoute.kt`, `view/component/home/HomeCheckTimeline.kt`, `ui/theme/Dimension.kt`, `ui/theme/Theme.kt`, `app/src/main/res/values/strings.xml`
+
+## 검증
+
+- `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest` 성공.
+- 최종 `./gradlew :app:assembleDebug :app:lintDebug :app:testDebugUnitTest` 성공.
+- 에뮬레이터에서 1080×2400 기본 화면의 3/6·6/6·취소 다이얼로그를 확인했다. 6/6 완료 버튼이 홈으로 이동하고 재진입 시 3/6으로 초기화되는 것을 확인했다.
+- 320×640dp, 글자 크기 200%에서 체크리스트 본문 스크롤과 고정 CTA, 기록 취소 다이얼로그 텍스트·버튼 배치를 확인했다.
+- 바깥 탭으로 다이얼로그를 닫은 뒤 배경 밝기가 복원되는 것을 확인했다.
+- UIAutomator 접근성 트리에서 홈 체크 카드가 `Button` 하나로 노출되고, 이름이 제목과 다음 점검 요약으로 제한되는 것을 확인했다. 실제 TalkBack 발화는 확인하지 않았다.
+- 사후 코드 리뷰: Critical/Blocker 없음. 행/칩 의미론 중복과 긴 홈 버튼 이름 우려를 수정했다. 새 화면 전용 회귀 테스트는 추가하지 않았다.
+- 기본 체크 완료 글자색 `#9CA3AF`는 Figma 값을 유지했다. 대비율이 낮다는 리뷰 우려는 비차단 디자인 제한으로 보고한다.
+- 시각 리뷰에서 기존 현장 사진 화면 상단이 Figma 캡처보다 위로 보이는 차이가 확인됐다. 캡처 뷰포트 높이가 달라 정확한 정규화 비교가 필요하며, 해당 기존 화면 레이아웃은 이번 누락 화면 작업 범위에서 변경하지 않았다. 취소 다이얼로그 자체와 체크리스트는 시각 QA 통과했다.
+
+## 현재 저장소 상태와 이어서 할 일
+
+- 작업 브랜치: `fix/#58-figma-review-and-hardcoded-values`
+- 변경 사항은 아직 커밋·푸시·PR로 게시하지 않았다.
+- 코드 사후 리뷰와 Figma 대조를 마쳤다. 리뷰상 Critical/Blocker는 없다.
+- 다음 제품 단계는 서버 연동이다. 체크리스트 항목, 초기 완료 수, 서버 저장 정책은 API/제품 결정에 맞춰 로컬 데모 모델을 교체한다.
+- 커밋·PR을 만들려면 저장소 규칙에 따라 `github_workflow`에 위임한다.

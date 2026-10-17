@@ -56,6 +56,9 @@
     <string name="home_additional_records">추가 기록</string>
     <string name="home_data_records">데이터 기록</string>
     <string name="home_today_check_title">오늘 체크 시간</string>
+    <string name="home_checklist_link">체크리스트</string>
+    <string name="home_open_checklist">체크리스트 열기</string>
+    <string name="home_checklist_card_accessibility_format">%1$s, %2$s</string>
     <string name="home_manager_call">관리자 전화</string>
     <string name="home_manager_call_description">현장 관리자에게 연락</string>
     <string name="home_emergency_call">긴급 전화</string>
@@ -237,4 +240,36 @@
     <string name="save_photo_count_format">%1$d장</string>
     <string name="save_temperature_detail_format">( 습도 %1$s 체감 %2$s )</string>
     <string name="photo_field_instruction_two_line">사진 촬영 또는\n앨범에서 선택</string>
+    <!-- Checklist demo screen: local state is intentionally seeded until the checklist API is connected. -->
+    <string name="checklist_title">체크리스트</string>
+    <string name="checklist_back">뒤로 가기</string>
+    <string name="checklist_round_title">20:00 체크</string>
+    <string name="checklist_status_in_progress">진행 중</string>
+    <string name="checklist_status_complete">완료</string>
+    <string name="checklist_site_team">인천 복합물류센터 신축 · A팀</string>
+    <string name="checklist_progress_format">체크리스트 %1$d / %2$d 완료</string>
+    <string name="checklist_period_hour_format">%1$02d시</string>
+    <string name="checklist_period_warning">주의</string>
+    <string name="checklist_period_current">현재 체크</string>
+    <string name="checklist_period_upcoming">예정</string>
+    <string name="checklist_guidance">관리자가 설정한 항목이에요. 확인한 항목을 눌러 체크하세요.</string>
+    <string name="checklist_item_water">식수(음용수) 비치 확인</string>
+    <string name="checklist_item_shade">그늘막·휴게시설 설치 확인</string>
+    <string name="checklist_item_health">근로자 건강상태(온열질환 증상) 확인</string>
+    <string name="checklist_item_work_hours">무더위 시간대(14~17시) 옥외작업 자제</string>
+    <string name="checklist_item_rest">2시간마다 20분 이상 휴식 실시</string>
+    <string name="checklist_item_first_aid">응급처치 키트 위치 확인</string>
+    <string name="checklist_item_checked">완료</string>
+    <string name="checklist_period_accessibility_format">%1$d시, %2$s</string>
+    <string name="checklist_complete_action_progress">체크 완료 (%1$d/%2$d)</string>
+    <string name="checklist_complete_action">체크 완료</string>
+    <string name="record_cancel_confirm_title">사진 기록을 취소할까요?</string>
+    <string name="record_cancel_confirm_message">지금 나가면 입력한 온도계 데이터와\n사진이 저장되지 않아요.</string>
+    <string name="record_cancel_confirm_generic_title">기록을 취소할까요?</string>
+    <string name="record_cancel_confirm_generic_message">지금 나가면 입력한 메모와 사진이 저장되지 않아요.</string>
+    <string name="record_cancel_confirm_work_title">작업 사진 기록을 취소할까요?</string>
+    <string name="record_cancel_confirm_rest_title">휴식 사진 기록을 취소할까요?</string>
+    <string name="record_cancel_confirm_continue">계속 작성</string>
+    <string name="record_cancel_confirm_home">홈으로 나가기</string>
+    <string name="record_cancel_confirm_saving_message">저장 중에는 나갈 수 없어요. 완료될 때까지 기다려 주세요.</string>
 </resources>

@@ -53,6 +53,9 @@ data class HeartGuardExtraColors(
     val emergencyCallingContainer: Color,
     val emergencyContactPhone: Color,
     val inputFieldBackground: Color,
+    val checklistComplete: Color,
+    val checklistCompletedText: Color,
+    val checklistDivider: Color,
 )
 
 val LocalHeartGuardExtraColors = staticCompositionLocalOf<HeartGuardExtraColors> {
@@ -137,6 +140,9 @@ private val emergencyCallingContainerColor = Color(0xFFF9EBD7)
 private val emergencyContactPhoneColor = Color(0xFF1169FA)
 // Figma 온도계 데이터 직접 입력 카드의 입력칸 배경(중립 회색)이다.
 private val inputFieldBackgroundColor = Color(0xFFF6F6F7)
+private val checklistCompleteColor = Color(0xFF1F9D55)
+private val checklistCompletedTextColor = Color(0xFF9CA3AF)
+private val checklistDividerColor = Color(0xFFE8EBF5)
 
 private val HeartGuardColorScheme = lightColorScheme(
     primary = primaryBlueColor,
@@ -208,6 +214,9 @@ private val heartGuardExtraColors = HeartGuardExtraColors(
     emergencyCallingContainer = emergencyCallingContainerColor,
     emergencyContactPhone = emergencyContactPhoneColor,
     inputFieldBackground = inputFieldBackgroundColor,
+    checklistComplete = checklistCompleteColor,
+    checklistCompletedText = checklistCompletedTextColor,
+    checklistDivider = checklistDividerColor,
 )
 
 /**

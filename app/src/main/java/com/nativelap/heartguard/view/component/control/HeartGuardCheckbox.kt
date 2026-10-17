@@ -30,6 +30,8 @@ fun HeartGuardCheckbox(
     contentDescription: String,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
+    isInteractive: Boolean = true,
+    isCircular: Boolean = false,
 ) {
     val checkboxFillColor = when {
         !isEnabled -> MaterialTheme.extraColors.disabledContent
@@ -42,22 +44,38 @@ fun HeartGuardCheckbox(
         else -> MaterialTheme.colorScheme.outline
     }
     val checkMarkColor = MaterialTheme.colorScheme.onPrimary
-
-    Box(
-        modifier = modifier
-            .size(HeartGuardComponentSize.TouchTarget)
+    val interactionModifier = if (isInteractive) {
+        Modifier
             .semantics { this.contentDescription = contentDescription }
             .toggleable(
                 value = isChecked,
                 enabled = isEnabled,
                 role = Role.Checkbox,
                 onValueChange = onCheckedChange,
-            ),
+            )
+    } else {
+        Modifier
+    }
+
+    Box(
+        modifier = modifier
+            .size(
+                if (isInteractive) {
+                    HeartGuardComponentSize.TouchTarget
+                } else {
+                    HeartGuardIconSize.Checkbox
+                },
+            )
+            .then(interactionModifier),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(HeartGuardIconSize.Checkbox)) {
             val borderWidth = HeartGuardBorderWidth.Checkbox.toPx()
-            val cornerRadius = HeartGuardRadius.Checkbox.toPx()
+            val cornerRadius = if (isCircular) {
+                size.minDimension / 2
+            } else {
+                HeartGuardRadius.Checkbox.toPx()
+            }
 
             drawRoundRect(
                 color = checkboxFillColor,
