@@ -35,7 +35,9 @@ Figma 파일 `이음산업건설`의 체크리스트 화면과 기록 취소 확
 ## 현재 저장소 상태와 이어서 할 일
 
 - 작업 브랜치: `fix/#58-figma-review-and-hardcoded-values`
-- 변경 사항은 아직 커밋·푸시·PR로 게시하지 않았다.
-- 코드 사후 리뷰와 Figma 대조를 마쳤다. 리뷰상 Critical/Blocker는 없다.
+- 구현은 커밋 `2feffb1` (`feat: [#58] Figma 체크리스트와 기록 취소 확인 화면 구현`)으로 게시했다.
+- 기존 Issue #58을 사용했고, 새 이슈는 만들지 않았다.
+- Draft PR [#59](https://github.com/team-nativeLab/heatguard-Android/pull/59)는 `dev` 대상이며 OPEN 상태다. 병합하지 않았다.
+- PR API는 `DIRTY` / `CONFLICTING`을 반환했지만 `git merge-tree`에는 파일 충돌이 없었다. 두 상태가 일치하지 않아 추가 확인이 필요하다. 새 head에는 GitHub 체크가 아직 보고되지 않았고, `sync-check.sh`의 저장소 조회는 `UNKNOWN`이었다. dev 동기화·충돌 해결·병합은 보류했다.
+- 코드 사후 리뷰와 Figma 대조를 마쳤다. 코드 리뷰상 Critical/Blocker는 없다.
 - 다음 제품 단계는 서버 연동이다. 체크리스트 항목, 초기 완료 수, 서버 저장 정책은 API/제품 결정에 맞춰 로컬 데모 모델을 교체한다.
-- 커밋·PR을 만들려면 저장소 규칙에 따라 `github_workflow`에 위임한다.
