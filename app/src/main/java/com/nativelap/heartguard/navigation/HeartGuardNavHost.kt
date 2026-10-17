@@ -28,6 +28,7 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
@@ -46,8 +47,10 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
@@ -72,6 +75,37 @@ internal fun HeartGuardNavHost(sessionViewModel: HeartGuardSessionViewModel = hi
         SessionState.Unauthenticated -> HeartGuardAuthNavDisplay()
     }
 }
+
+private fun shouldConfirmRecordExit(backStack: List<NavKey>): Boolean {
+    val currentDestination = backStack.lastOrNull() as? HeartGuardDestination
+    val previousDestination = backStack.getOrNull(backStack.lastIndex - 1) as? HeartGuardDestination
+
+    return currentDestination.isRecordEditingDestination() &&
+        !previousDestination.isRecordFlowDestination()
+}
+
+private fun HeartGuardDestination?.isRecordEditingDestination(): Boolean =
+    when (this) {
+        HeartGuardDestination.TemperatureRecord,
+        HeartGuardDestination.FieldPhoto,
+        HeartGuardDestination.WorkPhoto,
+        HeartGuardDestination.RestPhoto,
+        -> true
+
+        else -> false
+    }
+
+private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
+    when (this) {
+        HeartGuardDestination.TemperatureRecord,
+        HeartGuardDestination.FieldPhoto,
+        HeartGuardDestination.WorkPhoto,
+        HeartGuardDestination.RestPhoto,
+        is HeartGuardDestination.PhotoCamera,
+        -> true
+
+        else -> false
+    }
 
 /** 사전 발급 계정 로그인과 인증 전 Navigation 3 back stack을 담당한다. */
 @Composable
@@ -168,6 +202,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
     val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
+    val checklistViewModel: ChecklistViewModel = hiltViewModel()
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
@@ -210,14 +245,30 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     }
 
     fun goToSaveSuccess() {
+        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
+            backStack.removeLastOrNull()
+        }
         backStack.add(HeartGuardDestination.SaveSuccess)
     }
 
     fun goToSaveFailure() {
+        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
+            backStack.removeLastOrNull()
+        }
         backStack.add(HeartGuardDestination.SaveFailure)
     }
 
     fun goBack() {
+        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
+            backStack.removeLastOrNull()
+            return
+        }
+
+        if (shouldConfirmRecordExit(backStack)) {
+            backStack.add(HeartGuardDestination.RecordCancelConfirm)
+            return
+        }
+
         if (backStack.size > 1) {
             val poppedDestination = backStack.removeLastOrNull()
             // 호출 중 화면에서 뒤로 가도 서버의 긴급호출은 계속 진행 중이므로 상태·폴링을 지우지 않는다.
@@ -245,6 +296,18 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
         while (backStack.size > 1) {
             backStack.removeLastOrNull()
         }
+    }
+
+    fun leaveRecordFlow() {
+        val submissionState = recordDraftViewModel.submissionState.value
+        if (
+            submissionState !is RecordSubmissionState.Idle &&
+            submissionState !is RecordSubmissionState.Failure
+        ) {
+            return
+        }
+        recordDraftViewModel.reset()
+        goHome()
     }
 
     // 알림에서 연 화면이 연타로 중복해 쌓이지 않도록 맨 위와 같은 목적지는 다시 추가하지 않는다.
@@ -339,12 +402,23 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                         onRecordHistoryClick = {
                             backStack.add(HeartGuardDestination.RecordHistory)
                         },
+                        onChecklistClick = {
+                            checklistViewModel.resetDemoState()
+                            backStack.add(HeartGuardDestination.Checklist)
+                        },
                         onNotificationsClick = {
                             backStack.add(HeartGuardDestination.TeamNotifications)
                         },
                         onWithdrawClick = {
                             backStack.add(HeartGuardDestination.WithdrawNotice)
                         },
+                    )
+                }
+                entry<HeartGuardDestination.Checklist> {
+                    ChecklistRoute(
+                        checklistViewModel = checklistViewModel,
+                        onBackClick = ::goBack,
+                        onCompleteClick = ::goHome,
                     )
                 }
                 entry<HeartGuardDestination.ProfileEdit> {
@@ -562,6 +636,18 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                     HeartGuardWithdrawConfirmRoute(
                         withdrawViewModel = withdrawViewModel,
                         onDismiss = ::goBack,
+                    )
+                }
+                entry<HeartGuardDestination.RecordCancelConfirm>(
+                    metadata =
+                        DialogSceneStrategy.dialog(
+                            DialogProperties(usePlatformDefaultWidth = false),
+                        ),
+                ) {
+                    RecordCancelConfirmRoute(
+                        recordDraftViewModel = recordDraftViewModel,
+                        onContinueClick = ::goBack,
+                        onGoHomeClick = ::leaveRecordFlow,
                     )
                 }
                 entry<HeartGuardDestination.WithdrawDone> {

@@ -51,6 +51,15 @@ object HeartGuardSpacing {
     val AccountContentHorizontal = 24.dp
     val BottomActionHorizontal = 28.dp
     val DialogTop = 28.dp
+    val DialogBottom = 20.dp
+    val DialogActionGap = 12.dp
+    val ChecklistChipGap = 6.dp
+    val ChecklistChipHorizontal = 10.dp
+    val ChecklistChipVertical = 6.dp
+    val ChecklistSummaryVertical = 18.dp
+    val ChecklistSectionGap = 14.dp
+    val ChecklistItemHorizontal = 16.dp
+    val ChecklistItemTextGap = 12.dp
     val PhotoSelectionDescriptionTop = 40.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
@@ -171,6 +180,9 @@ object HeartGuardComponentSize {
     val MenuDrawerWidth = 300.dp
     val DialogMaxWidth = 322.dp
     val HomeTimelineMinHeight = 136.dp
+    val ChecklistProgressHeight = 6.dp
+    val ChecklistItemRowHeight = 55.dp
+    val RecordCancelDialogMinHeight = 280.dp
     val HomeContactHeight = 130.dp
     val EmergencyContactHeight = 143.dp
     val HomeAdditionalRecordHeight = 69.dp
@@ -233,6 +245,8 @@ object HeartGuardFontSize {
     val WithdrawTitle = 22.sp
     val CardTitle = 15.sp
     val DialogTitle = 20.sp
+    val DialogTitleLineHeight = 24.sp
+    val DialogBody = 14.sp
     val BodyLineHeight = 20.sp
     val EmergencyDescription = 15.sp
     val EmergencyContactTitle = 15.sp

@@ -53,7 +53,10 @@ import com.nativelap.heartguard.viewmodel.checklist.ChecklistUiState
 
 internal sealed interface ChecklistScreenEvent {
     data object BackClicked : ChecklistScreenEvent
-    data class ItemToggled(val titleResId: Int) : ChecklistScreenEvent
+    data class ItemToggled(
+        val titleResId: Int,
+        val isChecked: Boolean,
+    ) : ChecklistScreenEvent
     data object CompleteClicked : ChecklistScreenEvent
 }
 
@@ -158,8 +161,13 @@ internal fun ChecklistScreen(
                         )
                         ChecklistItemsCard(
                             items = uiState.items,
-                            onItemToggled = { titleResId ->
-                                onEvent(ChecklistScreenEvent.ItemToggled(titleResId))
+                            onItemToggled = { titleResId, isChecked ->
+                                onEvent(
+                                    ChecklistScreenEvent.ItemToggled(
+                                        titleResId = titleResId,
+                                        isChecked = isChecked,
+                                    ),
+                                )
                             },
                         )
                     }
@@ -385,7 +393,7 @@ private fun ChecklistPeriodChip(
 @Composable
 private fun ChecklistItemsCard(
     items: List<ChecklistItemUiModel>,
-    onItemToggled: (Int) -> Unit,
+    onItemToggled: (Int, Boolean) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         items.forEachIndexed { index, item ->
@@ -397,7 +405,9 @@ private fun ChecklistItemsCard(
             ChecklistItemRow(
                 title = stringResource(item.titleResId),
                 isChecked = item.isChecked,
-                onCheckedChange = { onItemToggled(item.titleResId) },
+                onCheckedChange = { isChecked ->
+                    onItemToggled(item.titleResId, isChecked)
+                },
             )
         }
     }

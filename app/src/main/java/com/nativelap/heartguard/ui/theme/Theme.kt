@@ -40,6 +40,9 @@ data class HeartGuardExtraColors(
     val homeTimelineDotBorder: Color,
     val homeTimelineCurrentRing: Color,
     val homeContactAlertContainer: Color,
+    val checklistComplete: Color,
+    val checklistCompletedText: Color,
+    val checklistDivider: Color,
     val pageBackground: Color,
     val temperatureRiseContainer: Color,
     val onTemperatureRiseContainer: Color,
@@ -133,6 +136,9 @@ private val homeTimelineDotBorderColor = Color(0xFFBFC2CC)
 // 현재 체크 시점 링은 활성 파랑(#4470ED)의 16% 투명도다.
 private val homeTimelineCurrentRingColor = Color(0x294470ED)
 private val homeContactAlertContainerColor = Color(0xFFFEE2E2)
+private val checklistCompleteColor = Color(0xFF1F9D55)
+private val checklistCompletedTextColor = Color(0xFF9CA3AF)
+private val checklistDividerColor = Color(0xFFE8EBF5)
 
 // 흰 카드가 배경과 구분되도록 Figma 홈 리디자인·회원탈퇴 화면에서 쓰는 옅은 회청색 페이지 배경이다.
 private val pageBackgroundColor = Color(0xFFF6F9FC)
@@ -229,6 +235,9 @@ private val heartGuardExtraColors =
         homeTimelineDotBorder = homeTimelineDotBorderColor,
         homeTimelineCurrentRing = homeTimelineCurrentRingColor,
         homeContactAlertContainer = homeContactAlertContainerColor,
+        checklistComplete = checklistCompleteColor,
+        checklistCompletedText = checklistCompletedTextColor,
+        checklistDivider = checklistDividerColor,
         pageBackground = pageBackgroundColor,
         temperatureRiseContainer = temperatureRiseContainerColor,
         onTemperatureRiseContainer = onTemperatureRiseContainerColor,

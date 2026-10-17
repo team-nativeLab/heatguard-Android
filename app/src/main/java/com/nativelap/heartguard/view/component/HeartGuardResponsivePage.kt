@@ -14,4 +14,4 @@ fun Modifier.heartGuardResponsivePage(containerColor: Color): Modifier =
     fillMaxSize()
         .background(containerColor)
         .wrapContentWidth(align = Alignment.CenterHorizontally)
-        .widthIn(max = HeartGuardComponentSize.ResponsiveContentMaxWidth)
+        .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)

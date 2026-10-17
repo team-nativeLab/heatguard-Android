@@ -51,6 +51,7 @@ fun HomeScreen(
     onEmergencyClick: () -> Unit,
     onFieldPhotoClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
+    onChecklistClick: () -> Unit,
     onRecordClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -131,6 +132,7 @@ fun HomeScreen(
                         title = stringResource(R.string.home_today_check_title),
                         nextCheckDescription = nextCheckDescription,
                         items = checkTimelineItems,
+                        onClick = onChecklistClick,
                         modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                     )
                 }
@@ -234,6 +236,7 @@ private fun HomeScreenPreview() {
             onEmergencyClick = {},
             onFieldPhotoClick = {},
             onRecordHistoryClick = {},
+            onChecklistClick = {},
             onRecordClick = {},
         )
     }

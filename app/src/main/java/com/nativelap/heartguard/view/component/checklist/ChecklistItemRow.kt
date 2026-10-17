@@ -39,7 +39,7 @@ internal fun ChecklistItemRow(
     ) {
         HeartGuardCheckbox(
             isChecked = isChecked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = {},
             contentDescription = title,
             isInteractive = false,
             isCircular = true,

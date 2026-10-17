@@ -2,6 +2,7 @@ package com.nativelap.heartguard.view.component.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,8 +26,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -49,13 +57,33 @@ fun HomeCheckTimeline(
     title: String,
     nextCheckDescription: String,
     items: List<CheckTimelineItem>,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accessibilityDescription = stringResource(
+        R.string.home_checklist_card_accessibility_format,
+        title,
+        nextCheckDescription,
+    )
+    val accessibilityActionLabel = stringResource(R.string.home_open_checklist)
+
     Card(
         modifier =
             modifier
                 .fillMaxWidth()
-                .heightIn(min = HeartGuardComponentSize.HomeTimelineMinHeight),
+                .heightIn(min = HeartGuardComponentSize.HomeTimelineMinHeight)
+                .clickable(
+                    onClickLabel = accessibilityActionLabel,
+                    role = Role.Button,
+                    onClick = onClick,
+                ).clearAndSetSemantics {
+                    contentDescription = accessibilityDescription
+                    role = Role.Button
+                    onClick(label = accessibilityActionLabel) {
+                        onClick()
+                        true
+                    }
+                },
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
@@ -65,14 +93,35 @@ fun HomeCheckTimeline(
                     .fillMaxWidth()
                     .padding(HeartGuardSpacing.Section),
         ) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = title,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                     ),
-            )
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_checklist_link),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    Text(
+                        text = stringResource(R.string.common_chevron_right),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(HeartGuardSpacing.Tight))
 
@@ -253,6 +302,7 @@ private fun HomeCheckTimelinePreview() {
                     CheckTimelineItem("20시", true, true),
                     CheckTimelineItem("22시", false),
                 ),
+            onClick = {},
         )
     }
 }

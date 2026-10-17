@@ -48,7 +48,10 @@ internal fun RecordCancelConfirmRoute(
 
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
-    val isSaving = submissionState is RecordSubmissionState.Submitting
+    val canLeaveRecordFlow =
+        submissionState is RecordSubmissionState.Idle ||
+            submissionState is RecordSubmissionState.Failure
+    val isSaving = !canLeaveRecordFlow
     val titleResource = when (draftState.selectedRecordType) {
         RecordType.TEMPERATURE -> R.string.record_cancel_confirm_title
         RecordType.WORK -> R.string.record_cancel_confirm_work_title
@@ -76,7 +79,7 @@ internal fun RecordCancelConfirmRoute(
         modifier = Modifier.padding(horizontal = HeartGuardSpacing.Section),
         onContinueClick = onContinueClick,
         onGoHomeClick = {
-            if (!isSaving) {
+            if (canLeaveRecordFlow) {
                 onGoHomeClick()
             }
         },

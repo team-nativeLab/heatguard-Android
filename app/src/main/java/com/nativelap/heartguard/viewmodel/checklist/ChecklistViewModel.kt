@@ -20,12 +20,15 @@ internal class ChecklistViewModel @Inject constructor() : ViewModel() {
         mutableUiState.value = ChecklistUiState()
     }
 
-    fun toggleChecklistItem(titleResId: Int) {
+    fun setChecklistItemChecked(
+        titleResId: Int,
+        isChecked: Boolean,
+    ) {
         mutableUiState.update { state ->
             state.copy(
                 items = state.items.map { item ->
                     if (item.titleResId == titleResId) {
-                        item.copy(isChecked = !item.isChecked)
+                        item.copy(isChecked = isChecked)
                     } else {
                         item
                     }
