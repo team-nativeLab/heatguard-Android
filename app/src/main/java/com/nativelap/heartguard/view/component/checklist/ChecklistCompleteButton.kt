@@ -23,16 +23,18 @@ internal fun ChecklistCompleteButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = DISABLED_BUTTON_ALPHA),
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = DISABLED_BUTTON_ALPHA),
+                disabledContentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
     ) {
         Text(
             text = title,

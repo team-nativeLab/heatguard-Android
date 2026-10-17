@@ -24,17 +24,16 @@ internal fun ChecklistItemRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.ChecklistItemRowHeight)
-            .toggleable(
-                value = isChecked,
-                role = Role.Checkbox,
-                onValueChange = onCheckedChange,
-            )
-            .padding(horizontal = HeartGuardSpacing.ChecklistItemHorizontal),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.ChecklistItemRowHeight)
+                .toggleable(
+                    value = isChecked,
+                    role = Role.Checkbox,
+                    onValueChange = onCheckedChange,
+                ).padding(horizontal = HeartGuardSpacing.ChecklistItemHorizontal),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HeartGuardCheckbox(
@@ -47,17 +46,20 @@ internal fun ChecklistItemRow(
 
         Text(
             text = title,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = HeartGuardSpacing.ChecklistItemTextGap),
-            color = if (isChecked) {
-                MaterialTheme.extraColors.checklistCompletedText
-            } else {
-                MaterialTheme.extraColors.strongText
-            },
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontWeight = FontWeight.Normal,
-            ),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(start = HeartGuardSpacing.ChecklistItemTextGap),
+            color =
+                if (isChecked) {
+                    MaterialTheme.extraColors.checklistCompletedText
+                } else {
+                    MaterialTheme.extraColors.strongText
+                },
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.Normal,
+                ),
         )
     }
 }

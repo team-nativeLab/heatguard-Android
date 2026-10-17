@@ -19,7 +19,10 @@ internal fun ChecklistRoute(
         uiState = uiState,
         onEvent = { event ->
             when (event) {
-                ChecklistScreenEvent.BackClicked -> onBackClick()
+                ChecklistScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
                 is ChecklistScreenEvent.ItemToggled -> {
                     checklistViewModel.setChecklistItemChecked(
                         titleResId = event.titleResId,

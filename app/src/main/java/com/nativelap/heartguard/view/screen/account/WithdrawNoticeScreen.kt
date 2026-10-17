@@ -1,7 +1,5 @@
 package com.nativelap.heartguard.view.screen.account
 
-import com.nativelap.heartguard.view.component.heartGuardResponsivePage
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -42,6 +40,7 @@ import com.nativelap.heartguard.view.component.account.WithdrawNoticeCard
 import com.nativelap.heartguard.view.component.account.WithdrawReasonCard
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.auth.AuthTextField
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
 import com.nativelap.heartguard.viewmodel.account.WithdrawNoticeScreenEvent
 import com.nativelap.heartguard.viewmodel.account.WithdrawSubmissionState
 import com.nativelap.heartguard.viewmodel.account.WithdrawUiState

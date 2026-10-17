@@ -46,30 +46,33 @@ internal fun RecordCancelConfirmDialogContent(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .widthIn(max = HeartGuardComponentSize.DialogMaxWidth)
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.RecordCancelDialogMinHeight),
+        modifier =
+            modifier
+                .widthIn(max = HeartGuardComponentSize.DialogMaxWidth)
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.RecordCancelDialogMinHeight),
         shape = RoundedCornerShape(HeartGuardRadius.Dialog),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(
-                start = HeartGuardSpacing.Section,
-                top = HeartGuardSpacing.DialogTop,
-                end = HeartGuardSpacing.Section,
-                bottom = HeartGuardSpacing.DialogBottom,
-            ),
+            modifier =
+                Modifier.padding(
+                    start = HeartGuardSpacing.Section,
+                    top = HeartGuardSpacing.DialogTop,
+                    end = HeartGuardSpacing.Section,
+                    bottom = HeartGuardSpacing.DialogBottom,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.DialogIcon)
-                    .background(
-                        color = MaterialTheme.extraColors.dangerContainer,
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.DialogIcon)
+                        .background(
+                            color = MaterialTheme.extraColors.dangerContainer,
+                            shape = CircleShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -85,21 +88,23 @@ internal fun RecordCancelConfirmDialogContent(
             Text(
                 text = title,
                 color = MaterialTheme.extraColors.strongText,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = HeartGuardFontSize.DialogTitle,
-                    lineHeight = HeartGuardFontSize.DialogTitleLineHeight,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontSize = HeartGuardFontSize.DialogTitle,
+                        lineHeight = HeartGuardFontSize.DialogTitleLineHeight,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 textAlign = TextAlign.Center,
             )
 
             Text(
                 text = message,
                 color = MaterialTheme.extraColors.secondaryText,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = HeartGuardFontSize.DialogBody,
-                    lineHeight = HeartGuardFontSize.BodyLineHeight,
-                ),
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = HeartGuardFontSize.DialogBody,
+                        lineHeight = HeartGuardFontSize.BodyLineHeight,
+                    ),
                 textAlign = TextAlign.Center,
             )
 
@@ -111,40 +116,46 @@ internal fun RecordCancelConfirmDialogContent(
             ) {
                 Button(
                     onClick = onContinueClick,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
                     shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.extraColors.strongText,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.extraColors.strongText,
+                        ),
                 ) {
                     Text(
                         text = continueTitle,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
                     )
                 }
 
                 Button(
                     onClick = onGoHomeClick,
                     enabled = !isSaving,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
                     shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
                 ) {
                     Text(
                         text = goHomeTitle,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
                     )
                 }
             }

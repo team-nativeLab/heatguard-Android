@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -30,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -53,10 +53,12 @@ import com.nativelap.heartguard.viewmodel.checklist.ChecklistUiState
 
 internal sealed interface ChecklistScreenEvent {
     data object BackClicked : ChecklistScreenEvent
+
     data class ItemToggled(
         val titleResId: Int,
         val isChecked: Boolean,
     ) : ChecklistScreenEvent
+
     data object CompleteClicked : ChecklistScreenEvent
 }
 
@@ -67,31 +69,35 @@ internal fun ChecklistScreen(
     onEvent: (ChecklistScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val progressFraction = if (uiState.items.isEmpty()) {
-        0f
-    } else {
-        uiState.completedCount.toFloat() / uiState.items.size
-    }
-    val actionTitle = if (uiState.isComplete) {
-        stringResource(R.string.checklist_complete_action)
-    } else {
-        stringResource(
-            R.string.checklist_complete_action_progress,
-            uiState.completedCount,
-            uiState.items.size,
-        )
-    }
+    val progressFraction =
+        if (uiState.items.isEmpty()) {
+            0f
+        } else {
+            uiState.completedCount.toFloat() / uiState.items.size
+        }
+    val actionTitle =
+        if (uiState.isComplete) {
+            stringResource(R.string.checklist_complete_action)
+        } else {
+            stringResource(
+                R.string.checklist_complete_action_progress,
+                uiState.completedCount,
+                uiState.items.size,
+            )
+        }
 
     Scaffold(
         modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
         topBar = {
             CenterAlignedTopAppBar(
-                modifier = Modifier.padding(
-                    top = HeartGuardSpacing.Section +
-                        HeartGuardSpacing.Compact +
-                        HeartGuardSpacing.Tight,
-                ),
+                modifier =
+                    Modifier.padding(
+                        top =
+                            HeartGuardSpacing.Section +
+                                HeartGuardSpacing.Compact +
+                                HeartGuardSpacing.Tight,
+                    ),
                 title = {
                     Text(
                         text = stringResource(R.string.checklist_title),
@@ -106,9 +112,10 @@ internal fun ChecklistScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.extraColors.pageBackground,
-                ),
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.extraColors.pageBackground,
+                    ),
             )
         },
         bottomBar = {
@@ -124,13 +131,15 @@ internal fun ChecklistScreen(
         },
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = HeartGuardSpacing.HeaderHorizontal,
-                vertical = HeartGuardSpacing.Compact,
-            ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            contentPadding =
+                PaddingValues(
+                    horizontal = HeartGuardSpacing.HeaderHorizontal,
+                    vertical = HeartGuardSpacing.Compact,
+                ),
         ) {
             item(key = "checklist-content") {
                 Surface(
@@ -139,9 +148,10 @@ internal fun ChecklistScreen(
                     color = MaterialTheme.colorScheme.surface,
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(
-                            HeartGuardSpacing.ChecklistSectionGap,
-                        ),
+                        verticalArrangement =
+                            Arrangement.spacedBy(
+                                HeartGuardSpacing.ChecklistSectionGap,
+                            ),
                     ) {
                         ChecklistSummaryCard(
                             completedCount = uiState.completedCount,
@@ -185,12 +195,13 @@ private fun ChecklistSummaryCard(
     isComplete: Boolean,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = HeartGuardSpacing.Section,
-                vertical = HeartGuardSpacing.ChecklistSummaryVertical,
-            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = HeartGuardSpacing.Section,
+                    vertical = HeartGuardSpacing.ChecklistSummaryVertical,
+                ),
         verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
     ) {
         Row(
@@ -206,26 +217,33 @@ private fun ChecklistSummaryCard(
             )
             Surface(
                 shape = RoundedCornerShape(HeartGuardRadius.Pill),
-                color = if (isComplete) {
-                    MaterialTheme.extraColors.successContainer
-                } else {
-                    MaterialTheme.colorScheme.primaryContainer
-                },
+                color =
+                    if (isComplete) {
+                        MaterialTheme.extraColors.successContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
             ) {
                 Text(
-                    text = stringResource(
-                        if (isComplete) R.string.checklist_status_complete
-                        else R.string.checklist_status_in_progress,
-                    ),
-                    modifier = Modifier.padding(
-                        horizontal = HeartGuardSpacing.Compact,
-                        vertical = HeartGuardSpacing.Tight,
-                    ),
-                    color = if (isComplete) {
-                        MaterialTheme.extraColors.success
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
+                    text =
+                        stringResource(
+                            if (isComplete) {
+                                R.string.checklist_status_complete
+                            } else {
+                                R.string.checklist_status_in_progress
+                            },
+                        ),
+                    modifier =
+                        Modifier.padding(
+                            horizontal = HeartGuardSpacing.Compact,
+                            vertical = HeartGuardSpacing.Tight,
+                        ),
+                    color =
+                        if (isComplete) {
+                            MaterialTheme.extraColors.success
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                 )
             }
@@ -239,35 +257,39 @@ private fun ChecklistSummaryCard(
 
         LinearProgressIndicator(
             progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(HeartGuardComponentSize.ChecklistProgressHeight)
-                .clip(
-                    RoundedCornerShape(
-                        HeartGuardComponentSize.ChecklistProgressHeight / 2,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(HeartGuardComponentSize.ChecklistProgressHeight)
+                    .clip(
+                        RoundedCornerShape(
+                            HeartGuardComponentSize.ChecklistProgressHeight / 2,
+                        ),
                     ),
-                ),
-            color = if (isComplete) {
-                MaterialTheme.extraColors.checklistComplete
-            } else {
-                MaterialTheme.colorScheme.primary
-            },
+            color =
+                if (isComplete) {
+                    MaterialTheme.extraColors.checklistComplete
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
             trackColor = MaterialTheme.extraColors.homeTimelineTrack,
             strokeCap = StrokeCap.Round,
             drawStopIndicator = {},
         )
 
         Text(
-            text = stringResource(
-                R.string.checklist_progress_format,
-                completedCount,
-                totalCount,
-            ),
-            color = if (isComplete) {
-                MaterialTheme.extraColors.success
-            } else {
-                MaterialTheme.colorScheme.primary
-            },
+            text =
+                stringResource(
+                    R.string.checklist_progress_format,
+                    completedCount,
+                    totalCount,
+                ),
+            color =
+                if (isComplete) {
+                    MaterialTheme.extraColors.success
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
         )
     }
@@ -285,13 +307,14 @@ private fun ChecklistPeriodRow(
         verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.ChecklistChipGap),
     ) {
         periods.forEach { period ->
-            val status = if (
-                period.status == ChecklistPeriodStatus.CURRENT && isChecklistComplete
-            ) {
-                ChecklistPeriodStatus.COMPLETED
-            } else {
-                period.status
-            }
+            val status =
+                if (
+                    period.status == ChecklistPeriodStatus.CURRENT && isChecklistComplete
+                ) {
+                    ChecklistPeriodStatus.COMPLETED
+                } else {
+                    period.status
+                }
             ChecklistPeriodChip(
                 period = period,
                 status = status,
@@ -305,64 +328,80 @@ private fun ChecklistPeriodChip(
     period: ChecklistPeriodUiModel,
     status: ChecklistPeriodStatus,
 ) {
-    val backgroundColor = when (status) {
-        ChecklistPeriodStatus.COMPLETED,
-        ChecklistPeriodStatus.UPCOMING,
-        -> MaterialTheme.colorScheme.surface
-
-        ChecklistPeriodStatus.WARNING -> MaterialTheme.extraColors.alertContainer
-        ChecklistPeriodStatus.CURRENT -> MaterialTheme.colorScheme.primary
-    }
-    val contentColor = when (status) {
-        ChecklistPeriodStatus.COMPLETED -> MaterialTheme.colorScheme.primary
-        ChecklistPeriodStatus.WARNING -> MaterialTheme.colorScheme.error
-        ChecklistPeriodStatus.CURRENT -> MaterialTheme.colorScheme.onPrimary
-        ChecklistPeriodStatus.UPCOMING -> MaterialTheme.extraColors.tertiaryText
-    }
-    val icon = when (status) {
-        ChecklistPeriodStatus.COMPLETED -> CHECKLIST_PERIOD_COMPLETED_ICON
-        ChecklistPeriodStatus.WARNING -> CHECKLIST_PERIOD_WARNING_ICON
-        ChecklistPeriodStatus.CURRENT -> CHECKLIST_PERIOD_CURRENT_ICON
-        ChecklistPeriodStatus.UPCOMING -> null
-    }
-    val statusDescription = stringResource(
+    val backgroundColor =
         when (status) {
-            ChecklistPeriodStatus.COMPLETED -> R.string.checklist_item_checked
-            ChecklistPeriodStatus.WARNING -> R.string.checklist_period_warning
-            ChecklistPeriodStatus.CURRENT -> R.string.checklist_period_current
-            ChecklistPeriodStatus.UPCOMING -> R.string.checklist_period_upcoming
-        },
-    )
-    val chipDescription = stringResource(
-        R.string.checklist_period_accessibility_format,
-        period.hour,
-        statusDescription,
-    )
+            ChecklistPeriodStatus.COMPLETED,
+            ChecklistPeriodStatus.UPCOMING,
+            -> MaterialTheme.colorScheme.surface
+
+            ChecklistPeriodStatus.WARNING -> MaterialTheme.extraColors.alertContainer
+
+            ChecklistPeriodStatus.CURRENT -> MaterialTheme.colorScheme.primary
+        }
+    val contentColor =
+        when (status) {
+            ChecklistPeriodStatus.COMPLETED -> MaterialTheme.colorScheme.primary
+            ChecklistPeriodStatus.WARNING -> MaterialTheme.colorScheme.error
+            ChecklistPeriodStatus.CURRENT -> MaterialTheme.colorScheme.onPrimary
+            ChecklistPeriodStatus.UPCOMING -> MaterialTheme.extraColors.tertiaryText
+        }
+    val icon =
+        when (status) {
+            ChecklistPeriodStatus.COMPLETED -> CHECKLIST_PERIOD_COMPLETED_ICON
+            ChecklistPeriodStatus.WARNING -> CHECKLIST_PERIOD_WARNING_ICON
+            ChecklistPeriodStatus.CURRENT -> CHECKLIST_PERIOD_CURRENT_ICON
+            ChecklistPeriodStatus.UPCOMING -> null
+        }
+    val statusDescription =
+        stringResource(
+            when (status) {
+                ChecklistPeriodStatus.COMPLETED -> R.string.checklist_item_checked
+                ChecklistPeriodStatus.WARNING -> R.string.checklist_period_warning
+                ChecklistPeriodStatus.CURRENT -> R.string.checklist_period_current
+                ChecklistPeriodStatus.UPCOMING -> R.string.checklist_period_upcoming
+            },
+        )
+    val chipDescription =
+        stringResource(
+            R.string.checklist_period_accessibility_format,
+            period.hour,
+            statusDescription,
+        )
 
     Surface(
-        modifier = Modifier.clearAndSetSemantics {
-            contentDescription = chipDescription
-        },
+        modifier =
+            Modifier.clearAndSetSemantics {
+                contentDescription = chipDescription
+            },
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
         color = backgroundColor,
-        border = when (status) {
-            ChecklistPeriodStatus.WARNING -> BorderStroke(
-                HeartGuardSpacing.Hairline,
-                MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
-            )
+        border =
+            when (status) {
+                ChecklistPeriodStatus.WARNING -> {
+                    BorderStroke(
+                        HeartGuardSpacing.Hairline,
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                    )
+                }
 
-            ChecklistPeriodStatus.CURRENT -> null
-            else -> BorderStroke(
-                HeartGuardSpacing.Hairline,
-                MaterialTheme.extraColors.subtleDivider,
-            )
-        },
+                ChecklistPeriodStatus.CURRENT -> {
+                    null
+                }
+
+                else -> {
+                    BorderStroke(
+                        HeartGuardSpacing.Hairline,
+                        MaterialTheme.extraColors.subtleDivider,
+                    )
+                }
+            },
     ) {
         Row(
-            modifier = Modifier.padding(
-                horizontal = HeartGuardSpacing.ChecklistChipHorizontal,
-                vertical = HeartGuardSpacing.ChecklistChipVertical,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = HeartGuardSpacing.ChecklistChipHorizontal,
+                    vertical = HeartGuardSpacing.ChecklistChipVertical,
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
         ) {
@@ -370,21 +409,24 @@ private fun ChecklistPeriodChip(
                 Text(
                     text = icon,
                     color = contentColor,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
             }
             Text(
                 text = stringResource(R.string.checklist_period_hour_format, period.hour),
                 color = contentColor,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = if (status == ChecklistPeriodStatus.CURRENT) {
-                        FontWeight.Medium
-                    } else {
-                        FontWeight.Normal
-                    },
-                ),
+                style =
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontWeight =
+                            if (status == ChecklistPeriodStatus.CURRENT) {
+                                FontWeight.Medium
+                            } else {
+                                FontWeight.Normal
+                            },
+                    ),
             )
         }
     }
@@ -440,11 +482,13 @@ private fun ChecklistScreenCompactPreview() {
 @Composable
 private fun ChecklistScreenCompletePreview() {
     HeartGuardTheme {
-        val completeUiState = ChecklistUiState(
-            items = ChecklistUiState().items.map { item ->
-                item.copy(isChecked = true)
-            },
-        )
+        val completeUiState =
+            ChecklistUiState(
+                items =
+                    ChecklistUiState().items.map { item ->
+                        item.copy(isChecked = true)
+                    },
+            )
         ChecklistScreen(
             uiState = completeUiState,
             onEvent = {},

@@ -1,7 +1,5 @@
 package com.nativelap.heartguard.view.screen.account
 
-import com.nativelap.heartguard.view.component.heartGuardResponsivePage
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +21,7 @@ import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawDoneMessage
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 
 /** Figma 19_회원탈퇴_완료 화면이다. 이미 탈퇴가 끝났으므로 뒤로 가기 버튼 없이 확인 버튼만 둔다. */

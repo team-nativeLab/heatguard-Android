@@ -60,11 +60,12 @@ fun HomeCheckTimeline(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accessibilityDescription = stringResource(
-        R.string.home_checklist_card_accessibility_format,
-        title,
-        nextCheckDescription,
-    )
+    val accessibilityDescription =
+        stringResource(
+            R.string.home_checklist_card_accessibility_format,
+            title,
+            nextCheckDescription,
+        )
     val accessibilityActionLabel = stringResource(R.string.home_open_checklist)
 
     Card(
@@ -102,9 +103,10 @@ fun HomeCheckTimeline(
                     text = title,
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

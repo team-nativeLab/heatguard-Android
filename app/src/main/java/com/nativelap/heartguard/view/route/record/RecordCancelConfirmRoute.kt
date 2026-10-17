@@ -30,8 +30,9 @@ internal fun RecordCancelConfirmRoute(
             onDispose {}
         } else {
             val originalDimAmount = dialogWindow.attributes.dimAmount
-            val originallyDimmedBehind = dialogWindow.attributes.flags and
-                WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0
+            val originallyDimmedBehind =
+                dialogWindow.attributes.flags and
+                    WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0
             dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
             dialogWindow.setDimAmount(RECORD_CANCEL_DIALOG_DIM_AMOUNT)
 
@@ -52,23 +53,31 @@ internal fun RecordCancelConfirmRoute(
         submissionState is RecordSubmissionState.Idle ||
             submissionState is RecordSubmissionState.Failure
     val isSaving = !canLeaveRecordFlow
-    val titleResource = when (draftState.selectedRecordType) {
-        RecordType.TEMPERATURE -> R.string.record_cancel_confirm_title
-        RecordType.WORK -> R.string.record_cancel_confirm_work_title
-        RecordType.REST -> R.string.record_cancel_confirm_rest_title
-        null -> R.string.record_cancel_confirm_generic_title
-    }
-    val messageResource = when {
-        isSaving -> R.string.record_cancel_confirm_saving_message
-        draftState.selectedRecordType == RecordType.TEMPERATURE -> {
-            R.string.record_cancel_confirm_message
+    val titleResource =
+        when (draftState.selectedRecordType) {
+            RecordType.TEMPERATURE -> R.string.record_cancel_confirm_title
+            RecordType.WORK -> R.string.record_cancel_confirm_work_title
+            RecordType.REST -> R.string.record_cancel_confirm_rest_title
+            null -> R.string.record_cancel_confirm_generic_title
         }
+    val messageResource =
+        when {
+            isSaving -> {
+                R.string.record_cancel_confirm_saving_message
+            }
 
-        else -> R.string.record_cancel_confirm_generic_message
-    }
-    val message = stringResource(
-        messageResource,
-    )
+            draftState.selectedRecordType == RecordType.TEMPERATURE -> {
+                R.string.record_cancel_confirm_message
+            }
+
+            else -> {
+                R.string.record_cancel_confirm_generic_message
+            }
+        }
+    val message =
+        stringResource(
+            messageResource,
+        )
 
     RecordCancelConfirmDialogContent(
         title = stringResource(titleResource),
