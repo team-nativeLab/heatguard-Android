@@ -61,6 +61,7 @@ internal fun HeartGuardHomeRoute(
     onProfileEditClick: () -> Unit,
     onInquiryClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
+    onChecklistClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
@@ -129,6 +130,7 @@ internal fun HeartGuardHomeRoute(
             },
             onFieldPhotoClick = onFieldPhotoClick,
             onRecordHistoryClick = onRecordHistoryClick,
+            onChecklistClick = onChecklistClick,
             onRecordClick = onRecordClick,
         )
 
