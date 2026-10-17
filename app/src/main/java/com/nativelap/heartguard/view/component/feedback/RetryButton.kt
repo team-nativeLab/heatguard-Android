@@ -23,20 +23,23 @@ fun RetryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
         )
     }
 }

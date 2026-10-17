@@ -1,7 +1,8 @@
 package com.nativelap.heartguard.view.component.photo
 
+import android.content.ContentResolver
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,8 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -87,37 +88,41 @@ private fun SelectedPhotoItem(
     index: Int,
 ) {
     val context = LocalContext.current
-    val photoBitmap = produceState<Bitmap?>(
-        initialValue = null,
-        key1 = uri,
-    ) {
-        value = try {
-            withContext(Dispatchers.IO) {
-                decodeSampledBitmap(uri, context.contentResolver::openInputStream)
-            }
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (_: Exception) {
-            null
-        }
-    }.value
+    val photoBitmap =
+        produceState<Bitmap?>(
+            initialValue = null,
+            key1 = uri,
+        ) {
+            value =
+                try {
+                    withContext(Dispatchers.IO) {
+                        decodeSampledBitmap(uri, context.contentResolver)
+                    }
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (_: Exception) {
+                    null
+                }
+        }.value
 
     val photoDescription = stringResource(R.string.photo_selected_accessibility, index)
     val removeDescription = stringResource(R.string.photo_remove_accessibility, index)
 
     Surface(
-        modifier = modifier
-            .aspectRatio(1f)
-            .semantics { contentDescription = photoDescription },
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .semantics { contentDescription = photoDescription },
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Box {
             if (photoBitmap == null) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -144,9 +149,10 @@ private fun SelectedPhotoItem(
 
             IconButton(
                 onClick = onRemoveClick,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .semantics { contentDescription = removeDescription },
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .semantics { contentDescription = removeDescription },
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
@@ -158,33 +164,20 @@ private fun SelectedPhotoItem(
     }
 }
 
+/** 미리보기용으로 줄여 디코딩한다. ImageDecoder는 촬영 파일의 EXIF 회전값을 반영해 사진이 눕지 않게 한다. */
 private fun decodeSampledBitmap(
     uri: Uri,
-    openInputStream: (Uri) -> java.io.InputStream?,
-): Bitmap? {
-    val bounds = BitmapFactory.Options().apply {
-        inJustDecodeBounds = true
-    }
-    openInputStream(uri)?.use { inputStream ->
-        BitmapFactory.decodeStream(inputStream, null, bounds)
-    } ?: return null
-
-    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-        return null
-    }
-
-    var sampleSize = 1
-    while (bounds.outWidth / sampleSize > MAX_PREVIEW_DIMENSION ||
-        bounds.outHeight / sampleSize > MAX_PREVIEW_DIMENSION
-    ) {
-        sampleSize *= 2
-    }
-
-    val options = BitmapFactory.Options().apply {
-        inSampleSize = sampleSize
-    }
-    return openInputStream(uri)?.use { inputStream ->
-        BitmapFactory.decodeStream(inputStream, null, options)
+    contentResolver: ContentResolver,
+): Bitmap {
+    val imageSource = ImageDecoder.createSource(contentResolver, uri)
+    return ImageDecoder.decodeBitmap(imageSource) { imageDecoder, imageInfo, _ ->
+        var sampleSize = 1
+        while (imageInfo.size.width / sampleSize > MAX_PREVIEW_DIMENSION ||
+            imageInfo.size.height / sampleSize > MAX_PREVIEW_DIMENSION
+        ) {
+            sampleSize *= 2
+        }
+        imageDecoder.setTargetSampleSize(sampleSize)
     }
 }
 

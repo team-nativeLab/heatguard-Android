@@ -200,6 +200,11 @@ val sharedViewModel: SomeFlowViewModel =
 - 새 화면이 `<App>Destination`에 `@Serializable`로 선언되어 있다.
 - route 문자열, `NavType`, `navArgument`를 새로 만들지 않았다.
 - Screen이 NavKey/back stack/NavDisplay를 참조하지 않는다.
+  (금지 예시) Screen이나 `FigmaAppFrame`/`<App>Scaffold`/`<App>BottomNavigation` 같은 공용 UI 컴포넌트가
+  `onNavigate: (<App>Destination) -> Unit`처럼 NavKey 타입을 파라미터 시그니처로 직접 받거나,
+  `FigmaAppFrame(selectedDestination = <App>Destination.Chat(), ...)`처럼 NavKey 인스턴스를 Screen 내부에서
+  직접 생성하는 코드. "지금 선택된 탭이 무엇인지" 같은 판단은 Route가 계산해 Screen에는 의미 기반 값
+  (선택 여부 `Boolean`, 탭 인덱스 등)이나 `onHomeTabClick: () -> Unit`처럼 의도 기반 콜백으로 좁혀서 전달한다.
 - ViewModel이 nav 인자를 받아야 하면 `SavedStateHandle`이 아니라 Route의 `LaunchedEffect(key)` + `initialize(...)` 방식을 썼다.
 - 다이얼로그·바텀시트를 로컬 boolean으로 여닫지 않고 실제 `NavKey` 목적지로 만들었다.
 - 여러 독립 플로우(탭 등)로 나뉘는 화면은 올바른 섹션의 back stack에 push했고, 섹션 재진입 시 기록 초기화가 필요한지 확인했다.

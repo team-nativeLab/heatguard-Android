@@ -27,14 +27,17 @@ fun EmergencyAlertBanner(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(HeartGuardRadius.LargeCard),
+        shape =
+            androidx.compose.foundation.shape
+                .RoundedCornerShape(HeartGuardRadius.LargeCard),
         color = MaterialTheme.extraColors.alertContainer,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = HeartGuardComponentSize.EmergencyAlertHeight)
-                .padding(horizontal = HeartGuardSpacing.EmergencyAlertHorizontal),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = HeartGuardComponentSize.EmergencyAlertHeight)
+                    .padding(horizontal = HeartGuardSpacing.EmergencyAlertHorizontal),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(

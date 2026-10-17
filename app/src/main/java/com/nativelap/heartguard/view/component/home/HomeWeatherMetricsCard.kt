@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,7 +23,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
@@ -46,57 +44,55 @@ fun HomeWeatherMetricsCard(
     weatherValue: String,
     modifier: Modifier = Modifier,
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val isCompact = maxWidth < COMPACT_METRIC_LAYOUT_WIDTH ||
-            LocalDensity.current.fontScale >= LARGE_FONT_SCALE_BREAKPOINT
-
-        Surface(
-            modifier = Modifier
+    Surface(
+        modifier =
+            modifier
                 .fillMaxWidth()
                 .heightIn(min = HeartGuardComponentSize.HomeWeatherMetricHeight),
-            shape = RoundedCornerShape(HeartGuardRadius.HomeMetric),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = HeartGuardElevation.HomeMetricCard,
-        ) {
-            if (isCompact) {
+        shape = RoundedCornerShape(HeartGuardRadius.HomeMetric),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = HeartGuardElevation.HomeMetricCard,
+    ) {
+        // 좁은 화면이나 큰 글꼴에서는 지표 3개를 가로로 나누면 글자가 세로로 쪼개지므로 한 줄씩 쌓는다.
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val fontScale = LocalDensity.current.fontScale
+            val isStacked = maxWidth.value / fontScale < HeartGuardComponentSize.HomeMetricRowMinWidth.value
+            if (isStacked) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = HeartGuardSpacing.Item,
-                            vertical = HeartGuardSpacing.Compact,
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                                vertical = HeartGuardSpacing.Section,
+                            ),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
                 ) {
                     HomeWeatherMetric(
                         iconPainter = painterResource(R.drawable.home_humidity),
                         metricLabel = humidityLabel,
                         metricValue = humidity,
-                        modifier = Modifier.fillMaxWidth(),
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     HomeWeatherMetric(
                         iconPainter = painterResource(R.drawable.home_feels_like),
                         metricLabel = feelsLikeTemperatureLabel,
                         metricValue = feelsLikeTemperature,
-                        modifier = Modifier.fillMaxWidth(),
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     HomeWeatherMetric(
                         iconPainter = painterResource(R.drawable.home_weather),
                         metricLabel = weatherLabel,
                         metricValue = weatherValue,
-                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             } else {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                            vertical = HeartGuardSpacing.Section,
-                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                                vertical = HeartGuardSpacing.Section,
+                            ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
                 ) {
@@ -163,9 +159,10 @@ private fun HomeWeatherMetric(
             Text(
                 text = metricValue,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
         }
     }
@@ -174,15 +171,13 @@ private fun HomeWeatherMetric(
 @Composable
 private fun HomeWeatherMetricDivider() {
     Surface(
-        modifier = Modifier
-            .width(HeartGuardBorderWidth.Divider)
-            .height(HeartGuardComponentSize.HomeMetricDividerHeight),
+        modifier =
+            Modifier
+                .width(HeartGuardBorderWidth.Divider)
+                .height(HeartGuardComponentSize.HomeMetricDividerHeight),
         color = MaterialTheme.colorScheme.outlineVariant,
     ) {}
 }
-
-private val COMPACT_METRIC_LAYOUT_WIDTH = 300.dp
-private const val LARGE_FONT_SCALE_BREAKPOINT = 1.5f
 
 @Preview(showBackground = true, widthDp = 320)
 @Composable

@@ -1,6 +1,6 @@
 ---
 name: android-code-naming
-description: Android Kotlin·Jetpack Compose 코드의 변수, 함수, 클래스, 파일, 패키지, UseCase 명명 규칙을 새로 작성하거나 검토할 때 사용한다.
+description: Android Kotlin·Jetpack Compose 코드의 변수, 함수, 클래스, 파일, 패키지, UseCase 명명 규칙과 코드 주석 규칙을 새로 작성하거나 검토할 때 사용한다.
 ---
 
 # Android Code Naming
@@ -45,9 +45,24 @@ description: Android Kotlin·Jetpack Compose 코드의 변수, 함수, 클래스
 4. backing property를 노출할 때는 `_uiState`는 `MutableStateFlow`, `uiState`는 읽기 전용 `StateFlow`처럼 변경 가능 범위를 분리한다.
 5. 기존 코드의 확립된 public API 명명과 충돌하면 호환성을 우선하고, 새 코드부터 이 규칙을 적용한다.
 
+## 주석
+
+- 핵심 역할을 하는 메소드(UseCase `invoke`, ViewModel의 사용자 이벤트 처리, Repository·RemoteDataSource 공개 메소드 등)에만 무엇을 하는지 한국어 1줄로 쓴다.
+- 호출 시점, 매개변수, 반환값, 성공·실패 처리를 나열하지 않는다.
+- getter, mapper·한 줄 변환, 단순 위임, 이름만으로 의미가 드러나는 메소드에는 주석을 달지 않는다.
+- 일반적이지 않은 로직이나 제약이 있을 때만 그 이유를 짧게 덧붙인다. 코드를 그대로 번역하는 주석은 쓰지 않는다.
+
+```kotlin
+// 추천 프로젝트 목록을 불러온다.
+suspend operator fun invoke(): List<Project> {
+    return projectRepository.getRecommendedProjects()
+}
+```
+
 ## 완료 체크
 
 - 변수와 함수 이름만으로 값과 동작의 의미를 파악할 수 있다.
 - 파일명과 대표 공개 타입명이 일치한다.
 - Composable, UseCase, UiState 등 계층 역할을 이름으로 식별할 수 있다.
 - package에 대문자나 `_`가 없다.
+- 주석이 핵심 메소드에만 1줄로 달려 있다.

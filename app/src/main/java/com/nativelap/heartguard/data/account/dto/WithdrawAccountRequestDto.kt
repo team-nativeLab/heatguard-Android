@@ -3,15 +3,14 @@ package com.nativelap.heartguard.data.account.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** DELETE /api/v1/site/profile(현장관리자 회원탈퇴) 요청 본문이다.
- * 예: {"currentPassword":"string"} */
+/** DELETE /api/v1/team/profile 요청 본문이다. [reason]은 선택 값(최대 1000자)이며 null이면 보내지 않는다. */
 @Serializable
 data class WithdrawAccountRequestDto(
     @SerialName("currentPassword")
     val currentPassword: String,
+    @SerialName("reason")
+    val reason: String? = null,
 ) {
-    // 로그·예외 메시지에 비밀번호 원문이 찍히지 않도록 자동 생성 toString을 대신한다.
-    override fun toString(): String {
-        return "WithdrawAccountRequestDto(currentPassword=***)"
-    }
+    // 비밀번호 원문이 자동 생성된 toString()을 통해 로그에 노출되지 않게 한다.
+    override fun toString(): String = "WithdrawAccountRequestDto(currentPassword=***, reason=$reason)"
 }

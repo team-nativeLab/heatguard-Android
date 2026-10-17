@@ -11,9 +11,10 @@ internal object ApiErrorCodeReader {
     // 오류 본문은 짧은 JSON이므로 이 크기를 넘는 본문은 읽지 않는다. 잘린 JSON은 파싱에 실패해 null이 된다.
     const val MAX_ERROR_BODY_BYTES = 16L * 1024L
 
-    private val errorJson = Json {
-        ignoreUnknownKeys = true
-    }
+    private val errorJson =
+        Json {
+            ignoreUnknownKeys = true
+        }
 
     fun read(errorBody: String): String? {
         if (errorBody.isBlank()) {

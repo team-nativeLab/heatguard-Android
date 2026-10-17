@@ -19,23 +19,28 @@ fun CallEndButton(
     title: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+        enabled = enabled,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
         shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.error,
-            contentColor = MaterialTheme.colorScheme.onError,
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+            ),
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
         )
     }
 }

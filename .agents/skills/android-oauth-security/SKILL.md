@@ -4,6 +4,7 @@ description: >
   Android 및 백엔드의 OAuth/OIDC 보안 규칙을 적용한다.
   Google, Kakao, Apple 로그인, PKCE, 토큰 저장, Redirect URI,
   Access Token, Refresh Token, Client ID, Client Secret,
+  로그아웃·세션 만료·계정 전환 시 이전 사용자 데이터(ViewModel·캐시) 초기화,
   Android 인증 코드를 구현하거나 검토할 때 사용한다.
 ---
 
@@ -164,6 +165,75 @@ Provider별 로그아웃/연동 해제 엔드포인트(모두 백엔드에서 �
 
 ---
 
+# 8-1. 세션 전환 시 이전 사용자 데이터 초기화
+
+로그아웃·세션 만료·탈퇴·계정 전환 뒤 다른 계정으로 로그인했을 때 이전 사용자의 이름·연락처·기록 등이 한 프레임이라도 보이면 개인정보 노출이다. 토큰 삭제만으로는 부족하며, 메모리·ViewModel·로컬 저장소에 남은 사용자 데이터를 함께 정리한다.
+
+새 라이브러리를 추가하지 않고 이미 쓰는 의존성(Hilt, Lifecycle ViewModel, Navigation 3, Coroutines)만으로 처리한다.
+
+### 단일 진입점
+
+- 세션 종료는 `SessionManager.expireSession()` 한 곳에서만 일어난다(`android-network-environment`의 인증 흐름). 이 함수 안에서 토큰 삭제와 사용자 데이터 정리를 함께 수행한다.
+- 로그아웃 버튼 콜백, 설정 화면 등 화면마다 수동 초기화 코드를 흩뿌리지 않는다. `System.exit`, 프로세스 강제 재시작으로 해결하지 않는다.
+
+### 앱 범위 객체(`@Singleton`)의 사용자 데이터
+
+- 사용자 데이터를 들고 있는 앱 범위 객체(Repository 메모리 캐시, `MutableStateFlow` 캐시, Room/DataStore의 사용자 테이블·키, 사용자별 이미지 캐시 등)는 공통 인터페이스를 구현하고 Hilt 멀티바인딩으로 등록한다.
+- `SessionManager`는 `Set<SessionScopedDataCleaner>`를 주입받아 세션 종료 시 모두 호출한다. 새 사용자 데이터 캐시를 추가할 때 등록을 빠뜨리지 않는다.
+
+```kotlin
+/** 세션 종료 시 비워야 하는 사용자 데이터 보관 객체가 구현한다. */
+interface SessionScopedDataCleaner {
+    suspend fun clearUserData()
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class SessionCleanerModule {
+    @Binds
+    @IntoSet
+    abstract fun bindProfileCacheCleaner(
+        profileRepositoryImpl: ProfileRepositoryImpl,
+    ): SessionScopedDataCleaner
+}
+```
+
+- 프로젝트에 같은 책임의 추상화가 이미 있으면 그것을 따르고 중복 타입을 만들지 않는다.
+
+### ViewModel 초기화
+
+- 사용자 데이터를 가진 ViewModel은 Navigation 3 entry 범위(`rememberViewModelStoreNavEntryDecorator`)로 만든다. 최상위 `<App>NavHost`가 `key(sessionState)`로 NavDisplay 서브트리를 다시 구성하면 entry의 ViewModelStore가 clear되어 이전 사용자 ViewModel이 사라진다(`android-navigation`의 "인증 상태 전환").
+- Activity 범위(Activity나 NavDisplay 바깥에서 `hiltViewModel()`) ViewModel에는 사용자 데이터를 두지 않는다. 불가피하면 `SessionManager.sessionState`를 수집해 `Unauthenticated` 또는 사용자 변경 시 UiState를 초기값으로 되돌린다.
+- 화면 흐름 공유용 수동 `ViewModelStoreOwner`는 흐름 종료뿐 아니라 세션 전환 시에도 `clear()`되는 위치(세션 `key` 안쪽)에 둔다.
+- `stateIn`·`MutableStateFlow`의 초기값은 로딩 또는 빈 상태로 둔다. 이전 사용자 값이나 샘플 값을 초기값으로 쓰지 않는다.
+- 앱 범위에서 사용자 의존 Flow를 만들 때는 사용자 식별자 변경에 맞춰 다시 시작한다.
+
+```kotlin
+val profileState: StateFlow<ProfileUiState> = sessionManager.sessionState
+    .map { sessionState -> sessionState.userIdOrNull }
+    .distinctUntilChanged()
+    .flatMapLatest { userId ->
+        if (userId == null) {
+            flowOf(ProfileUiState.Empty)
+        } else {
+            observeProfileUseCase(userId).map { profile -> ProfileUiState.Loaded(profile) }
+        }
+    }
+    .stateIn(applicationScope, SharingStarted.WhileSubscribed(5_000), ProfileUiState.Loading)
+```
+
+### 진행 중 요청과 백그라운드 작업
+
+- 세션 종료 시 사용자 범위 작업을 취소한다. ViewModel 작업은 ViewModelStore clear로 함께 취소되고, 앱 범위 Scope의 Job과 WorkManager 작업은 사용자 태그로 취소한다.
+- 앱 범위 작업의 응답이 늦게 도착했을 때 요청 시점 사용자와 현재 사용자가 다르면 결과를 저장·표시하지 않고 버린다.
+
+### 복원 경로
+
+- `SavedStateHandle`, `rememberSaveable`, Navigation 인자에 이름·연락처 같은 개인정보를 저장하지 않는다(식별자만 저장하고 다시 조회). 프로세스 재생성 시 이전 사용자 값이 복원되는 것을 막는다.
+- 프로필 이미지 등 사용자별 이미지 캐시는 캐시 키에 사용자 식별자를 포함하거나 세션 종료 시 해당 캐시를 정리한다.
+
+---
+
 # 9. Provider별 참고
 
 - **Google**: 다음 두 방식 중 백엔드 구조에 맞는 쪽을 선택한다. 이미 Kakao/Apple과 동일한 Authorization Code 교환 구조를 갖췄거나 백엔드가 사용자 대신 Google API를 호출해야 한다면 (B)를, 로그인 여부 확인만 필요하고 별도 교환 구조를 두지 않으려면 (A)를 사용한다.
@@ -195,3 +265,6 @@ Provider별 로그아웃/연동 해제 엔드포인트(모두 백엔드에서 �
 - 우리 백엔드 발급 토큰만 Android에 저장하며, Keystore 기반 암호화 저장소를 사용한다.
 - 토큰이 로그·크래시 리포트·분석 이벤트에 노출되지 않는다.
 - 로그아웃/탈퇴 흐름이 로컬 토큰 삭제 → 백엔드 세션 종료 → (탈퇴 시) Provider revoke/unlink 순서로 연결되어 있다.
+- 세션 종료가 `SessionManager.expireSession()` 한 곳에서 토큰과 사용자 데이터(`SessionScopedDataCleaner` 등록 객체)를 함께 정리한다.
+- 사용자 데이터 ViewModel이 세션 `key` 안쪽 entry 범위에 있어 세션 전환 시 새로 만들어지고, 초기값이 로딩/빈 상태다.
+- A 계정 로그인 → 데이터 표시 → 로그아웃 → B 계정 로그인 시 첫 화면부터 A 계정 데이터가 보이지 않는 것을 직접 확인했다.

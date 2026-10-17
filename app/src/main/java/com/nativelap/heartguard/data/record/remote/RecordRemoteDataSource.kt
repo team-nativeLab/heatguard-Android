@@ -5,6 +5,7 @@ import com.nativelap.heartguard.data.record.dto.RecordRequestDto
 import com.nativelap.heartguard.data.record.dto.RecordResponseDto
 import com.nativelap.heartguard.data.record.dto.UploadFileRequestDto
 import com.nativelap.heartguard.data.record.dto.UploadSlotDto
+import okhttp3.RequestBody
 
 interface RecordRemoteDataSource {
     suspend fun issueUploadUrls(files: List<UploadFileRequestDto>): ApiResult<List<UploadSlotDto>>
@@ -12,9 +13,11 @@ interface RecordRemoteDataSource {
     suspend fun uploadToPresignedUrl(
         uploadUrl: String,
         requiredHeaders: Map<String, String>,
-        contentType: String,
-        bytes: ByteArray,
+        photoContent: RequestBody,
     ): ApiResult<Unit>
 
-    suspend fun submitRecord(request: RecordRequestDto): ApiResult<RecordResponseDto>
+    suspend fun submitRecord(
+        request: RecordRequestDto,
+        expectedSessionGeneration: Long,
+    ): ApiResult<RecordResponseDto>
 }

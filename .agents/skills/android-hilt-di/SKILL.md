@@ -104,6 +104,7 @@ Scope는 객체의 실제 필요 수명과 일치시킨다.
 
 `@Singleton`은 편의를 위한 기본값이 아니다.
 상태 공유, 연결 유지, cache, 비용이 큰 생성 등 앱 단일 인스턴스 이유가 있어야 한다.
+사용자 데이터를 cache하는 `@Singleton`은 `SessionScopedDataCleaner`를 구현하고 `@Binds @IntoSet`으로 등록해 세션 종료 시 비워지게 한다(`android-oauth-security` 8-1).
 
 ## Context와 qualifier
 
@@ -184,6 +185,7 @@ class ProjectViewModel @Inject constructor(
 - RepositoryImpl과 RemoteDataSourceImpl은 `@Inject constructor`로 생성 가능하다.
 - Retrofit 계열은 `@Provides`로 한 곳에서 구성된다.
 - 불필요한 `@Singleton`이 없다.
+- 사용자 데이터를 cache하는 `@Singleton`이 `SessionScopedDataCleaner` 멀티바인딩에 등록되어 있다.
 - 동일 타입에 여러 구현체가 있으면 모든 제공·주입 지점에 qualifier가 빠짐없이 붙어 있다.
 - Application 수명 객체가 화면 객체를 참조하지 않는다.
 - ViewModel 생성은 Hilt가 담당한다.

@@ -5,6 +5,9 @@ enum class EmergencyCallState {
     NONE,
     ACTIVE,
     ACKNOWLEDGED,
+    CANCELLED,
+    COMPLETED,
+    UNKNOWN,
 }
 
 /** 긴급호출 등록/상태조회 API가 공통으로 반환하는 값을 정리한 도메인 모델이다. */

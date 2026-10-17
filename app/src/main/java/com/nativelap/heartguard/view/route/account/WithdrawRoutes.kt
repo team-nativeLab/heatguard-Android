@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.account.WithdrawConfirmDialogContent
@@ -28,9 +29,8 @@ internal fun HeartGuardWithdrawNoticeRoute(
     onWithdrawClick: () -> Unit,
     onWithdrawSucceeded: () -> Unit,
 ) {
-    // TODO: androidx.lifecycle:lifecycle-runtime-compose 도입이 확정되면 collectAsStateWithLifecycle로 교체한다.
-    val uiState by withdrawViewModel.uiState.collectAsState()
-    val password by withdrawViewModel.password.collectAsState()
+    val uiState by withdrawViewModel.uiState.collectAsStateWithLifecycle()
+    val password by withdrawViewModel.password.collectAsStateWithLifecycle()
     val latestOnWithdrawSucceeded by rememberUpdatedState(onWithdrawSucceeded)
 
     LaunchedEffect(uiState.submissionState) {
@@ -44,7 +44,10 @@ internal fun HeartGuardWithdrawNoticeRoute(
         password = password,
         onEvent = { event ->
             when (event) {
-                WithdrawNoticeScreenEvent.BackClicked -> onBackClick()
+                WithdrawNoticeScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
                 is WithdrawNoticeScreenEvent.ReasonSelected -> {
                     withdrawViewModel.selectReason(event.reason)
                 }
@@ -77,8 +80,9 @@ internal fun HeartGuardWithdrawConfirmRoute(
     val latestOnDismiss by rememberUpdatedState(onDismiss)
 
     LaunchedEffect(uiState.submissionState) {
-        val isFailed = uiState.submissionState == WithdrawSubmissionState.Failed ||
-            uiState.submissionState == WithdrawSubmissionState.InvalidPassword
+        val isFailed =
+            uiState.submissionState == WithdrawSubmissionState.Failed ||
+                uiState.submissionState == WithdrawSubmissionState.InvalidPassword
 
         if (isFailed) {
             latestOnDismiss()
@@ -100,9 +104,7 @@ internal fun HeartGuardWithdrawConfirmRoute(
 /** 회원탈퇴 완료 화면 Route이다. 탈퇴가 이미 끝났으므로 확인과 시스템 뒤로가기 모두 세션을 종료해
  * 로그인 화면으로 보낸다(탈퇴 전 화면으로 돌아가지 않게 한다). */
 @Composable
-internal fun HeartGuardWithdrawDoneRoute(
-    withdrawViewModel: WithdrawViewModel,
-) {
+internal fun HeartGuardWithdrawDoneRoute(withdrawViewModel: WithdrawViewModel) {
     BackHandler {
         withdrawViewModel.finishWithdrawal()
     }

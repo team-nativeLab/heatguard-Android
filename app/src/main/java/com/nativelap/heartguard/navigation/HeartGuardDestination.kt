@@ -10,6 +10,7 @@ internal sealed interface HeartGuardDestination : NavKey {
     @Serializable
     data object Login : HeartGuardDestination
 
+    // Navigation 3가 이전 버전의 저장된 back stack을 복원할 때 사용할 호환 키다.
     @Serializable
     data object SignUp : HeartGuardDestination
 
@@ -17,7 +18,24 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object Home : HeartGuardDestination
 
     @Serializable
-    data object Checklist : HeartGuardDestination
+    data object ProfileEdit : HeartGuardDestination
+
+    @Serializable
+    data object PasswordChange : HeartGuardDestination
+
+    @Serializable
+    data object Inquiry : HeartGuardDestination
+
+    @Serializable
+    data object TeamNotifications : HeartGuardDestination
+
+    @Serializable
+    data object RecordHistory : HeartGuardDestination
+
+    @Serializable
+    data class RecordHistoryDetail(
+        val recordId: String,
+    ) : HeartGuardDestination
 
     @Serializable
     data object Emergency : HeartGuardDestination
@@ -41,7 +59,9 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object RestPhoto : HeartGuardDestination
 
     @Serializable
-    data class PhotoCamera(val recordType: RecordType) : HeartGuardDestination
+    data class PhotoCamera(
+        val recordType: RecordType,
+    ) : HeartGuardDestination
 
     @Serializable
     data object SaveSuccess : HeartGuardDestination
@@ -54,9 +74,6 @@ internal sealed interface HeartGuardDestination : NavKey {
 
     @Serializable
     data object WithdrawConfirm : HeartGuardDestination
-
-    @Serializable
-    data object RecordCancelConfirm : HeartGuardDestination
 
     @Serializable
     data object WithdrawDone : HeartGuardDestination

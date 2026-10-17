@@ -4,11 +4,7 @@ package com.nativelap.heartguard.viewmodel.menu
 sealed interface MenuDrawerEvent {
     data object EditProfileClicked : MenuDrawerEvent
 
-    data object NotificationSettingsClicked : MenuDrawerEvent
-
-    data object NoticesClicked : MenuDrawerEvent
-
-    data object CustomerCenterClicked : MenuDrawerEvent
+    data object InquiryClicked : MenuDrawerEvent
 
     data object LogoutClicked : MenuDrawerEvent
 

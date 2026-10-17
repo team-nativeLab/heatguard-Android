@@ -1,26 +1,34 @@
 package com.nativelap.heartguard.view.route.home
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
+import com.nativelap.heartguard.domain.site.model.SkyStatus
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.heatLevelLabelText
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
@@ -29,51 +37,68 @@ import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.menu.MenuDrawerOverlay
 import com.nativelap.heartguard.view.component.temperatureValueText
 import com.nativelap.heartguard.view.screen.home.HomeScreen
+import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
-import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 /** 홈에 팀 현장페이지 API 결과와 사용자 이벤트를 HomeScreen에 전달하는 Route이다.
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
- * 온도 변화량·날씨 상태·체크 완료 여부처럼 API에 아직 없는 값도 "--"로 두고, API가 생기면 연결한다.
- * "관리자 전화"는 Emergency 화면으로 이동하지 않고 이 Route에서 바로 다이얼러를 여는 반면,
- * "긴급 전화"([onEmergencyClick])는 긴급호출 흐름(Emergency 화면)으로 이동한다 — 두 버튼의
- * 목적이 다르므로(즉시 통화 vs 긴급호출 절차 시작) 의도적으로 다른 방식으로 동작한다.
+ * 체크 완료 여부는 서버 필드가 없어 오늘 기록의 측정 시각으로 판정한다.
+ * "관리자 전화"([onManagerCallClick])는 현장관리자 긴급호출 흐름(Emergency 화면)으로 이동하고,
+ * "긴급 전화"는 이 Route에서 본사 연락처(company.phone)로 바로 다이얼러를 연다. 본사 번호가 없으면 비활성이다.
  * 메뉴 드로어는 홈 헤더에서만 열리는 오버레이라 이 Route가 열림 상태를 직접 소유한다.
  * android-navigation SKILL은 다이얼로그·바텀시트를 NavKey로 만들도록 하지만, 드로어는 사용자 결정에 따라
  * Navigation 3 목적지가 아닌 이 화면의 로컬 상태로 관리한다(드로어에서 시작하는 회원탈퇴만 NavHost로 이동). */
 @Composable
 internal fun HeartGuardHomeRoute(
     homeViewModel: HomeViewModel,
-    onEmergencyClick: () -> Unit,
+    onManagerCallClick: () -> Unit,
     onFieldPhotoClick: () -> Unit,
-    onRecordHistoryClick: () -> Unit,
     onRecordClick: () -> Unit,
-    onChecklistClick: () -> Unit,
+    onProfileEditClick: () -> Unit,
+    onInquiryClick: () -> Unit,
+    onRecordHistoryClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
+    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val loadFailureMessage = stringResource(R.string.home_load_failure)
+    val retryActionLabel = stringResource(R.string.common_retry)
+
+    // 기록 저장 뒤나 앱을 다시 열었을 때 날씨·체크 완료가 갱신되도록 홈이 다시 보일 때마다 새로 조회한다.
+    LifecycleResumeEffect(homeViewModel) {
+        homeViewModel.refresh()
+        onPauseOrDispose {}
+    }
+
+    // 홈 조회에 실패하면 모든 값이 "--"로 남으므로, 빈 값과 구분되도록 실패를 알리고 재시도할 수 있게 한다.
+    LaunchedEffect(homeUiState) {
+        if (homeUiState is HomeUiState.Error) {
+            val snackbarResult =
+                snackbarHostState.showSnackbar(
+                    message = loadFailureMessage,
+                    actionLabel = retryActionLabel,
+                    duration = SnackbarDuration.Indefinite,
+                )
+            if (snackbarResult == SnackbarResult.ActionPerformed) {
+                homeViewModel.loadTeamSiteOverview()
+            }
+        }
+    }
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    val unsupportedFeatureMessage = stringResource(R.string.home_feature_unavailable)
-    val showUnsupportedFeatureMessage: () -> Unit = {
-        coroutineScope.launch {
-            snackbarHostState.showSnackbar(message = unsupportedFeatureMessage)
-        }
-        Unit
-    }
 
     val dialPhoneNumber = rememberPhoneDialLauncher()
-    val managerPhoneNumber = siteStatus.managerPhoneNumber
+    val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
 
     // 드로어가 열려 있을 때만 시스템 뒤로가기를 가로채 드로어를 닫는다. 닫혀 있으면 NavHost의 onBack이 처리한다.
     BackHandler(enabled = isMenuDrawerOpen) {
@@ -82,29 +107,29 @@ internal fun HeartGuardHomeRoute(
 
     Box(modifier = Modifier.fillMaxSize()) {
         HomeScreen(
-            currentTemperature = temperatureValueText(siteStatus.temperature),
+            currentTemperature = homeTemperatureText(siteStatus.temperature),
             feelsLikeTemperature = temperatureValueText(siteStatus.apparentTemperature),
             humidity = humidityValueText(siteStatus.humidity),
-            // TODO: 온도 변화량·날씨 상태는 API 명세에 필드가 없어 "--"로 표시한다. 필드가 추가되면 연결한다.
-            temperatureDelta = emptyValueText(),
-            isTemperatureIncreasing = null,
-            weatherValue = emptyValueText(),
+            temperatureDelta = temperatureValueText(siteStatus.temperatureDelta),
+            isTemperatureIncreasing = siteStatus.isTemperatureIncreasing,
+            weatherValue = skyStatusText(siteStatus.skyStatus),
+            weatherImageRes = skyStatusImageRes(siteStatus.skyStatus),
             riskLabel = heatLevelLabelText(siteStatus.heatLevel),
             nextCheckDescription = nextCheckDescriptionText(checkSchedule),
             checkTimelineItems = checkTimelineItems(checkSchedule),
-            isManagerCallEnabled = managerPhoneNumber != null,
+            isEmergencyCallEnabled = headquartersPhoneNumber != null,
             onMenuClick = {
                 isMenuDrawerOpen = true
+                menuDrawerViewModel.loadProfile()
             },
-            onNotificationClick = showUnsupportedFeatureMessage,
-            onManagerCallClick = {
-                managerPhoneNumber?.let(dialPhoneNumber)
+            onNotificationClick = onNotificationsClick,
+            onManagerCallClick = onManagerCallClick,
+            onEmergencyClick = {
+                headquartersPhoneNumber?.let(dialPhoneNumber)
             },
-            onEmergencyClick = onEmergencyClick,
             onFieldPhotoClick = onFieldPhotoClick,
             onRecordHistoryClick = onRecordHistoryClick,
             onRecordClick = onRecordClick,
-            onChecklistClick = onChecklistClick,
         )
 
         MenuDrawerOverlay(
@@ -117,14 +142,15 @@ internal fun HeartGuardHomeRoute(
                 profile = menuDrawerProfile,
                 onEvent = { event ->
                     when (event) {
-                        // 관련 화면이 연결되지 않은 메뉴는 기능 안내를 표시한다.
-                        MenuDrawerEvent.EditProfileClicked,
-                        MenuDrawerEvent.CustomerCenterClicked,
-                        -> Unit
+                        MenuDrawerEvent.EditProfileClicked -> {
+                            isMenuDrawerOpen = false
+                            onProfileEditClick()
+                        }
 
-                        MenuDrawerEvent.NotificationSettingsClicked,
-                        MenuDrawerEvent.NoticesClicked,
-                        -> showUnsupportedFeatureMessage()
+                        MenuDrawerEvent.InquiryClicked -> {
+                            isMenuDrawerOpen = false
+                            onInquiryClick()
+                        }
 
                         MenuDrawerEvent.LogoutClicked -> {
                             isMenuDrawerOpen = false
@@ -142,10 +168,60 @@ internal fun HeartGuardHomeRoute(
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
         )
     }
 }
+
+// 온도를 받지 못했으면 Figma 홈의 관측값 없음 표기("--.- °C")를 쓴다.
+@Composable
+@ReadOnlyComposable
+private fun homeTemperatureText(temperature: String?): String =
+    if (temperature == null) {
+        stringResource(R.string.home_temperature_empty)
+    } else {
+        temperatureValueText(temperature)
+    }
+
+@Composable
+@ReadOnlyComposable
+private fun skyStatusText(skyStatus: SkyStatus?): String =
+    when (skyStatus) {
+        SkyStatus.CLEAR -> stringResource(R.string.home_sky_clear)
+
+        SkyStatus.PARTLY_CLOUDY -> stringResource(R.string.home_sky_partly_cloudy)
+
+        SkyStatus.CLOUDY -> stringResource(R.string.home_sky_cloudy)
+
+        SkyStatus.RAIN -> stringResource(R.string.home_sky_rain)
+
+        SkyStatus.SNOW -> stringResource(R.string.home_sky_snow)
+
+        SkyStatus.UNKNOWN,
+        null,
+        -> emptyValueText()
+    }
+
+// 눈 전용 이미지가 없어 눈·미입력은 기본 홈 날씨 이미지를 쓴다.
+@DrawableRes
+private fun skyStatusImageRes(skyStatus: SkyStatus?): Int =
+    when (skyStatus) {
+        SkyStatus.CLEAR -> R.drawable.weather_sunny
+
+        SkyStatus.CLOUDY -> R.drawable.weather_cloud
+
+        SkyStatus.RAIN -> R.drawable.weather_rain
+
+        SkyStatus.PARTLY_CLOUDY,
+        SkyStatus.SNOW,
+        SkyStatus.UNKNOWN,
+        null,
+        -> R.drawable.heartguard_home_weather
+    }
 
 private val nextCheckTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -183,7 +259,7 @@ private fun nextCheckDescriptionText(checkSchedule: CheckSchedule?): String {
     }
 }
 
-// 서버 체크 시각으로 타임라인 항목을 만든다. 체크 완료 여부는 API에 없어 모두 미완료로 두고, 다음 체크만 강조한다.
+// 서버 체크 시각으로 타임라인 항목을 만든다. 완료 여부는 오늘 기록 측정 시각으로 판정한 값이며, 다음 체크를 강조한다.
 @Composable
 @ReadOnlyComposable
 private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelineItem> {
@@ -194,7 +270,7 @@ private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelin
     return checkSchedule.checkTimes.map { checkTime ->
         CheckTimelineItem(
             timeLabel = checkTimeLabelText(checkTime),
-            isCompleted = false,
+            isCompleted = checkTime in checkSchedule.completedCheckTimes,
             isCurrent = checkTime == checkSchedule.nextCheckTime,
         )
     }
@@ -203,12 +279,11 @@ private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelin
 // 정시는 "09시", 그 외에는 "09:30"처럼 보여준다.
 @Composable
 @ReadOnlyComposable
-private fun checkTimeLabelText(checkTime: LocalTime): String {
-    return if (checkTime.minute == 0) {
+private fun checkTimeLabelText(checkTime: LocalTime): String =
+    if (checkTime.minute == 0) {
         stringResource(R.string.home_check_time_hour_format, checkTime.hour)
     } else {
         checkTime.format(nextCheckTimeFormatter)
     }
-}
 
 private const val MINUTES_PER_HOUR = 60L

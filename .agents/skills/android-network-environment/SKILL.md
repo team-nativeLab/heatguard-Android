@@ -1,6 +1,6 @@
 ---
 name: android-network-environment
-description: Android의 BuildConfig, product flavor, Retrofit, OkHttpClient, Interceptor, Authenticator, 서버 URL, WebSocket URL, timeout, 네트워크 로그, API key 환경 구성을 추가하거나 수정할 때 사용한다.
+description: Android의 BuildConfig, product flavor, Retrofit, OkHttpClient, Interceptor, Authenticator, 서버 URL, WebSocket URL, timeout, 네트워크 로그, API key 환경 구성, 민감 정보(local.properties·.gitignore·서명 키) 관리를 추가하거나 수정할 때 사용한다.
 ---
 
 # Android Network and Build Environment
@@ -53,10 +53,63 @@ feature 코드에 주소와 환경 값을 직접 작성하지 않는다.
 ## 필수 보안 원칙
 
 - 민감값을 Git에 커밋하지 않는다.
-- `local.properties`, 환경 변수, CI secret, Gradle property 등에서 주입한다.
+- 로컬은 `local.properties`, CI는 환경 변수(CI secret)에서 주입한다. 세부 규칙은 아래 "민감 정보와 local.properties"를 따른다.
 - BuildConfig 값은 최종 APK에서 추출될 수 있다고 가정한다.
 - 진짜 비밀키는 앱에 넣지 않고 backend proxy 또는 서버에 보관한다.
 - 운영 빌드에서는 상세 HTTP body logging을 끈다.
+
+## 민감 정보와 local.properties
+
+### 저장 위치
+
+- API 키, 서명 비밀번호, keystore 경로처럼 Git에 올리면 안 되는 값은 프로젝트 루트의 `local.properties`에만 둔다.
+- `.env`, `secrets.properties` 같은 별도 비밀 파일을 새로 만들지 않는다. 비밀값 저장 위치를 `local.properties` 하나로 유지한다.
+- 키 이름은 대문자 스네이크 케이스로 쓰고 값에 따옴표를 넣지 않는다. 예: `KAKAO_NATIVE_APP_KEY=abc123`, `RELEASE_STORE_PASSWORD=...`
+
+### Git 제외 확인
+
+- 작업 전 `.gitignore`에 `/local.properties`, `*.jks`, `*.keystore`가 있는지 확인하고, 없으면 추가한다.
+- `git ls-files local.properties`로 이미 추적 중인지 확인한다. 추적 중이면 `git rm --cached local.properties`로 추적을 해제하고, 이미 올라간 키는 노출된 것으로 보고 교체가 필요하다고 사용자에게 알린다.
+- 커밋 전 `git status`와 `git diff --cached`로 민감값이 포함되지 않았는지 다시 확인한다.
+
+### 읽는 위치와 전달 경로
+
+- `local.properties`는 모듈의 `build.gradle.kts` 한 곳에서 `Properties()`로 읽는다. 앱 코드에서 파일을 직접 읽지 않는다.
+- 앱 코드가 쓰는 값은 `buildConfigField` 또는 `manifestPlaceholders`로만 전달한다. 앱 코드는 `BuildConfig` 필드를 단일 진입점으로 사용한다.
+- 서명 비밀번호처럼 앱 실행에 필요 없는 값은 `buildConfigField`로 노출하지 않고 `signingConfigs`에서만 사용한다.
+- 값은 `local.properties` → 없으면 같은 이름의 환경 변수(`System.getenv`, CI secret) 순서로 읽는다. 둘 다 없으면 debug는 빈 값과 경고로 빌드하고, release는 빌드를 실패시키거나 서명 생략을 경고한다.
+- 새 Gradle 플러그인(secrets-gradle-plugin 등)을 추가하지 않고 기본 `java.util.Properties`로 처리한다.
+
+```kotlin
+val localSecretProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { inputStream -> load(inputStream) }
+    }
+}
+
+/** local.properties → 환경 변수(CI secret) 순서로 민감값을 읽는다. 둘 다 없으면 null. */
+fun readSecret(secretKey: String): String? {
+    return localSecretProperties.getProperty(secretKey)
+        ?: System.getenv(secretKey)
+}
+
+android {
+    defaultConfig {
+        val kakaoNativeAppKey = readSecret("KAKAO_NATIVE_APP_KEY").orEmpty()
+        if (kakaoNativeAppKey.isBlank()) {
+            logger.warn("KAKAO_NATIVE_APP_KEY가 local.properties와 환경 변수에 없습니다.")
+        }
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoNativeAppKey\"")
+    }
+}
+```
+
+### 필요한 키 목록 공유
+
+- 새 민감값을 추가하면 README의 "환경 설정" 절에 키 이름, 용도, 발급 위치를 값 없이 기록한다. 새 개발자가 이 목록을 보고 자신의 `local.properties`를 채운다.
+- CI를 쓰면 같은 키 이름으로 CI secret을 등록하도록 README에 함께 적는다.
+- 실제 값은 README, 이슈, PR, 커밋 메시지, 로그, 코드 주석 어디에도 쓰지 않는다.
 
 ## URL 규칙
 
@@ -146,6 +199,8 @@ ViewModel ──────┘
 - Base URL이 `/`로 끝난다.
 - 운영 로그가 비활성화된다.
 - 비밀키가 APK에 안전하다고 오해하는 설명이 없다.
+- 민감값이 `local.properties` 또는 CI secret에만 있고, `local.properties`·keystore 파일이 `.gitignore`에 있어 Git에 추적되지 않는다.
+- 새로 추가한 민감값의 키 이름과 용도가 README "환경 설정" 절에 값 없이 기록되어 있다.
 - Retrofit, OkHttp, ApiService의 Hilt provider가 중복되지 않는다.
 - 인증 필요 여부에 따라 ApiService가 올바른 Retrofit을 주입받고, 공개 endpoint에 Authorization Header가 붙지 않는다.
 - token refresh 정책이 한 곳에 있다.

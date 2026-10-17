@@ -5,39 +5,40 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.session.SessionEvent
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionState
-import com.nativelap.heartguard.core.session.SessionToken
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** 앱 최상위 Route(HeartGuardNavHost)가 SessionManager의 인증 상태를 단일 진입점으로 구독하도록 감싼다. */
 @HiltViewModel
-internal class HeartGuardSessionViewModel @Inject constructor(
-    private val sessionManager: SessionManager,
-) : ViewModel() {
-    val sessionState: StateFlow<SessionState> = sessionManager.sessionState
+internal class HeartGuardSessionViewModel
+    @Inject
+    constructor(
+        private val sessionManager: SessionManager,
+    ) : ViewModel() {
+        val sessionState: StateFlow<SessionState> = sessionManager.sessionState
 
-    val sessionEvents: SharedFlow<SessionEvent> = sessionManager.sessionEvents
+        val sessionEvents: SharedFlow<SessionEvent> = sessionManager.sessionEvents
 
-    init {
-        // 앱 시작 시 저장된 토큰 존재 여부로 초기 인증 상태(Authenticated/Unauthenticated)를 판별한다.
-        viewModelScope.launch {
-            sessionManager.initialize()
+        // 토큰은 화면에 노출하지 않고, 계정 전환마다 메인 흐름을 새로 만들 기준인 세대만 공개한다.
+        val sessionGeneration: StateFlow<Long> =
+            sessionManager.sessionSnapshot
+                .map { sessionSnapshot -> sessionSnapshot.generation }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = sessionManager.getSnapshot().generation,
+                )
+
+        init {
+            // 앱 시작 시 저장된 토큰 존재 여부로 초기 인증 상태(Authenticated/Unauthenticated)를 판별한다.
+            viewModelScope.launch {
+                sessionManager.initialize()
+            }
         }
     }
-
-    /** 로그인 화면에서 로그인이 성공했을 때 세션을 Authenticated로 전환한다.
-     * TODO: 실제 로그인 API가 연결되면 서버가 내려주는 access token으로 교체해야 한다.
-     * 지금은 로그인 API 자체가 없어 화면 흐름만 검증 가능한 placeholder token을 사용한다. */
-    fun onLoginSucceeded() {
-        viewModelScope.launch {
-            sessionManager.onLoginSucceeded(SessionToken(accessToken = PLACEHOLDER_ACCESS_TOKEN))
-        }
-    }
-
-    private companion object {
-        const val PLACEHOLDER_ACCESS_TOKEN = "placeholder-access-token"
-    }
-}

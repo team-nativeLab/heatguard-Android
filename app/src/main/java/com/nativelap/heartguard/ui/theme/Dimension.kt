@@ -14,7 +14,7 @@ object HeartGuardSpacing {
     val RecordFieldInset = 6.dp
     val EmergencyAlertHorizontal = 19.dp
     val EmergencyContactIndent = 7.dp
-    val AuthHorizontal = 40.dp
+    val AuthHorizontal = 12.dp
     val AuthTop = 142.dp
     val AuthLogoTitle = 20.dp
     val AuthTitleForm = 31.dp
@@ -61,15 +61,6 @@ object HeartGuardSpacing {
     val Compact = 8.dp
     val Tight = 4.dp
     val Hairline = 1.dp
-    val ChecklistChipGap = 6.dp
-    val ChecklistChipHorizontal = 10.dp
-    val ChecklistChipVertical = 6.dp
-    val ChecklistSummaryVertical = 18.dp
-    val ChecklistSectionGap = 14.dp
-    val ChecklistItemHorizontal = 16.dp
-    val ChecklistItemTextGap = 12.dp
-    val DialogBottom = 20.dp
-    val DialogActionGap = 12.dp
 }
 
 object HeartGuardRadius {
@@ -122,10 +113,23 @@ object HeartGuardIconSize {
     val EmergencyCallInner = 110.dp
     val EmergencyCallGlyph = 42.dp
     val PhotoError = 68.dp
+    val RecordHistoryType = 44.dp
+    val EmptyStateIllustration = 72.dp
 }
 
 object HeartGuardComponentSize {
-    val ResponsiveContentMaxWidth = 600.dp
+    // 목록 끝에서 다음 페이지를 받는 동안 보이는 작은 진행 표시다.
+    val ListLoadingIndicator = 24.dp
+
+    // 스크롤 Column에서 끝까지 이만큼 남았을 때 다음 페이지를 미리 요청한다.
+    val ListLoadMorePrefetchDistance = 200.dp
+
+    // 홈 날씨 지표 3개를 가로로 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 세로로 쌓는다.
+    val HomeMetricRowMinWidth = 260.dp
+
+    // 기록 건수 4칸을 한 줄에 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 2×2로 나눈다.
+    val HistoryCountRowMinWidth = 240.dp
+    val PageContentMaxWidth = 600.dp
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
     val AuthContentMaxWidth = 280.dp
@@ -134,6 +138,7 @@ object HeartGuardComponentSize {
     val TextFieldHeight = 48.dp
     val CompactInputHeight = 40.dp
     val TouchTarget = 48.dp
+
     // Figma 카드의 콘텐츠가 잘리지 않도록 최소 높이만 제공하고, 긴 텍스트에는 높이를 열어 둔다.
     val RecordOptionMinHeight = 110.dp
     val CameraAction = 64.dp
@@ -148,6 +153,7 @@ object HeartGuardComponentSize {
     val TemperatureErrorMessageMaxWidth = 180.dp
     val PhotoSelectionTitleMaxWidth = 200.dp
     val PhotoCaptureTextMaxWidth = 220.dp
+
     // 온도 기록 화면의 현장 사진 선택 영역은 작업·휴식 사진 카드보다 낮은 Figma 컴포넌트다.
     val FieldPhotoSelectionHeight = 104.dp
     val PhotoMemoMinHeight = 114.dp
@@ -156,6 +162,8 @@ object HeartGuardComponentSize {
     val EmergencyAlertHeight = 73.dp
     val EmergencyDescriptionMaxWidth = 180.dp
     val HomeActionCardHeight = 148.dp
+    val ProfileAvatar = 72.dp
+    val InquiryBodyFieldHeight = 140.dp
     val HomeWeatherMetricHeight = 78.dp
     val HomeWeatherIllustrationWidth = 159.dp
     val HomeWeatherIllustrationHeight = 121.dp
@@ -163,16 +171,15 @@ object HeartGuardComponentSize {
     val MenuDrawerWidth = 300.dp
     val DialogMaxWidth = 322.dp
     val HomeTimelineMinHeight = 136.dp
-    val ChecklistProgressHeight = 6.dp
-    val ChecklistItemRowHeight = 55.dp
-    val RecordCancelDialogMinHeight = 280.dp
     val HomeContactHeight = 130.dp
     val EmergencyContactHeight = 143.dp
     val HomeAdditionalRecordHeight = 69.dp
     val TemperatureDeltaMinWidth = 72.dp
     val ResultMessageHeight = 218.dp
-    val ResultSummaryHeight = 261.dp
     val ResultErrorDetailHeight = 123.dp
+
+    // Figma 22 기록 상세 정보 카드의 행 높이다.
+    val DetailInfoRowHeight = 45.dp
 }
 
 object HeartGuardOverlayBlur {
@@ -211,7 +218,6 @@ object HeartGuardFontSize {
     val ResultSummaryLabel = 14.sp
     val ResultSummaryValue = 12.sp
     val HeroTemperature = 40.sp
-    val HeroTemperatureCompact = 32.sp
     val TemperatureSummary = 32.sp
     val RecordOptionTitle = 16.sp
     val RecordOptionDescription = 14.sp
@@ -221,13 +227,12 @@ object HeartGuardFontSize {
     val TemperatureDelta = 9.sp
     val TimelineLabel = 9.5.sp
     val MenuProfileName = 18.sp
+    val ProfileAvatar = 26.sp
     val MenuItem = 15.sp
     val MenuProfileEmail = 12.sp
     val WithdrawTitle = 22.sp
     val CardTitle = 15.sp
     val DialogTitle = 20.sp
-    val DialogTitleLineHeight = 24.sp
-    val DialogBody = 14.sp
     val BodyLineHeight = 20.sp
     val EmergencyDescription = 15.sp
     val EmergencyContactTitle = 15.sp

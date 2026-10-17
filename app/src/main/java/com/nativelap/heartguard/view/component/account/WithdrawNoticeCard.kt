@@ -49,12 +49,13 @@ fun WithdrawNoticeCard(
                 horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(HeartGuardIconSize.WarningBadge)
-                        .background(
-                            color = MaterialTheme.extraColors.dangerContainer,
-                            shape = CircleShape,
-                        ),
+                    modifier =
+                        Modifier
+                            .size(HeartGuardIconSize.WarningBadge)
+                            .background(
+                                color = MaterialTheme.extraColors.dangerContainer,
+                                shape = CircleShape,
+                            ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -68,10 +69,11 @@ fun WithdrawNoticeCard(
                 Text(
                     text = title,
                     color = MaterialTheme.extraColors.strongText,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontSize = HeartGuardFontSize.CardTitle,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontSize = HeartGuardFontSize.CardTitle,
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
             }
 
@@ -89,22 +91,24 @@ private fun WithdrawNoticeLine(text: String) {
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
     ) {
         Box(
-            modifier = Modifier
-                .padding(top = HeartGuardSpacing.Compact)
-                .size(HeartGuardIconSize.Bullet)
-                .background(
-                    color = MaterialTheme.extraColors.tertiaryText,
-                    shape = CircleShape,
-                ),
+            modifier =
+                Modifier
+                    .padding(top = HeartGuardSpacing.Compact)
+                    .size(HeartGuardIconSize.Bullet)
+                    .background(
+                        color = MaterialTheme.extraColors.tertiaryText,
+                        shape = CircleShape,
+                    ),
         )
 
         Text(
             text = text,
             modifier = Modifier.weight(1f),
             color = MaterialTheme.extraColors.secondaryText,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                lineHeight = HeartGuardFontSize.BodyLineHeight,
-            ),
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    lineHeight = HeartGuardFontSize.BodyLineHeight,
+                ),
         )
     }
 }
@@ -115,11 +119,12 @@ private fun WithdrawNoticeCardPreview() {
     HeartGuardTheme {
         WithdrawNoticeCard(
             title = "유의사항",
-            noticeLines = listOf(
-                "계정 정보(이름, 이메일, 회사명)는 즉시 삭제되며 복구할 수 없어요",
-                "온도계 기록·현장 사진 등 작업 기록은 관계 법령에 따라 회사에 일정 기간 보관될 수 있어요",
-                "탈퇴 후 같은 이메일로 다시 가입해도 이전 기록은 연결되지 않아요",
-            ),
+            noticeLines =
+                listOf(
+                    "계정 정보(이름, 이메일, 회사명)는 즉시 삭제되며 복구할 수 없어요",
+                    "온도계 기록·현장 사진 등 작업 기록은 관계 법령에 따라 회사에 일정 기간 보관될 수 있어요",
+                    "탈퇴 후 같은 이메일로 다시 가입해도 이전 기록은 연결되지 않아요",
+                ),
         )
     }
 }

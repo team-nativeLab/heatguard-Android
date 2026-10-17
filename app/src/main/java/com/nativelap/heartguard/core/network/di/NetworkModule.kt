@@ -6,24 +6,27 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     @Provides
     @Singleton
-    fun provideJson(): Json = Json {
-        ignoreUnknownKeys = true
-    }
+    fun provideJson(): Json =
+        Json {
+            ignoreUnknownKeys = true
+        }
 
     @Provides
     @Singleton
     @UnauthenticatedApiClient
-    fun provideUnauthenticatedApiClient(): OkHttpClient = OkHttpClient.Builder()
-        .build()
+    fun provideUnauthenticatedApiClient(): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .build()
 
     @Provides
     @Singleton
@@ -31,15 +34,18 @@ object NetworkModule {
     fun provideAuthenticatedApiClient(
         bearerTokenInterceptor: BearerTokenInterceptor,
         bearerTokenAuthenticator: BearerTokenAuthenticator,
-    ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(bearerTokenInterceptor)
-        .authenticator(bearerTokenAuthenticator)
-        .build()
+    ): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .addInterceptor(bearerTokenInterceptor)
+            .authenticator(bearerTokenAuthenticator)
+            .build()
 
     @Provides
     @Singleton
     @ExternalUploadClient
-    fun provideExternalUploadClient(): OkHttpClient = OkHttpClient.Builder()
-        .build()
-
+    fun provideExternalUploadClient(): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .build()
 }

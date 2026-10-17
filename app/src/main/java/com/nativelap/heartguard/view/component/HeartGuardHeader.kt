@@ -43,10 +43,11 @@ fun HeartGuardHeader(
     val headerHorizontalPadding = HeartGuardSpacing.HeaderHorizontal - headerActionTouchInset
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.TouchTarget)
-            .padding(horizontal = headerHorizontalPadding),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                .padding(horizontal = headerHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HeartGuardHeaderActionButton(
@@ -56,9 +57,10 @@ fun HeartGuardHeader(
         )
 
         Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = HeartGuardSpacing.Compact),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = HeartGuardSpacing.Compact),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -66,11 +68,12 @@ fun HeartGuardHeader(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = HeartGuardFontSize.PageTitle,
-                    lineHeight = HeartGuardFontSize.PageTitle,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = HeartGuardFontSize.PageTitle,
+                        lineHeight = HeartGuardFontSize.PageTitle,
+                    ),
             )
         }
 

@@ -1,46 +1,106 @@
 package com.nativelap.heartguard.view.route.emergency
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.view.component.valueOrEmptyText
-import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
-import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
+import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.view.screen.emergency.CallingScreen
 import com.nativelap.heartguard.view.screen.emergency.EmergencyScreen
+import com.nativelap.heartguard.viewmodel.emergency.EmergencyEffect
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
+import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 
-/** 긴급 화면의 현장 관리자 연락처와 호출 취소 Navigation callback을 연결한다.
- * 화면 진입 시 [emergencyViewModel]로 긴급호출을 등록하고 상태 폴링을 시작한다.
- * 연락처는 팀 현장페이지 응답의 관리자 번호(site.managerPhone)이며, 받지 못했으면 "--"로 두고 전화 걸기를 막는다. */
+/** 긴급 화면(03)이다. "긴급 호출하기"를 눌러야 호출을 등록하고, 등록되면 호출 중 화면으로 이동한다.
+ * 이미 진행 중인 호출이 있으면 NavHost가 이 화면 대신 호출 중 화면으로 보낸다.
+ * 연락처는 홈 조회의 관리자 번호(site.managerPhone)이며, 없으면 "--"로 두고 전화 걸기를 막는다. */
 @Composable
 internal fun HeartGuardEmergencyRoute(
     emergencyViewModel: EmergencyViewModel,
     homeViewModel: HomeViewModel,
-    onCallClick: () -> Unit,
+    onCallStarted: () -> Unit,
     onCancelClick: () -> Unit,
 ) {
-    LaunchedEffect(Unit) {
-        emergencyViewModel.registerEmergencyCallIfNeeded()
-    }
-
+    val uiState by emergencyViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val dialPhoneNumber = rememberPhoneDialLauncher()
     val managerPhoneNumber = siteStatus.managerPhoneNumber
+    val currentOnCallStarted by rememberUpdatedState(onCallStarted)
+    val currentOnCancelClick by rememberUpdatedState(onCancelClick)
+
+    CollectEmergencyEffects(
+        emergencyViewModel = emergencyViewModel,
+        onCallStarted = { currentOnCallStarted() },
+        onCallClosed = { currentOnCancelClick() },
+    )
+
+    // 등록 요청 중에는 뒤로가기로 시트를 닫지 않는다(응답 전에 닫으면 호출 결과를 놓친다).
+    BackHandler {
+        if (!uiState.isRegistering) {
+            onCancelClick()
+        }
+    }
 
     EmergencyScreen(
         contactName = stringResource(R.string.emergency_contact_name),
         phoneNumber = valueOrEmptyText(managerPhoneNumber),
         isContactCallEnabled = managerPhoneNumber != null,
-        onCallClick = onCallClick,
-        // 호출 취소는 진행 중인 알림·폴링을 정리한 뒤에만 이전 화면으로 돌아간다.
+        isRegistering = uiState.isRegistering,
+        hasRegistrationFailed = uiState.hasRegistrationFailed,
+        onCallClick = emergencyViewModel::startEmergencyCall,
+        onCancelClick = onCancelClick,
+        onContactClick = {
+            managerPhoneNumber?.let(dialPhoneNumber)
+        },
+    )
+}
+
+/** 호출 중 화면(04)이다. 폴링한 서버 상태로 관리자 확인(연결됨)을 보여주고, 취소·종료 또는 관리자 종료 시 홈으로 돌아간다.
+ * 호출 식별자가 없으면(이어받기 전) 취소·종료 버튼을 누를 수 없다. */
+@Composable
+internal fun HeartGuardCallingRoute(
+    emergencyViewModel: EmergencyViewModel,
+    homeViewModel: HomeViewModel,
+    onCallClosed: () -> Unit,
+) {
+    val uiState by emergencyViewModel.uiState.collectAsStateWithLifecycle()
+    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
+    val dialPhoneNumber = rememberPhoneDialLauncher()
+    val managerPhoneNumber = siteStatus.managerPhoneNumber
+    val currentOnCallClosed by rememberUpdatedState(onCallClosed)
+
+    CollectEmergencyEffects(
+        emergencyViewModel = emergencyViewModel,
+        onCallStarted = {},
+        onCallClosed = { currentOnCallClosed() },
+    )
+
+    BackHandler {
+        emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+    }
+
+    CallingScreen(
+        isConnected = uiState.isConnected,
+        contactName = stringResource(R.string.emergency_contact_name),
+        phoneNumber = valueOrEmptyText(managerPhoneNumber),
+        isContactCallEnabled = managerPhoneNumber != null,
+        isUpdatingStatus = !uiState.canControlCall,
+        statusUpdateError = uiState.statusUpdateFailed,
+        isConnectionUnstable = uiState.isConnectionUnstable,
         onCancelClick = {
-            emergencyViewModel.reset()
-            onCancelClick()
+            emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        },
+        onEndClick = {
+            emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.COMPLETED)
         },
         onContactClick = {
             managerPhoneNumber?.let(dialPhoneNumber)
@@ -48,33 +108,28 @@ internal fun HeartGuardEmergencyRoute(
     )
 }
 
-/** 호출 대기 Screen을 표시하고 취소·종료 목적지 callback을 전달한다.
- * [emergencyViewModel]이 폴링한 실제 상태(ACKNOWLEDGED)로 "연결됨" 화면을 보여준다. */
+// 긴급호출 일회성 결과는 화면이 보이는 동안에만 수집한다. 두 Route 중 화면에 올라온 쪽 하나만 수집한다.
 @Composable
-internal fun HeartGuardCallingRoute(
+private fun CollectEmergencyEffects(
     emergencyViewModel: EmergencyViewModel,
-    homeViewModel: HomeViewModel,
-    onCancelClick: () -> Unit,
-    onEndClick: () -> Unit,
+    onCallStarted: () -> Unit,
+    onCallClosed: () -> Unit,
 ) {
-    val uiState by emergencyViewModel.uiState.collectAsStateWithLifecycle()
-    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
-    val dialPhoneNumber = rememberPhoneDialLauncher()
-    val managerPhoneNumber = siteStatus.managerPhoneNumber
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnCallStarted by rememberUpdatedState(onCallStarted)
+    val currentOnCallClosed by rememberUpdatedState(onCallClosed)
 
-    CallingScreen(
-        isConnected = uiState.status.state == EmergencyCallState.ACKNOWLEDGED,
-        contactName = stringResource(R.string.emergency_contact_name),
-        phoneNumber = valueOrEmptyText(managerPhoneNumber),
-        isContactCallEnabled = managerPhoneNumber != null,
-        onCancelClick = onCancelClick,
-        // 통화 종료는 폴링을 정리한 뒤에만 홈으로 돌아간다.
-        onEndClick = {
-            emergencyViewModel.reset()
-            onEndClick()
-        },
-        onContactClick = {
-            managerPhoneNumber?.let(dialPhoneNumber)
-        },
-    )
+    LaunchedEffect(emergencyViewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            emergencyViewModel.effects.collect { emergencyEffect ->
+                if (!emergencyViewModel.isCurrentEffect(emergencyEffect)) {
+                    return@collect
+                }
+                when (emergencyEffect) {
+                    is EmergencyEffect.CallStarted -> currentOnCallStarted()
+                    is EmergencyEffect.CallClosed -> currentOnCallClosed()
+                }
+            }
+        }
+    }
 }

@@ -9,15 +9,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.view.component.humidityValueText
-import com.nativelap.heartguard.view.component.temperatureValueText
-import com.nativelap.heartguard.viewmodel.home.HomeViewModel
-import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.component.RecordTypeSelectionSheet
+import com.nativelap.heartguard.view.component.humidityValueText
 import com.nativelap.heartguard.view.component.recordTypeOptions
+import com.nativelap.heartguard.view.component.temperatureValueText
 import com.nativelap.heartguard.view.screen.temperature.TemperatureRecordScreen
+import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
+import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
+import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 
 /** 기록 유형 선택 overlay의 선택 상태를 관리하고 선택 결과를 상위 Navigation에 전달한다.
  * 새 기록을 시작하는 진입점이므로, 진입 시 [recordDraftViewModel]을 초기화해 이전 시도의
@@ -50,9 +51,9 @@ internal fun HeartGuardRecordTypeSelectionRoute(
     )
 }
 
-/** 온도계 기록 화면이다. 상단 현재 온도는 팀 현장페이지 응답 값이며(없으면 "--"), 직접 입력 값은 [recordDraftViewModel]과 공유한다.
+/** 온도계 기록 화면이다. 상단 현재 온도는 작업자 홈 응답 값이며(없으면 "--"), 직접 입력 값은 [recordDraftViewModel]과 공유한다.
  * "기록 저장"은 확인 화면 없이 바로 기록을 등록하고 결과에 따라 [onSaveSuccess]/[onSaveFailure]로 이동한다.
- * 온도계가 없으면 직접 입력한 값과 현장 사진이 모두 있어야 하고, 설치된 기기는 서버에서 측정값을 받아야 저장할 수 있다. */
+ * 직접 입력 온도·습도와 함께 현장 사진을 첨부해 저장한다. */
 @Composable
 internal fun HeartGuardTemperatureRecordRoute(
     recordDraftViewModel: RecordDraftViewModel,
@@ -60,17 +61,22 @@ internal fun HeartGuardTemperatureRecordRoute(
     onFieldPhotoClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
+    onMenuClick: () -> Unit,
+    onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
-    val submitRecord = rememberRecordSubmitter(
-        recordDraftViewModel = recordDraftViewModel,
-        onSaveSuccess = onSaveSuccess,
-        onSaveFailure = onSaveFailure,
-    )
+    val submitRecord =
+        rememberRecordSubmitter(
+            recordDraftViewModel = recordDraftViewModel,
+            onSaveSuccess = onSaveSuccess,
+            onSaveFailure = onSaveFailure,
+        )
 
     TemperatureRecordScreen(
+        onMenuClick = onMenuClick,
+        onNotificationClick = onNotificationClick,
         currentTemperature = temperatureValueText(siteStatus.temperature),
         humidity = humidityValueText(siteStatus.humidity),
         feelsLikeTemperature = temperatureValueText(siteStatus.apparentTemperature),
@@ -78,12 +84,10 @@ internal fun HeartGuardTemperatureRecordRoute(
         humidityText = draftState.humidityText,
         isManualInputEnabled = draftState.isManualInputEnabled,
         selectedFieldPhotoCount = draftState.fieldPhotoUris.size,
-        isSaveEnabled = (if (draftState.isManualInputEnabled) {
-            draftState.canSubmitTemperatureRecord
-        } else {
-            siteStatus.temperature != null && siteStatus.humidity != null
-        }) &&
-            submissionState !is RecordSubmissionState.Submitting,
+        isSaveEnabled =
+            draftState.canSubmitTemperatureRecord &&
+                draftState.fieldPhotoUris.isNotEmpty() &&
+                submissionState.canAttemptSubmission,
         onTemperatureChange = recordDraftViewModel::updateTemperatureText,
         onHumidityChange = recordDraftViewModel::updateHumidityText,
         onManualInputChange = recordDraftViewModel::updateManualInputEnabled,
