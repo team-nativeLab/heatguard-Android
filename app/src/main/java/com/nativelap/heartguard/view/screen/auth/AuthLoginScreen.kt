@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,6 +61,7 @@ fun AuthLoginScreen(
     passwordErrorMessage: String? = null,
     statusMessage: String? = null,
     isSubmitting: Boolean = false,
+    onSignUpClick: () -> Unit = {},
 ) {
     // 이전 앱에서 열려 있던 키보드 inset이 진입 직후 잠깐 남아도 키보드 레이아웃으로 바뀌지 않도록
     // 로그인 입력칸에 포커스가 있을 때만 키보드가 열린 것으로 본다.
@@ -203,6 +205,13 @@ fun AuthLoginScreen(
                     onClick = onLoginClick,
                     isEnabled = !isSubmitting,
                 )
+
+                TextButton(onClick = onSignUpClick) {
+                    Text(
+                        text = stringResource(R.string.auth_signup_link),
+                        color = MaterialTheme.extraColors.authPrimary,
+                    )
+                }
 
                 if (statusMessage != null) {
                     Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
