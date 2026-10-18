@@ -28,6 +28,7 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
@@ -143,11 +144,24 @@ private fun HeartGuardAuthNavDisplay() {
         entryProvider =
             entryProvider {
                 entry<HeartGuardDestination.Login> {
-                    HeartGuardLoginRoute()
+                    HeartGuardLoginRoute(
+                        onNavigateToSignUp = {
+                            backStack.add(HeartGuardDestination.SignUpForm)
+                        },
+                    )
                 }
                 entry<HeartGuardDestination.SignUp> {
                     // 이전 버전에서 저장된 가입 NavKey가 복원돼도 가입 화면은 다시 노출하지 않는다.
                     HeartGuardLoginRoute()
+                }
+                entry<HeartGuardDestination.SignUpForm> {
+                    HeartGuardSignUpRoute(
+                        onNavigateToLogin = {
+                            if (backStack.size > 1) {
+                                backStack.removeLastOrNull()
+                            }
+                        },
+                    )
                 }
             },
     )
