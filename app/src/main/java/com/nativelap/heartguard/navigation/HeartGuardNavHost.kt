@@ -235,6 +235,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // 앱을 다시 열었을 때 서버에 진행 중인 긴급호출이 있으면 이어받아, 홈의 "긴급 전화"가 새 호출 대신 그 호출로 이어지게 한다.
     // 홈 조회가 끝날 때마다 다시 확인해, 이어받기가 한 번 실패해도 응답 내용과 상관없이 다음 새로고침에서 복구한다.
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val homeRefreshCompletionCount by homeViewModel.refreshCompletionCount.collectAsStateWithLifecycle()
     val hasServerActiveEmergencyCall =
         (homeUiState as? HomeUiState.Success)
@@ -417,7 +418,6 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                             backStack.add(HeartGuardDestination.RecordHistory)
                         },
                         onChecklistClick = {
-                            checklistViewModel.resetDemoState()
                             backStack.add(HeartGuardDestination.Checklist)
                         },
                         onNotificationsClick = {
@@ -431,6 +431,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 entry<HeartGuardDestination.Checklist> {
                     ChecklistRoute(
                         checklistViewModel = checklistViewModel,
+                        checkSchedule = checkSchedule,
                         onBackClick = ::goBack,
                         onCompleteClick = ::goHome,
                     )

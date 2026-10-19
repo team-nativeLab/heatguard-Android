@@ -72,7 +72,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `PATCH /api/v1/team/notifications/{notificationId}/read` | 연결 | 본인에게 공개된 알림 한 건을 사용자별로 읽음 처리합니다. body 없이 요청하며 응답은 `{notificationId, read, readAt}`입니다. |
 | `PATCH /api/v1/team/notifications/read-all` | 연결 | Query·Body 없이 본인의 모든 분류·페이지 알림을 읽음 처리합니다. 응답 `{updatedCount, unreadCount}`를 반영하고 목록을 유지한 채 현재 분류 첫 페이지를 재조회합니다. 재조회 실패는 기존 데이터와 읽음 결과를 보존하며 GET만 재시도합니다. 개별 읽음과 겹친 목록 조회는 처리 완료까지 대기하고, 앱 복귀 조회는 최소 5초 간격으로 실행합니다. 처리 중 재진입·연타를 차단하고 세션 종료 시 요청을 취소·무효화합니다. |
 | `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
-| `GET /team/checklist`, `PUT /team/checklist/items/{itemId}` | 미연결 | 작업자 앱에 체크리스트 화면을 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
+| `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
 
 알림·기록 내역·홈·긴급 호출·문의·프로필 변경의 RemoteDataSource는 성공 envelope의 `success`·`error`·필수 `data`를 검증하며, 모순되거나 누락된 응답을 성공으로 표시하지 않습니다. 정상 빈 목록과 현재 호출 `NONE`/`callId=null`은 유지합니다. 비밀번호 변경은 오류 없는 `success=true/data=null` 응답과 호환되며, Unit 응답인 로그아웃·회원탈퇴에는 필수-data 검증을 적용하지 않습니다. HTTP 200의 명시적 거절 코드가 HTTP 상태별 화면 안내와 같은 의미인지 여부는 서버 계약 확인이 필요합니다.
