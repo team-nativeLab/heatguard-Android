@@ -23,6 +23,7 @@ internal fun ChecklistItemRow(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -31,6 +32,7 @@ internal fun ChecklistItemRow(
                 .heightIn(min = HeartGuardComponentSize.ChecklistItemRowHeight)
                 .toggleable(
                     value = isChecked,
+                    enabled = enabled,
                     role = Role.Checkbox,
                     onValueChange = onCheckedChange,
                 ).padding(horizontal = HeartGuardSpacing.ChecklistItemHorizontal),

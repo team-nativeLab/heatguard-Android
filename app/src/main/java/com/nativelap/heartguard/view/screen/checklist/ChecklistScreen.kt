@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,14 +52,18 @@ import com.nativelap.heartguard.viewmodel.checklist.ChecklistItemUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistPeriodStatus
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistPeriodUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistUiState
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 internal sealed interface ChecklistScreenEvent {
     data object BackClicked : ChecklistScreenEvent
 
     data class ItemToggled(
-        val titleResId: Int,
+        val itemId: String,
         val isChecked: Boolean,
     ) : ChecklistScreenEvent
+
+    data object RetryClicked : ChecklistScreenEvent
 
     data object CompleteClicked : ChecklistScreenEvent
 }
@@ -158,28 +164,87 @@ internal fun ChecklistScreen(
                             totalCount = uiState.items.size,
                             progress = progressFraction,
                             isComplete = uiState.isComplete,
+                            date = uiState.date?.format(CHECKLIST_DATE_FORMATTER),
                         )
-                        ChecklistPeriodRow(
-                            periods = uiState.periods,
-                            isChecklistComplete = uiState.isComplete,
-                        )
+                        ChecklistPeriodRow(periods = uiState.periods)
+                        if (uiState.hasSaveError) {
+                            Text(
+                                text = stringResource(R.string.checklist_save_failure),
+                                modifier = Modifier.padding(horizontal = HeartGuardSpacing.Tight),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                         Text(
                             text = stringResource(R.string.checklist_guidance),
                             modifier = Modifier.padding(horizontal = HeartGuardSpacing.Tight),
                             color = MaterialTheme.extraColors.secondaryText,
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        ChecklistItemsCard(
-                            items = uiState.items,
-                            onItemToggled = { titleResId, isChecked ->
-                                onEvent(
-                                    ChecklistScreenEvent.ItemToggled(
-                                        titleResId = titleResId,
-                                        isChecked = isChecked,
-                                    ),
-                                )
-                            },
-                        )
+                        when {
+                            uiState.isLoading && !uiState.hasLoaded -> {
+                                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                            }
+
+                            uiState.hasLoadError && !uiState.hasLoaded -> {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.checklist_load_failure),
+                                        color = MaterialTheme.extraColors.secondaryText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                    Button(onClick = { onEvent(ChecklistScreenEvent.RetryClicked) }) {
+                                        Text(text = stringResource(R.string.common_retry))
+                                    }
+                                }
+                            }
+
+                            uiState.hasLoaded -> {
+                                Column {
+                                    if (uiState.hasLoadError) {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.checklist_load_failure),
+                                                color = MaterialTheme.extraColors.secondaryText,
+                                                style = MaterialTheme.typography.bodySmall,
+                                            )
+                                            Button(onClick = { onEvent(ChecklistScreenEvent.RetryClicked) }) {
+                                                Text(text = stringResource(R.string.common_retry))
+                                            }
+                                        }
+                                    }
+                                    if (uiState.items.isEmpty()) {
+                                        Text(
+                                            text = stringResource(R.string.checklist_empty),
+                                            modifier = Modifier.padding(HeartGuardSpacing.Section),
+                                            color = MaterialTheme.extraColors.secondaryText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    } else {
+                                        ChecklistItemsCard(
+                                            items = uiState.items,
+                                            savingItemIds = uiState.savingItemIds,
+                                            onItemToggled = { itemId, isChecked ->
+                                                onEvent(
+                                                    ChecklistScreenEvent.ItemToggled(
+                                                        itemId = itemId,
+                                                        isChecked = isChecked,
+                                                    ),
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -193,6 +258,7 @@ private fun ChecklistSummaryCard(
     totalCount: Int,
     progress: Float,
     isComplete: Boolean,
+    date: String?,
 ) {
     Column(
         modifier =
@@ -210,7 +276,7 @@ private fun ChecklistSummaryCard(
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Text(
-                text = stringResource(R.string.checklist_round_title),
+                text = date ?: stringResource(R.string.checklist_date_unknown),
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -248,12 +314,6 @@ private fun ChecklistSummaryCard(
                 )
             }
         }
-
-        Text(
-            text = stringResource(R.string.checklist_site_team),
-            color = MaterialTheme.extraColors.secondaryText,
-            style = MaterialTheme.typography.bodySmall,
-        )
 
         LinearProgressIndicator(
             progress = { progress },
@@ -297,27 +357,16 @@ private fun ChecklistSummaryCard(
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun ChecklistPeriodRow(
-    periods: List<ChecklistPeriodUiModel>,
-    isChecklistComplete: Boolean,
-) {
+private fun ChecklistPeriodRow(periods: List<ChecklistPeriodUiModel>) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.ChecklistChipGap),
         verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.ChecklistChipGap),
     ) {
         periods.forEach { period ->
-            val status =
-                if (
-                    period.status == ChecklistPeriodStatus.CURRENT && isChecklistComplete
-                ) {
-                    ChecklistPeriodStatus.COMPLETED
-                } else {
-                    period.status
-                }
             ChecklistPeriodChip(
                 period = period,
-                status = status,
+                status = period.status,
             )
         }
     }
@@ -355,7 +404,7 @@ private fun ChecklistPeriodChip(
     val statusDescription =
         stringResource(
             when (status) {
-                ChecklistPeriodStatus.COMPLETED -> R.string.checklist_item_checked
+                ChecklistPeriodStatus.COMPLETED -> R.string.checklist_period_recorded
                 ChecklistPeriodStatus.WARNING -> R.string.checklist_period_warning
                 ChecklistPeriodStatus.CURRENT -> R.string.checklist_period_current
                 ChecklistPeriodStatus.UPCOMING -> R.string.checklist_period_upcoming
@@ -364,7 +413,8 @@ private fun ChecklistPeriodChip(
     val chipDescription =
         stringResource(
             R.string.checklist_period_accessibility_format,
-            period.hour,
+            period.time.hour,
+            period.time.minute,
             statusDescription,
         )
 
@@ -416,7 +466,7 @@ private fun ChecklistPeriodChip(
                 )
             }
             Text(
-                text = stringResource(R.string.checklist_period_hour_format, period.hour),
+                text = stringResource(R.string.checklist_period_time_format, period.time.hour, period.time.minute),
                 color = contentColor,
                 style =
                     MaterialTheme.typography.labelMedium.copy(
@@ -435,7 +485,8 @@ private fun ChecklistPeriodChip(
 @Composable
 private fun ChecklistItemsCard(
     items: List<ChecklistItemUiModel>,
-    onItemToggled: (Int, Boolean) -> Unit,
+    savingItemIds: Set<String>,
+    onItemToggled: (String, Boolean) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         items.forEachIndexed { index, item ->
@@ -445,10 +496,11 @@ private fun ChecklistItemsCard(
                 )
             }
             ChecklistItemRow(
-                title = stringResource(item.titleResId),
+                title = item.title,
                 isChecked = item.isChecked,
+                enabled = item.itemId !in savingItemIds,
                 onCheckedChange = { isChecked ->
-                    onItemToggled(item.titleResId, isChecked)
+                    onItemToggled(item.itemId, isChecked)
                 },
             )
         }
@@ -484,10 +536,8 @@ private fun ChecklistScreenCompletePreview() {
     HeartGuardTheme {
         val completeUiState =
             ChecklistUiState(
-                items =
-                    ChecklistUiState().items.map { item ->
-                        item.copy(isChecked = true)
-                    },
+                hasLoaded = true,
+                items = listOf(ChecklistItemUiModel("preview", "예시 항목", isChecked = true)),
             )
         ChecklistScreen(
             uiState = completeUiState,
@@ -499,3 +549,4 @@ private fun ChecklistScreenCompletePreview() {
 private const val CHECKLIST_PERIOD_COMPLETED_ICON = "✓"
 private const val CHECKLIST_PERIOD_WARNING_ICON = "!"
 private const val CHECKLIST_PERIOD_CURRENT_ICON = "●"
+private val CHECKLIST_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd", Locale.getDefault())
