@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 8341)
-Total output lines: 401
-
 <resources>
     <string name="app_name">HeartGuard</string>
     <string name="brand_name">현장가드</string>
@@ -149,7 +146,117 @@ Total output lines: 401
     <string name="save_error_upload_expired">사진 업로드가 만료되었어요. 다시 시도하면 사진을 새로 올립니다</string>
     <string name="save_error_file_too_large">사진 용량이 너무 커요. 다른 사진으로 다시 시도해 주세요</string>
     <string name="save_error_unsupported_media_type">지원하지 않는 사진 형식이에요. JPG·PNG·WEBP 사진을 사용해 주세요</string>
-    <string n…2341 tokens truncated…ing>
+    <string name="save_error_rate_limited">요청이 많아요. 잠시 후 다시 시도해 주세요</string>
+    <string name="save_error_retry">잠시 후 다시 시도해 주세요</string>
+    <string name="save_draft_exit">임시저장 후 나가기</string>
+    <string name="save_temperature_summary">온도계 기록</string>
+    <string name="save_work_photo_summary">작업 사진</string>
+    <string name="save_rest_photo_summary">휴식 사진</string>
+    <string name="save_time_summary">저장 시간</string>
+    <string name="record_type_selection_title">기록 유형을 선택하세요</string>
+    <string name="record_temperature_title">온도계 사진</string>
+    <string name="record_temperature_description">온도/습도 입력 후 체감온도 계산</string>
+    <string name="record_work_photo_title">작업 사진</string>
+    <string name="record_work_photo_description">작업 중 사진을 1~2장 업로드</string>
+    <string name="record_rest_photo_title">휴식 사진</string>
+    <string name="record_rest_photo_description">휴식 중 사진을 1~2장 업로드</string>
+    <string name="emergency_alert_description">현장관리자에게 즉시 도움을 요청합니다</string>
+    <string name="emergency_contact_title">연락 대상</string>
+    <string name="emergency_contact_name">현장 관리자</string>
+    <string name="auth_password_error">비밀번호가 올바르지 않아요</string>
+    <string name="emergency_alert_title">긴급 상황이에요</string>
+    <string name="emergency_indicator_title">긴급 호출하기</string>
+    <string name="emergency_indicator_description">버튼을 누르면 즉시\n관리자에게 전화가 연결됩니다</string>
+    <string name="emergency_screen_title">긴급 호출</string>
+    <string name="emergency_calling_indicator_title">긴급 호출 중...</string>
+    <string name="emergency_calling_indicator_description">버튼을 누르면 즉시\n관리자에게 전화가 연결됩니다</string>
+    <string name="emergency_connected_status">관리자와 연결됨</string>
+    <string name="emergency_connected_status_description">통화를 계속 진행해 주세요</string>
+    <string name="temperature_not_installed_note">미설치 시 자동으로 기록됩니다.</string>
+    <string name="temperature_save">기록 저장</string>
+    <string name="photo_field_screen_title">현장 사진</string>
+    <string name="photo_field_screen_description">온도계 데이터를 입력하고 현장 사진을 촬영해 주세요.</string>
+    <string name="photo_field_retry">다시하기</string>
+    <string name="photo_temperature_not_saved">온도계가 아직 저장이 안되었어요</string>
+    <string name="photo_selected_count">%1$d장 선택됨</string>
+    <string name="photo_source_title">사진을 추가할 방법을 선택하세요</string>
+    <string name="photo_source_camera">카메라로 촬영하기</string>
+    <string name="photo_source_gallery">앨범에서 선택하기</string>
+    <string name="photo_camera_unavailable">카메라를 실행하지 못했어요. 다른 방법을 선택해 주세요.</string>
+    <string name="photo_camera_field_title">현장 사진 촬영</string>
+    <string name="photo_camera_work_title">작업 사진 촬영</string>
+    <string name="photo_camera_rest_title">휴식 사진 촬영</string>
+    <string name="photo_camera_permission_denied">카메라 권한을 허용해야 사진을 촬영할 수 있어요.</string>
+    <string name="photo_camera_request_permission">카메라 권한 다시 요청</string>
+    <string name="photo_camera_open_settings">설정에서 권한 허용</string>
+    <string name="photo_camera_settings_unavailable">설정 화면을 열지 못했어요.</string>
+    <string name="photo_camera_starting">카메라를 준비하고 있어요.</string>
+    <string name="photo_camera_retry">다시 시도</string>
+    <string name="photo_camera_capture">사진 촬영</string>
+    <string name="photo_camera_close">카메라 닫기</string>
+    <string name="photo_camera_file_unavailable">사진 파일을 준비하지 못했어요. 저장 공간을 확인해 주세요.</string>
+    <string name="photo_camera_capture_failed">사진을 촬영하지 못했어요. 다시 시도해 주세요.</string>
+    <string name="photo_camera_limit_reached">사진은 최대 2장까지 선택할 수 있어요.</string>
+    <string name="photo_preview_unavailable">사진을 불러올 수 없어요</string>
+    <string name="photo_selected_accessibility">선택한 사진 %1$d</string>
+    <string name="photo_remove_accessibility">사진 %1$d 삭제</string>
+    <string name="save_complete">확인</string>
+    <!-- 메뉴 드로어 -->
+    <string name="home_load_failure">홈 정보를 불러오지 못했어요</string>
+    <string name="menu_edit_profile">내 정보 수정</string>
+    <string name="menu_inquiry">문의하기</string>
+    <string name="menu_logout">로그아웃</string>
+    <string name="menu_withdraw">회원탈퇴</string>
+    <string name="menu_close_description">메뉴 닫기</string>
+    <string name="menu_profile_affiliation_format">%1$s · %2$s</string>
+    <!-- 회원탈퇴 -->
+    <string name="withdraw_title">회원탈퇴</string>
+    <string name="withdraw_back_description">뒤로 가기</string>
+    <string name="withdraw_notice_headline">탈퇴하기 전에 꼭 확인해주세요</string>
+    <string name="withdraw_notice_subtitle">탈퇴 후에는 아래 내용이 적용돼요</string>
+    <string name="withdraw_notice_card_title">유의사항</string>
+    <string name="withdraw_notice_account_deleted">탈퇴하면 소속 팀의 모든 작업자 계정과 로그인 세션이 비활성화돼요</string>
+    <string name="withdraw_notice_records_retained">현장과 기존 기록·사진은 유지되며, 기록·사진은 생성일부터 365일 뒤 삭제돼요</string>
+    <string name="withdraw_notice_records_not_linked">탈퇴가 완료되면 소속 팀의 작업자 계정은 로그인할 수 없어요</string>
+    <string name="withdraw_reason_title">탈퇴 사유</string>
+    <string name="withdraw_reason_optional">(선택)</string>
+    <string name="withdraw_reason_field_work_ended">현장 작업이 종료되었어요</string>
+    <string name="withdraw_reason_changed_company">다른 회사로 이직했어요</string>
+    <string name="withdraw_reason_inconvenient">앱 사용이 불편해요</string>
+    <string name="withdraw_reason_other">기타</string>
+    <string name="withdraw_password_label">비밀번호 확인</string>
+    <string name="withdraw_password_placeholder">현재 비밀번호를 입력해주세요</string>
+    <string name="withdraw_agree">유의사항을 모두 확인했으며, 탈퇴에 동의해요</string>
+    <string name="withdraw_action">탈퇴하기</string>
+    <string name="withdraw_confirm_title">정말 탈퇴하시겠어요?</string>
+    <string name="withdraw_confirm_message">소속 팀의 모든 작업자 계정과 세션이 비활성화돼요.\n기존 기록과 사진은 생성일부터 365일 뒤 삭제돼요.</string>
+    <string name="withdraw_failure_message">탈퇴하지 못했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="withdraw_done_title">탈퇴가 완료되었어요</string>
+    <string name="withdraw_done_message">그동안 폭염가드를 이용해주셔서 감사해요</string>
+    <!-- 서버 값 표시 -->
+    <!-- 서버에서 값을 아직 받지 못했거나 해당 API가 없을 때 표시하는 빈 값이며 번역 대상이 아니다. -->
+    <string name="common_empty_value" translatable="false">--</string>
+    <string name="profile_title">내 정보 수정</string>
+    <string name="profile_worker_role">현장작업자</string>
+    <string name="profile_company">회사명</string>
+    <string name="profile_name">이름</string>
+    <string name="profile_email">이메일</string>
+    <string name="profile_email_uneditable">변경 불가</string>
+    <string name="profile_email_note">로그인에 쓰는 이메일은 변경할 수 없어요</string>
+    <string name="profile_password_change">비밀번호 변경</string>
+    <string name="profile_password_change_description">현재 비밀번호 확인 후 변경할 수 있어요</string>
+    <!-- 비밀번호 변경 -->
+    <string name="password_change_title">비밀번호 변경</string>
+    <string name="password_change_description">현재 비밀번호를 확인한 뒤\n새 비밀번호로 변경할 수 있어요</string>
+    <string name="password_change_current_label">현재 비밀번호</string>
+    <string name="password_change_current_placeholder">현재 비밀번호 입력</string>
+    <string name="password_change_new_label">새 비밀번호</string>
+    <string name="password_change_new_placeholder">새 비밀번호 입력</string>
+    <string name="password_change_confirm_label">새 비밀번호 확인</string>
+    <string name="password_change_confirm_placeholder">새 비밀번호 다시 입력</string>
+    <string name="password_change_rule">영문, 숫자를 포함해 8자 이상 입력해 주세요</string>
+    <string name="password_change_rule_satisfied">✓ 영문, 숫자를 포함해 8자 이상</string>
+    <string name="password_change_confirm_mismatch">새 비밀번호가 일치하지 않아요</string>
     <string name="password_change_confirm_match">✓ 새 비밀번호가 일치해요</string>
     <string name="password_change_submit">변경하기</string>
     <string name="password_change_done">변경 완료</string>
