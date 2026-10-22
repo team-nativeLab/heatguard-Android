@@ -53,6 +53,7 @@ import com.nativelap.heartguard.viewmodel.checklist.ChecklistPeriodStatus
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistPeriodUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistUiState
 import java.time.format.DateTimeFormatter
+import java.time.LocalTime
 import java.util.Locale
 
 internal sealed interface ChecklistScreenEvent {
@@ -72,6 +73,8 @@ internal sealed interface ChecklistScreenEvent {
 @OptIn(ExperimentalMaterial3Api::class)
 internal fun ChecklistScreen(
     uiState: ChecklistUiState,
+    selectedTime: LocalTime? = null,
+    siteLabel: String? = null,
     onEvent: (ChecklistScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,6 +168,8 @@ internal fun ChecklistScreen(
                             progress = progressFraction,
                             isComplete = uiState.isComplete,
                             date = uiState.date?.format(CHECKLIST_DATE_FORMATTER),
+                            selectedTime = selectedTime,
+                            siteLabel = siteLabel,
                         )
                         ChecklistPeriodRow(periods = uiState.periods)
                         if (uiState.hasSaveError) {
@@ -259,6 +264,8 @@ private fun ChecklistSummaryCard(
     progress: Float,
     isComplete: Boolean,
     date: String?,
+    selectedTime: LocalTime?,
+    siteLabel: String?,
 ) {
     Column(
         modifier =
@@ -276,7 +283,14 @@ private fun ChecklistSummaryCard(
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Text(
-                text = date ?: stringResource(R.string.checklist_date_unknown),
+                text =
+                    selectedTime?.let { time ->
+                        stringResource(
+                            R.string.checklist_selected_period_heading_format,
+                            time.hour,
+                            time.minute,
+                        )
+                    } ?: date ?: stringResource(R.string.checklist_date_unknown),
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -313,6 +327,15 @@ private fun ChecklistSummaryCard(
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                 )
             }
+        }
+
+        if (siteLabel != null) {
+            Text(
+                text = siteLabel,
+                modifier = Modifier.padding(horizontal = HeartGuardSpacing.Tight),
+                color = MaterialTheme.extraColors.secondaryText,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
 
         LinearProgressIndicator(
@@ -466,7 +489,7 @@ private fun ChecklistPeriodChip(
                 )
             }
             Text(
-                text = stringResource(R.string.checklist_period_time_format, period.time.hour, period.time.minute),
+                text = stringResource(R.string.checklist_period_hour_format, period.time.hour),
                 color = contentColor,
                 style =
                     MaterialTheme.typography.labelMedium.copy(

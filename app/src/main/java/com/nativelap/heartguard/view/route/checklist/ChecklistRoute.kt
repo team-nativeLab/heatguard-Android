@@ -13,11 +13,14 @@ import com.nativelap.heartguard.view.screen.checklist.ChecklistScreen
 import com.nativelap.heartguard.view.screen.checklist.ChecklistScreenEvent
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import kotlinx.coroutines.delay
+import java.time.LocalTime
 
 @Composable
 internal fun ChecklistRoute(
     checklistViewModel: ChecklistViewModel,
     checkSchedule: CheckSchedule?,
+    selectedTime: LocalTime? = null,
+    siteLabel: String? = null,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
 ) {
@@ -44,6 +47,8 @@ internal fun ChecklistRoute(
 
     ChecklistScreen(
         uiState = uiState,
+        selectedTime = selectedTime,
+        siteLabel = siteLabel,
         onEvent = { event ->
             when (event) {
                 ChecklistScreenEvent.BackClicked -> {
