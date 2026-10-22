@@ -108,6 +108,12 @@ class HomeViewModel
             refresh()
         }
 
+        /** 자정 이후에는 전날 완료 기록을 제거한 뒤 오늘 일정과 기록을 다시 불러온다. */
+        fun refreshForNewDay() {
+            todayRecordTimes.value = emptyList()
+            loadTeamSiteOverview()
+        }
+
         /** 홈으로 돌아올 때(화면 재개·기록 저장 후) 호출한다. 이미 받은 값은 새 응답이 올 때까지 그대로 보여 깜빡이지 않게 하고,
          * 새로 받은 결과로 바꾼다. 이전 값이 있는데 새 조회만 실패하면 이전 값을 유지하고 [HomeUiState.Error]로 바꾸지 않는다. */
         fun refresh() {
