@@ -1,5 +1,8 @@
 package com.nativelap.heartguard.view.screen.auth
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,16 +11,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,20 +44,11 @@ internal fun AuthPhoneNumberScreen(
     phoneNumber: String,
     onPhoneNumberChange: (String) -> Unit,
     onLinkClick: () -> Unit,
-    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.authBackground,
-        topBar = {
-            TextButton(
-                modifier = Modifier.statusBarsPadding(),
-                onClick = onBackClick,
-            ) {
-                Text(stringResource(R.string.common_back_description))
-            }
-        },
         bottomBar = {
             BottomActionBar {
                 AuthPrimaryButton(
@@ -67,11 +64,11 @@ internal fun AuthPhoneNumberScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .consumeWindowInsets(innerPadding)
-                    .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
+                    .padding(horizontal = HeartGuardSpacing.HeaderHorizontal)
                     .verticalScroll(rememberScrollState()),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTitleForm))
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTop - innerPadding.calculateTopPadding()))
                 AuthTitleBlock(
                     title = stringResource(R.string.auth_phone_title),
                     description = stringResource(R.string.auth_phone_description),
@@ -91,28 +88,50 @@ internal fun AuthPhoneNumberScreen(
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Spacer(modifier = Modifier.width(HeartGuardSpacing.Compact))
+                    Box(
+                        modifier = Modifier.width(1.dp).height(HeartGuardSpacing.Compact).background(
+                            MaterialTheme.extraColors.subtleDivider,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.width(HeartGuardSpacing.Compact))
                     OutlinedTextField(
                         value = phoneNumber,
-                        onValueChange = onPhoneNumberChange,
+                        onValueChange = { enteredPhoneNumber ->
+                            onPhoneNumberChange(enteredPhoneNumber.filter { digit -> digit in '0'..'9' })
+                        },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text(stringResource(R.string.auth_phone_hint)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         trailingIcon = {
                             if (phoneNumber.isNotEmpty()) {
-                                TextButton(onClick = { onPhoneNumberChange("") }) {
-                                    Text(stringResource(R.string.common_clear))
+                                IconButton(onClick = { onPhoneNumberChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.common_clear),
+                                        tint = MaterialTheme.extraColors.tertiaryText,
+                                    )
                                 }
                             }
                         },
                     )
                 }
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
-                Text(
-                    text = stringResource(R.string.auth_phone_security_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.extraColors.tertiaryText,
+                    )
+                    Text(
+                        text = stringResource(R.string.auth_phone_security_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
@@ -122,6 +141,6 @@ internal fun AuthPhoneNumberScreen(
 @Composable
 private fun AuthPhoneNumberScreenPreview() {
     HeartGuardTheme {
-        AuthPhoneNumberScreen("", {}, {}, {})
+        AuthPhoneNumberScreen("", {}, {})
     }
 }

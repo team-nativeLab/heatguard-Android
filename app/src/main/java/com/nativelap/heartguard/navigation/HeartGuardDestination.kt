@@ -18,9 +18,6 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object SignUpForm : HeartGuardDestination
 
     @Serializable
-    data object PhoneNumberLink : HeartGuardDestination
-
-    @Serializable
     data object Home : HeartGuardDestination
 
     @Serializable
