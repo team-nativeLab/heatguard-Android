@@ -62,7 +62,6 @@ fun AuthLoginScreen(
     statusMessage: String? = null,
     isSubmitting: Boolean = false,
     onSignUpClick: () -> Unit = {},
-    onPhoneNumberClick: () -> Unit = {},
 ) {
     // 이전 앱에서 열려 있던 키보드 inset이 진입 직후 잠깐 남아도 키보드 레이아웃으로 바뀌지 않도록
     // 로그인 입력칸에 포커스가 있을 때만 키보드가 열린 것으로 본다.
@@ -210,13 +209,6 @@ fun AuthLoginScreen(
                 TextButton(onClick = onSignUpClick) {
                     Text(
                         text = stringResource(R.string.auth_signup_link),
-                        color = MaterialTheme.extraColors.authPrimary,
-                    )
-                }
-
-                TextButton(onClick = onPhoneNumberClick) {
-                    Text(
-                        text = stringResource(R.string.auth_phone_link_entry),
                         color = MaterialTheme.extraColors.authPrimary,
                     )
                 }

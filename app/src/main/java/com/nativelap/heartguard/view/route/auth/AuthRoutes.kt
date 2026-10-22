@@ -21,7 +21,6 @@ import com.nativelap.heartguard.viewmodel.auth.TeamLoginViewModel
 @Composable
 internal fun HeartGuardLoginRoute(
     onNavigateToSignUp: () -> Unit = {},
-    onNavigateToPhoneNumber: () -> Unit = {},
     viewModel: TeamLoginViewModel = hiltViewModel(),
 ) {
     var email by rememberSaveable {
@@ -61,18 +60,18 @@ internal fun HeartGuardLoginRoute(
             },
         isSubmitting = uiState.isSubmitting,
         onSignUpClick = onNavigateToSignUp,
-        onPhoneNumberClick = onNavigateToPhoneNumber,
     )
 }
 
 @Composable
-internal fun HeartGuardPhoneNumberRoute(onNavigateBack: () -> Unit) {
+internal fun HeartGuardPhoneNumberRoute() {
     var phoneNumber by remember { mutableStateOf("") }
     AuthPhoneNumberScreen(
         phoneNumber = phoneNumber,
-        onPhoneNumberChange = { phoneNumber = it },
+        onPhoneNumberChange = { enteredPhoneNumber ->
+            phoneNumber = enteredPhoneNumber.filter { digit -> digit in '0'..'9' }
+        },
         onLinkClick = {},
-        onBackClick = onNavigateBack,
     )
 }
 

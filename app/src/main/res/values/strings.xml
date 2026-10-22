@@ -34,10 +34,9 @@
     <string name="auth_phone_label">휴대폰 번호</string>
     <string name="auth_phone_country_code">+82</string>
     <string name="auth_phone_hint">010-1234-5678</string>
-    <string name="auth_phone_security_note">입력한 휴대폰 번호를 정확히 확인해 주세요.</string>
+    <string name="auth_phone_security_note">휴대폰 번호 연동 기능은 준비 중이에요.</string>
     <string name="auth_phone_link">연동하기</string>
     <string name="common_clear">지우기</string>
-    <string name="auth_phone_link_entry">휴대폰 번호 연동</string>
     <string name="auth_login_invalid_credentials">이메일 또는 비밀번호를 확인해주세요</string>
     <string name="auth_login_account_disabled">사용할 수 없는 계정입니다. 관리자에게 문의해주세요</string>
     <string name="auth_login_rate_limited">로그인 시도가 많습니다. 잠시 후 다시 시도해주세요</string>

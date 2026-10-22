@@ -28,7 +28,6 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
-import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
@@ -150,9 +149,6 @@ private fun HeartGuardAuthNavDisplay() {
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
-                        onNavigateToPhoneNumber = {
-                            backStack.add(HeartGuardDestination.PhoneNumberLink)
-                        },
                     )
                 }
                 entry<HeartGuardDestination.SignUp> {
@@ -166,11 +162,6 @@ private fun HeartGuardAuthNavDisplay() {
                                 backStack.removeLastOrNull()
                             }
                         },
-                    )
-                }
-                entry<HeartGuardDestination.PhoneNumberLink> {
-                    HeartGuardPhoneNumberRoute(
-                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
             },
