@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 8546)
+Total output lines: 225
+
 # HeartGuard (heatguard-Android)
 
 폭염 현장에서 일하는 작업자를 위해 체온 기록, 긴급 호출, 작업/휴식 사진 기록을 지원하는 Android 앱입니다.
@@ -21,7 +24,7 @@
 
 ## 개요
 폭염 환경에서 작업하는 현장 인력의 체온·작업/휴식 상태를 기록하고, 위험 상황 발생 시 관리자에게 긴급 호출을 보낼 수 있도록 돕는 것을 목표로 하는 Android 앱입니다.
-현재 구현된 작업자 앱 화면(로그인, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용하며 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)에 연결되어 있습니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다. 회원가입 기능은 제공하지 않으며 계정은 관리자가 사전에 발급합니다.
+현재 구현된 작업자 앱 화면(로그인, 회원가입 입력 UI, 휴대폰 번호 연동 UI, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 로그인·작업자 기능은 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)에 연결되어 있고, 회원가입 제출과 휴대폰 번호 연동은 화면만 구성되어 서버·App Link와 연결되지 않았습니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다. 계정은 관리자가 사전에 발급합니다.
 
 PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 README·사용자 제공 요구사항·Figma·API 명세 v0.1을 작업 범위 자료로 사용하며, 별도 PRD는 생성하지 않습니다.
 
@@ -30,7 +33,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 
 | 화면 | 설명 |
 |---|---|
-| Login | 사전 발급된 작업자 계정 로그인. 회원가입 화면과 흐름은 제공하지 않음 |
+| Login / SignUpForm / PhoneNumberLink | 사전 발급된 작업자 계정 로그인, 회원가입 입력 UI, 휴대폰 번호 연동 UI. 회원가입 제출과 전화번호 연동은 아직 서버/App Link에 연결되지 않음 |
 | Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 현장관리자 긴급호출 화면으로, "긴급 전화"는 본사 번호(`company.phone`) 다이얼(번호 없으면 비활성). 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
 | ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
 | Inquiry | 문의 등록과 내 문의 목록(상태 배지·등록일). 문의 상세 화면은 범위 밖 |
@@ -64,55 +67,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, companyName, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`과 마지막으로 받은 `version`을 보냄. 409는 최신 정보 재조회 후 안내 |
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
 | `GET /team` | 연결 | 기상 미입력 시 `weather`·`heatLevel`이 null, 관리자 연락처는 빈 문자열일 수 있음. `company.phone`(본사 연락처), `weather.skyStatus`, `weather.temperatureDelta` 사용 |
-| `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | `files[i] ↔ uploads[i]` 순서 보장, `slot`은 기록 내 사진 위치, `requiredHeaders`를 그대로 붙여 PUT. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처리. `restMinutes`는 서버가 계산 |
-| `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 `date` 하루 단위 필터만 지원(기간·유형 쿼리는 무시됨). 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
-| `POST·GET /team/inquiries` | 연결 | 목록 항목 `{inquiryId, title, content, status, deliveryStatus, replies[], createdAt}`, 알 수 없는 cursor는 400 |
-| `POST /team/emergency-calls`, `GET …/current`, `PATCH …/{callId}` | 연결 | `current`는 종료된 이전 호출(CANCELLED 등)도 반환하므로 앱은 자신이 시작·이어받은 `callId`만 반영. 취소·종료의 409 `INVALID_STATUS_TRANSITION`은 현재 상태를 다시 조회해 화면을 맞춤 |
-| `GET /api/v1/team/notifications` | 연결 | `category`는 선택값(`ALL`·`RECORD`·`EMERGENCY`·`NOTICE`, 생략/빈 값은 `ALL`), `limit`은 1..100(기본 20), `cursor`는 선택값이며 앱은 선택한 분류를 전송합니다. 응답 `items`는 `{notificationId, type, category, title, resourceId, read, createdAt, updatedAt}`, `page`는 `{nextCursor, hasMore}`, 카운트는 전체 `unreadCount`와 분류별 `filteredUnreadCount`. 알림 유형은 `RECORD_CREATED`, `EMERGENCY_ACKNOWLEDGED`, `INQUIRY_ANSWERED`. |
-| `PATCH /api/v1/team/notifications/{notificationId}/read` | 연결 | 본인에게 공개된 알림 한 건을 사용자별로 읽음 처리합니다. body 없이 요청하며 응답은 `{notificationId, read, readAt}`입니다. |
-| `PATCH /api/v1/team/notifications/read-all` | 연결 | Query·Body 없이 본인의 모든 분류·페이지 알림을 읽음 처리합니다. 응답 `{updatedCount, unreadCount}`를 반영하고 목록을 유지한 채 현재 분류 첫 페이지를 재조회합니다. 재조회 실패는 기존 데이터와 읽음 결과를 보존하며 GET만 재시도합니다. 개별 읽음과 겹친 목록 조회는 처리 완료까지 대기하고, 앱 복귀 조회는 최소 5초 간격으로 실행합니다. 처리 중 재진입·연타를 차단하고 세션 종료 시 요청을 취소·무효화합니다. |
-| `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
-| `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
-| `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
-
-알림·기록 내역·홈·긴급 호출·문의·프로필 변경의 RemoteDataSource는 성공 envelope의 `success`·`error`·필수 `data`를 검증하며, 모순되거나 누락된 응답을 성공으로 표시하지 않습니다. 정상 빈 목록과 현재 호출 `NONE`/`callId=null`은 유지합니다. 비밀번호 변경은 오류 없는 `success=true/data=null` 응답과 호환되며, Unit 응답인 로그아웃·회원탈퇴에는 필수-data 검증을 적용하지 않습니다. HTTP 200의 명시적 거절 코드가 HTTP 상태별 화면 안내와 같은 의미인지 여부는 서버 계약 확인이 필요합니다.
-
-알림 명세에서 기록·긴급 알림은 팀에 공유하고 문의 답변 알림은 작성자에게만 공개합니다. 읽음 상태는 사용자별입니다. 공지 게시 API, 과거 기록 알림 소급 생성, FCM/APNs Push 발송은 명세 범위에 없으며 앱에도 푸시 등록·수신 기능이 없습니다.
-
-2026-10-01 추가 계약 점검에서 긴급호출의 409 후 상태 재조회가 실패하면 기존 호출과 폴링을 유지하고 실패를 표시하도록 수정했습니다. 폴링의 정상 `NONE`·호출 ID 없음 응답은 현재 호출을 종료합니다. 기록 내역·문의·알림 목록은 첫 페이지만 받고 스크롤이 끝에 가까워지면 `nextCursor`로 다음 페이지를 이어 받습니다(기록 내역은 최신 날짜부터 하루씩, 기록이 없는 날은 건너뜀). `page` 누락, `hasMore=true`인데 커서 없음, 이미 받은 커서 반복은 잘린 목록을 성공으로 보여주지 않고 실패로 알립니다. 아직 받을 목록이 남아 있으면 건수 뒤에 `+`를 붙입니다(예: `32+건`). 홈 체크 타임라인용 오늘 기록 전체 조회만 하루 100페이지 안전 상한을 둡니다.
-
-2026-10-04 호출 재진입 수정에서는 요청·폴링·화면 이동 효과에 호출 흐름과 세션 세대, 호출 ID를 연결해 이전 호출의 지연 응답·종료 이벤트가 새 호출을 닫지 않게 했습니다. Route는 `RESUMED` 수명 상태에서만 효과를 수집하고 현재 흐름에 속하는 효과인지 확인합니다.
-
-## 기록 저장 안전성
-
-기록 저장 POST 전용 Retrofit 서비스는 요청 본문을 재사용 불가로 감싸고 연결 복구 재시도·HTTP/HTTPS 리다이렉트를 비활성화합니다. 408·503 등의 응답에 따른 OkHttp 자동 재전송도 차단하며, 다른 API의 기존 재시도 정책은 유지합니다.
-
-기록 저장 응답은 HTTP 성공만으로 판단하지 않습니다. `requireSuccessData`가 `success=true`, 오류 없음, 필수 `data`와 비어 있지 않은 `recordId`를 확인합니다. 모순되거나 누락된 응답, 응답 유실, 저장 여부를 확정할 수 없는 서버 오류는 `Unknown`으로 분류하며 성공 화면을 표시하지 않습니다. 명세의 명확한 거절 코드만 일반 실패로 처리합니다.
-
-`SubmitFieldRecordUseCase`는 현재 작업자 `userId`를 조회하고 POST 전에 제출 ID·기록 유형·측정 시각을 로컬에 기록합니다. `RecordSubmissionRepository` → `RecordSubmissionLocalDataSource` 흐름으로 `noBackupFilesDir/record-submissions` 아래 `AtomicFile`에 저장하며, 파일명은 서버 주소와 작업자 ID의 SHA-256으로 계정·서버별로 분리합니다. 사진·메모·토큰은 이 표식에 저장하지 않습니다. 파일을 읽거나 확정 기록할 수 없으면 서버 제출을 진행하지 않습니다.
-
-결과 불명 표식은 앱 재시작·로그아웃 후에도 남고, 같은 작업자로 로그인하면 기록 내역 화면에 서버 기록과 별도로 표시됩니다. 해당 제출 ID는 사진 업로드와 POST를 다시 실행하지 않습니다. 서버 내역과 시간·유형으로 자동 매칭하거나 이전 제출을 재시도 가능한 상태로 풀지 않으며, 내역 확인 후 별도의 새 기록을 작성할 수 있습니다. 서버의 Idempotency-Key 지원은 아직 확인되지 않아, 서로 다른 새 제출이나 다른 기기의 중복 저장까지 보장하지는 않습니다.
-
-서버 저장 성공 후 표식 정리에 실패하면 성공 결과를 유지하면서 로컬 정리 필요를 안내합니다. 현재 ViewModel이 알고 있는 성공 표식은 기록 내역 진입·재시도 때 서버 재전송 없이 로컬 파일 정리만 재시도합니다. 정리가 끝나기 전에 프로세스가 종료되면 남은 표식은 결과 확인 필요 항목으로 표시될 수 있습니다.
-
-## 인증·계정 전환 정책
-
-- **요청 소유 세션**: 인증 요청은 만들어진 시점의 세션 스냅샷(세대·토큰)을 태그로 가지며, 전송 직전에 세션이 바뀌었으면 보내지 않습니다(`SessionChangedException`, 화면에는 오류로 노출하지 않음). 늦게 도착한 이전 세션의 401은 새 로그인을 끝내지 않습니다.
-- **토큰 삭제 실패**: 로그아웃·만료 때 메모리 세션을 먼저 끝내고, 저장소 삭제가 실패하면 Keystore 키를 폐기해 남은 암호문을 읽을 수 없게 합니다. 저장값을 읽거나 복호화하지 못하면 로그아웃 상태로 시작합니다.
-- **계정 전환 정리**: 로그인·로그아웃마다 세션 세대가 바뀌고, 로그아웃→재로그인이 빠르게 지나가도 홈·긴급호출·탈퇴·기록 초안·목록 ViewModel과 화면 이동 기록을 정리합니다. 업로드→저장처럼 여러 요청으로 이어지는 흐름은 단계 사이에 세대를 비교해 다른 계정으로 저장되지 않게 합니다. 기록 제출은 시작 시점의 `expectedSessionGeneration`을 UseCase·Repository·RemoteDataSource까지 전달하고, Retrofit의 로컬 `RequestSessionGeneration` 태그를 호출 생성 시에도 확인합니다. 이 값은 서버 요청 본문이나 헤더에 추가하지 않습니다.
-- **초안 복원**: 프로세스 재생성 뒤 남은 입력 초안은 저장 토큰으로 복원된 같은 세션일 때만 되살리고, 새로 로그인한 세션이면 버립니다.
-
-## 백엔드 확인 요청
-앱에서 해결할 수 없어 서버 쪽 확인·추가가 필요한 항목입니다. 해당 UI는 고정값 없이 `--`로 표시하거나 숨깁니다.
-
-- **체감온도 계산**: 테스트 기록(31.5°C, 습도 60%)의 체감온도가 81.9°C로 계산되어 내려왔습니다.
-- **체크 완료 판정**: 홈 체크 타임라인 완료 여부 필드가 없어, 앱이 "체크 시각 ~ 다음 체크 시각 전" 사이 기록 유무로 판정합니다. 서버 기준 확인 또는 필드 추가가 필요합니다.
-- **없는 필드**: 온도계 설치 여부(현재 측정 온도 유무로 표시), 기록 목록 썸네일 URL, 기록 목록 기간·유형 쿼리
-- **현장작업자 온도 기록 검증**: 2026-10-01 실서버에서 온도계 기록(직접 입력) 촬영→업로드→저장→상세 사진→기록 알림까지 성공했습니다. 휴식·작업 기록은 서버가 `WEATHER_BASELINE_REQUIRED`(현장 기상값 미입력)로 거절해 저장 성공은 확인하지 못했고, 앱은 오류 안내를 표시합니다.
-- **계약 확인**: `sha256` 인코딩(Base64/hex), `slot` 의미, `POST /team/records`의 Idempotency-Key 지원, 허용 이미지 형식·최대 크기
-
-## 기술 스택
-`gradle/libs.versions.toml`, `app/build.gradle.kts` 기준으로 확인한 값입니다.
+| `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | `files[i] ↔ uploads[i]` 순서 보장, `slot`은 기록 내 사진 위치, `requiredHeaders`를 그대로 붙여 PUT. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처…2546 tokens truncated…`app/build.gradle.kts` 기준으로 확인한 값입니다.
 
 | 영역 | 사용 기술 |
 |---|---|
@@ -192,7 +147,7 @@ HEARTGUARD_DEBUG_BASE_URL=https://YOUR_DEBUG_API_HOST/
 HEARTGUARD_RELEASE_BASE_URL=https://YOUR_RELEASE_API_HOST/
 ```
 
-Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 검증 단계에서 실패합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 회원가입은 제공하지 않습니다.
+Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 검증 단계에서 실패합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 회원가입 제출과 전화번호 연동은 화면만 제공하며 서버 연동은 미구현입니다.
 
 ## 테스트
 `app/build.gradle.kts`에 선언된 테스트 의존성 기준입니다. 검증 시에는 아래 프로젝트 태스크를 사용합니다.

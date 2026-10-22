@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 9000)
+Total output lines: 711
+
 package com.nativelap.heartguard.navigation
 
 import androidx.activity.compose.LocalActivity
@@ -28,6 +31,7 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
@@ -148,6 +152,9 @@ private fun HeartGuardAuthNavDisplay() {
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
+                        onNavigateToPhoneNumber = {
+                            backStack.add(HeartGuardDestination.PhoneNumberLink)
+                        },
                     )
                 }
                 entry<HeartGuardDestination.SignUp> {
@@ -161,6 +168,11 @@ private fun HeartGuardAuthNavDisplay() {
                                 backStack.removeLastOrNull()
                             }
                         },
+                    )
+                }
+                entry<HeartGuardDestination.PhoneNumberLink> {
+                    HeartGuardPhoneNumberRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
             },
@@ -219,269 +231,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     val checklistViewModel: ChecklistViewModel = hiltViewModel()
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
-    // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
-    // 없이 인자 없는 hiltViewModel()을 쓴다. 흐름 종료 시 정리는 emergencyViewModel.reset()으로 한다.
-    val emergencyViewModel: EmergencyViewModel = hiltViewModel()
-
-    // emergencyViewModel도 같은 이유로, 로그아웃·세션 만료 시 3초 폴링이 남지 않도록 정리한다.
-    DisposableEffect(Unit) {
-        onDispose {
-            if (isLeavingMainFlow()) {
-                emergencyViewModel.reset()
-            }
-        }
-    }
-
-    // 앱을 다시 열었을 때 서버에 진행 중인 긴급호출이 있으면 이어받아, 홈의 "긴급 전화"가 새 호출 대신 그 호출로 이어지게 한다.
-    // 홈 조회가 끝날 때마다 다시 확인해, 이어받기가 한 번 실패해도 응답 내용과 상관없이 다음 새로고침에서 복구한다.
-    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
-    val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
-    val homeRefreshCompletionCount by homeViewModel.refreshCompletionCount.collectAsStateWithLifecycle()
-    val hasServerActiveEmergencyCall =
-        (homeUiState as? HomeUiState.Success)
-            ?.overview
-            ?.hasActiveEmergencyCall == true
-    LaunchedEffect(homeRefreshCompletionCount, hasServerActiveEmergencyCall) {
-        if (hasServerActiveEmergencyCall) {
-            emergencyViewModel.resumeActiveCall()
-        }
-    }
-
-    // 회원탈퇴 안내·최종 확인·완료 화면이 입력값(비밀번호 포함)과 요청 상태를 공유한다. 같은 이유로 Activity 스코프이며,
-    // 로그아웃·세션 만료로 이 Composable이 사라질 때 비밀번호가 메모리에 남지 않도록 여기서도 reset()한다.
-    val withdrawViewModel: WithdrawViewModel = hiltViewModel()
-
-    DisposableEffect(Unit) {
-        onDispose {
-            if (isLeavingMainFlow()) {
-                withdrawViewModel.reset()
-            }
-        }
-    }
-
-    fun goToSaveSuccess() {
-        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
-            backStack.removeLastOrNull()
-        }
-        backStack.add(HeartGuardDestination.SaveSuccess)
-    }
-
-    fun goToSaveFailure() {
-        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
-            backStack.removeLastOrNull()
-        }
-        backStack.add(HeartGuardDestination.SaveFailure)
-    }
-
-    fun goBack() {
-        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
-            backStack.removeLastOrNull()
-            return
-        }
-
-        if (shouldConfirmRecordExit(backStack)) {
-            backStack.add(HeartGuardDestination.RecordCancelConfirm)
-            return
-        }
-
-        if (backStack.size > 1) {
-            val poppedDestination = backStack.removeLastOrNull()
-            // 호출 중 화면에서 뒤로 가도 서버의 긴급호출은 계속 진행 중이므로 상태·폴링을 지우지 않는다.
-            // 홈의 "긴급 전화"로 다시 들어오면 같은 호출의 호출 중 화면으로 돌아간다.
-            // 안내 화면에서 뒤로 나가면 회원탈퇴 흐름을 벗어난 것이므로 입력한 비밀번호와 진행 중인 요청을 정리한다.
-            if (poppedDestination is HeartGuardDestination.WithdrawNotice) {
-                withdrawViewModel.reset()
-            }
-        }
-    }
-
-    // 탈퇴에 성공하면 확인 다이얼로그와 안내 화면을 back stack에서 걷어내고 완료 화면으로 교체한다.
-    // 그래야 완료 화면에서 탈퇴 전 화면으로 되돌아갈 수 없다.
-    fun goToWithdrawDone() {
-        while (
-            backStack.lastOrNull() is HeartGuardDestination.WithdrawConfirm ||
-            backStack.lastOrNull() is HeartGuardDestination.WithdrawNotice
-        ) {
-            backStack.removeLastOrNull()
-        }
-        backStack.add(HeartGuardDestination.WithdrawDone)
-    }
-
-    fun goHome() {
-        while (backStack.size > 1) {
-            backStack.removeLastOrNull()
-        }
-    }
-
-    fun leaveRecordFlow() {
-        val submissionState = recordDraftViewModel.submissionState.value
-        if (
-            submissionState !is RecordSubmissionState.Idle &&
-            submissionState !is RecordSubmissionState.Failure
-        ) {
-            return
-        }
-        recordDraftViewModel.reset()
-        goHome()
-    }
-
-    // 알림에서 연 화면이 연타로 중복해 쌓이지 않도록 맨 위와 같은 목적지는 다시 추가하지 않는다.
-    fun openFromNotification(target: NotificationOpenTarget) {
-        val destination =
-            when (target) {
-                is NotificationOpenTarget.RecordDetail -> {
-                    HeartGuardDestination.RecordHistoryDetail(target.recordId)
-                }
-
-                NotificationOpenTarget.Inquiry -> {
-                    HeartGuardDestination.Inquiry
-                }
-
-                // 진행 중인 호출이 없으면 새 호출을 시작하는 화면으로 보내지 않고 알림 목록에 머문다.
-                NotificationOpenTarget.ActiveEmergencyCall -> {
-                    val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
-                    if (hasActiveEmergencyCall) {
-                        HeartGuardDestination.Calling
-                    } else {
-                        null
-                    }
-                }
-            }
-        if (destination != null && backStack.lastOrNull() != destination) {
-            backStack.add(destination)
-        }
-    }
-
-    val sceneStrategies: List<SceneStrategy<NavKey>> =
-        listOf(
-            DialogSceneStrategy(),
-            HeartGuardBottomSheetSceneStrategy(),
-            SinglePaneSceneStrategy(),
-        )
-
-    NavDisplay(
-        backStack = backStack,
-        onBack = ::goBack,
-        sceneStrategies = sceneStrategies,
-        transitionSpec = {
-            ContentTransform(
-                targetContentEnter = EnterTransition.None,
-                initialContentExit = ExitTransition.None,
-                sizeTransform = null,
-            )
-        },
-        popTransitionSpec = {
-            ContentTransform(
-                targetContentEnter = EnterTransition.None,
-                initialContentExit = ExitTransition.None,
-                sizeTransform = null,
-            )
-        },
-        predictivePopTransitionSpec = {
-            ContentTransform(
-                targetContentEnter = EnterTransition.None,
-                initialContentExit = ExitTransition.None,
-                sizeTransform = null,
-            )
-        },
-        entryProvider =
-            entryProvider {
-                entry<HeartGuardDestination.Home> {
-                    HeartGuardHomeRoute(
-                        homeViewModel = homeViewModel,
-                        // 관리자 전화는 현장관리자 긴급호출 흐름으로 이동한다(본사 긴급 전화는 Route가 바로 다이얼한다).
-                        // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
-                        onManagerCallClick = {
-                            val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
-                            if (hasActiveEmergencyCall) {
-                                backStack.add(HeartGuardDestination.Calling)
-                            } else {
-                                backStack.add(HeartGuardDestination.Emergency)
-                            }
-                        },
-                        // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
-                        // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
-                        onFieldPhotoClick = {
-                            recordDraftViewModel.startRecord(RecordType.TEMPERATURE)
-                            backStack.add(HeartGuardDestination.FieldPhoto)
-                        },
-                        onRecordClick = {
-                            backStack.add(HeartGuardDestination.RecordTypeSelection)
-                        },
-                        onProfileEditClick = {
-                            backStack.add(HeartGuardDestination.ProfileEdit)
-                        },
-                        onInquiryClick = {
-                            backStack.add(HeartGuardDestination.Inquiry)
-                        },
-                        onRecordHistoryClick = {
-                            backStack.add(HeartGuardDestination.RecordHistory)
-                        },
-                        onChecklistClick = {
-                            backStack.add(HeartGuardDestination.Checklist)
-                        },
-                        onNotificationsClick = {
-                            backStack.add(HeartGuardDestination.TeamNotifications)
-                        },
-                        onWithdrawClick = {
-                            backStack.add(HeartGuardDestination.WithdrawNotice)
-                        },
-                    )
-                }
-                entry<HeartGuardDestination.Checklist> {
-                    ChecklistRoute(
-                        checklistViewModel = checklistViewModel,
-                        checkSchedule = checkSchedule,
-                        onBackClick = ::goBack,
-                        onCompleteClick = ::goHome,
-                    )
-                }
-                entry<HeartGuardDestination.ProfileEdit> {
-                    HeartGuardProfileEditRoute(
-                        onBackClick = ::goBack,
-                        onPasswordChangeClick = {
-                            backStack.add(HeartGuardDestination.PasswordChange)
-                        },
-                    )
-                }
-                entry<HeartGuardDestination.PasswordChange> {
-                    HeartGuardPasswordChangeRoute(onBackClick = ::goBack)
-                }
-                entry<HeartGuardDestination.Inquiry> {
-                    HeartGuardInquiryRoute(onBackClick = ::goBack)
-                }
-                entry<HeartGuardDestination.TeamNotifications> {
-                    HeartGuardTeamNotificationsRoute(
-                        onBackClick = ::goBack,
-                        onOpenTarget = ::openFromNotification,
-                    )
-                }
-                entry<HeartGuardDestination.RecordHistory> {
-                    HeartGuardRecordHistoryRoute(
-                        onBackClick = ::goBack,
-                        recordDraftViewModel = recordDraftViewModel,
-                        onRecordClick = { recordId ->
-                            backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
-                        },
-                        // Figma 23 빈 상태의 "기록하기"는 07 기록유형선택 시트를 연다.
-                        onCreateRecordClick = {
-                            backStack.add(HeartGuardDestination.RecordTypeSelection)
-                        },
-                        onResumeDraftClick = { recordType ->
-                            val destination =
-                                when (recordType) {
-                                    RecordType.TEMPERATURE -> HeartGuardDestination.TemperatureRecord
-                                    RecordType.WORK -> HeartGuardDestination.WorkPhoto
-                                    RecordType.REST -> HeartGuardDestination.RestPhoto
-                                }
-                            backStack.removeLastOrNull()
-                            backStack.add(destination)
-                        },
-                    )
-                }
-                entry<HeartGuardDestination.RecordHistoryDetail> { destination ->
-                    HeartGuardRecordDetailRoute(
-                        recordId = destination.recordId,
+    // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 …3000 tokens truncated…         recordId = destination.recordId,
                         onBackClick = ::goBack,
                     )
                 }
