@@ -49,6 +49,7 @@ import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
+import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
@@ -236,6 +237,15 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // 홈 조회가 끝날 때마다 다시 확인해, 이어받기가 한 번 실패해도 응답 내용과 상관없이 다음 새로고침에서 복구한다.
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
+    val checklistSiteLabel =
+        (homeUiState as? HomeUiState.Success)
+            ?.overview
+            ?.let { overview ->
+                listOfNotNull(overview.workplace, overview.teamName)
+                    .filter(String::isNotBlank)
+                    .joinToString(separator = " · ")
+                    .takeIf(String::isNotBlank)
+            }
     val homeRefreshCompletionCount by homeViewModel.refreshCompletionCount.collectAsStateWithLifecycle()
     val hasServerActiveEmergencyCall =
         (homeUiState as? HomeUiState.Success)
@@ -418,7 +428,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                             backStack.add(HeartGuardDestination.RecordHistory)
                         },
                         onChecklistClick = {
-                            backStack.add(HeartGuardDestination.Checklist)
+                            backStack.add(HeartGuardDestination.ChecklistOverview)
                         },
                         onNotificationsClick = {
                             backStack.add(HeartGuardDestination.TeamNotifications)
@@ -428,10 +438,35 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                         },
                     )
                 }
+                entry<HeartGuardDestination.ChecklistOverview> {
+                    ChecklistOverviewScreen(
+                        schedule = checkSchedule.takeIf { homeUiState is HomeUiState.Success },
+                        siteLabel = checklistSiteLabel,
+                        isLoading = homeUiState is HomeUiState.Loading,
+                        hasLoadError = homeUiState is HomeUiState.Error,
+                        onBackClick = ::goBack,
+                        onRetryClick = homeViewModel::loadTeamSiteOverview,
+                        onNewDay = homeViewModel::refreshForNewDay,
+                        onPeriodClick = { time ->
+                            backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
+                        },
+                    )
+                }
                 entry<HeartGuardDestination.Checklist> {
                     ChecklistRoute(
                         checklistViewModel = checklistViewModel,
                         checkSchedule = checkSchedule,
+                        siteLabel = checklistSiteLabel,
+                        onBackClick = ::goBack,
+                        onCompleteClick = ::goHome,
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistPeriod> { destination ->
+                    ChecklistRoute(
+                        checklistViewModel = checklistViewModel,
+                        checkSchedule = checkSchedule,
+                        selectedTime = runCatching { java.time.LocalTime.parse(destination.time) }.getOrNull(),
+                        siteLabel = checklistSiteLabel,
                         onBackClick = ::goBack,
                         onCompleteClick = ::goHome,
                     )
