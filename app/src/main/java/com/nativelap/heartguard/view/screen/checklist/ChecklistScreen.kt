@@ -52,8 +52,8 @@ import com.nativelap.heartguard.viewmodel.checklist.ChecklistItemUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistPeriodStatus
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistPeriodUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistUiState
-import java.time.format.DateTimeFormatter
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 internal sealed interface ChecklistScreenEvent {

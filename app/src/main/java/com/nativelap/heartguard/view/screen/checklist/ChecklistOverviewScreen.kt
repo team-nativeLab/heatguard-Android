@@ -36,10 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
@@ -48,12 +48,12 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.heartGuardResponsivePage
-import java.time.LocalTime
+import kotlinx.coroutines.delay
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.delay
 
 private enum class PeriodStatus {
     COMPLETED,
@@ -114,18 +114,20 @@ internal fun ChecklistOverviewScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.extraColors.pageBackground,
-                ),
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.extraColors.pageBackground,
+                    ),
             )
         },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = HeartGuardSpacing.HeaderHorizontal,
-                vertical = HeartGuardSpacing.Compact,
-            ),
+            contentPadding =
+                PaddingValues(
+                    horizontal = HeartGuardSpacing.HeaderHorizontal,
+                    vertical = HeartGuardSpacing.Compact,
+                ),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             if (schedule != null) {
@@ -140,7 +142,7 @@ internal fun ChecklistOverviewScreen(
                             warningCount = periods.count { period -> period.status == PeriodStatus.WARNING },
                             totalCount = periods.size,
                             siteLabel = siteLabel,
-                        date = overviewDate,
+                            date = overviewDate,
                         )
                     }
                 }
@@ -228,34 +230,46 @@ private fun OverviewPeriodCard(
 ) {
     val (statusLabel, containerColor, labelColor) =
         when (period.status) {
-            PeriodStatus.COMPLETED -> Triple(
-                stringResource(R.string.checklist_period_recorded),
-                MaterialTheme.colorScheme.surface,
-                MaterialTheme.extraColors.success,
-            )
-            PeriodStatus.WARNING -> Triple(
-                stringResource(R.string.checklist_overview_status_missed),
-                MaterialTheme.extraColors.alertContainer,
-                MaterialTheme.colorScheme.error,
-            )
-            PeriodStatus.CURRENT -> Triple(
-                stringResource(R.string.checklist_period_current),
-                MaterialTheme.colorScheme.primaryContainer,
-                MaterialTheme.colorScheme.primary,
-            )
-            PeriodStatus.UPCOMING -> Triple(
-                stringResource(R.string.checklist_period_upcoming),
-                MaterialTheme.colorScheme.surface,
-                MaterialTheme.extraColors.tertiaryText,
-            )
+            PeriodStatus.COMPLETED -> {
+                Triple(
+                    stringResource(R.string.checklist_period_recorded),
+                    MaterialTheme.colorScheme.surface,
+                    MaterialTheme.extraColors.success,
+                )
+            }
+
+            PeriodStatus.WARNING -> {
+                Triple(
+                    stringResource(R.string.checklist_overview_status_missed),
+                    MaterialTheme.extraColors.alertContainer,
+                    MaterialTheme.colorScheme.error,
+                )
+            }
+
+            PeriodStatus.CURRENT -> {
+                Triple(
+                    stringResource(R.string.checklist_period_current),
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            PeriodStatus.UPCOMING -> {
+                Triple(
+                    stringResource(R.string.checklist_period_upcoming),
+                    MaterialTheme.colorScheme.surface,
+                    MaterialTheme.extraColors.tertiaryText,
+                )
+            }
         }
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(
-            onClickLabel = stringResource(R.string.checklist_overview_open_detail),
-            role = Role.Button,
-            onClick = onClick,
-        ),
+        modifier =
+            Modifier.fillMaxWidth().clickable(
+                onClickLabel = stringResource(R.string.checklist_overview_open_detail),
+                role = Role.Button,
+                onClick = onClick,
+            ),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = containerColor),
     ) {
@@ -269,11 +283,12 @@ private fun OverviewPeriodCard(
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
             ) {
                 Text(
-                    text = stringResource(
-                        R.string.checklist_period_time_format,
-                        period.time.hour,
-                        period.time.minute,
-                    ),
+                    text =
+                        stringResource(
+                            R.string.checklist_period_time_format,
+                            period.time.hour,
+                            period.time.minute,
+                        ),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -342,11 +357,11 @@ private fun ChecklistOverviewSummary(
                         )
                         Text(
                             text = stringResource(R.string.checklist_overview_completed_of_format, totalCount),
-                        modifier =
-                            Modifier.padding(
-                                start = HeartGuardSpacing.Tight,
-                                bottom = HeartGuardSpacing.Tight,
-                            ),
+                            modifier =
+                                Modifier.padding(
+                                    start = HeartGuardSpacing.Tight,
+                                    bottom = HeartGuardSpacing.Tight,
+                                ),
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -435,12 +450,13 @@ private fun CheckSchedule?.toOverviewPeriods(): List<OverviewPeriod> {
 private fun ChecklistOverviewScreenPreview() {
     HeartGuardTheme {
         ChecklistOverviewScreen(
-            schedule = CheckSchedule(
-                checkTimes = listOf(LocalTime.of(8, 0), LocalTime.of(10, 0), LocalTime.of(12, 0)),
-                nextCheckTime = LocalTime.of(12, 0),
-                minutesUntilNextCheck = 20,
-                completedCheckTimes = setOf(LocalTime.of(8, 0)),
-            ),
+            schedule =
+                CheckSchedule(
+                    checkTimes = listOf(LocalTime.of(8, 0), LocalTime.of(10, 0), LocalTime.of(12, 0)),
+                    nextCheckTime = LocalTime.of(12, 0),
+                    minutesUntilNextCheck = 20,
+                    completedCheckTimes = setOf(LocalTime.of(8, 0)),
+                ),
             siteLabel = "",
             isLoading = false,
             hasLoadError = false,

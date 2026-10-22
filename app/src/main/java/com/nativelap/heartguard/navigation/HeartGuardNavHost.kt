@@ -50,8 +50,8 @@ import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
-import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
+import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
