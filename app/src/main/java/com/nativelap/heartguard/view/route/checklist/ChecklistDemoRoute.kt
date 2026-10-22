@@ -86,7 +86,10 @@ internal fun ChecklistDemoPeriodRoute(
         siteLabel = stringResource(R.string.checklist_demo_site_label),
         onEvent = { event ->
             when (event) {
-                ChecklistScreenEvent.BackClicked -> onBackClick()
+                ChecklistScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
                 is ChecklistScreenEvent.ItemToggled -> {
                     checklistDemoViewModel.setItemChecked(
                         time = selectedTime,
@@ -94,7 +97,11 @@ internal fun ChecklistDemoPeriodRoute(
                         isChecked = event.isChecked,
                     )
                 }
-                ChecklistScreenEvent.RetryClicked -> Unit
+
+                ChecklistScreenEvent.RetryClicked -> {
+                    Unit
+                }
+
                 ChecklistScreenEvent.CompleteClicked -> {
                     if (checklistUiState.isComplete) {
                         checklistDemoViewModel.completeRound(selectedTime)

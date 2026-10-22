@@ -21,8 +21,8 @@ internal class ChecklistDemoViewModel
             mutableUiState.value = ChecklistDemoUiState()
         }
 
-        fun checkSchedule(state: ChecklistDemoUiState = mutableUiState.value): CheckSchedule {
-            return CheckSchedule(
+        fun checkSchedule(state: ChecklistDemoUiState = mutableUiState.value): CheckSchedule =
+            CheckSchedule(
                 checkTimes = state.rounds.map(ChecklistDemoRoundUiModel::time),
                 nextCheckTime = state.currentTime,
                 minutesUntilNextCheck = null,
@@ -32,7 +32,6 @@ internal class ChecklistDemoViewModel
                         .map(ChecklistDemoRoundUiModel::time)
                         .toSet(),
             )
-        }
 
         fun checklistUiState(
             time: LocalTime,
@@ -98,9 +97,10 @@ internal class ChecklistDemoViewModel
                 }
             val nextCurrentTime =
                 if (state.currentTime == time) {
-                    updatedRounds.firstOrNull { round ->
-                        !round.isComplete && round.time.isAfter(time)
-                    }?.time
+                    updatedRounds
+                        .firstOrNull { round ->
+                            !round.isComplete && round.time.isAfter(time)
+                        }?.time
                 } else {
                     state.currentTime
                 }
@@ -165,8 +165,8 @@ private fun demoRound(
     time: LocalTime,
     checkedCount: Int,
     isComplete: Boolean,
-): ChecklistDemoRoundUiModel {
-    return ChecklistDemoRoundUiModel(
+): ChecklistDemoRoundUiModel =
+    ChecklistDemoRoundUiModel(
         time = time,
         items =
             CHECKLIST_DEMO_ITEM_TITLE_RESOURCE_IDS.mapIndexed { index, titleResourceId ->
@@ -178,4 +178,3 @@ private fun demoRound(
             },
         isComplete = isComplete,
     )
-}
