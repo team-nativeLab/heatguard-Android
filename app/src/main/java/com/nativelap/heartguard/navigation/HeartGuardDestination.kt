@@ -27,7 +27,15 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object ChecklistOverview : HeartGuardDestination
 
     @Serializable
+    data object ChecklistDemoOverview : HeartGuardDestination
+
+    @Serializable
     data class ChecklistPeriod(
+        val time: String,
+    ) : HeartGuardDestination
+
+    @Serializable
+    data class ChecklistDemoPeriod(
         val time: String,
     ) : HeartGuardDestination
 

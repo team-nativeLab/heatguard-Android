@@ -30,6 +30,8 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistDemoOverviewRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistDemoPeriodRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
@@ -53,6 +55,7 @@ import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistDemoViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
@@ -218,6 +221,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
     val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val checklistViewModel: ChecklistViewModel = hiltViewModel()
+    val checklistDemoViewModel: ChecklistDemoViewModel = hiltViewModel()
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
@@ -450,6 +454,27 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                         onPeriodClick = { time ->
                             backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
                         },
+                        onDemoClick = {
+                            checklistDemoViewModel.startDemo()
+                            backStack.add(HeartGuardDestination.ChecklistDemoOverview)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistDemoOverview> {
+                    ChecklistDemoOverviewRoute(
+                        checklistDemoViewModel = checklistDemoViewModel,
+                        onBackClick = ::goBack,
+                        onPeriodClick = { time ->
+                            backStack.add(HeartGuardDestination.ChecklistDemoPeriod(time = time.toString()))
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistDemoPeriod> { destination ->
+                    ChecklistDemoPeriodRoute(
+                        checklistDemoViewModel = checklistDemoViewModel,
+                        time = destination.time,
+                        onBackClick = ::goBack,
+                        onCompleteClick = ::goBack,
                     )
                 }
                 entry<HeartGuardDestination.Checklist> {

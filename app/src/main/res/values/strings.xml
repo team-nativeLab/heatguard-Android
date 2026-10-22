@@ -398,6 +398,14 @@
     <string name="checklist_overview_empty">오늘 등록된 체크 시간이 없어요.</string>
     <string name="checklist_overview_guidance">확인할 회차를 선택해 체크리스트를 확인하세요.</string>
     <string name="checklist_overview_open_detail">체크리스트 상세 열기</string>
+    <string name="checklist_demo_entry">Figma 회차 데모 보기</string>
+    <string name="checklist_demo_site_label">인천 복합물류센터 신축 · A팀</string>
+    <string name="checklist_demo_item_water">식수(음용수) 비치 확인</string>
+    <string name="checklist_demo_item_shade">그늘막·휴게시설 설치 확인</string>
+    <string name="checklist_demo_item_health">근로자 건강상태(온열질환 증상) 확인</string>
+    <string name="checklist_demo_item_work_pause">무더위 시간대(14~17시) 옥외작업 자제</string>
+    <string name="checklist_demo_item_rest">2시간마다 20분 이상 휴식 실시</string>
+    <string name="checklist_demo_item_first_aid">응급처치 키트 위치 확인</string>
     <string name="checklist_overview_rounds_heading">오늘 회차</string>
     <string name="checklist_selected_period_heading_format">%1$02d:%2$02d 체크</string>
     <string name="checklist_complete_action_progress">체크 완료 (%1$d/%2$d)</string>

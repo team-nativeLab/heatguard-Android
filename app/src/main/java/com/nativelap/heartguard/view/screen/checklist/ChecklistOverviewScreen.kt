@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,19 +79,23 @@ internal fun ChecklistOverviewScreen(
     onRetryClick: () -> Unit,
     onPeriodClick: (LocalTime) -> Unit,
     onNewDay: () -> Unit = {},
+    onDemoClick: (() -> Unit)? = null,
+    fixedOverviewDate: LocalDate? = null,
     modifier: Modifier = Modifier,
 ) {
     var overviewDate by remember { mutableStateOf(LocalDate.now(KOREA_ZONE)) }
     val periods = schedule.toOverviewPeriods()
     val completedCount = periods.count { period -> period.status == PeriodStatus.COMPLETED }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(CHECKLIST_OVERVIEW_DATE_POLL_MILLIS)
-            val currentDate = LocalDate.now(KOREA_ZONE)
-            if (currentDate != overviewDate) {
-                overviewDate = currentDate
-                onNewDay()
+    LaunchedEffect(fixedOverviewDate) {
+        if (fixedOverviewDate == null) {
+            while (true) {
+                delay(CHECKLIST_OVERVIEW_DATE_POLL_MILLIS)
+                val currentDate = LocalDate.now(KOREA_ZONE)
+                if (currentDate != overviewDate) {
+                    overviewDate = currentDate
+                    onNewDay()
+                }
             }
         }
     }
@@ -142,8 +147,19 @@ internal fun ChecklistOverviewScreen(
                             warningCount = periods.count { period -> period.status == PeriodStatus.WARNING },
                             totalCount = periods.size,
                             siteLabel = siteLabel,
-                            date = overviewDate,
+                            date = fixedOverviewDate ?: overviewDate,
                         )
+                    }
+                }
+            }
+
+            if (onDemoClick != null) {
+                item(key = "overview-demo-entry") {
+                    TextButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onDemoClick,
+                    ) {
+                        Text(text = stringResource(R.string.checklist_demo_entry))
                     }
                 }
             }
