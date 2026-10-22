@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,13 +32,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
@@ -96,17 +97,11 @@ internal fun ChecklistScreen(
         }
 
     Scaffold(
-        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground).widthIn(max = 402.dp),
         containerColor = MaterialTheme.extraColors.pageBackground,
         topBar = {
             CenterAlignedTopAppBar(
-                modifier =
-                    Modifier.padding(
-                        top =
-                            HeartGuardSpacing.Section +
-                                HeartGuardSpacing.Compact +
-                                HeartGuardSpacing.Tight,
-                    ),
+                modifier = Modifier,
                 title = {
                     Text(
                         text = stringResource(R.string.checklist_title),
@@ -146,21 +141,18 @@ internal fun ChecklistScreen(
                     .padding(innerPadding),
             contentPadding =
                 PaddingValues(
-                    horizontal = HeartGuardSpacing.HeaderHorizontal,
-                    vertical = HeartGuardSpacing.Compact,
+                    start = HeartGuardSpacing.HeaderHorizontal,
+                    top = CHECKLIST_DETAIL_CONTENT_TOP_PADDING,
+                    end = HeartGuardSpacing.HeaderHorizontal,
+                    bottom = HeartGuardSpacing.Compact,
                 ),
         ) {
             item(key = "checklist-content") {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RectangleShape,
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    Column(
-                        verticalArrangement =
-                            Arrangement.spacedBy(
-                                HeartGuardSpacing.ChecklistSectionGap,
-                            ),
+                Column(verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.ChecklistSectionGap)) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(CHECKLIST_DETAIL_CARD_RADIUS),
+                        color = MaterialTheme.colorScheme.surface,
                     ) {
                         ChecklistSummaryCard(
                             completedCount = uiState.completedCount,
@@ -171,82 +163,82 @@ internal fun ChecklistScreen(
                             selectedTime = selectedTime,
                             siteLabel = siteLabel,
                         )
-                        ChecklistPeriodRow(periods = uiState.periods)
-                        if (uiState.hasSaveError) {
-                            Text(
-                                text = stringResource(R.string.checklist_save_failure),
-                                modifier = Modifier.padding(horizontal = HeartGuardSpacing.Tight),
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
+                    }
+                    ChecklistPeriodRow(periods = uiState.periods)
+                    if (uiState.hasSaveError) {
                         Text(
-                            text = stringResource(R.string.checklist_guidance),
+                            text = stringResource(R.string.checklist_save_failure),
                             modifier = Modifier.padding(horizontal = HeartGuardSpacing.Tight),
-                            color = MaterialTheme.extraColors.secondaryText,
+                            color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        when {
-                            uiState.isLoading && !uiState.hasLoaded -> {
-                                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                            }
+                    }
+                    Text(
+                        text = stringResource(R.string.checklist_guidance),
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.Tight),
+                        color = MaterialTheme.extraColors.secondaryText,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    when {
+                        uiState.isLoading && !uiState.hasLoaded -> {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        }
 
-                            uiState.hasLoadError && !uiState.hasLoaded -> {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.checklist_load_failure),
-                                        color = MaterialTheme.extraColors.secondaryText,
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                    Button(onClick = { onEvent(ChecklistScreenEvent.RetryClicked) }) {
-                                        Text(text = stringResource(R.string.common_retry))
-                                    }
+                        uiState.hasLoadError && !uiState.hasLoaded -> {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.checklist_load_failure),
+                                    color = MaterialTheme.extraColors.secondaryText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                Button(onClick = { onEvent(ChecklistScreenEvent.RetryClicked) }) {
+                                    Text(text = stringResource(R.string.common_retry))
                                 }
                             }
+                        }
 
-                            uiState.hasLoaded -> {
-                                Column {
-                                    if (uiState.hasLoadError) {
-                                        Column(
-                                            modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.checklist_load_failure),
-                                                color = MaterialTheme.extraColors.secondaryText,
-                                                style = MaterialTheme.typography.bodySmall,
-                                            )
-                                            Button(onClick = { onEvent(ChecklistScreenEvent.RetryClicked) }) {
-                                                Text(text = stringResource(R.string.common_retry))
-                                            }
-                                        }
-                                    }
-                                    if (uiState.items.isEmpty()) {
+                        uiState.hasLoaded -> {
+                            Column {
+                                if (uiState.hasLoadError) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                                    ) {
                                         Text(
-                                            text = stringResource(R.string.checklist_empty),
-                                            modifier = Modifier.padding(HeartGuardSpacing.Section),
+                                            text = stringResource(R.string.checklist_load_failure),
                                             color = MaterialTheme.extraColors.secondaryText,
                                             style = MaterialTheme.typography.bodySmall,
                                         )
-                                    } else {
-                                        ChecklistItemsCard(
-                                            items = uiState.items,
-                                            savingItemIds = uiState.savingItemIds,
-                                            onItemToggled = { itemId, isChecked ->
-                                                onEvent(
-                                                    ChecklistScreenEvent.ItemToggled(
-                                                        itemId = itemId,
-                                                        isChecked = isChecked,
-                                                    ),
-                                                )
-                                            },
-                                        )
+                                        Button(onClick = { onEvent(ChecklistScreenEvent.RetryClicked) }) {
+                                            Text(text = stringResource(R.string.common_retry))
+                                        }
                                     }
+                                }
+                                if (uiState.items.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.checklist_empty),
+                                        modifier = Modifier.padding(HeartGuardSpacing.Section),
+                                        color = MaterialTheme.extraColors.secondaryText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                } else {
+                                    ChecklistItemsCard(
+                                        items = uiState.items,
+                                        savingItemIds = uiState.savingItemIds,
+                                        onItemToggled = { itemId, isChecked ->
+                                            onEvent(
+                                                ChecklistScreenEvent.ItemToggled(
+                                                    itemId = itemId,
+                                                    isChecked = isChecked,
+                                                ),
+                                            )
+                                        },
+                                    )
                                 }
                             }
                         }
@@ -272,7 +264,7 @@ private fun ChecklistSummaryCard(
             Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = HeartGuardSpacing.Section,
+                    horizontal = CHECKLIST_DETAIL_SUMMARY_HORIZONTAL,
                     vertical = HeartGuardSpacing.ChecklistSummaryVertical,
                 ),
         verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
@@ -511,21 +503,28 @@ private fun ChecklistItemsCard(
     savingItemIds: Set<String>,
     onItemToggled: (String, Boolean) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        items.forEachIndexed { index, item ->
-            if (index > 0) {
-                HorizontalDivider(
-                    color = MaterialTheme.extraColors.checklistDivider,
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(CHECKLIST_DETAIL_CARD_RADIUS),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.Compact),
+                        color = MaterialTheme.extraColors.checklistDivider,
+                    )
+                }
+                ChecklistItemRow(
+                    title = item.title,
+                    isChecked = item.isChecked,
+                    enabled = item.itemId !in savingItemIds,
+                    onCheckedChange = { isChecked ->
+                        onItemToggled(item.itemId, isChecked)
+                    },
                 )
             }
-            ChecklistItemRow(
-                title = item.title,
-                isChecked = item.isChecked,
-                enabled = item.itemId !in savingItemIds,
-                onCheckedChange = { isChecked ->
-                    onItemToggled(item.itemId, isChecked)
-                },
-            )
         }
     }
 }
@@ -572,4 +571,7 @@ private fun ChecklistScreenCompletePreview() {
 private const val CHECKLIST_PERIOD_COMPLETED_ICON = "✓"
 private const val CHECKLIST_PERIOD_WARNING_ICON = "!"
 private const val CHECKLIST_PERIOD_CURRENT_ICON = "●"
+private val CHECKLIST_DETAIL_CARD_RADIUS = 16.dp
+private val CHECKLIST_DETAIL_SUMMARY_HORIZONTAL = 20.dp
+private val CHECKLIST_DETAIL_CONTENT_TOP_PADDING = 19.dp
 private val CHECKLIST_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd", Locale.getDefault())

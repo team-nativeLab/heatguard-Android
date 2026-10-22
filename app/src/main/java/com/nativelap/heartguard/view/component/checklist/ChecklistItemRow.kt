@@ -43,7 +43,7 @@ internal fun ChecklistItemRow(
             onCheckedChange = {},
             contentDescription = title,
             isInteractive = false,
-            isCircular = true,
+            isCircular = false,
         )
 
         Text(
@@ -52,14 +52,9 @@ internal fun ChecklistItemRow(
                 Modifier
                     .weight(1f)
                     .padding(start = HeartGuardSpacing.ChecklistItemTextGap),
-            color =
-                if (isChecked) {
-                    MaterialTheme.extraColors.checklistCompletedText
-                } else {
-                    MaterialTheme.extraColors.strongText
-                },
+            color = MaterialTheme.extraColors.strongText,
             style =
-                MaterialTheme.typography.bodySmall.copy(
+                MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Normal,
                 ),
         )

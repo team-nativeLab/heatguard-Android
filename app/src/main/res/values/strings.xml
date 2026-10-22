@@ -34,8 +34,9 @@
     <string name="auth_phone_label">휴대폰 번호</string>
     <string name="auth_phone_country_code">+82</string>
     <string name="auth_phone_hint">010-1234-5678</string>
-    <string name="auth_phone_security_note">휴대폰 번호 연동 기능은 준비 중이에요.</string>
+    <string name="auth_phone_security_note">화면 미리보기용이며 입력한 번호는 저장되지 않아요</string>
     <string name="auth_phone_link">연동하기</string>
+    <string name="auth_phone_clear_symbol">×</string>
     <string name="common_clear">지우기</string>
     <string name="auth_login_invalid_credentials">이메일 또는 비밀번호를 확인해주세요</string>
     <string name="auth_login_account_disabled">사용할 수 없는 계정입니다. 관리자에게 문의해주세요</string>
@@ -407,6 +408,16 @@
     <string name="checklist_demo_item_rest">2시간마다 20분 이상 휴식 실시</string>
     <string name="checklist_demo_item_first_aid">응급처치 키트 위치 확인</string>
     <string name="checklist_overview_rounds_heading">오늘 회차</string>
+    <string name="checklist_overview_interval">2시간마다 체크</string>
+    <string name="checklist_overview_badge_completed">완료</string>
+    <string name="checklist_overview_badge_current">진행 중</string>
+    <string name="checklist_overview_badge_upcoming">예정</string>
+    <string name="checklist_overview_timeline_warning">!</string>
+    <string name="checklist_demo_completed_metadata_format">%1$d개 항목 · %2$s 완료</string>
+    <string name="checklist_demo_completed_metadata_generic">%1$d개 항목 · 완료</string>
+    <string name="checklist_demo_missed_metadata_format">%1$d / 6 체크 · 기한 지남</string>
+    <string name="checklist_demo_current_metadata_format">%1$d / 6 체크 · %2$s까지</string>
+    <string name="checklist_demo_upcoming_metadata_format">%1$s부터 체크할 수 있어요</string>
     <string name="checklist_selected_period_heading_format">%1$02d:%2$02d 체크</string>
     <string name="checklist_complete_action_progress">체크 완료 (%1$d/%2$d)</string>
     <string name="checklist_complete_action">체크 완료</string>
