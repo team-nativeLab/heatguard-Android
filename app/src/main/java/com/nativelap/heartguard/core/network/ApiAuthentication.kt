@@ -4,4 +4,5 @@ package com.nativelap.heartguard.core.network
 enum class ApiAuthentication {
     NONE,
     BEARER,
+    APP_ACCOUNT_BEARER,
 }

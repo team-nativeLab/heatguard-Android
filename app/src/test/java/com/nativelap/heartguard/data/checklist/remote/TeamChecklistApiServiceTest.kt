@@ -2,7 +2,7 @@ package com.nativelap.heartguard.data.checklist.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
-import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
+import com.nativelap.heartguard.core.session.createTeamMemberTestSessionManager
 import com.nativelap.heartguard.data.checklist.dto.UpdateChecklistItemRequestDto
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -76,7 +76,7 @@ class TeamChecklistApiServiceTest {
         ApiRetrofitFactory(
             authenticatedApiClient = OkHttpClient(),
             unauthenticatedApiClient = OkHttpClient(),
-            sessionManager = createUnauthenticatedTestSessionManager(),
+            sessionManager = createTeamMemberTestSessionManager(),
             json = Json { ignoreUnknownKeys = true },
         ).createService(
             baseUrl = server.url("/").toString(),

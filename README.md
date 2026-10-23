@@ -21,7 +21,7 @@
 
 ## 개요
 폭염 환경에서 작업하는 현장 인력의 체온·작업/휴식 상태를 기록하고, 위험 상황 발생 시 관리자에게 긴급 호출을 보낼 수 있도록 돕는 것을 목표로 하는 Android 앱입니다.
-현재 구현된 작업자 앱 화면(로그인, 회원가입 입력 UI, 휴대폰 번호 연동 UI, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 로그인·작업자 기능은 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)에 연결되어 있고, 회원가입 제출과 휴대폰 번호 연동은 화면만 구성되어 서버·App Link와 연결되지 않았습니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다. 계정은 관리자가 사전에 발급합니다.
+현재 구현된 작업자 앱 화면(로그인, 앱 계정 회원가입, 작업자 계정 휴대폰 번호 연동 UI, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 기존 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)와 앱 계정 가입·로그인·현장 연동 API(`/api/v1/auth/app/*`, `/api/v1/app/*`)는 서로 다른 세션 역할로 호출합니다. 앱 계정은 연결된 현장 목록과 선택 화면을 사용하며 작업자 체크리스트 화면에는 접근하지 않습니다. 현장 링크를 앱으로 직접 여는 Android App Link 주소/도메인은 제공 대기 중이므로 Manifest 수신 필터는 아직 등록하지 않았습니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
 
 PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 README·사용자 제공 요구사항·Figma·API 명세 v0.1을 작업 범위 자료로 사용하며, 별도 PRD는 생성하지 않습니다.
 
@@ -30,7 +30,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 
 | 화면 | 설명 |
 |---|---|
-| Login / SignUpForm / PhoneNumberLink | 사전 발급된 작업자 계정 로그인, 회원가입 입력 UI, 휴대폰 번호 연동 UI. 회원가입 제출과 전화번호 연동은 아직 서버/App Link에 연결되지 않음 |
+| Login / SignUpForm / PhoneNumberLink | 작업자 로그인, 이메일 인증코드 기반 앱 계정 가입·로그인, 작업자 휴대폰 번호 연동 UI. 앱 계정 가입은 API 명세 계약 기준으로 구현했으며 Android App Link 주소는 제공 대기 중 |
 | Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 현장관리자 긴급호출 화면으로, "긴급 전화"는 본사 번호(`company.phone`) 다이얼(번호 없으면 비활성). 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
 | ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
 | Inquiry | 문의 등록과 내 문의 목록(상태 배지·등록일). 문의 상세 화면은 범위 밖 |
@@ -58,12 +58,14 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 
 알림과 휴식 기록 계약은 사용자 제공 Downloads의 `개인 페이지 & 공유된 페이지 11` 명세를 기준으로 합니다. 알림 분류 매핑은 `RECORD`→`RECORD_CREATED`, `EMERGENCY`→`EMERGENCY_ACKNOWLEDGED`, `NOTICE`→`INQUIRY_ANSWERED`입니다.
 
+앱 계정 가입·현장 연동 API는 사용자 제공 `개인 페이지 & 공유된 페이지 16` 명세 및 이메일 인증 PR #28의 제안 계약을 기준으로 구현했습니다. PR #28은 Draft 상태이고 서버 배포 및 SMTP 실검증은 확인되지 않았으므로 아래 신규 API는 운영/스테이징에서 검증된 계약으로 간주하지 않습니다. Android App Link의 실제 scheme/domain은 제공 대기 중입니다. `APP_ACCOUNT` 세션에는 앱 계정 인증·현장 연동 API만 허용하고, `/team/checklist`를 포함한 작업자 API는 `TEAM_MEMBER` 세션에서만 호출합니다.
+
 | API | 앱 연동 | 비고 |
 |---|---|---|
 | `POST /auth/team/login`, `POST /auth/team/logout` | 연결 | 응답 `data{accessToken, expiresAt, user, siteId, teamId}`, refresh token 없음 |
 | `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, companyName, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`과 마지막으로 받은 `version`을 보냄. 409는 최신 정보 재조회 후 안내 |
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
-| `GET /team` | 연결 | 기상 미입력 시 `weather`·`heatLevel`이 null, 관리자 연락처는 빈 문자열일 수 있음. `company.phone`(본사 연락처), `weather.skyStatus`, `weather.temperatureDelta` 사용 |
+| `GET /team` | 연결 | 기상 미입력 시 기상·비교 필드는 null, 관리자 연락처는 빈 문자열일 수 있음. 응답 DTO가 `company.phone`, `weather.observedAt`·`skyStatus`·`temperatureDelta`·비교값, `unreadNotificationCount`를 파싱한다. 화면에서 사용하는 값만 Domain에 매핑한다. |
 | `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | `files[i] ↔ uploads[i]` 순서 보장, `slot`은 기록 내 사진 위치, `requiredHeaders`를 그대로 붙여 PUT. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처리. `restMinutes`는 서버가 계산 |
 | `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 `date` 하루 단위 필터만 지원(기간·유형 쿼리는 무시됨). 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
 | `POST·GET /team/inquiries` | 연결 | 목록 항목 `{inquiryId, title, content, status, deliveryStatus, replies[], createdAt}`, 알 수 없는 cursor는 400 |
@@ -73,6 +75,8 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `PATCH /api/v1/team/notifications/read-all` | 연결 | Query·Body 없이 본인의 모든 분류·페이지 알림을 읽음 처리합니다. 응답 `{updatedCount, unreadCount}`를 반영하고 목록을 유지한 채 현재 분류 첫 페이지를 재조회합니다. 재조회 실패는 기존 데이터와 읽음 결과를 보존하며 GET만 재시도합니다. 개별 읽음과 겹친 목록 조회는 처리 완료까지 대기하고, 앱 복귀 조회는 최소 5초 간격으로 실행합니다. 처리 중 재진입·연타를 차단하고 세션 종료 시 요청을 취소·무효화합니다. |
 | `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
 | `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
+| `POST /auth/email-codes`, `POST /auth/app/register`, `POST /auth/app/login`, `POST /auth/app/logout` | 명세 계약 기준 구현, 서버 검증 대기 | 이메일 인증코드 발송·앱 계정 가입·로그인·로그아웃. 앱 계정 토큰은 `APP_ACCOUNT` 역할로 저장·라우팅한다. 가입 이메일 API는 Draft PR #28 계약이며 실제 SMTP/서버 검증은 하지 않았다. |
+| `POST /app/links/claim`, `GET /app/sites`, `POST /app/sites/{siteId}/select` | 명세 계약 기준 구현, 서버 검증 대기 | 일회성 링크 토큰과 담당자 전화번호를 대조해 현장을 연동한 뒤 목록 조회·선택. 전화번호 대조는 SMS 인증이 아니다. 링크 입력은 수신 URI 파서에 연결했으나 실제 App Link scheme/domain 및 Manifest 필터는 주소 제공 후 설정한다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
 
 알림·기록 내역·홈·긴급 호출·문의·프로필 변경의 RemoteDataSource는 성공 envelope의 `success`·`error`·필수 `data`를 검증하며, 모순되거나 누락된 응답을 성공으로 표시하지 않습니다. 정상 빈 목록과 현재 호출 `NONE`/`callId=null`은 유지합니다. 비밀번호 변경은 오류 없는 `success=true/data=null` 응답과 호환되며, Unit 응답인 로그아웃·회원탈퇴에는 필수-data 검증을 적용하지 않습니다. HTTP 200의 명시적 거절 코드가 HTTP 상태별 화면 안내와 같은 의미인지 여부는 서버 계약 확인이 필요합니다.
@@ -192,7 +196,7 @@ HEARTGUARD_DEBUG_BASE_URL=https://YOUR_DEBUG_API_HOST/
 HEARTGUARD_RELEASE_BASE_URL=https://YOUR_RELEASE_API_HOST/
 ```
 
-Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 검증 단계에서 실패합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 회원가입 제출과 전화번호 연동은 화면만 제공하며 서버 연동은 미구현입니다.
+Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 검증 단계에서 실패합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 명세 기반 단위 테스트까지만 검증합니다.
 
 ## 테스트
 `app/build.gradle.kts`에 선언된 테스트 의존성 기준입니다. 검증 시에는 아래 프로젝트 태스크를 사용합니다.

@@ -41,14 +41,18 @@ import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 
-/** Figma 회원가입 화면에 맞춰 작업자 등록 입력 UI를 표시한다. */
+/** 이메일 인증코드와 앱 계정 자격 증명을 입력받는다. */
 @Composable
 internal fun AuthSignUpScreen(
-    companyName: String,
-    memberName: String,
     email: String,
+    verificationCode: String,
     password: String,
     passwordConfirmation: String,
+    isSendingEmailCode: Boolean,
+    isEmailCodeSent: Boolean,
+    resendCooldownSeconds: Int,
+    isSubmitting: Boolean,
+    statusMessage: String?,
     onEvent: (AuthSignUpScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -86,28 +90,6 @@ internal fun AuthSignUpScreen(
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpTitleForm))
 
                 AuthTextField(
-                    label = stringResource(R.string.auth_signup_company_label),
-                    text = companyName,
-                    onTextChange = { value ->
-                        onEvent(AuthSignUpScreenEvent.CompanyNameChanged(value))
-                    },
-                    placeholder = stringResource(R.string.auth_signup_company_hint),
-                )
-
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
-
-                AuthTextField(
-                    label = stringResource(R.string.auth_signup_member_label),
-                    text = memberName,
-                    onTextChange = { value ->
-                        onEvent(AuthSignUpScreenEvent.MemberNameChanged(value))
-                    },
-                    placeholder = stringResource(R.string.auth_signup_member_hint),
-                )
-
-                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
-
-                AuthTextField(
                     label = stringResource(R.string.auth_email),
                     text = email,
                     onTextChange = { value ->
@@ -115,6 +97,37 @@ internal fun AuthSignUpScreen(
                     },
                     placeholder = stringResource(R.string.auth_email_hint),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                )
+
+                TextButton(
+                    onClick = { onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked) },
+                    enabled = !isSendingEmailCode && !isSubmitting && resendCooldownSeconds == 0,
+                ) {
+                    Text(
+                        text =
+                            if (resendCooldownSeconds > 0) {
+                                stringResource(R.string.auth_signup_resend_wait, resendCooldownSeconds)
+                            } else {
+                                stringResource(
+                                    if (isEmailCodeSent) {
+                                        R.string.auth_signup_resend_code
+                                    } else {
+                                        R.string.auth_signup_send_code
+                                    },
+                                )
+                            },
+                        color = MaterialTheme.extraColors.authPrimary,
+                    )
+                }
+
+                AuthTextField(
+                    label = stringResource(R.string.auth_signup_verification_code_label),
+                    text = verificationCode,
+                    onTextChange = { value ->
+                        onEvent(AuthSignUpScreenEvent.VerificationCodeChanged(value.filter(Char::isDigit).take(6)))
+                    },
+                    placeholder = stringResource(R.string.auth_signup_verification_code_hint),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
@@ -150,7 +163,17 @@ internal fun AuthSignUpScreen(
                     onClick = {
                         onEvent(AuthSignUpScreenEvent.SignUpClicked)
                     },
+                    isEnabled = !isSubmitting && !isSendingEmailCode,
                 )
+
+                if (statusMessage != null) {
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                    Text(
+                        text = statusMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
 
                 Row(
                     modifier =
@@ -180,6 +203,15 @@ internal fun AuthSignUpScreen(
                         )
                     }
                 }
+
+                TextButton(
+                    onClick = { onEvent(AuthSignUpScreenEvent.AppAccountLoginClicked) },
+                ) {
+                    Text(
+                        text = stringResource(R.string.auth_login_app_account),
+                        color = MaterialTheme.extraColors.authPrimary,
+                    )
+                }
             }
         }
     }
@@ -190,11 +222,15 @@ internal fun AuthSignUpScreen(
 private fun AuthSignUpScreenPreview() {
     HeartGuardTheme {
         AuthSignUpScreen(
-            companyName = "",
-            memberName = "",
             email = "",
+            verificationCode = "",
             password = "",
             passwordConfirmation = "",
+            isSendingEmailCode = false,
+            isEmailCodeSent = false,
+            resendCooldownSeconds = 0,
+            isSubmitting = false,
+            statusMessage = null,
             onEvent = {},
         )
     }

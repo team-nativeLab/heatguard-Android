@@ -21,13 +21,16 @@ import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardAppAccountLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistDemoOverviewRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistDemoPeriodRoute
@@ -51,6 +54,7 @@ import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
+import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
 import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
@@ -67,17 +71,53 @@ import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
  * (BearerTokenAuthenticator가 expireSession()을 호출한 경우 포함) 자동으로 로그인 화면으로 돌아간다. */
 @Composable
-internal fun HeartGuardNavHost(sessionViewModel: HeartGuardSessionViewModel = hiltViewModel()) {
+internal fun HeartGuardNavHost(
+    sessionViewModel: HeartGuardSessionViewModel = hiltViewModel(),
+    appLinkTokenViewModel: AppLinkTokenViewModel = hiltViewModel(),
+) {
     val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
+    val sessionRole by sessionViewModel.sessionRole.collectAsStateWithLifecycle()
     val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
+    val pendingLinkToken by appLinkTokenViewModel.pendingToken.collectAsStateWithLifecycle()
 
     when (sessionState) {
         // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 인트로 로고를 보여 준다.
-        SessionState.Initializing -> IntroScreen()
+        SessionState.Initializing -> {
+            IntroScreen()
+        }
 
-        SessionState.Authenticated -> HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
+        SessionState.Authenticated -> {
+            when (sessionRole) {
+                SessionRole.APP_ACCOUNT -> {
+                    if (pendingLinkToken == null) {
+                        AppAccountSitesRoute()
+                    } else {
+                        HeartGuardPhoneNumberRoute(
+                            linkToken = requireNotNull(pendingLinkToken),
+                            onClaimSuccess = {
+                                appLinkTokenViewModel.consume(requireNotNull(pendingLinkToken))
+                            },
+                            onCancelClaim = {
+                                appLinkTokenViewModel.consume(requireNotNull(pendingLinkToken))
+                            },
+                        )
+                    }
+                }
 
-        SessionState.Unauthenticated -> HeartGuardAuthNavDisplay()
+                SessionRole.TEAM_MEMBER,
+                -> {
+                    HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
+                }
+
+                null -> {
+                    IntroScreen()
+                }
+            }
+        }
+
+        SessionState.Unauthenticated -> {
+            HeartGuardAuthNavDisplay(startWithAppLogin = pendingLinkToken != null)
+        }
     }
 }
 
@@ -114,8 +154,21 @@ private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
 
 /** 사전 발급 계정 로그인과 인증 전 Navigation 3 back stack을 담당한다. */
 @Composable
-private fun HeartGuardAuthNavDisplay() {
-    val backStack = rememberNavBackStack(HeartGuardDestination.Login)
+private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
+    val initialDestination =
+        if (startWithAppLogin) {
+            HeartGuardDestination.AppAccountLogin
+        } else {
+            HeartGuardDestination.Login
+        }
+    val backStack = rememberNavBackStack(initialDestination)
+
+    LaunchedEffect(startWithAppLogin) {
+        if (startWithAppLogin && backStack.lastOrNull() != HeartGuardDestination.AppAccountLogin) {
+            backStack.clear()
+            backStack.add(HeartGuardDestination.AppAccountLogin)
+        }
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -152,6 +205,21 @@ private fun HeartGuardAuthNavDisplay() {
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
+                        onNavigateToAppLogin = {
+                            backStack.add(HeartGuardDestination.AppAccountLogin)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.AppAccountLogin> {
+                    HeartGuardAppAccountLoginRoute(
+                        onNavigateToTeamLogin = {
+                            if (backStack.lastOrNull() == HeartGuardDestination.AppAccountLogin) {
+                                backStack.removeLastOrNull()
+                            }
+                        },
+                        onNavigateToSignUp = {
+                            backStack.add(HeartGuardDestination.SignUpForm)
+                        },
                     )
                 }
                 entry<HeartGuardDestination.SignUp> {
@@ -164,6 +232,9 @@ private fun HeartGuardAuthNavDisplay() {
                             if (backStack.size > 1) {
                                 backStack.removeLastOrNull()
                             }
+                        },
+                        onNavigateToAppLogin = {
+                            backStack.add(HeartGuardDestination.AppAccountLogin)
                         },
                     )
                 }

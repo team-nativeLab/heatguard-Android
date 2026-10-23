@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,9 @@ internal fun AuthPhoneNumberScreen(
     phoneNumber: String,
     onPhoneNumberChange: (String) -> Unit,
     onLinkClick: () -> Unit,
+    isSubmitting: Boolean = false,
+    statusMessage: String? = null,
+    onCancelClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -82,7 +86,21 @@ internal fun AuthPhoneNumberScreen(
                         .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                         .padding(horizontal = PHONE_SCREEN_HORIZONTAL_PADDING, vertical = PHONE_SCREEN_BOTTOM_PADDING),
             ) {
-                PhoneLinkButton(onClick = onLinkClick)
+                Column {
+                    PhoneLinkButton(
+                        onClick = onLinkClick,
+                        enabled = !isSubmitting && phoneNumber.any(Char::isDigit),
+                    )
+                    if (onCancelClick != null) {
+                        TextButton(
+                            onClick = onCancelClick,
+                            enabled = !isSubmitting,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(text = stringResource(R.string.auth_phone_cancel_link))
+                        }
+                    }
+                }
             }
         },
     ) { innerPadding ->
@@ -132,6 +150,14 @@ internal fun AuthPhoneNumberScreen(
                     text = stringResource(R.string.auth_phone_security_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.extraColors.strongText,
+                )
+            }
+            if (statusMessage != null) {
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                Text(
+                    text = statusMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -302,7 +328,10 @@ private val PHONE_NUMBER_OFFSET_MAPPING =
     }
 
 @Composable
-private fun PhoneLinkButton(onClick: () -> Unit) {
+private fun PhoneLinkButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+) {
     Box(
         modifier =
             Modifier
@@ -315,7 +344,11 @@ private fun PhoneLinkButton(onClick: () -> Unit) {
                 ).background(
                     Brush.linearGradient(PHONE_LINK_BUTTON_GRADIENT),
                     RoundedCornerShape(PHONE_LINK_BUTTON_RADIUS),
-                ).clickable(role = Role.Button, onClick = onClick),
+                ).clickable(
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Text(

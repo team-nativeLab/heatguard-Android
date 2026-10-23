@@ -5,7 +5,7 @@ import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
-import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
+import com.nativelap.heartguard.core.session.createTeamMemberTestSessionManager
 import com.nativelap.heartguard.data.emergency.remote.EmergencyCallApiService
 import com.nativelap.heartguard.data.emergency.remote.EmergencyCallRemoteDataSourceImpl
 import com.nativelap.heartguard.data.inquiry.remote.InquiryApiService
@@ -90,7 +90,7 @@ class FeatureEnvelopeRegressionTest(
                     ApiRetrofitFactory(
                         authenticatedApiClient = OkHttpClient(),
                         unauthenticatedApiClient = OkHttpClient(),
-                        sessionManager = createUnauthenticatedTestSessionManager(),
+                        sessionManager = createTeamMemberTestSessionManager(),
                         json = Json { ignoreUnknownKeys = true },
                     )
                 val executor = ApiExecutor()

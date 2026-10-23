@@ -3,6 +3,7 @@ package com.nativelap.heartguard.core.network
 import com.nativelap.heartguard.core.network.di.AuthenticatedApiClient
 import com.nativelap.heartguard.core.network.di.UnauthenticatedApiClient
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -55,7 +56,9 @@ class ApiRetrofitFactory
                         unauthenticatedApiClient
                     }
 
-                    ApiAuthentication.BEARER -> {
+                    ApiAuthentication.BEARER,
+                    ApiAuthentication.APP_ACCOUNT_BEARER,
+                    -> {
                         SessionBoundCallFactory(
                             delegateClient =
                                 if (allowRequestReplay) {
@@ -64,6 +67,12 @@ class ApiRetrofitFactory
                                     singleAttemptClient
                                 },
                             sessionManager = sessionManager,
+                            requiredRole =
+                                if (authentication == ApiAuthentication.APP_ACCOUNT_BEARER) {
+                                    SessionRole.APP_ACCOUNT
+                                } else {
+                                    SessionRole.TEAM_MEMBER
+                                },
                         )
                     }
                 }
