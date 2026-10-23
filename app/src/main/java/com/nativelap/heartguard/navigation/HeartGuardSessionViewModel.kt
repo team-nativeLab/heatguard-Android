@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.session.SessionEvent
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharedFlow
@@ -22,6 +23,15 @@ internal class HeartGuardSessionViewModel
         private val sessionManager: SessionManager,
     ) : ViewModel() {
         val sessionState: StateFlow<SessionState> = sessionManager.sessionState
+
+        val sessionRole: StateFlow<SessionRole?> =
+            sessionManager.sessionSnapshot
+                .map { sessionSnapshot -> sessionSnapshot.role }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = sessionManager.getSnapshot().role,
+                )
 
         val sessionEvents: SharedFlow<SessionEvent> = sessionManager.sessionEvents
 

@@ -4,7 +4,8 @@ package com.nativelap.heartguard.core.session
 data class SessionSnapshot(
     val generation: Long,
     val accessToken: String?,
+    val role: SessionRole? = null,
 ) {
     override fun toString(): String =
-        "SessionSnapshot(generation=$generation, hasAccessToken=${!accessToken.isNullOrBlank()})"
+        "SessionSnapshot(generation=$generation, role=$role, hasAccessToken=${!accessToken.isNullOrBlank()})"
 }

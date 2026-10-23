@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.route.auth
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,13 +15,19 @@ import com.nativelap.heartguard.view.screen.auth.AuthLoginScreen
 import com.nativelap.heartguard.view.screen.auth.AuthPhoneNumberScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreenEvent
+import com.nativelap.heartguard.viewmodel.auth.AppAccountLoginViewModel
+import com.nativelap.heartguard.viewmodel.auth.AppAccountSignUpFailure
+import com.nativelap.heartguard.viewmodel.auth.AppAccountSignUpViewModel
 import com.nativelap.heartguard.viewmodel.auth.TeamLoginFailure
 import com.nativelap.heartguard.viewmodel.auth.TeamLoginViewModel
+import com.nativelap.heartguard.viewmodel.site.ClaimAppSiteLinkFailure
+import com.nativelap.heartguard.viewmodel.site.ClaimAppSiteLinkViewModel
 
 /** 사전 발급된 작업자 계정의 로그인 요청과 화면 상태를 연결하는 Route이다. */
 @Composable
 internal fun HeartGuardLoginRoute(
     onNavigateToSignUp: () -> Unit = {},
+    onNavigateToAppLogin: () -> Unit = {},
     viewModel: TeamLoginViewModel = hiltViewModel(),
 ) {
     var email by rememberSaveable {
@@ -60,48 +67,162 @@ internal fun HeartGuardLoginRoute(
             },
         isSubmitting = uiState.isSubmitting,
         onSignUpClick = onNavigateToSignUp,
+        switchLoginLabelResource = R.string.auth_login_app_account,
+        onSwitchLoginClick = onNavigateToAppLogin,
     )
 }
 
 @Composable
-internal fun HeartGuardPhoneNumberRoute() {
+internal fun HeartGuardAppAccountLoginRoute(
+    onNavigateToTeamLogin: () -> Unit,
+    onNavigateToSignUp: () -> Unit,
+    viewModel: AppAccountLoginViewModel = hiltViewModel(),
+) {
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AuthLoginScreen(
+        email = email,
+        password = password,
+        onEmailChange = { email = it },
+        onPasswordChange = { password = it },
+        onLoginClick = { viewModel.login(email = email, password = password) },
+        titleResource = R.string.auth_login_app_account,
+        descriptionResource = R.string.auth_login_app_account_description,
+        isSubmitting = uiState.isSubmitting,
+        statusMessage = if (uiState.hasFailure) stringResource(R.string.auth_login_generic_error) else null,
+        onSignUpClick = onNavigateToSignUp,
+        switchLoginLabelResource = R.string.auth_login_team_account,
+        onSwitchLoginClick = onNavigateToTeamLogin,
+    )
+}
+
+@Composable
+internal fun HeartGuardPhoneNumberRoute(
+    linkToken: String,
+    onClaimSuccess: () -> Unit,
+    onCancelClaim: () -> Unit,
+    viewModel: ClaimAppSiteLinkViewModel = hiltViewModel(),
+) {
     var phoneNumber by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val statusMessage =
+        when (uiState.failure) {
+            null -> null
+            ClaimAppSiteLinkFailure.PHONE_MISMATCH -> stringResource(R.string.auth_phone_mismatch_error)
+            ClaimAppSiteLinkFailure.LINK_UNAVAILABLE -> stringResource(R.string.auth_phone_link_unavailable_error)
+            ClaimAppSiteLinkFailure.RATE_LIMITED -> stringResource(R.string.auth_phone_rate_limited_error)
+            ClaimAppSiteLinkFailure.NETWORK -> stringResource(R.string.auth_phone_network_error)
+            ClaimAppSiteLinkFailure.SESSION_REQUIRED -> stringResource(R.string.auth_phone_session_required_error)
+            ClaimAppSiteLinkFailure.GENERIC -> stringResource(R.string.auth_phone_generic_error)
+        }
+
+    LaunchedEffect(uiState.isComplete) {
+        if (uiState.isComplete) {
+            onClaimSuccess()
+        }
+    }
+
     AuthPhoneNumberScreen(
         phoneNumber = phoneNumber,
         onPhoneNumberChange = { enteredPhoneNumber ->
             phoneNumber = enteredPhoneNumber.filter { digit -> digit in '0'..'9' }
         },
-        onLinkClick = {},
+        onLinkClick = {
+            viewModel.claim(
+                token = linkToken,
+                managerPhone = phoneNumber,
+            )
+        },
+        isSubmitting = uiState.isSubmitting,
+        statusMessage = statusMessage,
+        onCancelClick = onCancelClaim,
     )
 }
 
 /** 회원가입 화면의 입력 상태를 화면 수명 안에서 관리한다. */
 @Composable
-internal fun HeartGuardSignUpRoute(onNavigateToLogin: () -> Unit) {
-    var companyName by remember { mutableStateOf("") }
-    var memberName by remember { mutableStateOf("") }
+internal fun HeartGuardSignUpRoute(
+    onNavigateToLogin: () -> Unit,
+    onNavigateToAppLogin: () -> Unit,
+    viewModel: AppAccountSignUpViewModel = hiltViewModel(),
+) {
     var email by remember { mutableStateOf("") }
+    var verificationCode by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordConfirmation by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isCodeSentForCurrentEmail = uiState.emailForRequestedCode == email.trim()
+    val statusMessage =
+        when (uiState.failure) {
+            null -> {
+                if (isCodeSentForCurrentEmail) {
+                    stringResource(R.string.auth_signup_code_sent)
+                } else {
+                    null
+                }
+            }
+
+            AppAccountSignUpFailure.EMAIL_CODE_REQUIRED -> {
+                stringResource(R.string.auth_signup_code_required)
+            }
+
+            AppAccountSignUpFailure.EMAIL_CODE_REQUEST -> {
+                stringResource(R.string.auth_signup_email_code_error)
+            }
+
+            AppAccountSignUpFailure.EMAIL_ALREADY_EXISTS -> {
+                stringResource(R.string.auth_signup_email_exists_error)
+            }
+
+            AppAccountSignUpFailure.RATE_LIMITED -> {
+                stringResource(R.string.auth_signup_rate_limited_error)
+            }
+
+            AppAccountSignUpFailure.NETWORK -> {
+                stringResource(R.string.auth_signup_network_error)
+            }
+
+            AppAccountSignUpFailure.INVALID_FORM -> {
+                stringResource(R.string.auth_signup_form_error)
+            }
+
+            AppAccountSignUpFailure.INVALID_VERIFICATION_CODE -> {
+                stringResource(R.string.auth_signup_invalid_code_error)
+            }
+
+            AppAccountSignUpFailure.ACCOUNT_NOT_READY -> {
+                stringResource(R.string.auth_signup_account_not_ready_error)
+            }
+
+            AppAccountSignUpFailure.REGISTRATION -> {
+                stringResource(R.string.auth_signup_registration_error)
+            }
+
+            AppAccountSignUpFailure.LOGIN_AFTER_REGISTRATION -> {
+                stringResource(R.string.auth_signup_login_after_register_error)
+            }
+        }
 
     AuthSignUpScreen(
-        companyName = companyName,
-        memberName = memberName,
         email = email,
+        verificationCode = verificationCode,
         password = password,
         passwordConfirmation = passwordConfirmation,
+        isSendingEmailCode = uiState.isRequestingEmailCode,
+        isEmailCodeSent = isCodeSentForCurrentEmail,
+        resendCooldownSeconds = uiState.resendCooldownSeconds,
+        isSubmitting = uiState.isSubmitting,
+        statusMessage = statusMessage,
         onEvent = { event ->
             when (event) {
-                is AuthSignUpScreenEvent.CompanyNameChanged -> {
-                    companyName = event.companyName
-                }
-
-                is AuthSignUpScreenEvent.MemberNameChanged -> {
-                    memberName = event.memberName
-                }
-
                 is AuthSignUpScreenEvent.EmailChanged -> {
                     email = event.email
+                }
+
+                is AuthSignUpScreenEvent.VerificationCodeChanged -> {
+                    verificationCode = event.verificationCode
                 }
 
                 is AuthSignUpScreenEvent.PasswordChanged -> {
@@ -117,7 +238,20 @@ internal fun HeartGuardSignUpRoute(onNavigateToLogin: () -> Unit) {
                 }
 
                 AuthSignUpScreenEvent.SignUpClicked -> {
-                    Unit
+                    viewModel.signUp(
+                        email = email,
+                        password = password,
+                        confirmPassword = passwordConfirmation,
+                        verificationCode = verificationCode,
+                    )
+                }
+
+                AuthSignUpScreenEvent.RequestEmailCodeClicked -> {
+                    viewModel.requestEmailCode(email)
+                }
+
+                AuthSignUpScreenEvent.AppAccountLoginClicked -> {
+                    onNavigateToAppLogin()
                 }
             }
         },

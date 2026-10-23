@@ -73,6 +73,25 @@ class SessionManagerTest {
         }
 
     @Test
+    fun appAccountRoleIsStoredAndRestoredWithItsToken() =
+        runTest {
+            val storage = FakeTokenStorage()
+            val firstSessionManager = SessionManager(storage, StandardTestDispatcher(testScheduler))
+            firstSessionManager.onLoginSucceeded(
+                SessionToken(
+                    accessToken = "app-token",
+                    role = SessionRole.APP_ACCOUNT,
+                ),
+            )
+
+            val restoredSessionManager = SessionManager(storage, StandardTestDispatcher(testScheduler))
+            restoredSessionManager.initialize()
+
+            assertEquals(SessionRole.APP_ACCOUNT, restoredSessionManager.getSnapshot().role)
+            assertEquals("app-token", restoredSessionManager.getSnapshot().accessToken)
+        }
+
+    @Test
     fun expireSessionEmitsExpiredEvent() =
         runTest {
             val storage = FakeTokenStorage()
@@ -142,6 +161,7 @@ class SessionManagerTest {
             sessionManager.initialize()
             assertEquals(Authenticated, sessionManager.sessionState.value)
             assertEquals(null, sessionManager.getSnapshot().accessToken)
+            assertEquals(SessionRole.TEAM_MEMBER, sessionManager.getSnapshot().role)
             assertTrue(sessionManager.expireSession(requestSnapshot.generation))
             assertEquals(Unauthenticated, sessionManager.sessionState.value)
         }
@@ -354,6 +374,8 @@ class SessionManagerTest {
 
     private class FakeTokenStorage : TokenStorage {
         var accessToken: String? = null
+        var sessionRole: SessionRole? = null
+        var selectedSiteId: String? = null
         var clearCount = 0
         var shouldFailSave = false
         var shouldFailClear = false
@@ -368,13 +390,39 @@ class SessionManagerTest {
         override fun saveAccessToken(accessToken: String) {
             check(!shouldFailSave)
             this.accessToken = accessToken
+            sessionRole = SessionRole.TEAM_MEMBER
             onSave?.invoke()
+        }
+
+        override fun readSessionRole(): SessionRole? = sessionRole
+
+        override fun saveSession(
+            accessToken: String,
+            role: SessionRole,
+        ) {
+            check(!shouldFailSave)
+            this.accessToken = accessToken
+            sessionRole = role
+            selectedSiteId = null
+            onSave?.invoke()
+        }
+
+        override fun readSelectedSiteId(): String? = selectedSiteId
+
+        override fun saveSelectedSiteId(siteId: String) {
+            selectedSiteId = siteId
+        }
+
+        override fun clearSelectedSiteId() {
+            selectedSiteId = null
         }
 
         override fun clear() {
             clearCount += 1
             check(!shouldFailClear)
             accessToken = null
+            sessionRole = null
+            selectedSiteId = null
         }
     }
 }

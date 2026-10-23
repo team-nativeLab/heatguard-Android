@@ -86,6 +86,12 @@ class SessionManager
                             SessionSnapshot(
                                 generation = initializedGeneration,
                                 accessToken = validAccessToken,
+                                role =
+                                    if (validAccessToken == null) {
+                                        null
+                                    } else {
+                                        tokenStorage.readSessionRole() ?: SessionRole.TEAM_MEMBER
+                                    },
                             )
                         restoredGeneration = initializedGeneration.takeIf { validAccessToken != null }
                         mutableSessionState.value =
@@ -104,11 +110,12 @@ class SessionManager
             sessionMutex.withLock {
                 currentCoroutineContext().ensureActive()
                 withContext(ioDispatcher + NonCancellable) {
-                    tokenStorage.saveAccessToken(sessionToken.accessToken)
+                    tokenStorage.saveSession(sessionToken.accessToken, sessionToken.role)
                     mutableSessionSnapshot.value =
                         SessionSnapshot(
                             generation = getSnapshot().generation + 1L,
                             accessToken = sessionToken.accessToken,
+                            role = sessionToken.role,
                         )
                     mutableSessionState.value = SessionState.Authenticated
                     isInitialized = true
@@ -127,7 +134,10 @@ class SessionManager
                 }
                 currentCoroutineContext().ensureActive()
                 withContext(ioDispatcher + NonCancellable) {
-                    mutableSessionSnapshot.value = getSnapshot().copy(accessToken = null)
+                    mutableSessionSnapshot.value =
+                        getSnapshot().copy(
+                            accessToken = null,
+                        )
                     clearStoredTokenSafely()
                 }
                 true
@@ -163,6 +173,7 @@ class SessionManager
                     SessionSnapshot(
                         generation = getSnapshot().generation + 1L,
                         accessToken = null,
+                        role = null,
                     )
                 mutableSessionState.value = SessionState.Unauthenticated
                 isInitialized = true

@@ -51,9 +51,63 @@ class AndroidKeystoreTokenStorage
                 preferences
                     .edit()
                     .putString(KEY_ACCESS_TOKEN, encrypt(accessToken))
+                    .putString(KEY_SESSION_ROLE, SessionRole.TEAM_MEMBER.name)
                     .commit()
 
             check(saved) { "Unable to persist the session tokens" }
+        }
+
+        @Synchronized
+        override fun readSessionRole(): SessionRole? =
+            preferences
+                .getString(KEY_SESSION_ROLE, null)
+                ?.let { storedRole ->
+                    SessionRole.entries.firstOrNull { role -> role.name == storedRole }
+                }
+
+        @Synchronized
+        override fun saveSession(
+            accessToken: String,
+            role: SessionRole,
+        ) {
+            require(accessToken.isNotBlank())
+
+            val saved =
+                preferences
+                    .edit()
+                    .putString(KEY_ACCESS_TOKEN, encrypt(accessToken))
+                    .putString(KEY_SESSION_ROLE, role.name)
+                    .remove(KEY_SELECTED_SITE_ID)
+                    .commit()
+
+            check(saved) { "Unable to persist the session" }
+        }
+
+        @Synchronized
+        override fun readSelectedSiteId(): String? =
+            preferences
+                .getString(KEY_SELECTED_SITE_ID, null)
+                ?.takeIf(String::isNotBlank)
+
+        @Synchronized
+        override fun saveSelectedSiteId(siteId: String) {
+            require(siteId.isNotBlank())
+            val saved =
+                preferences
+                    .edit()
+                    .putString(KEY_SELECTED_SITE_ID, siteId)
+                    .commit()
+            check(saved) { "Unable to persist the selected site" }
+        }
+
+        @Synchronized
+        override fun clearSelectedSiteId() {
+            val cleared =
+                preferences
+                    .edit()
+                    .remove(KEY_SELECTED_SITE_ID)
+                    .commit()
+            check(cleared) { "Unable to clear the selected site" }
         }
 
         /** 디스크 삭제가 실패하면 암호화 키를 폐기해 남은 암호문을 다시 읽을 수 없게 만든다. */
@@ -63,6 +117,8 @@ class AndroidKeystoreTokenStorage
                 preferences
                     .edit()
                     .remove(KEY_ACCESS_TOKEN)
+                    .remove(KEY_SESSION_ROLE)
+                    .remove(KEY_SELECTED_SITE_ID)
                     .commit()
 
             if (!cleared) {
@@ -142,6 +198,8 @@ class AndroidKeystoreTokenStorage
             const val GCM_TAG_SIZE_BITS = 128
             const val KEY_ALIAS = "heartguard.session.aes"
             const val KEY_ACCESS_TOKEN = "access_token"
+            const val KEY_SESSION_ROLE = "session_role"
+            const val KEY_SELECTED_SITE_ID = "selected_site_id"
             const val PREFERENCES_NAME = "heartguard_session"
             const val TRANSFORMATION = "AES/GCM/NoPadding"
         }

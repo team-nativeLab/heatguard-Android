@@ -6,5 +6,20 @@ interface TokenStorage {
 
     fun saveAccessToken(accessToken: String)
 
+    fun readSessionRole(): SessionRole? = null
+
+    fun saveSession(
+        accessToken: String,
+        role: SessionRole,
+    ) {
+        saveAccessToken(accessToken)
+    }
+
+    fun readSelectedSiteId(): String? = null
+
+    fun saveSelectedSiteId(siteId: String) = Unit
+
+    fun clearSelectedSiteId() = Unit
+
     fun clear()
 }

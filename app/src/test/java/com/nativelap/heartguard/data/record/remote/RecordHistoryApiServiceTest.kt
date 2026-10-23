@@ -2,7 +2,7 @@ package com.nativelap.heartguard.data.record.remote
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
-import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
+import com.nativelap.heartguard.core.session.createTeamMemberTestSessionManager
 import com.nativelap.heartguard.data.record.mapper.toDomain
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import kotlinx.coroutines.runBlocking
@@ -96,7 +96,7 @@ class RecordHistoryApiServiceTest {
         ApiRetrofitFactory(
             authenticatedApiClient = OkHttpClient(),
             unauthenticatedApiClient = OkHttpClient(),
-            sessionManager = createUnauthenticatedTestSessionManager(),
+            sessionManager = createTeamMemberTestSessionManager(),
             json = Json { ignoreUnknownKeys = true },
         ).createService(
             baseUrl = server.url("/").toString(),

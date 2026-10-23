@@ -59,6 +59,11 @@ class TeamSiteResponseDtoTest {
         assertEquals("02-000-0000", homeResponse.company?.phone)
         assertEquals("CLEAR", homeResponse.weather?.skyStatus)
         assertEquals(-1.5, homeResponse.weather?.temperatureDelta ?: error("delta missing"), 0.0)
+        assertEquals("2026-09-29T10:00:00+09:00", homeResponse.weather?.observedAt)
+        assertEquals(33.0, homeResponse.weather?.comparisonTemperature ?: error("comparison missing"), 0.0)
+        assertEquals("2026-09-29T09:00:00+09:00", homeResponse.weather?.comparisonObservedAt)
+        assertEquals("PREVIOUS_OBSERVATION", homeResponse.weather?.comparisonBasis)
+        assertEquals(0, homeResponse.unreadNotificationCount)
     }
 
     @Test

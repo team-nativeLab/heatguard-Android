@@ -1,6 +1,6 @@
 package com.nativelap.heartguard.core.network
 
-import com.nativelap.heartguard.core.session.createUnauthenticatedTestSessionManager
+import com.nativelap.heartguard.core.session.createTeamMemberTestSessionManager
 import com.nativelap.heartguard.data.record.dto.RecordRequestDto
 import com.nativelap.heartguard.data.record.remote.RecordApiService
 import kotlinx.coroutines.runBlocking
@@ -107,7 +107,7 @@ class RecordSingleAttemptTest {
         ApiRetrofitFactory(
             authenticatedApiClient = OkHttpClient(),
             unauthenticatedApiClient = OkHttpClient(),
-            sessionManager = createUnauthenticatedTestSessionManager(),
+            sessionManager = createTeamMemberTestSessionManager(),
             json = Json { ignoreUnknownKeys = true },
         ).createService(
             baseUrl = server.url("/").toString(),

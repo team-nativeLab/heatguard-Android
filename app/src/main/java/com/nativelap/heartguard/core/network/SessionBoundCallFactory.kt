@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.core.network
 
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionSnapshot
 import okhttp3.Call
 import okhttp3.OkHttpClient
@@ -12,11 +13,15 @@ import java.io.IOException
 class SessionBoundCallFactory(
     private val delegateClient: OkHttpClient,
     private val sessionManager: SessionManager,
+    private val requiredRole: SessionRole = SessionRole.TEAM_MEMBER,
 ) : Call.Factory {
     override fun newCall(request: Request): Call {
         val owningSnapshot = sessionManager.getSnapshot()
         val expectedGeneration = request.tag(RequestSessionGeneration::class.java)?.generation
         if (expectedGeneration != null && expectedGeneration != owningSnapshot.generation) {
+            throw SessionChangedException()
+        }
+        if (owningSnapshot.role != requiredRole || owningSnapshot.accessToken.isNullOrBlank()) {
             throw SessionChangedException()
         }
         val sessionBoundRequest =
