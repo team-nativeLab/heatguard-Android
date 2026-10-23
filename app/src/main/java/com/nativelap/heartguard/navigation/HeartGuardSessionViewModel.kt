@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.session.SessionEvent
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
+import com.nativelap.heartguard.core.session.SessionSnapshot
 import com.nativelap.heartguard.core.session.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharedFlow
@@ -44,6 +45,15 @@ internal class HeartGuardSessionViewModel
                     started = SharingStarted.Eagerly,
                     initialValue = sessionManager.getSnapshot().generation,
                 )
+
+        fun expireTeamMemberSession() {
+            viewModelScope.launch {
+                val currentSnapshot: SessionSnapshot = sessionManager.getSnapshot()
+                if (currentSnapshot.role == SessionRole.TEAM_MEMBER) {
+                    sessionManager.expireSession(currentSnapshot.generation)
+                }
+            }
+        }
 
         init {
             // 앱 시작 시 저장된 토큰 존재 여부로 초기 인증 상태(Authenticated/Unauthenticated)를 판별한다.

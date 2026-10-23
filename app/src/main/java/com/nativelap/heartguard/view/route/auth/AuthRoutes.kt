@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.core.session.PendingAppLink
 import com.nativelap.heartguard.view.screen.auth.AuthLoginScreen
 import com.nativelap.heartguard.view.screen.auth.AuthPhoneNumberScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreen
@@ -100,15 +101,18 @@ internal fun HeartGuardAppAccountLoginRoute(
 
 @Composable
 internal fun HeartGuardPhoneNumberRoute(
-    linkToken: String,
-    onClaimSuccess: () -> Unit,
-    onCancelClaim: () -> Unit,
+    pendingAppLink: PendingAppLink,
+    onClaimSuccess: (PendingAppLink) -> Unit,
+    onCancelClaim: (PendingAppLink) -> Unit,
+    onSessionRequired: () -> Unit,
+    isAppAccountSession: Boolean,
     viewModel: ClaimAppSiteLinkViewModel = hiltViewModel(),
 ) {
-    var phoneNumber by remember { mutableStateOf("") }
+    val linkToken = pendingAppLink.token
+    var phoneNumber by remember(pendingAppLink.linkId) { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val statusMessage =
-        when (uiState.failure) {
+        when (uiState.failure.takeIf { uiState.linkId == pendingAppLink.linkId }) {
             null -> null
             ClaimAppSiteLinkFailure.PHONE_MISMATCH -> stringResource(R.string.auth_phone_mismatch_error)
             ClaimAppSiteLinkFailure.LINK_UNAVAILABLE -> stringResource(R.string.auth_phone_link_unavailable_error)
@@ -118,9 +122,26 @@ internal fun HeartGuardPhoneNumberRoute(
             ClaimAppSiteLinkFailure.GENERIC -> stringResource(R.string.auth_phone_generic_error)
         }
 
-    LaunchedEffect(uiState.isComplete) {
-        if (uiState.isComplete) {
-            onClaimSuccess()
+    LaunchedEffect(pendingAppLink.linkId, isAppAccountSession) {
+        viewModel.activateLink(
+            pendingAppLink = pendingAppLink,
+            clearSessionRequiredFailure = isAppAccountSession,
+        )
+    }
+
+    LaunchedEffect(uiState.linkId, uiState.completedLinkId) {
+        if (uiState.linkId == pendingAppLink.linkId &&
+            uiState.completedLinkId == pendingAppLink.linkId
+        ) {
+            onClaimSuccess(pendingAppLink)
+        }
+    }
+
+    LaunchedEffect(uiState.linkId, uiState.failure) {
+        if (uiState.linkId == pendingAppLink.linkId &&
+            uiState.failure == ClaimAppSiteLinkFailure.SESSION_REQUIRED
+        ) {
+            onSessionRequired()
         }
     }
 
@@ -131,13 +152,13 @@ internal fun HeartGuardPhoneNumberRoute(
         },
         onLinkClick = {
             viewModel.claim(
-                token = linkToken,
+                pendingAppLink = pendingAppLink,
                 managerPhone = phoneNumber,
             )
         },
-        isSubmitting = uiState.isSubmitting,
+        isSubmitting = uiState.linkId != pendingAppLink.linkId || uiState.isSubmitting,
         statusMessage = statusMessage,
-        onCancelClick = onCancelClaim,
+        onCancelClick = { onCancelClaim(pendingAppLink) },
     )
 }
 

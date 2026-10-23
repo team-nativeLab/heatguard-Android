@@ -21,7 +21,7 @@
 
 ## 개요
 폭염 환경에서 작업하는 현장 인력의 체온·작업/휴식 상태를 기록하고, 위험 상황 발생 시 관리자에게 긴급 호출을 보낼 수 있도록 돕는 것을 목표로 하는 Android 앱입니다.
-현재 구현된 작업자 앱 화면(로그인, 앱 계정 회원가입, 작업자 계정 휴대폰 번호 연동 UI, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 기존 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)와 앱 계정 가입·로그인·현장 연동 API(`/api/v1/auth/app/*`, `/api/v1/app/*`)는 서로 다른 세션 역할로 호출합니다. 앱 계정은 연결된 현장 목록과 선택 화면을 사용하며 작업자 체크리스트 화면에는 접근하지 않습니다. 현장 링크를 앱으로 직접 여는 Android App Link 주소/도메인은 제공 대기 중이므로 Manifest 수신 필터는 아직 등록하지 않았습니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
+현재 구현된 작업자 앱 화면(로그인, 앱 계정 회원가입, 작업자 계정 휴대폰 번호 연동 UI, 홈, 긴급 호출, 기록 유형 선택·온도계·작업/휴식/현장 사진 기록, 저장 결과, 기록 내역·상세, 내 정보 수정, 비밀번호 변경, 문의하기, 알림 목록, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 기존 작업자 API(`/api/v1/auth/team/*`, `/api/v1/team/*`)와 앱 계정 가입·로그인·현장 연동 API(`/api/v1/auth/app/*`, `/api/v1/app/*`)는 서로 다른 세션 역할로 호출합니다. 앱 계정은 연결된 현장 목록과 선택 화면을 사용하며 작업자 체크리스트 화면에는 접근하지 않습니다. 현장 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}`은 Android App Link로 수신하고, 토큰은 메모리에서만 유지해 앱이 종료되면 링크를 다시 열어야 합니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
 
 PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 README·사용자 제공 요구사항·Figma·API 명세 v0.1을 작업 범위 자료로 사용하며, 별도 PRD는 생성하지 않습니다.
 
@@ -30,7 +30,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 
 | 화면 | 설명 |
 |---|---|
-| Login / SignUpForm / PhoneNumberLink | 작업자 로그인, 이메일 인증코드 기반 앱 계정 가입·로그인, 작업자 휴대폰 번호 연동 UI. 앱 계정 가입은 API 명세 계약 기준으로 구현했으며 Android App Link 주소는 제공 대기 중 |
+| Login / SignUpForm / PhoneNumberLink | 작업자 로그인, 이메일 인증코드 기반 앱 계정 가입·로그인, Android App Link에서 전달된 현장 토큰과 담당자 전화번호로 현장 연동 |
 | Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 현장관리자 긴급호출 화면으로, "긴급 전화"는 본사 번호(`company.phone`) 다이얼(번호 없으면 비활성). 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
 | ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
 | Inquiry | 문의 등록과 내 문의 목록(상태 배지·등록일). 문의 상세 화면은 범위 밖 |
@@ -58,7 +58,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 
 알림과 휴식 기록 계약은 사용자 제공 Downloads의 `개인 페이지 & 공유된 페이지 11` 명세를 기준으로 합니다. 알림 분류 매핑은 `RECORD`→`RECORD_CREATED`, `EMERGENCY`→`EMERGENCY_ACKNOWLEDGED`, `NOTICE`→`INQUIRY_ANSWERED`입니다.
 
-앱 계정 가입·현장 연동 API는 사용자 제공 `개인 페이지 & 공유된 페이지 16` 명세 및 이메일 인증 PR #28의 제안 계약을 기준으로 구현했습니다. PR #28은 Draft 상태이고 서버 배포 및 SMTP 실검증은 확인되지 않았으므로 아래 신규 API는 운영/스테이징에서 검증된 계약으로 간주하지 않습니다. Android App Link의 실제 scheme/domain은 제공 대기 중입니다. `APP_ACCOUNT` 세션에는 앱 계정 인증·현장 연동 API만 허용하고, `/team/checklist`를 포함한 작업자 API는 `TEAM_MEMBER` 세션에서만 호출합니다.
+앱 계정 가입·현장 연동 API는 사용자 제공 `개인 페이지 & 공유된 페이지 16` 명세 및 이메일 인증 PR #28의 제안 계약을 기준으로 구현했습니다. PR #28은 Draft 상태이고 서버 배포 및 SMTP 실검증은 확인되지 않았으므로 아래 신규 API는 운영/스테이징에서 검증된 계약으로 간주하지 않습니다. HTTPS App Link는 지정 host/path만 수락하고, 경로의 토큰을 기존 `POST /app/links/claim` 본문에 담당자 전화번호와 함께 전달합니다. `APP_ACCOUNT` 세션에는 앱 계정 인증·현장 연동 API만 허용하고, `/team/checklist`를 포함한 작업자 API는 `TEAM_MEMBER` 세션에서만 호출합니다.
 
 | API | 앱 연동 | 비고 |
 |---|---|---|
@@ -76,7 +76,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
 | `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
 | `POST /auth/email-codes`, `POST /auth/app/register`, `POST /auth/app/login`, `POST /auth/app/logout` | 명세 계약 기준 구현, 서버 검증 대기 | 이메일 인증코드 발송·앱 계정 가입·로그인·로그아웃. 앱 계정 토큰은 `APP_ACCOUNT` 역할로 저장·라우팅한다. 가입 이메일 API는 Draft PR #28 계약이며 실제 SMTP/서버 검증은 하지 않았다. |
-| `POST /app/links/claim`, `GET /app/sites`, `POST /app/sites/{siteId}/select` | 명세 계약 기준 구현, 서버 검증 대기 | 일회성 링크 토큰과 담당자 전화번호를 대조해 현장을 연동한 뒤 목록 조회·선택. 전화번호 대조는 SMS 인증이 아니다. 링크 입력은 수신 URI 파서에 연결했으나 실제 App Link scheme/domain 및 Manifest 필터는 주소 제공 후 설정한다. |
+| `POST /app/links/claim`, `GET /app/sites`, `POST /app/sites/{siteId}/select` | 명세 계약 기준 구현, 서버 검증 대기 | `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}` App Link 토큰과 담당자 전화번호를 대조해 현장을 연동한 뒤 목록 조회·선택. 전화번호 대조는 SMS 인증이 아니다. App Link 토큰은 성공·취소까지 메모리에만 보관한다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
 
 알림·기록 내역·홈·긴급 호출·문의·프로필 변경의 RemoteDataSource는 성공 envelope의 `success`·`error`·필수 `data`를 검증하며, 모순되거나 누락된 응답을 성공으로 표시하지 않습니다. 정상 빈 목록과 현재 호출 `NONE`/`callId=null`은 유지합니다. 비밀번호 변경은 오류 없는 `success=true/data=null` 응답과 호환되며, Unit 응답인 로그아웃·회원탈퇴에는 필수-data 검증을 적용하지 않습니다. HTTP 200의 명시적 거절 코드가 HTTP 상태별 화면 안내와 같은 의미인지 여부는 서버 계약 확인이 필요합니다.
