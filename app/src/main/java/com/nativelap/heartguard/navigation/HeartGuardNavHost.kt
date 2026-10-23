@@ -78,7 +78,7 @@ internal fun HeartGuardNavHost(
     val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
     val sessionRole by sessionViewModel.sessionRole.collectAsStateWithLifecycle()
     val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
-    val pendingLinkToken by appLinkTokenViewModel.pendingToken.collectAsStateWithLifecycle()
+    val pendingAppLink by appLinkTokenViewModel.pendingLink.collectAsStateWithLifecycle()
 
     when (sessionState) {
         // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 인트로 로고를 보여 준다.
@@ -89,24 +89,40 @@ internal fun HeartGuardNavHost(
         SessionState.Authenticated -> {
             when (sessionRole) {
                 SessionRole.APP_ACCOUNT -> {
-                    if (pendingLinkToken == null) {
+                    if (pendingAppLink == null) {
                         AppAccountSitesRoute()
                     } else {
                         HeartGuardPhoneNumberRoute(
-                            linkToken = requireNotNull(pendingLinkToken),
-                            onClaimSuccess = {
-                                appLinkTokenViewModel.consume(requireNotNull(pendingLinkToken))
+                            pendingAppLink = requireNotNull(pendingAppLink),
+                            onClaimSuccess = { completedLink ->
+                                appLinkTokenViewModel.consume(completedLink)
                             },
-                            onCancelClaim = {
-                                appLinkTokenViewModel.consume(requireNotNull(pendingLinkToken))
+                            onCancelClaim = { canceledLink ->
+                                appLinkTokenViewModel.consume(canceledLink)
                             },
+                            onSessionRequired = sessionViewModel::expireTeamMemberSession,
+                            isAppAccountSession = true,
                         )
                     }
                 }
 
                 SessionRole.TEAM_MEMBER,
                 -> {
-                    HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
+                    if (pendingAppLink == null) {
+                        HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
+                    } else {
+                        HeartGuardPhoneNumberRoute(
+                            pendingAppLink = requireNotNull(pendingAppLink),
+                            onClaimSuccess = { completedLink ->
+                                appLinkTokenViewModel.consume(completedLink)
+                            },
+                            onCancelClaim = { canceledLink ->
+                                appLinkTokenViewModel.consume(canceledLink)
+                            },
+                            onSessionRequired = sessionViewModel::expireTeamMemberSession,
+                            isAppAccountSession = false,
+                        )
+                    }
                 }
 
                 null -> {
@@ -116,7 +132,7 @@ internal fun HeartGuardNavHost(
         }
 
         SessionState.Unauthenticated -> {
-            HeartGuardAuthNavDisplay(startWithAppLogin = pendingLinkToken != null)
+            HeartGuardAuthNavDisplay(startWithAppLogin = pendingAppLink != null)
         }
     }
 }

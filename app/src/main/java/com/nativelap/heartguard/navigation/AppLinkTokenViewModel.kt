@@ -2,6 +2,7 @@ package com.nativelap.heartguard.navigation
 
 import androidx.lifecycle.ViewModel
 import com.nativelap.heartguard.core.session.AppLinkTokenStore
+import com.nativelap.heartguard.core.session.PendingAppLink
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -11,9 +12,9 @@ internal class AppLinkTokenViewModel
     constructor(
         private val appLinkTokenStore: AppLinkTokenStore,
     ) : ViewModel() {
-        val pendingToken = appLinkTokenStore.pendingToken
+        val pendingLink = appLinkTokenStore.pendingLink
 
-        fun consume(token: String) {
-            appLinkTokenStore.consume(token)
+        fun consume(link: PendingAppLink) {
+            appLinkTokenStore.consume(link)
         }
     }

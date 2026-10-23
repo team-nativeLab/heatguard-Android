@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.PendingAppLink
 import com.nativelap.heartguard.domain.site.usecase.ClaimAppSiteLinkUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,32 +24,58 @@ internal class ClaimAppSiteLinkViewModel
 
         val uiState: StateFlow<ClaimAppSiteLinkUiState> = mutableUiState.asStateFlow()
 
+        fun activateLink(
+            pendingAppLink: PendingAppLink,
+            clearSessionRequiredFailure: Boolean = false,
+        ) {
+            val currentState = mutableUiState.value
+            if (currentState.linkId != pendingAppLink.linkId ||
+                (clearSessionRequiredFailure && currentState.failure == ClaimAppSiteLinkFailure.SESSION_REQUIRED)
+            ) {
+                mutableUiState.value = ClaimAppSiteLinkUiState(linkId = pendingAppLink.linkId)
+            }
+        }
+
         fun claim(
-            token: String,
+            pendingAppLink: PendingAppLink,
             managerPhone: String,
         ) {
             val normalizedPhone = managerPhone.filter(Char::isDigit)
-            if (mutableUiState.value.isSubmitting || token.isBlank() || normalizedPhone.isBlank()) {
+            val currentState = mutableUiState.value
+            if (currentState.linkId != pendingAppLink.linkId ||
+                currentState.isSubmitting ||
+                currentState.completedLinkId != null ||
+                pendingAppLink.token.isBlank() ||
+                normalizedPhone.isBlank()
+            ) {
                 return
             }
             mutableUiState.update { it.copy(isSubmitting = true, failure = null) }
             viewModelScope.launch {
-                when (val result = claimAppSiteLinkUseCase(token, normalizedPhone)) {
+                when (val result = claimAppSiteLinkUseCase(pendingAppLink.token, normalizedPhone)) {
                     is ApiResult.Success -> {
                         mutableUiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                isComplete = true,
-                            )
+                            if (it.linkId == pendingAppLink.linkId) {
+                                it.copy(
+                                    isSubmitting = false,
+                                    completedLinkId = pendingAppLink.linkId,
+                                )
+                            } else {
+                                it
+                            }
                         }
                     }
 
                     is ApiResult.Failure -> {
                         mutableUiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                failure = result.error.toClaimFailure(),
-                            )
+                            if (it.linkId == pendingAppLink.linkId) {
+                                it.copy(
+                                    isSubmitting = false,
+                                    failure = result.error.toClaimFailure(),
+                                )
+                            } else {
+                                it
+                            }
                         }
                     }
                 }
@@ -91,8 +118,9 @@ internal class ClaimAppSiteLinkViewModel
     }
 
 internal data class ClaimAppSiteLinkUiState(
+    val linkId: Long? = null,
     val isSubmitting: Boolean = false,
-    val isComplete: Boolean = false,
+    val completedLinkId: Long? = null,
     val failure: ClaimAppSiteLinkFailure? = null,
 )
 
