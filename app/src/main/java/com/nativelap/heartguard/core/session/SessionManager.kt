@@ -58,6 +58,39 @@ class SessionManager
 
         fun getSnapshot(): SessionSnapshot = mutableSessionSnapshot.value
 
+        fun getSelectedSiteId(): String? = tokenStorage.readSelectedSiteId()
+
+        /** 세션 전환과 경쟁하지 않도록 현재 앱 계정 세션에서만 현장 선택을 저장한다. */
+        suspend fun saveSelectedSiteIdForSession(
+            siteId: String,
+            expectedSnapshot: SessionSnapshot,
+        ): Boolean =
+            sessionMutex.withLock {
+                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.APP_ACCOUNT) {
+                    return@withLock false
+                }
+                currentCoroutineContext().ensureActive()
+                withContext(ioDispatcher) {
+                    tokenStorage.saveSelectedSiteId(siteId)
+                }
+                true
+            }
+
+        suspend fun clearSelectedSiteIdForSession(
+            expectedSnapshot: SessionSnapshot,
+            expectedSiteId: String,
+        ): Boolean =
+            sessionMutex.withLock {
+                if (getSnapshot() != expectedSnapshot || tokenStorage.readSelectedSiteId() != expectedSiteId) {
+                    return@withLock false
+                }
+                currentCoroutineContext().ensureActive()
+                withContext(ioDispatcher) {
+                    tokenStorage.clearSelectedSiteId()
+                }
+                true
+            }
+
         /** 현재 인증 세션이 앱 시작 때 저장 토큰으로 복원된 세션인지다. 새 로그인 세션이면 false다. */
         fun isRestoredSession(): Boolean =
             mutableSessionState.value == SessionState.Authenticated &&

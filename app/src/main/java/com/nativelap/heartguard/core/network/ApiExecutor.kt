@@ -24,6 +24,8 @@ class ApiExecutor
                 )
             } catch (_: SessionChangedException) {
                 ApiResult.Failure(ApiError.SessionChanged)
+            } catch (_: SiteNotSelectedException) {
+                ApiResult.Failure(ApiError.SiteNotSelected)
             } catch (_: IOException) {
                 ApiResult.Failure(ApiError.Network)
             } catch (_: SerializationException) {

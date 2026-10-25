@@ -101,6 +101,10 @@ internal class ClaimAppSiteLinkViewModel
                     ClaimAppSiteLinkFailure.SESSION_REQUIRED
                 }
 
+                ApiError.SiteNotSelected -> {
+                    ClaimAppSiteLinkFailure.GENERIC
+                }
+
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,

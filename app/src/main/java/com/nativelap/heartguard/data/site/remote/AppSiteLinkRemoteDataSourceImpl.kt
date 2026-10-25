@@ -14,11 +14,12 @@ class AppSiteLinkRemoteDataSourceImpl
     @Inject
     constructor(
         private val appSiteLinkApiService: AppSiteLinkApiService,
+        private val appSiteDashboardApiService: AppSiteDashboardApiService,
         private val apiExecutor: ApiExecutor,
     ) : AppSiteLinkRemoteDataSource {
         override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboardDto> =
             apiExecutor
-                .execute { appSiteLinkApiService.getDashboard(siteId) }
+                .execute { appSiteDashboardApiService.getDashboard() }
                 .requireSuccessData { response ->
                     response.summary.todayRecordCount >= 0 && response.summary.activeEmergencyCount >= 0
                 }

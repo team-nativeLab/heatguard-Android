@@ -4,6 +4,7 @@ import com.nativelap.heartguard.BuildConfig
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkApiService
+import com.nativelap.heartguard.data.site.remote.AppSiteDashboardApiService
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkRemoteDataSource
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkRemoteDataSourceImpl
 import com.nativelap.heartguard.data.site.repository.AppSiteLinkRepositoryImpl
@@ -34,6 +35,16 @@ abstract class AppSiteLinkDataModule {
                 baseUrl = BuildConfig.BASE_URL,
                 serviceClass = AppSiteLinkApiService::class.java,
                 authentication = ApiAuthentication.APP_ACCOUNT_BEARER,
+                allowRequestReplay = false,
+            )
+
+        @Provides
+        @Singleton
+        fun provideAppSiteDashboardApiService(apiRetrofitFactory: ApiRetrofitFactory): AppSiteDashboardApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = AppSiteDashboardApiService::class.java,
+                authentication = ApiAuthentication.APP_ACCOUNT_SITE_BEARER,
                 allowRequestReplay = false,
             )
     }

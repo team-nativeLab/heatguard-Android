@@ -2,23 +2,16 @@ package com.nativelap.heartguard.data.site.remote
 
 import com.nativelap.heartguard.core.network.ApiEnvelope
 import com.nativelap.heartguard.data.site.dto.AppLinkedSitesResponseDto
-import com.nativelap.heartguard.data.site.dto.AppSiteDashboardDto
 import com.nativelap.heartguard.data.site.dto.AppSiteLinkClaimResponseDto
 import com.nativelap.heartguard.data.site.dto.AppSiteSelectionResponseDto
 import com.nativelap.heartguard.data.site.dto.ClaimAppSiteLinkRequestDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface AppSiteLinkApiService {
-    @GET("api/v1/site/dashboard")
-    suspend fun getDashboard(
-        @Header("X-Site-Id") siteId: String,
-    ): ApiEnvelope<AppSiteDashboardDto>
-
     @DELETE("api/v1/app/sites/{siteId}/link")
     suspend fun unlinkSite(
         @Path("siteId") siteId: String,
