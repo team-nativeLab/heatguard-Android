@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
+import com.nativelap.heartguard.core.session.SessionSnapshot
+import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.domain.auth.usecase.LogoutAppAccountUseCase
 import com.nativelap.heartguard.domain.site.model.AppLinkedSite
 import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
@@ -13,9 +16,12 @@ import com.nativelap.heartguard.domain.site.usecase.GetSelectedAppSiteIdUseCase
 import com.nativelap.heartguard.domain.site.usecase.SelectAppSiteUseCase
 import com.nativelap.heartguard.domain.site.usecase.UnlinkAppSiteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,27 +38,40 @@ internal class AppAccountSitesViewModel
         private val logoutAppAccountUseCase: LogoutAppAccountUseCase,
         private val sessionManager: SessionManager,
     ) : ViewModel() {
-        private val mutableUiState =
-            MutableStateFlow(
-                AppAccountSitesUiState(
-                    selectedSiteId = getSelectedAppSiteIdUseCase(),
-                ),
-            )
+        private val mutableUiState = MutableStateFlow(AppAccountSitesUiState())
 
         val uiState: StateFlow<AppAccountSitesUiState> = mutableUiState.asStateFlow()
 
+        private var activeSessionSnapshot: SessionSnapshot? = null
+        private val sessionRequestJobs = mutableSetOf<Job>()
+
         init {
-            refresh()
+            viewModelScope.launch {
+                combine(
+                    sessionManager.sessionState,
+                    sessionManager.sessionSnapshot,
+                ) { sessionState, sessionSnapshot ->
+                    SessionOwner(sessionState, sessionSnapshot)
+                }.distinctUntilChanged()
+                    .collect(::onSessionChanged)
+            }
         }
 
         fun refresh() {
-            if (isBusy()) {
+            activeSessionSnapshot?.let(::refresh)
+        }
+
+        private fun refresh(expectedSession: SessionSnapshot) {
+            if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
             }
             mutableUiState.update { it.copy(isLoading = true, hasFailure = false, dashboard = null) }
-            viewModelScope.launch {
+            launchSessionRequest(expectedSession) {
                 when (val result = getAppLinkedSitesUseCase()) {
                     is ApiResult.Success -> {
+                        if (!isCurrentSession(expectedSession)) {
+                            return@launchSessionRequest
+                        }
                         mutableUiState.update {
                             it.copy(
                                 isLoading = false,
@@ -60,31 +79,38 @@ internal class AppAccountSitesViewModel
                                 selectedSiteId = getSelectedAppSiteIdUseCase(),
                                 openedSiteId =
                                     it.openedSiteId?.takeIf { openedId ->
-                                        result.value.any { site ->
-                                            site.siteId ==
-                                                openedId
-                                        }
+                                        result.value.any { site -> site.siteId == openedId }
                                     },
                             )
                         }
-                        mutableUiState.value.openedSiteId?.let { loadDashboard(it) }
+                        mutableUiState.value.openedSiteId?.let { siteId ->
+                            loadDashboard(siteId, expectedSession)
+                        }
                     }
 
                     is ApiResult.Failure -> {
-                        mutableUiState.update { it.copy(isLoading = false, hasFailure = true, dashboard = null) }
+                        if (isCurrentSession(expectedSession)) {
+                            mutableUiState.update {
+                                it.copy(isLoading = false, hasFailure = true, dashboard = null)
+                            }
+                        }
                     }
                 }
             }
         }
 
         fun selectSite(siteId: String) {
-            if (isBusy()) {
+            val expectedSession = activeSessionSnapshot ?: return
+            if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
             }
             mutableUiState.update { it.copy(isSelectingSite = true, hasFailure = false) }
-            viewModelScope.launch {
+            launchSessionRequest(expectedSession) {
                 when (val result = selectAppSiteUseCase(siteId)) {
                     is ApiResult.Success -> {
+                        if (!isCurrentSession(expectedSession)) {
+                            return@launchSessionRequest
+                        }
                         mutableUiState.update {
                             it.copy(
                                 isSelectingSite = false,
@@ -93,11 +119,15 @@ internal class AppAccountSitesViewModel
                                 dashboard = null,
                             )
                         }
-                        loadDashboard(result.value.siteId)
+                        loadDashboard(result.value.siteId, expectedSession)
                     }
 
                     is ApiResult.Failure -> {
-                        mutableUiState.update { it.copy(isSelectingSite = false, hasFailure = true) }
+                        if (isCurrentSession(expectedSession)) {
+                            mutableUiState.update {
+                                it.copy(isSelectingSite = false, hasFailure = true)
+                            }
+                        }
                     }
                 }
             }
@@ -108,20 +138,34 @@ internal class AppAccountSitesViewModel
                 it.isLoading || it.isSelectingSite || it.isUnlinkingSite || it.isLoadingDashboard
             }
 
-        private suspend fun loadDashboard(siteId: String) {
-            mutableUiState.update { it.copy(isLoadingDashboard = true, dashboard = null, hasDashboardFailure = false) }
+        private suspend fun loadDashboard(
+            siteId: String,
+            expectedSession: SessionSnapshot,
+        ) {
+            if (!isCurrentSession(expectedSession)) {
+                return
+            }
+            mutableUiState.update {
+                it.copy(isLoadingDashboard = true, dashboard = null, hasDashboardFailure = false)
+            }
             when (val result = getAppSiteDashboardUseCase(siteId)) {
                 is ApiResult.Success -> {
-                    mutableUiState.update { it.copy(isLoadingDashboard = false, dashboard = result.value) }
+                    if (isCurrentSession(expectedSession)) {
+                        mutableUiState.update {
+                            it.copy(isLoadingDashboard = false, dashboard = result.value)
+                        }
+                    }
                 }
 
                 is ApiResult.Failure -> {
-                    mutableUiState.update {
-                        it.copy(
-                            isLoadingDashboard = false,
-                            dashboard = null,
-                            hasDashboardFailure = true,
-                        )
+                    if (isCurrentSession(expectedSession)) {
+                        mutableUiState.update {
+                            it.copy(
+                                isLoadingDashboard = false,
+                                dashboard = null,
+                                hasDashboardFailure = true,
+                            )
+                        }
                     }
                 }
             }
@@ -129,18 +173,24 @@ internal class AppAccountSitesViewModel
 
         fun closeDashboard() {
             if (!isBusy()) {
-                mutableUiState.update { it.copy(openedSiteId = null, dashboard = null, hasDashboardFailure = false) }
+                mutableUiState.update {
+                    it.copy(openedSiteId = null, dashboard = null, hasDashboardFailure = false)
+                }
             }
         }
 
         fun unlinkSite(siteId: String) {
-            if (isBusy()) {
+            val expectedSession = activeSessionSnapshot ?: return
+            if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
             }
             mutableUiState.update { it.copy(isUnlinkingSite = true, hasUnlinkFailure = false) }
-            viewModelScope.launch {
+            launchSessionRequest(expectedSession) {
                 when (unlinkAppSiteUseCase(siteId)) {
                     is ApiResult.Success -> {
+                        if (!isCurrentSession(expectedSession)) {
+                            return@launchSessionRequest
+                        }
                         mutableUiState.update {
                             it.copy(
                                 isUnlinkingSite = false,
@@ -150,24 +200,97 @@ internal class AppAccountSitesViewModel
                                 dashboard = null,
                             )
                         }
-                        refresh()
+                        refresh(expectedSession)
                     }
 
                     is ApiResult.Failure -> {
-                        mutableUiState.update { it.copy(isUnlinkingSite = false, hasUnlinkFailure = true) }
-                        refresh()
+                        if (isCurrentSession(expectedSession)) {
+                            mutableUiState.update {
+                                it.copy(isUnlinkingSite = false, hasUnlinkFailure = true)
+                            }
+                            refresh(expectedSession)
+                        }
                     }
                 }
             }
         }
 
         fun logout() {
-            viewModelScope.launch {
+            val expectedSession = activeSessionSnapshot ?: return
+            if (!isCurrentSession(expectedSession)) {
+                return
+            }
+            launchSessionRequest(expectedSession) {
                 logoutAppAccountUseCase()
-                sessionManager.expireSession()
+                if (isCurrentSession(expectedSession)) {
+                    sessionManager.expireSession(expectedSession.generation)
+                }
             }
         }
+
+        private fun onSessionChanged(owner: SessionOwner) {
+            val isAppAccountSession =
+                owner.state == SessionState.Authenticated &&
+                    owner.snapshot.role == SessionRole.APP_ACCOUNT &&
+                    !owner.snapshot.accessToken.isNullOrBlank()
+            if (!isAppAccountSession) {
+                clearSessionState()
+                return
+            }
+            if (activeSessionSnapshot == owner.snapshot) {
+                return
+            }
+
+            cancelSessionRequests()
+            activeSessionSnapshot = owner.snapshot
+            mutableUiState.value =
+                AppAccountSitesUiState(
+                    selectedSiteId = getSelectedAppSiteIdUseCase(),
+                )
+            refresh(owner.snapshot)
+        }
+
+        private fun clearSessionState() {
+            if (activeSessionSnapshot == null && mutableUiState.value == AppAccountSitesUiState()) {
+                return
+            }
+            cancelSessionRequests()
+            activeSessionSnapshot = null
+            mutableUiState.value = AppAccountSitesUiState()
+        }
+
+        private fun cancelSessionRequests() {
+            sessionRequestJobs.toList().forEach(Job::cancel)
+            sessionRequestJobs.clear()
+        }
+
+        private fun launchSessionRequest(
+            expectedSession: SessionSnapshot,
+            action: suspend () -> Unit,
+        ) {
+            val job =
+                viewModelScope.launch {
+                    if (isCurrentSession(expectedSession)) {
+                        action()
+                    }
+                }
+            sessionRequestJobs += job
+            job.invokeOnCompletion {
+                sessionRequestJobs -= job
+            }
+        }
+
+        private fun isCurrentSession(expectedSession: SessionSnapshot): Boolean =
+            activeSessionSnapshot == expectedSession &&
+                sessionManager.getSnapshot() == expectedSession &&
+                sessionManager.sessionState.value == SessionState.Authenticated &&
+                expectedSession.role == SessionRole.APP_ACCOUNT
     }
+
+private data class SessionOwner(
+    val state: SessionState,
+    val snapshot: SessionSnapshot,
+)
 
 internal data class AppAccountSitesUiState(
     val linkedSites: List<AppLinkedSite> = emptyList(),

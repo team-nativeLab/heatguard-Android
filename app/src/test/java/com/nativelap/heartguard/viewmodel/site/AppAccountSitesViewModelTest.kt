@@ -2,6 +2,9 @@ package com.nativelap.heartguard.viewmodel.site
 
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
+import com.nativelap.heartguard.core.session.SessionToken
 import com.nativelap.heartguard.core.session.createTestSessionManager
 import com.nativelap.heartguard.domain.auth.model.AppAccountRegistration
 import com.nativelap.heartguard.domain.auth.model.AppEmailCode
@@ -19,7 +22,10 @@ import com.nativelap.heartguard.domain.site.usecase.SelectAppSiteUseCase
 import com.nativelap.heartguard.domain.site.usecase.UnlinkAppSiteUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -37,7 +43,8 @@ class AppAccountSitesViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
                 val repository = DashboardSitesRepository()
-                val viewModel = createViewModel(repository)
+                val sessionManager = createAppAccountSession()
+                val viewModel = createViewModel(repository, sessionManager)
                 advanceUntilIdle()
                 viewModel.selectSite("a")
                 advanceUntilIdle()
@@ -73,7 +80,8 @@ class AppAccountSitesViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
                 val repository = DashboardSitesRepository()
-                val viewModel = createViewModel(repository)
+                val sessionManager = createAppAccountSession()
+                val viewModel = createViewModel(repository, sessionManager)
                 advanceUntilIdle()
                 viewModel.selectSite("a")
                 advanceUntilIdle()
@@ -87,7 +95,79 @@ class AppAccountSitesViewModelTest {
             }
         }
 
-    private fun createViewModel(repository: DashboardSitesRepository): AppAccountSitesViewModel =
+    @Test
+    fun switchingAppAccountClearsOldSitesAndRejectsOldSessionResponse() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val sessionManager = createAppAccountSession()
+                val oldAccountSites =
+                    listOf(
+                        AppLinkedSite("old-site", "계정 A 현장", "이전 관리자", "01011112222"),
+                    )
+                val newAccountSites =
+                    listOf(
+                        AppLinkedSite("new-site", "계정 B 현장", "새 관리자", "01033334444"),
+                    )
+                val repository =
+                    DashboardSitesRepository().apply {
+                        sites = oldAccountSites
+                        selected = "old-site"
+                    }
+                val viewModel = createViewModel(repository, sessionManager)
+                advanceUntilIdle()
+
+                assertEquals(oldAccountSites, viewModel.uiState.value.linkedSites)
+                assertEquals("old-site", viewModel.uiState.value.selectedSiteId)
+
+                var accountBLoginStarted = false
+                val statesAfterAccountBLogin = mutableListOf<AppAccountSitesUiState>()
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.uiState.collect { state ->
+                        if (accountBLoginStarted) {
+                            statesAfterAccountBLogin += state
+                        }
+                    }
+                }
+
+                repository.nextLinkedSitesResponse = {
+                    accountBLoginStarted = true
+                    repository.sites = newAccountSites
+                    repository.selected = "new-site"
+                    sessionManager.onLoginSucceeded(
+                        SessionToken("account-b", SessionRole.APP_ACCOUNT),
+                    )
+                    ApiResult.Success(oldAccountSites)
+                }
+                viewModel.refresh()
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.linkedSites.none { it.siteId == "old-site" })
+                assertEquals(newAccountSites, viewModel.uiState.value.linkedSites)
+                assertEquals("new-site", viewModel.uiState.value.selectedSiteId)
+                assertNull(viewModel.uiState.value.dashboard)
+                assertTrue(statesAfterAccountBLogin.isNotEmpty())
+                assertTrue(
+                    statesAfterAccountBLogin.none { state ->
+                        state.linkedSites.any { site -> site.siteId == "old-site" } ||
+                            state.selectedSiteId == "old-site"
+                    },
+                )
+
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    private suspend fun createAppAccountSession(): SessionManager =
+        createTestSessionManager(Dispatchers.Unconfined).apply {
+            onLoginSucceeded(SessionToken("account-a", SessionRole.APP_ACCOUNT))
+        }
+
+    private fun createViewModel(
+        repository: DashboardSitesRepository,
+        sessionManager: SessionManager,
+    ): AppAccountSitesViewModel =
         AppAccountSitesViewModel(
             GetAppLinkedSitesUseCase(repository),
             GetSelectedAppSiteIdUseCase(repository),
@@ -95,7 +175,7 @@ class AppAccountSitesViewModelTest {
             UnlinkAppSiteUseCase(repository),
             GetAppSiteDashboardUseCase(repository),
             LogoutAppAccountUseCase(UnusedAppAuthRepository()),
-            createTestSessionManager(Dispatchers.Unconfined),
+            sessionManager,
         )
 }
 
@@ -104,6 +184,7 @@ private class DashboardSitesRepository : AppSiteLinkRepository {
     var dashboardSite: String? = null
     var sites = listOf(AppLinkedSite("a", "현장 A", null, ""), AppLinkedSite("b", "현장 B", null, ""))
     var dashboardResult: ApiResult<AppSiteDashboard> = ApiResult.Success(AppSiteDashboard(2, 0))
+    var nextLinkedSitesResponse: (suspend () -> ApiResult<List<AppLinkedSite>>)? = null
 
     override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboard> {
         dashboardSite = siteId
@@ -118,7 +199,14 @@ private class DashboardSitesRepository : AppSiteLinkRepository {
         return ApiResult.Success(Unit)
     }
 
-    override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> = ApiResult.Success(sites)
+    override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> {
+        val pendingResponse = nextLinkedSitesResponse
+        nextLinkedSitesResponse = null
+        if (pendingResponse != null) {
+            return pendingResponse()
+        }
+        return ApiResult.Success(sites)
+    }
 
     override suspend fun selectSite(siteId: String): ApiResult<AppSelectedSite> {
         selected = siteId
