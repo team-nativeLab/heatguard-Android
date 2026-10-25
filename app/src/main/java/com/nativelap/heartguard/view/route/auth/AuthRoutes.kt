@@ -28,7 +28,6 @@ import com.nativelap.heartguard.viewmodel.site.ClaimAppSiteLinkViewModel
 @Composable
 internal fun HeartGuardLoginRoute(
     onNavigateToSignUp: () -> Unit = {},
-    onNavigateToAppLogin: () -> Unit = {},
     viewModel: TeamLoginViewModel = hiltViewModel(),
 ) {
     var email by rememberSaveable {
@@ -68,14 +67,11 @@ internal fun HeartGuardLoginRoute(
             },
         isSubmitting = uiState.isSubmitting,
         onSignUpClick = onNavigateToSignUp,
-        switchLoginLabelResource = R.string.auth_login_app_account,
-        onSwitchLoginClick = onNavigateToAppLogin,
     )
 }
 
 @Composable
 internal fun HeartGuardAppAccountLoginRoute(
-    onNavigateToTeamLogin: () -> Unit,
     onNavigateToSignUp: () -> Unit,
     viewModel: AppAccountLoginViewModel = hiltViewModel(),
 ) {
@@ -94,8 +90,6 @@ internal fun HeartGuardAppAccountLoginRoute(
         isSubmitting = uiState.isSubmitting,
         statusMessage = if (uiState.hasFailure) stringResource(R.string.auth_login_generic_error) else null,
         onSignUpClick = onNavigateToSignUp,
-        switchLoginLabelResource = R.string.auth_login_team_account,
-        onSwitchLoginClick = onNavigateToTeamLogin,
     )
 }
 
@@ -166,7 +160,6 @@ internal fun HeartGuardPhoneNumberRoute(
 @Composable
 internal fun HeartGuardSignUpRoute(
     onNavigateToLogin: () -> Unit,
-    onNavigateToAppLogin: () -> Unit,
     viewModel: AppAccountSignUpViewModel = hiltViewModel(),
 ) {
     var email by remember { mutableStateOf("") }
@@ -269,10 +262,6 @@ internal fun HeartGuardSignUpRoute(
 
                 AuthSignUpScreenEvent.RequestEmailCodeClicked -> {
                     viewModel.requestEmailCode(email)
-                }
-
-                AuthSignUpScreenEvent.AppAccountLoginClicked -> {
-                    onNavigateToAppLogin()
                 }
             }
         },

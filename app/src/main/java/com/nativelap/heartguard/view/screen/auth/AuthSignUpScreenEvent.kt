@@ -23,6 +23,4 @@ internal sealed interface AuthSignUpScreenEvent {
     data object RequestEmailCodeClicked : AuthSignUpScreenEvent
 
     data object LoginClicked : AuthSignUpScreenEvent
-
-    data object AppAccountLoginClicked : AuthSignUpScreenEvent
 }
