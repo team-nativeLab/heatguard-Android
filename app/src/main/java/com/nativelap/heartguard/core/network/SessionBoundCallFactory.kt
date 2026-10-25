@@ -27,8 +27,9 @@ class SessionBoundCallFactory(
         }
         val selectedSiteIdSnapshot =
             if (requireSelectedSite) {
-                val selectedSiteId = sessionManager.getSelectedSiteId()?.takeIf(String::isNotBlank)
-                    ?: throw SiteNotSelectedException()
+                val selectedSiteId =
+                    sessionManager.getSelectedSiteId()?.takeIf(String::isNotBlank)
+                        ?: throw SiteNotSelectedException()
                 SelectedSiteIdSnapshot(selectedSiteId)
             } else {
                 null

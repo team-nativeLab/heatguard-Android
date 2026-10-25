@@ -6,10 +6,10 @@ import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
 import com.nativelap.heartguard.core.network.BearerTokenInterceptor
+import com.nativelap.heartguard.core.session.InMemoryTokenStorage
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionToken
-import com.nativelap.heartguard.core.session.InMemoryTokenStorage
 import com.nativelap.heartguard.core.session.createTestSessionManager
 import com.nativelap.heartguard.data.site.dto.ClaimAppSiteLinkRequestDto
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,14 @@ class AppSiteLinkApiServiceTest {
                 storage.saveSelectedSiteId("site-a")
                 val service = createDashboardService(server, sessionManager)
 
-                assertEquals(2, service.getDashboard().data?.summary?.todayRecordCount)
+                assertEquals(
+                    2,
+                    service
+                        .getDashboard()
+                        .data
+                        ?.summary
+                        ?.todayRecordCount,
+                )
                 val request = server.takeRequest()
                 assertEquals("/api/v1/site/dashboard", request.url.encodedPath)
                 assertEquals("Bearer x", request.headers["Authorization"])
@@ -215,7 +222,13 @@ class AppSiteLinkApiServiceTest {
                             .build(),
                     )
                 }
-                server.enqueue(MockResponse.Builder().code(500).body("server error").build())
+                server.enqueue(
+                    MockResponse
+                        .Builder()
+                        .code(500)
+                        .body("server error")
+                        .build(),
+                )
                 val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
                 sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
                 val remoteDataSource =

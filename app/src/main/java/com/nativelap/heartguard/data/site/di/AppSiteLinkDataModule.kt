@@ -3,8 +3,8 @@ package com.nativelap.heartguard.data.site.di
 import com.nativelap.heartguard.BuildConfig
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
-import com.nativelap.heartguard.data.site.remote.AppSiteLinkApiService
 import com.nativelap.heartguard.data.site.remote.AppSiteDashboardApiService
+import com.nativelap.heartguard.data.site.remote.AppSiteLinkApiService
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkRemoteDataSource
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkRemoteDataSourceImpl
 import com.nativelap.heartguard.data.site.repository.AppSiteLinkRepositoryImpl
