@@ -1,23 +1,10 @@
 package com.nativelap.heartguard.view.route.home
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -26,24 +13,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.core.util.rememberPhoneCallLauncher
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
 import com.nativelap.heartguard.domain.site.model.SkyStatus
-import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.heatLevelLabelText
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
-import com.nativelap.heartguard.view.component.home.HomeCallPermissionDialog
-import com.nativelap.heartguard.view.component.home.HomeEmergencyPhoneCallDialog
 import com.nativelap.heartguard.view.component.humidityValueText
 import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.menu.MenuDrawerOverlay
@@ -60,14 +41,14 @@ import java.time.format.DateTimeFormatter
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
  * 체크 완료 여부는 서버 필드가 없어 오늘 기록의 측정 시각으로 판정한다.
  * "관리자 전화"([onManagerCallClick])는 현장관리자 긴급호출 흐름(Emergency 화면)으로 이동하고,
- * "긴급 전화"는 이 Route에서 임시 본사 번호로 확인 후 직접 통화한다.
+ * "긴급 전화"는 Navigation 3의 본사 연락처 시트로 이동한다.
  * 메뉴 드로어는 홈 헤더에서만 열리는 오버레이라 이 Route가 열림 상태를 직접 소유한다.
- * android-navigation SKILL은 다이얼로그·바텀시트를 NavKey로 만들도록 하지만, 드로어는 사용자 결정에 따라
- * Navigation 3 목적지가 아닌 이 화면의 로컬 상태로 관리한다(드로어에서 시작하는 회원탈퇴만 NavHost로 이동). */
+ * 메뉴 드로어만 이 화면의 로컬 상태로 관리하고 전화·기록 오버레이는 Navigation 3 목적지로 처리한다. */
 @Composable
 internal fun HeartGuardHomeRoute(
     homeViewModel: HomeViewModel,
     onManagerCallClick: () -> Unit,
+    onEmergencyClick: () -> Unit,
     onFieldPhotoClick: () -> Unit,
     onRecordClick: () -> Unit,
     onProfileEditClick: () -> Unit,
@@ -85,9 +66,7 @@ internal fun HeartGuardHomeRoute(
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
     val loadFailureMessage = stringResource(R.string.home_load_failure)
-    val retryActionLabel = stringResource(R.string.common_retry)
 
     // 기록 저장 뒤나 앱을 다시 열었을 때 날씨·체크 완료가 갱신되도록 홈이 다시 보일 때마다 새로 조회한다.
     LifecycleResumeEffect(homeViewModel) {
@@ -95,63 +74,15 @@ internal fun HeartGuardHomeRoute(
         onPauseOrDispose {}
     }
 
-    // 홈 조회에 실패하면 모든 값이 "--"로 남으므로, 빈 값과 구분되도록 실패를 알리고 재시도할 수 있게 한다.
+    // 홈 서버 조회 실패를 Toast로 알린다.
     LaunchedEffect(homeUiState) {
         if (homeUiState is HomeUiState.Error) {
-            val snackbarResult =
-                snackbarHostState.showSnackbar(
-                    message = loadFailureMessage,
-                    actionLabel = retryActionLabel,
-                    duration = SnackbarDuration.Indefinite,
-                )
-            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                homeViewModel.loadTeamSiteOverview()
-            }
+            Toast.makeText(context, loadFailureMessage, Toast.LENGTH_SHORT).show()
         }
     }
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
-
-    val callPhoneNumber = rememberPhoneCallLauncher()
-    val headquartersPhoneNumber = stringResource(R.string.home_emergency_phone_number)
-    val callFailedMessage = stringResource(R.string.home_call_failed)
-    var isPhoneCallDialogVisible by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var isCallPermissionDialogVisible by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var isCallPermissionRequestInProgress by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var isCallActionInProgress by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    val startHeadquartersCall = {
-        if (!isCallActionInProgress) {
-            isCallActionInProgress = true
-            isPhoneCallDialogVisible = false
-            if (!callPhoneNumber(headquartersPhoneNumber)) {
-                isCallActionInProgress = false
-                Toast.makeText(context, callFailedMessage, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    val callPermissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-        ) { isPermissionGranted ->
-            isCallPermissionRequestInProgress = false
-            if (isPermissionGranted) {
-                startHeadquartersCall()
-            } else {
-                isPhoneCallDialogVisible = false
-                isCallPermissionDialogVisible = true
-            }
-        }
 
     // 드로어가 열려 있을 때만 시스템 뒤로가기를 가로채 드로어를 닫는다. 닫혀 있으면 NavHost의 onBack이 처리한다.
     BackHandler(enabled = isMenuDrawerOpen) {
@@ -176,58 +107,12 @@ internal fun HeartGuardHomeRoute(
             },
             onNotificationClick = onNotificationsClick,
             onManagerCallClick = onManagerCallClick,
-            onEmergencyClick = {
-                isCallActionInProgress = false
-                isPhoneCallDialogVisible = true
-            },
+            onEmergencyClick = onEmergencyClick,
             onFieldPhotoClick = onFieldPhotoClick,
             onRecordHistoryClick = onRecordHistoryClick,
             onChecklistClick = onChecklistClick,
             onRecordClick = onRecordClick,
         )
-
-        if (isPhoneCallDialogVisible) {
-            HomeEmergencyPhoneCallDialog(
-                phoneNumber = headquartersPhoneNumber,
-                onDismissRequest = {
-                    isPhoneCallDialogVisible = false
-                },
-                onCallClick = {
-                    val hasCallPermission =
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.CALL_PHONE,
-                        ) == PackageManager.PERMISSION_GRANTED
-                    if (hasCallPermission) {
-                        startHeadquartersCall()
-                    } else {
-                        if (!isCallPermissionRequestInProgress) {
-                            isCallPermissionRequestInProgress = true
-                            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
-                        }
-                    }
-                },
-            )
-        }
-
-        if (isCallPermissionDialogVisible) {
-            HomeCallPermissionDialog(
-                onDismissRequest = {
-                    isCallPermissionDialogVisible = false
-                    isPhoneCallDialogVisible = true
-                },
-                onOpenSettingsClick = {
-                    isCallPermissionDialogVisible = false
-                    isPhoneCallDialogVisible = true
-                    val settingsIntent =
-                        Intent(
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", context.packageName, null),
-                        )
-                    context.startActivity(settingsIntent)
-                },
-            )
-        }
 
         MenuDrawerOverlay(
             isVisible = isMenuDrawerOpen,
@@ -272,15 +157,6 @@ internal fun HeartGuardHomeRoute(
                 },
             )
         }
-
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-        )
     }
 }
 
