@@ -94,6 +94,65 @@ class AppAccountSignUpViewModelTest {
         }
 
     @Test
+    fun `인증코드 요청 네트워크 오류를 화면 상태로 전달한다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val repository =
+                    FakeAppAuthRepository(
+                        emailCodeResult = ApiResult.Failure(ApiError.Network),
+                    )
+                val viewModel = createViewModel(repository)
+
+                viewModel.requestEmailCode("worker@example.com")
+                advanceUntilIdle()
+
+                assertEquals(AppAccountSignUpFailure.NETWORK, viewModel.uiState.value.failure)
+                assertEquals(listOf("email-code"), repository.requestOrder)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `가입 서버 오류 코드를 사용자 상태로 변환하고 로그인하지 않는다`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val registrationErrors =
+                    listOf(
+                        ApiError.Http(statusCode = 400, errorCode = "INVALID_VERIFICATION_CODE") to
+                            AppAccountSignUpFailure.INVALID_VERIFICATION_CODE,
+                        ApiError.Http(statusCode = 409, errorCode = "EMAIL_ALREADY_EXISTS") to
+                            AppAccountSignUpFailure.EMAIL_ALREADY_EXISTS,
+                        ApiError.Http(statusCode = 409, errorCode = "SILO_NOT_BOOTSTRAPPED") to
+                            AppAccountSignUpFailure.ACCOUNT_NOT_READY,
+                        ApiError.Http(statusCode = 429, errorCode = "RATE_LIMITED") to
+                            AppAccountSignUpFailure.RATE_LIMITED,
+                    )
+
+                registrationErrors.forEach { (registrationError, expectedFailure) ->
+                    val repository =
+                        FakeAppAuthRepository(
+                            registrationResult = ApiResult.Failure(registrationError),
+                        )
+                    val viewModel = createViewModel(repository)
+                    val password = testPassword()
+
+                    viewModel.requestEmailCode("worker@example.com")
+                    advanceUntilIdle()
+                    viewModel.signUp("worker@example.com", password, password, "123456")
+                    advanceUntilIdle()
+
+                    assertEquals(expectedFailure, viewModel.uiState.value.failure)
+                    assertEquals(listOf("email-code", "register"), repository.requestOrder)
+                }
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
     fun `인증코드 재전송은 60초 대기 후 허용된다`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -159,6 +218,14 @@ class AppAccountSignUpViewModelTest {
     private class FakeAppAuthRepository(
         private val emailCodeResult: ApiResult<AppEmailCode> =
             ApiResult.Success(AppEmailCode(expiresAt = "2026-10-23T12:10:00+09:00")),
+        private val registrationResult: ApiResult<AppAccountRegistration> =
+            ApiResult.Success(
+                AppAccountRegistration(
+                    userId = "user_01",
+                    email = "worker@example.com",
+                    createdAt = "2026-10-23T12:00:00+09:00",
+                ),
+            ),
     ) : AppAuthRepository {
         val requestOrder = mutableListOf<String>()
         var loginRole: SessionRole? = null
@@ -175,13 +242,7 @@ class AppAccountSignUpViewModelTest {
             verificationCode: String,
         ): ApiResult<AppAccountRegistration> {
             requestOrder += "register"
-            return ApiResult.Success(
-                AppAccountRegistration(
-                    userId = "user_01",
-                    email = email,
-                    createdAt = "2026-10-23T12:00:00+09:00",
-                ),
-            )
+            return registrationResult
         }
 
         override suspend fun login(
