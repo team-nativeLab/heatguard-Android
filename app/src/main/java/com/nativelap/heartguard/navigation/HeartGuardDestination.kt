@@ -80,9 +80,6 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object HeadquartersCallConfirmation : HeartGuardDestination
 
     @Serializable
-    data object HeadquartersCallPermission : HeartGuardDestination
-
-    @Serializable
     data object RecordTypeSelection : HeartGuardDestination
 
     @Serializable
