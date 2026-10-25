@@ -14,7 +14,7 @@
 - [아키텍처](#아키텍처)
 - [프로젝트 구조](#프로젝트-구조)
 - [시작하기](#시작하기)
-- [테스트](#테스트)
+- [검증과 품질 검사](#검증과-품질-검사)
 - [개발 워크플로](#개발-워크플로)
 - [문서](#문서)
 - [라이선스](#라이선스)
@@ -49,7 +49,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 사진 흐름은 사진 종류 선택 → CameraX 전체 화면 촬영 또는 Android Photo Picker(`PickVisualMedia`) 앨범 선택 → 공유 `RecordDraftViewModel` 목록 반영 → 업로드 및 기록 제출 순서입니다. 사진 종류별 최대 2장까지 담으며, 저장 확인 화면 없이 제출하며, 저장은 `RecordDraftViewModel`의 `viewModelScope`에서 실행하며 연타를 차단합니다. POST 이후 취소되거나 응답을 확인하지 못한 제출은 로컬 표식을 유지해 같은 제출의 재전송을 차단합니다. CameraX 화면은 Manifest의 `CAMERA` 권한을 선언하고 런타임 권한도 요청합니다. 촬영 JPEG은 앱 캐시의 `photos/` 임시 파일로 만들고 `FileProvider` URI를 목록·미리보기·업로드에 사용합니다. 기록 흐름이 끝나거나 사진을 삭제하면 촬영 캐시 파일을 정리합니다. 온도·습도·메모 등 일부 입력 초안은 `SavedStateHandle`로 복구하며, 사진 URI나 업로드 키는 프로세스 재생성 후 복구하지 않습니다.
 
 ## 반응형 UI 진행 상태
-홈, 프로필 수정, 문의, 알림, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패, 탈퇴 안내·완료 화면에는 최대 600dp 중앙 콘텐츠 래퍼와 하단 동작 폭 제한을 적용했습니다. 로그인은 폼의 실제 높이에 따라 상단 여백을 줄이고 상태바·내비게이션 바·키보드 여백을 처리합니다. 키보드가 없을 때는 폼을 스크롤하고 하단 로그인 동작을 유지하며, 키보드가 열리면 폼과 하단 동작을 함께 스크롤해 짧은 높이에서도 입력칸을 확인할 수 있도록 합니다. 탈퇴 확인의 안내 문구는 별도 스크롤 영역을 제공합니다. 로그인 입력 영역, 알림 빈 상태, 탈퇴 완료 본문은 작은 화면에서 스크롤됩니다. 카메라 촬영 화면은 전체 화면 구성을 유지합니다. 2026-10-01 에뮬레이터에서 로그인 393×582dp 잘림 수정과 실제 IME 표시를 캡처로 확인했으며, 확대 글꼴·탈퇴 화면의 넓은 폭·스크롤은 계측 테스트로 검증했습니다. 저장 결과 제목·메시지·요약·버튼은 확대 글꼴에 맞춰 높이가 늘어나고, 메뉴는 짧은 화면에서 스크롤됩니다. 시트 본문도 최대 600dp로 제한하며 온도계 수동 입력 스위치에 접근성 이름을 연결했습니다. 저장 결과의 긴 요약·가로 오류 화면, 메뉴 스크롤, 태블릿 중앙 정렬과 스위치 semantics는 계측 테스트로 검증했습니다. 모든 작업자 프레임의 인증된 화면과 기기 크기별 시각 비교는 아직 완료되지 않았습니다.
+홈, 프로필 수정, 문의, 알림, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패, 탈퇴 안내·완료 화면에는 최대 600dp 중앙 콘텐츠 래퍼와 하단 동작 폭 제한을 적용했습니다. 로그인은 폼의 실제 높이에 따라 상단 여백을 줄이고 상태바·내비게이션 바·키보드 여백을 처리합니다. 키보드가 없을 때는 폼을 스크롤하고 하단 로그인 동작을 유지하며, 키보드가 열리면 폼과 하단 동작을 함께 스크롤해 짧은 높이에서도 입력칸을 확인할 수 있도록 합니다. 탈퇴 확인의 안내 문구는 별도 스크롤 영역을 제공합니다. 로그인 입력 영역, 알림 빈 상태, 탈퇴 완료 본문은 작은 화면에서 스크롤됩니다. 카메라 촬영 화면은 전체 화면 구성을 유지합니다. 2026-10-01 에뮬레이터에서 로그인 393×582dp 잘림 수정과 실제 IME 표시를 캡처로 확인했습니다. 확대 글꼴·탈퇴 화면의 넓은 폭·스크롤은 과거 계측 테스트로 검증했으나, 테스트 소스 제거 후 자동으로 재현할 수 없습니다. 저장 결과 제목·메시지·요약·버튼은 확대 글꼴에 맞춰 높이가 늘어나고, 메뉴는 짧은 화면에서 스크롤됩니다. 시트 본문도 최대 600dp로 제한하며 온도계 수동 입력 스위치에 접근성 이름을 연결했습니다. 저장 결과의 긴 요약·가로 오류 화면, 메뉴 스크롤, 태블릿 중앙 정렬과 스위치 semantics는 당시 계측 테스트로 확인했습니다. 이 결과는 역사적 기록이며 현재 자동 검증은 제공하지 않습니다. 모든 작업자 프레임의 인증된 화면과 기기 크기별 시각 비교는 아직 완료되지 않았습니다.
 
 로그인 브랜드 이미지는 사용자 제공 투명 PNG를 `app/src/main/res/drawable-nodpi/heart_guard_logo.png`로 사용합니다. `BrandMark`는 80dp 영역에서 `ContentScale.Fit`으로 원본 비율을 유지합니다. 설치한 앱의 로그인 화면에서 PNG 표시를 시각 확인했으며 [검증 보고서](docs/verification/2026-10-04-functional-regression.md)에 캡처를 보관했습니다. 호출 취소 버튼에는 1dp 테두리와 surface 배경을 적용했습니다.
 
@@ -73,7 +73,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `GET /api/v1/team/notifications` | 연결 | `category`는 선택값(`ALL`·`RECORD`·`EMERGENCY`·`NOTICE`, 생략/빈 값은 `ALL`), `limit`은 1..100(기본 20), `cursor`는 선택값이며 앱은 선택한 분류를 전송합니다. 응답 `items`는 `{notificationId, type, category, title, resourceId, read, createdAt, updatedAt}`, `page`는 `{nextCursor, hasMore}`, 카운트는 전체 `unreadCount`와 분류별 `filteredUnreadCount`. 알림 유형은 `RECORD_CREATED`, `EMERGENCY_ACKNOWLEDGED`, `INQUIRY_ANSWERED`. |
 | `PATCH /api/v1/team/notifications/{notificationId}/read` | 연결 | 본인에게 공개된 알림 한 건을 사용자별로 읽음 처리합니다. body 없이 요청하며 응답은 `{notificationId, read, readAt}`입니다. |
 | `PATCH /api/v1/team/notifications/read-all` | 연결 | Query·Body 없이 본인의 모든 분류·페이지 알림을 읽음 처리합니다. 응답 `{updatedCount, unreadCount}`를 반영하고 목록을 유지한 채 현재 분류 첫 페이지를 재조회합니다. 재조회 실패는 기존 데이터와 읽음 결과를 보존하며 GET만 재시도합니다. 개별 읽음과 겹친 목록 조회는 처리 완료까지 대기하고, 앱 복귀 조회는 최소 5초 간격으로 실행합니다. 처리 중 재진입·연타를 차단하고 세션 종료 시 요청을 취소·무효화합니다. |
-| `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 테스트 계정으로는 실행하지 않고 단위 테스트로만 확인 |
+| `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 실계정으로 실행하지 않았으며, 과거 단위 테스트로만 확인했습니다. 현재 테스트 소스는 없습니다. |
 | `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
 | `POST /auth/team/email-codes`, `POST /auth/team/register`, `POST /auth/team/login`, `POST /auth/team/logout` | Android Team 계약 반영, 서버 검증 대기 | 이메일 인증·Team 가입·로그인·로그아웃. 가입 요청 후 Team 로그인 API로 Team 세션을 발급받는다. 서버는 가입 사용자의 Team 연결·역할 및 기존 Team 로그인 응답과의 호환을 구현해야 한다. |
 | `POST /team/links/claim`, `GET /team/sites`, `POST /team/sites/{siteId}/select`, `DELETE /team/sites/{siteId}/link` | Android Team 계약 반영, 서버 검증 대기 | App Link 토큰과 담당자 전화번호로 현장을 연동하고 목록·선택·연결 해제를 제공한다. 전화번호 대조는 SMS 인증이 아니다. 토큰은 성공·취소까지 메모리에만 보관한다. |
@@ -178,32 +178,22 @@ core/session/    # 세션 상태와 Keystore 기반 토큰 저장
 HeartGuard/
 ├── app/                      # Android Application: 진입점, UI, Navigation, ViewModel
 │   └── src/
-│       ├── main/
-│       │   ├── java/com/nativelap/heartguard/
-│       │   │   ├── MainActivity.kt
-│       │   │   ├── navigation/
-│       │   │   ├── ui/theme/
-│       │   │   ├── core/      # component / util
-│       │   │   ├── viewmodel/
-│       │   │   └── view/      # route / screen / component
-│       │   ├── assets/licenses/pretendard/
-│       │   └── res/
-│       ├── test/             # ViewModel 단위 테스트
-│       └── androidTest/      # 화면·SavedState 계측 테스트
+│       └── main/
+│           ├── java/com/nativelap/heartguard/
+│           │   ├── MainActivity.kt
+│           │   ├── navigation/
+│           │   ├── ui/theme/
+│           │   ├── core/      # component / util
+│           │   ├── viewmodel/
+│           │   └── view/      # route / screen / component
+│           ├── assets/licenses/pretendard/
+│           └── res/
 ├── core/                     # Android Library: 공통 네트워크·세션·DI
-│   └── src/
-│       ├── main/java/com/nativelap/heartguard/core/
-│       ├── test/             # 네트워크·세션 단위 테스트
-│       └── testFixtures/     # 모듈 간 공유 TestSessionManager
+│   └── src/main/java/com/nativelap/heartguard/core/
 ├── domain/                   # Android Library: 모델·Repository 계약·UseCase
-│   └── src/
-│       ├── main/java/com/nativelap/heartguard/domain/
-│       └── test/             # 모델·UseCase 단위 테스트
+│   └── src/main/java/com/nativelap/heartguard/domain/
 ├── data/                     # Android Library: API·Repository·로컬 저장 구현
-│   └── src/
-│       ├── main/java/com/nativelap/heartguard/data/
-│       ├── test/             # API 계약·Mapper·Repository 단위 테스트
-│       └── androidTest/      # 기록 제출 표식 영속화 계측 테스트
+│   └── src/main/java/com/nativelap/heartguard/data/
 ├── .agents/skills/           # 이 저장소 계열 공통 개발 규칙
 ├── AGENTS.md                 # 저장소 공통 에이전트 계약
 ├── gradle/libs.versions.toml  # 의존성 버전 카탈로그
@@ -232,34 +222,30 @@ HEARTGUARD_DEBUG_BASE_URL=https://YOUR_DEBUG_API_HOST/
 HEARTGUARD_RELEASE_BASE_URL=https://YOUR_RELEASE_API_HOST/
 ```
 
-Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 `:data:validateReleaseServerConfiguration` 검증 단계에서 실패합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 명세 기반 단위 테스트까지만 검증합니다.
+Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 `:data:validateReleaseServerConfiguration` 검증 단계에서 실패합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 당시 명세 기반 단위 테스트까지만 검증했습니다. 해당 테스트 소스는 현재 제거되어 자동 검증을 다시 실행할 수 없습니다.
 
-## 테스트
-각 모듈의 `build.gradle.kts`에 선언된 테스트 의존성 기준입니다. 검증 시에는 특정 모듈로 범위를 제한하지 않은 아래 프로젝트 태스크를 사용합니다.
+## 검증과 품질 검사
+사용자 요청에 따라 네 모듈(`app`, `core`, `domain`, `data`)의 `src/test`, `src/androidTest`, `src/testFixtures` 테스트 소스와 테스트 전용 구성을 제거했습니다. 따라서 현재 단위·계측 테스트는 없으며 `testDebugUnitTest`, `connectedDebugAndroidTest`로 기능 회귀를 자동 확인할 수 없습니다. 인증·세션·권한 분리·기록 저장 안전성을 포함한 과거 테스트 보호도 더 이상 실행되지 않습니다.
 
 | 목적 | 명령 |
 |---|---|
-| 단위 테스트(JUnit4) | `./gradlew testDebugUnitTest` |
-| 계측 테스트(Espresso, Compose UI Test) | `./gradlew connectedDebugAndroidTest` |
+| Debug 빌드 | `./gradlew assembleDebug` |
 | Lint | `./gradlew lintDebug` |
 | Kotlin·Gradle 포맷 검사 | `./gradlew spotlessCheck` |
 
-기본 생성 예제인 `ExampleUnitTest`와 `ExampleInstrumentedTest`만 제거했습니다. 기능·보안 회귀 테스트는 담당 모듈의 `src/test` 또는 `src/androidTest`로 옮겨 유지합니다. 공유 세션 테스트 도우미 `TestSessionManager`는 `core/src/testFixtures`에 두고, 각 모듈이 테스트 의존성으로 사용합니다. 아래 날짜별 검증 결과는 모듈 분리 전 이력입니다.
+### 과거 검증 기록
+아래 결과는 테스트 코드가 저장소에 있던 시점의 기록이며, 현재 코드에서 재실행할 수 없습니다. 2026-10-01 `testDebugUnitTest` 167개와 `connectedDebugAndroidTest` 20개가 통과했고, `lintDebug`는 오류 0개(경고 46개), `assembleDebug`는 성공했습니다. 2026-10-04 기록된 시점에는 단위 테스트 276개와 계측 테스트 32개가 통과했고, 마지막 응답 검증 변경 뒤 단위 테스트·`assembleDebug`·`lintDebug`가 성공했습니다(Lint 오류 0개·경고 52개). 당시 알림·REST·긴급호출·문의·기록·인증/세션 및 UI 테스트가 API 계약, 실패 경로, 계정 전환과 저장 안전성 등을 다뤘습니다. 이는 과거 상태의 결과이며 현재 기능 회귀 방지를 보장하지 않습니다.
 
-알림 테스트는 API 경로·query/body 계약, 유형·분류 매핑, cursor 페이지, 개별·전체 읽음 성공/실패, 지연 응답·재진입·세션 전환, PATCH와 페이지 조회 교차, 최신 분류 대기 조회, 포그라운드 5초 갱신 간격과 읽음 완료 후 예약 갱신, 느린 오류 안내 중 분류 조회, PATCH 성공 후 GET 실패와 재시도를 다룹니다. REST 테스트는 자정 경과·1440분 경계·필수 입력·한국 날짜·SavedState 복원과 초기화를 검증합니다. 긴급호출 테스트는 409 후 Network·429·500 재조회 실패와 NONE 종료를, 문의·기록 테스트는 마지막 허용 페이지·커서 순환·누락·취소를 검증합니다. 화면 계측 테스트는 빈 목록의 새로고침 오류·읽음 완료 후 자동 페이지 조회 재개, 로그인 짧은 화면·확대 글꼴·실제 IME·오류 안내 조합, 탈퇴 중앙 폭 제한·스크롤·IME 실패 안내를 검증합니다. 2026-10-01 `testDebugUnitTest` 167개와 `connectedDebugAndroidTest` 20개가 통과했으며, `lintDebug` 오류 0개(기존 경고 46개), `assembleDebug` 성공을 확인했습니다. 실제 서버 사진 업로드·REST 저장은 이번 변경에서 아직 재검증하지 않았습니다.
+로그인·탈퇴 IME의 과거 계측 재검증과 당시 남은 서버·관리자 연동 검증 조건은 [2026-10-04 회귀 검증 보고서](docs/verification/2026-10-04-functional-regression.md)에 기록되어 있습니다. 서버 실검증과 관리자 웹 연동은 당시에도 완료되지 않은 범위였습니다.
 
-2026-10-04 기록 저장·호출·로그인 및 탈퇴 UI 수정과 남은 응답 검증 후 전체 단위 테스트 276개가 통과했습니다. UI 변경 단계에서 전체 계측 테스트 32개가 통과했고, 마지막 RemoteDataSource 응답 검증 변경 뒤 단위 테스트·`assembleDebug`·`lintDebug`를 다시 실행해 성공했습니다(Lint 오류 0개·경고 52개). 마지막 응답 회귀 테스트 70개는 실제 Retrofit→RemoteDataSource 흐름의 성공·명시적 거절·누락·모순 응답을 검증합니다. 기록 저장 검증은 응답 유실·모순된 성공 응답·자동 재전송 차단·중복 제출 ID·계정 전환·파일 손상·동시 제출·최초 파일 쓰기 중단·성공 후 로컬 정리 실패를 다룹니다. 호출 검증은 이전 흐름의 종료 효과와 늦은 응답이 새 호출에 반영되지 않는 경우를 포함합니다.
-
-앞서 실패했던 로그인·탈퇴 IME 계측 2건은 에뮬레이터의 하드웨어 키보드 설정을 끄고 Cold Boot한 환경에서 재검증했습니다. 실제 IME 표시와 짧은 화면·확대 글꼴에서 입력칸 및 동작 버튼의 접근성을 확인했습니다. 입력 포커스 콜백과 입력칸 전체 표시, 키보드를 숨겼다가 다시 열었을 때의 입력칸 전체 표시·포커스 유지도 계측 테스트로 확인했습니다. 알림을 포함한 남은 응답 검증도 완료했으나 자동 테스트 통과를 전체 제품 실서버 검증 완료로 간주하지 않습니다. 이번 작업의 실서버 검증은 테스트 자격증명 사용에 대한 자동 승인 검토 차단으로 확인을 기다리고 있으며, 관리자 웹 URL도 제공되지 않아 관리자 목록·알림·확인·종료·문의 답변 연동 검증은 남아 있습니다. 과거 실서버 검증 결과는 위의 해당 날짜 기준입니다.
-
-자세한 기능별 PASS·BLOCKED·NOT_RUN 범위와 설치 앱 캡처는 [2026-10-04 회귀 검증 보고서](docs/verification/2026-10-04-functional-regression.md)를 참고하세요. 기록·호출·UI 변경의 [PR #103](https://github.com/team-nativeLab/heatguard-Android/pull/103)·[PR #105](https://github.com/team-nativeLab/heatguard-Android/pull/105)·[PR #106](https://github.com/team-nativeLab/heatguard-Android/pull/106)은 의존 브랜치에 연결된 Draft이며 병합하지 않았습니다. 마지막 응답 검증과 보고서는 [PR #108](https://github.com/team-nativeLab/heatguard-Android/pull/108)에 Draft로 게시했으며 Issue #107을 `Refs #107`로 연결합니다. 선행 PR을 포함하고 기본 브랜치는 dev이며, 병합하지 않았습니다.
+자세한 과거 PASS·BLOCKED·NOT_RUN 범위와 설치 앱 캡처는 [2026-10-04 회귀 검증 보고서](docs/verification/2026-10-04-functional-regression.md)를 참고하세요. 기록·호출·UI 변경의 [PR #103](https://github.com/team-nativeLab/heatguard-Android/pull/103)·[PR #105](https://github.com/team-nativeLab/heatguard-Android/pull/105)·[PR #106](https://github.com/team-nativeLab/heatguard-Android/pull/106)은 의존 브랜치에 연결된 Draft이며 병합하지 않았습니다. 마지막 응답 검증과 보고서는 [PR #108](https://github.com/team-nativeLab/heatguard-Android/pull/108)에 Draft로 게시했으며 Issue #107을 `Refs #107`로 연결합니다. 선행 PR을 포함하고 기본 브랜치는 dev이며, 병합하지 않았습니다.
 
 ## 개발 워크플로
 - 코드 작업 전 `AGENTS.md`와 `.agents/skills/**/SKILL.md`를 먼저 확인하고 규칙을 따릅니다.
 - GitHub Issue·브랜치·커밋·PR 규칙은 [`AGENTS.md`](AGENTS.md) 6장과 [`.agents/skills/android-github-workflow/SKILL.md`](.agents/skills/android-github-workflow/SKILL.md)를 따릅니다.
 
 ## 문서
-- [2026-10-04 기능 수정 및 회귀 검증](docs/verification/2026-10-04-functional-regression.md) — 코드 변경, 자동 테스트, 시각 증거, 실서버·관리자 연동의 남은 조건
+- [2026-10-04 기능 수정 및 회귀 검증](docs/verification/2026-10-04-functional-regression.md) — 테스트 소스 제거 전의 역사적 자동 검증 결과, 시각 증거, 당시 실서버·관리자 연동의 남은 조건
 - [`AGENTS.md`](AGENTS.md) — 저장소 공통 에이전트 계약(계층 구조, 기술 계약, 스킬 라우팅)
 - `.agents/skills/` — 영역별 개발 규칙(SKILL.md 모음: DI, 네트워크, UI, Navigation, 디자인 시스템 등)
 - PRD 문서: 저장소에 없음. 사용자 확인에 따라 별도 생성하지 않음

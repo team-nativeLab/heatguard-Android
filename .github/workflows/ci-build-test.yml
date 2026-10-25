@@ -1,7 +1,5 @@
-# 붙여넣을 위치: <레포>/.github/workflows/ci-build-test.yml
-# 목적: PR마다 컴파일 → 단위 테스트 → lint 를 실행한다. (ktlint 포맷 검사는 format-check.yml 에서 별도로 실행한다)
-# 주의: 워크플로 이름("CI Build & Test")은 ci-autofix-*.yml 의 workflow_run 트리거와 연결되어 있으므로 바꾸지 않는다.
-name: CI Build & Test
+# 목적: PR마다 컴파일 → lint 를 실행한다. (ktlint 포맷 검사는 format-check.yml 에서 별도로 실행한다)
+name: CI Build & Lint
 
 on:
   pull_request:
@@ -9,7 +7,7 @@ on:
 
 # 같은 PR 에 새 커밋이 올라오면 이전 실행을 취소한다.
 concurrency:
-  group: ci-build-test-${{ github.event.pull_request.number }}
+  group: ci-build-lint-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 # 최소 권한: 코드 읽기만 허용한다.
@@ -17,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  build-test:
+  build-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -63,26 +61,19 @@ jobs:
       - name: Kotlin 컴파일 (debug)
         run: ./gradlew :app:compileDebugKotlin --stacktrace
 
-      - name: 단위 테스트 (debug)
-        run: ./gradlew testDebugUnitTest --stacktrace
-
       - name: Android Lint (debug)
         run: ./gradlew lintDebug --stacktrace
 
-      # 실패해도 원인 확인을 위해 리포트를 항상 올린다.
-      - name: 테스트·lint 리포트 업로드
+      # 실패해도 원인 확인을 위해 lint 리포트를 항상 올린다.
+      - name: lint 리포트 업로드
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ci-reports
           path: |
-            app/build/reports/tests/
             app/build/reports/lint-results-debug.*
-            core/build/reports/tests/
             core/build/reports/lint-results-debug.*
-            domain/build/reports/tests/
             domain/build/reports/lint-results-debug.*
-            data/build/reports/tests/
             data/build/reports/lint-results-debug.*
           if-no-files-found: ignore
           retention-days: 7

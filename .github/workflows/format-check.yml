@@ -1,5 +1,5 @@
 # 목적: PR마다 Spotless(ktlint)로 코드 줄바꿈·포맷이 적용됐는지 확인한다.
-# "CI Build & Test"와 분리된 워크플로라 포맷 실패가 ci-autofix-*.yml(workflow_run)을 실행하지 않는다.
+# "CI Build & Lint"와 분리된 워크플로라 포맷 실패가 ci-autofix-*.yml(workflow_run)을 실행하지 않는다.
 # 실패하면 로컬에서 ./gradlew spotlessApply 를 실행해 커밋한다.
 name: Format Check
 

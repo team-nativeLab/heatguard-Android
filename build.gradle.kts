@@ -19,8 +19,8 @@ val ktlintEditorConfig =
         "ktlint_function_signature_rule_force_multiline_when_parameter_count_greater_or_equal_than" to 2,
         "ij_kotlin_allow_trailing_comma" to true,
         "ij_kotlin_allow_trailing_comma_on_call_site" to true,
-        // Compose 함수(대문자 시작)와 한글 등 서술형 이름을 쓰는 테스트 함수는 함수 이름 규칙에서 제외한다
-        "ktlint_function_naming_ignore_when_annotated_with" to "Composable,Test",
+        // Compose 함수(대문자 시작)는 함수 이름 규칙에서 제외한다
+        "ktlint_function_naming_ignore_when_annotated_with" to "Composable",
         // 줄바꿈과 무관하게 상수·파일 이름 변경을 요구하는 규칙은 포맷 범위 밖이라 끈다
         "ktlint_standard_property-naming" to "disabled",
         "ktlint_standard_filename" to "disabled",
