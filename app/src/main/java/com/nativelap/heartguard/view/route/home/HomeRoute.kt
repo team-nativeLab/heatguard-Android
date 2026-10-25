@@ -1,15 +1,10 @@
 package com.nativelap.heartguard.view.route.home
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -18,8 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -27,7 +22,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
 import com.nativelap.heartguard.domain.site.model.SkyStatus
-import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.heatLevelLabelText
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
@@ -67,13 +61,12 @@ internal fun HeartGuardHomeRoute(
     onSiteSelectionClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
     val loadFailureMessage = stringResource(R.string.home_load_failure)
-    val retryActionLabel = stringResource(R.string.common_retry)
 
     // 기록 저장 뒤나 앱을 다시 열었을 때 날씨·체크 완료가 갱신되도록 홈이 다시 보일 때마다 새로 조회한다.
     LifecycleResumeEffect(homeViewModel) {
@@ -81,18 +74,10 @@ internal fun HeartGuardHomeRoute(
         onPauseOrDispose {}
     }
 
-    // 홈 조회에 실패하면 모든 값이 "--"로 남으므로, 빈 값과 구분되도록 실패를 알리고 재시도할 수 있게 한다.
+    // 홈 서버 조회 실패를 Toast로 알린다.
     LaunchedEffect(homeUiState) {
         if (homeUiState is HomeUiState.Error) {
-            val snackbarResult =
-                snackbarHostState.showSnackbar(
-                    message = loadFailureMessage,
-                    actionLabel = retryActionLabel,
-                    duration = SnackbarDuration.Indefinite,
-                )
-            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                homeViewModel.loadTeamSiteOverview()
-            }
+            Toast.makeText(context, loadFailureMessage, Toast.LENGTH_SHORT).show()
         }
     }
     var isMenuDrawerOpen by rememberSaveable {
@@ -172,15 +157,6 @@ internal fun HeartGuardHomeRoute(
                 },
             )
         }
-
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-        )
     }
 }
 

@@ -258,7 +258,7 @@
     <string name="photo_remove_accessibility">사진 %1$d 삭제</string>
     <string name="save_complete">확인</string>
     <!-- 메뉴 드로어 -->
-    <string name="home_load_failure">홈 정보를 불러오지 못했어요</string>
+    <string name="home_load_failure">전화번호로 현장과 연동해주세요</string>
     <string name="menu_edit_profile">내 정보 수정</string>
     <string name="menu_inquiry">문의하기</string>
     <string name="menu_home">홈</string>
