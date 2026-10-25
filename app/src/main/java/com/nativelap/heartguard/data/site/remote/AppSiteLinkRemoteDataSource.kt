@@ -7,16 +7,26 @@ import com.nativelap.heartguard.data.site.dto.AppSiteLinkClaimResponseDto
 import com.nativelap.heartguard.data.site.dto.AppSiteSelectionResponseDto
 
 interface AppSiteLinkRemoteDataSource {
-    suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboardDto>
+    suspend fun getDashboard(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSiteDashboardDto>
 
-    suspend fun unlinkSite(siteId: String): ApiResult<Unit>
+    suspend fun unlinkSite(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<Unit>
 
     suspend fun claim(
         token: String,
         managerPhone: String,
+        expectedSessionGeneration: Long,
     ): ApiResult<AppSiteLinkClaimResponseDto>
 
-    suspend fun getLinkedSites(): ApiResult<AppLinkedSitesResponseDto>
+    suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<AppLinkedSitesResponseDto>
 
-    suspend fun selectSite(siteId: String): ApiResult<AppSiteSelectionResponseDto>
+    suspend fun selectSite(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSiteSelectionResponseDto>
 }

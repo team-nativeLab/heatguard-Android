@@ -10,6 +10,8 @@ class GetAppSiteDashboardUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        suspend operator fun invoke(siteId: String): ApiResult<AppSiteDashboard> =
-            appSiteLinkRepository.getDashboard(siteId)
+        suspend operator fun invoke(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSiteDashboard> = appSiteLinkRepository.getDashboard(siteId, expectedSessionGeneration)
     }

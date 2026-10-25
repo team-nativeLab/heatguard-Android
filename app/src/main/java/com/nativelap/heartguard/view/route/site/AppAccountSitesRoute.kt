@@ -34,6 +34,7 @@ internal fun AppAccountSitesRoute(
         uiState = uiState,
         onRefresh = viewModel::refresh,
         onSelectSite = viewModel::selectSite,
+        onOpenDashboard = viewModel::openDashboard,
         isLinkDialogVisible = isLinkDialogVisible,
         linkInput = linkInput,
         hasLinkFailure = hasLinkFailure,

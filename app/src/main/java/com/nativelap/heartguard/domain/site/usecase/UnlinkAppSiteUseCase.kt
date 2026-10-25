@@ -9,5 +9,8 @@ class UnlinkAppSiteUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        suspend operator fun invoke(siteId: String): ApiResult<Unit> = appSiteLinkRepository.unlinkSite(siteId)
+        suspend operator fun invoke(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<Unit> = appSiteLinkRepository.unlinkSite(siteId, expectedSessionGeneration)
     }

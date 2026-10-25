@@ -21,11 +21,19 @@ class AppSiteLinkRepositoryImpl
         private val appSiteLinkRemoteDataSource: AppSiteLinkRemoteDataSource,
         private val sessionManager: SessionManager,
     ) : AppSiteLinkRepository {
-        override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboard> {
-            if (siteId.isBlank() || sessionManager.getSelectedSiteId() != siteId) {
+        override suspend fun getDashboard(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSiteDashboard> {
+            val requestSession = sessionManager.getSnapshot()
+            if (siteId.isBlank() ||
+                requestSession.role != SessionRole.APP_ACCOUNT ||
+                requestSession.generation != expectedSessionGeneration ||
+                sessionManager.getSelectedSiteId() != siteId
+            ) {
                 return ApiResult.Failure(ApiError.SiteNotSelected)
             }
-            return appSiteLinkRemoteDataSource.getDashboard(siteId).map { response ->
+            return appSiteLinkRemoteDataSource.getDashboard(siteId, expectedSessionGeneration).map { response ->
                 AppSiteDashboard(
                     todayRecordCount = response.summary.todayRecordCount,
                     activeEmergencyCount = response.summary.activeEmergencyCount,
@@ -36,17 +44,31 @@ class AppSiteLinkRepositoryImpl
         override suspend fun claim(
             token: String,
             managerPhone: String,
+            expectedSessionGeneration: Long,
         ): ApiResult<AppSiteLinkClaim> =
-            appSiteLinkRemoteDataSource
-                .claim(
-                    token = token,
-                    managerPhone = managerPhone.filter(Char::isDigit),
-                ).map { response -> response.toDomain() }
+            sessionManager.getSnapshot().let { requestSession ->
+                if (requestSession.role != SessionRole.APP_ACCOUNT ||
+                    requestSession.generation != expectedSessionGeneration
+                ) {
+                    return ApiResult.Failure(ApiError.SessionChanged)
+                }
+                appSiteLinkRemoteDataSource
+                    .claim(
+                        token = token,
+                        managerPhone = managerPhone.filter(Char::isDigit),
+                        expectedSessionGeneration = expectedSessionGeneration,
+                    ).map { response -> response.toDomain() }
+            }
 
-        override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> {
+        override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> {
             val requestSession = sessionManager.getSnapshot()
+            if (requestSession.role != SessionRole.APP_ACCOUNT ||
+                requestSession.generation != expectedSessionGeneration
+            ) {
+                return ApiResult.Failure(ApiError.SessionChanged)
+            }
             val selectedSiteIdAtRequest = sessionManager.getSelectedSiteId()
-            val result = appSiteLinkRemoteDataSource.getLinkedSites()
+            val result = appSiteLinkRemoteDataSource.getLinkedSites(expectedSessionGeneration)
             if (result is ApiResult.Failure) {
                 return result
             }
@@ -64,13 +86,21 @@ class AppSiteLinkRepositoryImpl
             }
         }
 
-        override suspend fun unlinkSite(siteId: String): ApiResult<Unit> {
+        override suspend fun unlinkSite(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<Unit> {
             if (siteId.isBlank()) {
                 return ApiResult.Failure(ApiError.Unknown)
             }
             val requestSession = sessionManager.getSnapshot()
+            if (requestSession.role != SessionRole.APP_ACCOUNT ||
+                requestSession.generation != expectedSessionGeneration
+            ) {
+                return ApiResult.Failure(ApiError.SessionChanged)
+            }
             val selectedSiteIdAtRequest = sessionManager.getSelectedSiteId()
-            val result = appSiteLinkRemoteDataSource.unlinkSite(siteId)
+            val result = appSiteLinkRemoteDataSource.unlinkSite(siteId, expectedSessionGeneration)
             if (result is ApiResult.Success) {
                 try {
                     if (selectedSiteIdAtRequest == siteId) {
@@ -85,7 +115,10 @@ class AppSiteLinkRepositoryImpl
             return result
         }
 
-        override suspend fun selectSite(siteId: String): ApiResult<AppSelectedSite> {
+        override suspend fun selectSite(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSelectedSite> {
             if (siteId.isBlank()) {
                 return ApiResult.Failure(ApiError.Unknown)
             }
@@ -93,7 +126,10 @@ class AppSiteLinkRepositoryImpl
             if (requestSession.role != SessionRole.APP_ACCOUNT) {
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
-            return when (val result = appSiteLinkRemoteDataSource.selectSite(siteId)) {
+            if (requestSession.generation != expectedSessionGeneration) {
+                return ApiResult.Failure(ApiError.SessionChanged)
+            }
+            return when (val result = appSiteLinkRemoteDataSource.selectSite(siteId, expectedSessionGeneration)) {
                 is ApiResult.Failure -> {
                     result
                 }

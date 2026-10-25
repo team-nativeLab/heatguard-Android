@@ -31,6 +31,7 @@ internal fun AppAccountSitesScreen(
     uiState: AppAccountSitesUiState,
     onRefresh: () -> Unit,
     onSelectSite: (String) -> Unit,
+    onOpenDashboard: (String) -> Unit,
     isLinkDialogVisible: Boolean,
     linkInput: String,
     hasLinkFailure: Boolean,
@@ -82,7 +83,10 @@ internal fun AppAccountSitesScreen(
             title = { Text(stringResource(R.string.app_account_site_unlink)) },
             text = { Text(stringResource(R.string.app_account_site_unlink_confirmation, site.siteName)) },
             confirmButton = {
-                TextButton(onClick = onConfirmUnlink) {
+                TextButton(
+                    onClick = onConfirmUnlink,
+                    enabled = !uiState.isLoading && !uiState.isSelectingSite && !uiState.isUnlinkingSite,
+                ) {
                     Text(stringResource(R.string.app_account_site_unlink))
                 }
             },
@@ -170,7 +174,7 @@ internal fun AppAccountSitesScreen(
                 Text(stringResource(R.string.app_account_add_site))
             }
 
-            if (uiState.hasFailure) {
+            if (uiState.hasFailure && uiState.linkedSites.isEmpty()) {
                 Text(
                     text = stringResource(R.string.app_account_sites_error),
                     color = MaterialTheme.colorScheme.error,
@@ -178,7 +182,7 @@ internal fun AppAccountSitesScreen(
                 TextButton(onClick = onRefresh) {
                     Text(text = stringResource(R.string.common_retry))
                 }
-            } else if (uiState.isLoading) {
+            } else if (uiState.isLoading && uiState.linkedSites.isEmpty()) {
                 Text(text = stringResource(R.string.app_account_sites_loading))
             } else if (uiState.linkedSites.isEmpty()) {
                 Text(text = stringResource(R.string.app_account_sites_empty))
@@ -186,6 +190,24 @@ internal fun AppAccountSitesScreen(
                 Text(text = stringResource(R.string.app_account_sites_link_hint))
             } else {
                 Text(text = stringResource(R.string.app_account_sites_description))
+                if (uiState.isLoading) {
+                    Text(text = stringResource(R.string.app_account_sites_loading))
+                }
+                if (uiState.hasFailure) {
+                    Text(
+                        text = stringResource(R.string.app_account_sites_error),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    TextButton(onClick = onRefresh) {
+                        Text(text = stringResource(R.string.common_retry))
+                    }
+                }
+                if (uiState.hasSelectionFailure) {
+                    Text(
+                        text = stringResource(R.string.app_account_site_selection_error),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(
@@ -203,13 +225,17 @@ internal fun AppAccountSitesScreen(
                                 }
                                 Button(
                                     onClick = { onSelectSite(site.siteId) },
-                                    enabled = !uiState.isSelectingSite && !uiState.isUnlinkingSite,
+                                    enabled =
+                                        !uiState.isSelectingSite && !uiState.isUnlinkingSite &&
+                                            !uiState.isLoading && uiState.selectedSiteId != site.siteId,
                                     modifier = Modifier.padding(top = 8.dp),
                                 ) {
                                     Text(
                                         text =
                                             stringResource(
-                                                if (uiState.selectedSiteId == site.siteId) {
+                                                if (uiState.selectingSiteId == site.siteId) {
+                                                    R.string.app_account_site_selecting
+                                                } else if (uiState.selectedSiteId == site.siteId) {
                                                     R.string.app_account_site_selected
                                                 } else {
                                                     R.string.app_account_site_select
@@ -217,9 +243,21 @@ internal fun AppAccountSitesScreen(
                                             ),
                                     )
                                 }
+                                if (uiState.selectedSiteId == site.siteId) {
+                                    TextButton(
+                                        onClick = { onOpenDashboard(site.siteId) },
+                                        enabled =
+                                            !uiState.isLoading && !uiState.isLoadingDashboard &&
+                                                !uiState.isUnlinkingSite,
+                                    ) {
+                                        Text(stringResource(R.string.app_account_site_open_dashboard))
+                                    }
+                                }
                                 TextButton(
                                     onClick = { onRequestUnlink(site) },
-                                    enabled = !uiState.isSelectingSite && !uiState.isUnlinkingSite,
+                                    enabled =
+                                        !uiState.isLoading && !uiState.isSelectingSite &&
+                                            !uiState.isUnlinkingSite,
                                 ) {
                                     Text(stringResource(R.string.app_account_site_unlink))
                                 }

@@ -13,5 +13,11 @@ class ClaimAppSiteLinkUseCase
         suspend operator fun invoke(
             token: String,
             managerPhone: String,
-        ): ApiResult<AppSiteLinkClaim> = appSiteLinkRepository.claim(token = token, managerPhone = managerPhone)
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSiteLinkClaim> =
+            appSiteLinkRepository.claim(
+                token = token,
+                managerPhone = managerPhone,
+                expectedSessionGeneration = expectedSessionGeneration,
+            )
     }

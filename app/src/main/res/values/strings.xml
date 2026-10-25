@@ -73,6 +73,9 @@
     <string name="app_account_sites_error">현장 목록을 불러오지 못했습니다.</string>
     <string name="app_account_site_select">이 현장 선택</string>
     <string name="app_account_site_selected">선택됨</string>
+    <string name="app_account_site_selecting">선택 중…</string>
+    <string name="app_account_site_selection_error">현장을 선택하지 못했습니다. 다시 시도해주세요.</string>
+    <string name="app_account_site_open_dashboard">현장 정보 보기</string>
     <string name="app_account_site_unlink">연동 해제</string>
     <string name="app_account_sites_switch">내 현장 목록 · 현장 전환</string>
     <string name="app_account_add_site">새로운 현장 연동하기</string>

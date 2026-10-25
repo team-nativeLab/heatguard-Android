@@ -67,7 +67,7 @@ internal class AppAccountSitesViewModel
             }
             mutableUiState.update { it.copy(isLoading = true, hasFailure = false, dashboard = null) }
             launchSessionRequest(expectedSession) {
-                when (val result = getAppLinkedSitesUseCase()) {
+                when (val result = getAppLinkedSitesUseCase(expectedSession.generation)) {
                     is ApiResult.Success -> {
                         if (!isCurrentSession(expectedSession)) {
                             return@launchSessionRequest
@@ -104,9 +104,15 @@ internal class AppAccountSitesViewModel
             if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
             }
-            mutableUiState.update { it.copy(isSelectingSite = true, hasFailure = false) }
+            mutableUiState.update {
+                it.copy(
+                    isSelectingSite = true,
+                    selectingSiteId = siteId,
+                    hasSelectionFailure = false,
+                )
+            }
             launchSessionRequest(expectedSession) {
-                when (val result = selectAppSiteUseCase(siteId)) {
+                when (val result = selectAppSiteUseCase(siteId, expectedSession.generation)) {
                     is ApiResult.Success -> {
                         if (!isCurrentSession(expectedSession)) {
                             return@launchSessionRequest
@@ -114,18 +120,18 @@ internal class AppAccountSitesViewModel
                         mutableUiState.update {
                             it.copy(
                                 isSelectingSite = false,
+                                selectingSiteId = null,
                                 selectedSiteId = result.value.siteId,
-                                openedSiteId = result.value.siteId,
+                                openedSiteId = null,
                                 dashboard = null,
                             )
                         }
-                        loadDashboard(result.value.siteId, expectedSession)
                     }
 
                     is ApiResult.Failure -> {
                         if (isCurrentSession(expectedSession)) {
                             mutableUiState.update {
-                                it.copy(isSelectingSite = false, hasFailure = true)
+                                it.copy(isSelectingSite = false, selectingSiteId = null, hasSelectionFailure = true)
                             }
                         }
                     }
@@ -148,7 +154,7 @@ internal class AppAccountSitesViewModel
             mutableUiState.update {
                 it.copy(isLoadingDashboard = true, dashboard = null, hasDashboardFailure = false)
             }
-            when (val result = getAppSiteDashboardUseCase(siteId)) {
+            when (val result = getAppSiteDashboardUseCase(siteId, expectedSession.generation)) {
                 is ApiResult.Success -> {
                     if (isCurrentSession(expectedSession)) {
                         mutableUiState.update {
@@ -179,6 +185,19 @@ internal class AppAccountSitesViewModel
             }
         }
 
+        fun openDashboard(siteId: String) {
+            val expectedSession = activeSessionSnapshot ?: return
+            if (!isCurrentSession(expectedSession) || isBusy() ||
+                mutableUiState.value.selectedSiteId != siteId
+            ) {
+                return
+            }
+            mutableUiState.update { it.copy(openedSiteId = siteId) }
+            viewModelScope.launch {
+                loadDashboard(siteId, expectedSession)
+            }
+        }
+
         fun unlinkSite(siteId: String) {
             val expectedSession = activeSessionSnapshot ?: return
             if (!isCurrentSession(expectedSession) || isBusy()) {
@@ -186,7 +205,7 @@ internal class AppAccountSitesViewModel
             }
             mutableUiState.update { it.copy(isUnlinkingSite = true, hasUnlinkFailure = false) }
             launchSessionRequest(expectedSession) {
-                when (unlinkAppSiteUseCase(siteId)) {
+                when (unlinkAppSiteUseCase(siteId, expectedSession.generation)) {
                     is ApiResult.Success -> {
                         if (!isCurrentSession(expectedSession)) {
                             return@launchSessionRequest
@@ -297,6 +316,8 @@ internal data class AppAccountSitesUiState(
     val selectedSiteId: String? = null,
     val isLoading: Boolean = false,
     val isSelectingSite: Boolean = false,
+    val selectingSiteId: String? = null,
+    val hasSelectionFailure: Boolean = false,
     val isUnlinkingSite: Boolean = false,
     val hasUnlinkFailure: Boolean = false,
     val openedSiteId: String? = null,

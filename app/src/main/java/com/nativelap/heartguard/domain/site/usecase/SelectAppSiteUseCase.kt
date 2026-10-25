@@ -10,6 +10,8 @@ class SelectAppSiteUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        suspend operator fun invoke(siteId: String): ApiResult<AppSelectedSite> =
-            appSiteLinkRepository.selectSite(siteId)
+        suspend operator fun invoke(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSelectedSite> = appSiteLinkRepository.selectSite(siteId, expectedSessionGeneration)
     }

@@ -3,6 +3,9 @@ package com.nativelap.heartguard.viewmodel.site
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.PendingAppLink
+import com.nativelap.heartguard.core.session.SessionRole
+import com.nativelap.heartguard.core.session.SessionToken
+import com.nativelap.heartguard.core.session.createTestSessionManager
 import com.nativelap.heartguard.domain.site.model.AppLinkedSite
 import com.nativelap.heartguard.domain.site.model.AppSelectedSite
 import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
@@ -32,7 +35,11 @@ class ClaimAppSiteLinkViewModelTest {
             try {
                 val response = CompletableDeferred<ApiResult<AppSiteLinkClaim>>()
                 val repository = FakeAppSiteLinkRepository(response)
-                val viewModel = ClaimAppSiteLinkViewModel(ClaimAppSiteLinkUseCase(repository))
+                val viewModel =
+                    ClaimAppSiteLinkViewModel(
+                        ClaimAppSiteLinkUseCase(repository),
+                        createTestSessionManager(Dispatchers.Unconfined),
+                    )
                 val firstLink = PendingAppLink("first-link", 1L)
                 val secondLink = PendingAppLink("second-link", 2L)
 
@@ -59,7 +66,11 @@ class ClaimAppSiteLinkViewModelTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
                 val repository = FakeAppSiteLinkRepository()
-                val viewModel = ClaimAppSiteLinkViewModel(ClaimAppSiteLinkUseCase(repository))
+                val viewModel =
+                    ClaimAppSiteLinkViewModel(
+                        ClaimAppSiteLinkUseCase(repository),
+                        createTestSessionManager(Dispatchers.Unconfined),
+                    )
 
                 val pendingAppLink = PendingAppLink("link-token", 10L)
                 viewModel.activateLink(pendingAppLink)
@@ -76,6 +87,36 @@ class ClaimAppSiteLinkViewModelTest {
         }
 
     @Test
+    fun sessionChangeDuringClaimCannotCompleteTheOldRequest() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val response = CompletableDeferred<ApiResult<AppSiteLinkClaim>>()
+                val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
+                sessionManager.onLoginSucceeded(SessionToken("account-a", SessionRole.APP_ACCOUNT))
+                val viewModel =
+                    ClaimAppSiteLinkViewModel(
+                        ClaimAppSiteLinkUseCase(FakeAppSiteLinkRepository(response)),
+                        sessionManager,
+                    )
+                val pendingAppLink = PendingAppLink("link-token", 30L)
+                viewModel.activateLink(pendingAppLink)
+                viewModel.claim(pendingAppLink, "01012345678")
+                runCurrent()
+
+                sessionManager.onLoginSucceeded(SessionToken("account-b", SessionRole.APP_ACCOUNT))
+                response.complete(ApiResult.Success(AppSiteLinkClaim("site-1", "현장", "2026-10-23")))
+                advanceUntilIdle()
+
+                assertNull(viewModel.uiState.value.completedLinkId)
+                assertEquals(ClaimAppSiteLinkFailure.SESSION_REQUIRED, viewModel.uiState.value.failure)
+                assertFalse(viewModel.uiState.value.isSubmitting)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
     fun appAccountEntryClearsPreviousSessionRequiredFailure() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -85,7 +126,11 @@ class ClaimAppSiteLinkViewModelTest {
                     FakeAppSiteLinkRepository(
                         defaultClaimResult = ApiResult.Failure(ApiError.SessionChanged),
                     )
-                val viewModel = ClaimAppSiteLinkViewModel(ClaimAppSiteLinkUseCase(repository))
+                val viewModel =
+                    ClaimAppSiteLinkViewModel(
+                        ClaimAppSiteLinkUseCase(repository),
+                        createTestSessionManager(Dispatchers.Unconfined),
+                    )
 
                 viewModel.activateLink(pendingAppLink)
                 viewModel.claim(pendingAppLink, "01012345678")
@@ -114,18 +159,29 @@ private class FakeAppSiteLinkRepository(
     override suspend fun claim(
         token: String,
         managerPhone: String,
+        expectedSessionGeneration: Long,
     ): ApiResult<AppSiteLinkClaim> {
         this.managerPhone = managerPhone
         return claimResponse?.await() ?: defaultClaimResult
     }
 
-    override suspend fun unlinkSite(siteId: String): ApiResult<Unit> = ApiResult.Success(Unit)
+    override suspend fun unlinkSite(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<Unit> = ApiResult.Success(Unit)
 
-    override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboard> = error("Not used")
+    override suspend fun getDashboard(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSiteDashboard> = error("Not used")
 
-    override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> = ApiResult.Success(emptyList())
+    override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> =
+        ApiResult.Success(emptyList())
 
-    override suspend fun selectSite(siteId: String): ApiResult<AppSelectedSite> = error("Not used by claim tests")
+    override suspend fun selectSite(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSelectedSite> = error("Not used by claim tests")
 
     override fun getSelectedSiteId(): String? = null
 }

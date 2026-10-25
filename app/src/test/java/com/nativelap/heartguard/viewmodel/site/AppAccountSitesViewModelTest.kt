@@ -20,6 +20,7 @@ import com.nativelap.heartguard.domain.site.usecase.GetAppSiteDashboardUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetSelectedAppSiteIdUseCase
 import com.nativelap.heartguard.domain.site.usecase.SelectAppSiteUseCase
 import com.nativelap.heartguard.domain.site.usecase.UnlinkAppSiteUseCase
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
@@ -28,6 +29,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
@@ -38,7 +40,114 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppAccountSitesViewModelTest {
     @Test
-    fun selectionLoadsCorrectSiteAndWebUnlinkRemovesOpenedData() =
+    fun emptySiteListIsShownAsSuccessfulEmptyState() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val repository = DashboardSitesRepository().apply { sites = emptyList() }
+                val viewModel = createViewModel(repository, createAppAccountSession())
+
+                advanceUntilIdle()
+
+                assertTrue(
+                    viewModel.uiState.value.linkedSites
+                        .isEmpty(),
+                )
+                assertTrue(!viewModel.uiState.value.isLoading)
+                assertTrue(!viewModel.uiState.value.hasFailure)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun selectionFailureKeepsExistingSelectionAndSiteList() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val repository = DashboardSitesRepository().apply { selected = "a" }
+                val viewModel = createViewModel(repository, createAppAccountSession())
+                advanceUntilIdle()
+                repository.selectionResult = ApiResult.Failure(ApiError.Network)
+
+                viewModel.selectSite("b")
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf("a", "b"),
+                    viewModel.uiState.value.linkedSites
+                        .map { it.siteId },
+                )
+                assertEquals("a", viewModel.uiState.value.selectedSiteId)
+                assertTrue(viewModel.uiState.value.hasSelectionFailure)
+                assertNull(viewModel.uiState.value.selectingSiteId)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun listFailureKeepsCachedSitesAndRetryReloadsThem() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val repository = DashboardSitesRepository()
+                val viewModel = createViewModel(repository, createAppAccountSession())
+                advanceUntilIdle()
+                repository.nextLinkedSitesResponse = { ApiResult.Failure(ApiError.Network) }
+
+                viewModel.refresh()
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf("a", "b"),
+                    viewModel.uiState.value.linkedSites
+                        .map { it.siteId },
+                )
+                assertTrue(viewModel.uiState.value.hasFailure)
+
+                repository.sites = listOf(AppLinkedSite("c", "현장 C", null, ""))
+                viewModel.refresh()
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf("c"),
+                    viewModel.uiState.value.linkedSites
+                        .map { it.siteId },
+                )
+                assertTrue(!viewModel.uiState.value.hasFailure)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun repeatedSelectionWhileRequestIsPendingStartsOnlyOneRequest() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val selectionGate = CompletableDeferred<ApiResult<AppSelectedSite>>()
+                val repository = DashboardSitesRepository().apply { nextSelectionResponse = { selectionGate.await() } }
+                val viewModel = createViewModel(repository, createAppAccountSession())
+                advanceUntilIdle()
+
+                viewModel.selectSite("a")
+                runCurrent()
+                viewModel.selectSite("b")
+                runCurrent()
+
+                assertEquals(1, repository.selectionRequestCount)
+                assertEquals("a", viewModel.uiState.value.selectingSiteId)
+                selectionGate.complete(ApiResult.Success(AppSelectedSite("a", "현장 A")))
+                advanceUntilIdle()
+                assertEquals("a", viewModel.uiState.value.selectedSiteId)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun selectionStaysOnListAndDashboardOpensOnExplicitAction() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
@@ -47,6 +156,11 @@ class AppAccountSitesViewModelTest {
                 val viewModel = createViewModel(repository, sessionManager)
                 advanceUntilIdle()
                 viewModel.selectSite("a")
+                advanceUntilIdle()
+                assertEquals("a", viewModel.uiState.value.selectedSiteId)
+                assertNull(viewModel.uiState.value.openedSiteId)
+                assertNull(repository.dashboardSite)
+                viewModel.openDashboard("a")
                 advanceUntilIdle()
                 assertEquals("a", repository.dashboardSite)
                 assertEquals(
@@ -57,6 +171,8 @@ class AppAccountSitesViewModelTest {
 
                 viewModel.closeDashboard()
                 viewModel.selectSite("b")
+                advanceUntilIdle()
+                viewModel.openDashboard("b")
                 advanceUntilIdle()
                 assertEquals("b", repository.dashboardSite)
                 repository.sites = repository.sites.filterNot { it.siteId == "b" }
@@ -84,6 +200,8 @@ class AppAccountSitesViewModelTest {
                 val viewModel = createViewModel(repository, sessionManager)
                 advanceUntilIdle()
                 viewModel.selectSite("a")
+                advanceUntilIdle()
+                viewModel.openDashboard("a")
                 advanceUntilIdle()
                 repository.dashboardResult = ApiResult.Failure(ApiError.Http(403))
                 viewModel.refresh()
@@ -187,13 +305,22 @@ private class DashboardSitesRepository : AppSiteLinkRepository {
     var sites = listOf(AppLinkedSite("a", "현장 A", null, ""), AppLinkedSite("b", "현장 B", null, ""))
     var dashboardResult: ApiResult<AppSiteDashboard> = ApiResult.Success(AppSiteDashboard(2, 0))
     var nextLinkedSitesResponse: (suspend () -> ApiResult<List<AppLinkedSite>>)? = null
+    var nextSelectionResponse: (suspend () -> ApiResult<AppSelectedSite>)? = null
+    var selectionResult: ApiResult<AppSelectedSite>? = null
+    var selectionRequestCount: Int = 0
 
-    override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboard> {
+    override suspend fun getDashboard(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSiteDashboard> {
         dashboardSite = siteId
         return dashboardResult
     }
 
-    override suspend fun unlinkSite(siteId: String): ApiResult<Unit> {
+    override suspend fun unlinkSite(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<Unit> {
         sites = sites.filterNot { it.siteId == siteId }
         if (selected == siteId) {
             selected = null
@@ -201,7 +328,7 @@ private class DashboardSitesRepository : AppSiteLinkRepository {
         return ApiResult.Success(Unit)
     }
 
-    override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> {
+    override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> {
         val pendingResponse = nextLinkedSitesResponse
         nextLinkedSitesResponse = null
         if (pendingResponse != null) {
@@ -210,7 +337,17 @@ private class DashboardSitesRepository : AppSiteLinkRepository {
         return ApiResult.Success(sites)
     }
 
-    override suspend fun selectSite(siteId: String): ApiResult<AppSelectedSite> {
+    override suspend fun selectSite(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSelectedSite> {
+        selectionRequestCount += 1
+        val pendingResponse = nextSelectionResponse
+        nextSelectionResponse = null
+        if (pendingResponse != null) {
+            return pendingResponse()
+        }
+        selectionResult?.let { return it }
         selected = siteId
         return ApiResult.Success(AppSelectedSite(siteId, "현장"))
     }
@@ -220,6 +357,7 @@ private class DashboardSitesRepository : AppSiteLinkRepository {
     override suspend fun claim(
         token: String,
         managerPhone: String,
+        expectedSessionGeneration: Long,
     ): ApiResult<AppSiteLinkClaim> = error("Not used")
 }
 

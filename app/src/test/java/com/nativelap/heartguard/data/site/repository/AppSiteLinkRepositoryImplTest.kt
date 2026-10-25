@@ -28,13 +28,13 @@ class AppSiteLinkRepositoryImplTest {
             val storage = InMemoryTokenStorage()
             val sessionManager = createAppAccountSession(storage)
             val repository =
-                createRepository(sessionManager) {
+                createRepository(sessionManager) { _, _ ->
                     ApiResult.Success(AppSiteSelectionResponseDto("site_01", "서울 현장"))
                 }
 
             assertEquals(
                 ApiResult.Success(AppSelectedSite("site_01", "서울 현장")),
-                repository.selectSite("site_01"),
+                repository.selectSite("site_01", sessionManager.getSnapshot().generation),
             )
             assertEquals("site_01", storage.selectedSiteId)
         }
@@ -46,11 +46,14 @@ class AppSiteLinkRepositoryImplTest {
             val sessionManager = createAppAccountSession(storage)
             storage.saveSelectedSiteId("previous_site")
             val repository =
-                createRepository(sessionManager) {
+                createRepository(sessionManager) { _, _ ->
                     ApiResult.Failure(ApiError.Http(statusCode = 500))
                 }
 
-            assertEquals(ApiResult.Failure(ApiError.Http(statusCode = 500)), repository.selectSite("site_01"))
+            assertEquals(
+                ApiResult.Failure(ApiError.Http(statusCode = 500)),
+                repository.selectSite("site_01", sessionManager.getSnapshot().generation),
+            )
             assertEquals("previous_site", storage.selectedSiteId)
         }
 
@@ -61,11 +64,14 @@ class AppSiteLinkRepositoryImplTest {
             val sessionManager = createAppAccountSession(storage)
             storage.saveSelectedSiteId("previous_site")
             val repository =
-                createRepository(sessionManager) {
+                createRepository(sessionManager) { _, _ ->
                     ApiResult.Failure(ApiError.Network)
                 }
 
-            assertEquals(ApiResult.Failure(ApiError.Network), repository.selectSite("site_01"))
+            assertEquals(
+                ApiResult.Failure(ApiError.Network),
+                repository.selectSite("site_01", sessionManager.getSnapshot().generation),
+            )
             assertEquals("previous_site", storage.selectedSiteId)
         }
 
@@ -75,9 +81,10 @@ class AppSiteLinkRepositoryImplTest {
             val storage = InMemoryTokenStorage()
             val sessionManager = createAppAccountSession(storage)
             val pendingSelection = CompletableDeferred<ApiResult<AppSiteSelectionResponseDto>>()
-            val repository = createRepository(sessionManager) { pendingSelection.await() }
+            val repository = createRepository(sessionManager) { _, _ -> pendingSelection.await() }
 
-            val request = async { repository.selectSite("account_a_site") }
+            val expectedGeneration = sessionManager.getSnapshot().generation
+            val request = async { repository.selectSite("account_a_site", expectedGeneration) }
             yield()
             sessionManager.onLoginSucceeded(SessionToken("account-b-token", SessionRole.APP_ACCOUNT))
             storage.saveSelectedSiteId("account_b_site")
@@ -93,13 +100,20 @@ class AppSiteLinkRepositoryImplTest {
             val storage = InMemoryTokenStorage()
             val sessionManager = createAppAccountSession(storage)
             storage.saveSelectedSiteId("site_a")
+            val expectedGeneration = sessionManager.getSnapshot().generation
             val repository =
                 AppSiteLinkRepositoryImpl(
-                    appSiteLinkRemoteDataSource = FakeAppSiteLinkRemoteDataSource(unlink = { ApiResult.Success(Unit) }),
+                    appSiteLinkRemoteDataSource =
+                        FakeAppSiteLinkRemoteDataSource(unlink = {
+                            _,
+                            _,
+                            ->
+                            ApiResult.Success(Unit)
+                        }),
                     sessionManager = sessionManager,
                 )
 
-            repository.unlinkSite("site_a")
+            repository.unlinkSite("site_a", expectedGeneration)
 
             assertEquals(null, storage.selectedSiteId)
         }
@@ -111,13 +125,20 @@ class AppSiteLinkRepositoryImplTest {
             val sessionManager = createAppAccountSession(storage)
             storage.saveSelectedSiteId("site_a")
             val unlinkGate = CompletableDeferred<ApiResult<Unit>>()
+            val expectedGeneration = sessionManager.getSnapshot().generation
             val repository =
                 AppSiteLinkRepositoryImpl(
-                    appSiteLinkRemoteDataSource = FakeAppSiteLinkRemoteDataSource(unlink = { unlinkGate.await() }),
+                    appSiteLinkRemoteDataSource =
+                        FakeAppSiteLinkRemoteDataSource(unlink = {
+                            _,
+                            _,
+                            ->
+                            unlinkGate.await()
+                        }),
                     sessionManager = sessionManager,
                 )
 
-            val request = async { repository.unlinkSite("site_a") }
+            val request = async { repository.unlinkSite("site_a", expectedGeneration) }
             yield()
             sessionManager.saveSelectedSiteIdForSession("site_b", sessionManager.getSnapshot())
             unlinkGate.complete(ApiResult.Success(Unit))
@@ -133,13 +154,14 @@ class AppSiteLinkRepositoryImplTest {
             val sessionManager = createAppAccountSession(storage)
             storage.saveSelectedSiteId("site_a")
             val listGate = CompletableDeferred<ApiResult<AppLinkedSitesResponseDto>>()
+            val expectedGeneration = sessionManager.getSnapshot().generation
             val repository =
                 AppSiteLinkRepositoryImpl(
                     appSiteLinkRemoteDataSource = FakeAppSiteLinkRemoteDataSource(linkedSites = { listGate.await() }),
                     sessionManager = sessionManager,
                 )
 
-            val request = async { repository.getLinkedSites() }
+            val request = async { repository.getLinkedSites(expectedGeneration) }
             yield()
             sessionManager.saveSelectedSiteIdForSession("site_b", sessionManager.getSnapshot())
             listGate.complete(ApiResult.Success(AppLinkedSitesResponseDto(emptyList())))
@@ -150,7 +172,7 @@ class AppSiteLinkRepositoryImplTest {
 
     private fun createRepository(
         sessionManager: SessionManager,
-        selectSite: suspend (String) -> ApiResult<AppSiteSelectionResponseDto>,
+        selectSite: suspend (String, Long) -> ApiResult<AppSiteSelectionResponseDto>,
     ) = AppSiteLinkRepositoryImpl(
         appSiteLinkRemoteDataSource = FakeAppSiteLinkRemoteDataSource(selectSite),
         sessionManager = sessionManager,
@@ -164,26 +186,36 @@ class AppSiteLinkRepositoryImplTest {
         }
 
     private class FakeAppSiteLinkRemoteDataSource(
-        private val selectSite: suspend (String) -> ApiResult<AppSiteSelectionResponseDto> = {
+        private val selectSite: suspend (String, Long) -> ApiResult<AppSiteSelectionResponseDto> = { _, _ ->
             ApiResult.Failure(ApiError.Unknown)
         },
-        private val unlink: suspend (String) -> ApiResult<Unit> = { ApiResult.Success(Unit) },
-        private val linkedSites: suspend () -> ApiResult<AppLinkedSitesResponseDto> = {
+        private val unlink: suspend (String, Long) -> ApiResult<Unit> = { _, _ -> ApiResult.Success(Unit) },
+        private val linkedSites: suspend (Long) -> ApiResult<AppLinkedSitesResponseDto> = {
             ApiResult.Success(AppLinkedSitesResponseDto(listOf(AppLinkedSiteDto("site_a", "A 현장", null, "now"))))
         },
     ) : AppSiteLinkRemoteDataSource {
-        override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboardDto> = error("Not used")
+        override suspend fun getDashboard(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSiteDashboardDto> = error("Not used")
 
-        override suspend fun unlinkSite(siteId: String): ApiResult<Unit> = unlink.invoke(siteId)
+        override suspend fun unlinkSite(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<Unit> = unlink.invoke(siteId, expectedSessionGeneration)
 
         override suspend fun claim(
             token: String,
             managerPhone: String,
+            expectedSessionGeneration: Long,
         ): ApiResult<AppSiteLinkClaimResponseDto> = error("Not used")
 
-        override suspend fun getLinkedSites(): ApiResult<AppLinkedSitesResponseDto> = linkedSites.invoke()
+        override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<AppLinkedSitesResponseDto> =
+            linkedSites.invoke(expectedSessionGeneration)
 
-        override suspend fun selectSite(siteId: String): ApiResult<AppSiteSelectionResponseDto> =
-            selectSite.invoke(siteId)
+        override suspend fun selectSite(
+            siteId: String,
+            expectedSessionGeneration: Long,
+        ): ApiResult<AppSiteSelectionResponseDto> = selectSite.invoke(siteId, expectedSessionGeneration)
     }
 }

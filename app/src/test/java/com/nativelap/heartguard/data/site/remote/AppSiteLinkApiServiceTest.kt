@@ -6,6 +6,7 @@ import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
 import com.nativelap.heartguard.core.network.BearerTokenInterceptor
+import com.nativelap.heartguard.core.network.RequestSessionGeneration
 import com.nativelap.heartguard.core.session.InMemoryTokenStorage
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
@@ -46,7 +47,7 @@ class AppSiteLinkApiServiceTest {
                 assertEquals(
                     2,
                     service
-                        .getDashboard()
+                        .getDashboard(RequestSessionGeneration(sessionManager.getSnapshot().generation))
                         .data
                         ?.summary
                         ?.todayRecordCount,
@@ -71,7 +72,10 @@ class AppSiteLinkApiServiceTest {
                 sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
                 sessionManager.saveSelectedSiteIdForSession("selected_site", sessionManager.getSnapshot())
 
-                createService(server, sessionManager).unlinkSite("site_01")
+                createService(server, sessionManager).unlinkSite(
+                    "site_01",
+                    RequestSessionGeneration(sessionManager.getSnapshot().generation),
+                )
                 val request = server.takeRequest()
 
                 assertEquals("DELETE", request.method)
@@ -114,6 +118,7 @@ class AppSiteLinkApiServiceTest {
 
                 createService(server, sessionManager).claim(
                     ClaimAppSiteLinkRequestDto(token = "y", managerPhone = "01012345678"),
+                    RequestSessionGeneration(sessionManager.getSnapshot().generation),
                 )
                 val request = server.takeRequest()
 
@@ -181,9 +186,10 @@ class AppSiteLinkApiServiceTest {
                 sessionManager.saveSelectedSiteIdForSession("previous_site", sessionManager.getSnapshot())
                 val service = createService(server, sessionManager)
 
-                val sites = service.getLinkedSites()
+                val owningSession = RequestSessionGeneration(sessionManager.getSnapshot().generation)
+                val sites = service.getLinkedSites(owningSession)
                 val listRequest = server.takeRequest()
-                val selected = service.selectSite("site_01")
+                val selected = service.selectSite("site_01", owningSession)
                 val selectRequest = server.takeRequest()
 
                 assertEquals("GET", listRequest.method)
@@ -239,10 +245,16 @@ class AppSiteLinkApiServiceTest {
                     )
 
                 repeat(3) {
-                    assertEquals(ApiResult.Failure(ApiError.Serialization), remoteDataSource.selectSite("site_01"))
+                    assertEquals(
+                        ApiResult.Failure(ApiError.Serialization),
+                        remoteDataSource.selectSite("site_01", sessionManager.getSnapshot().generation),
+                    )
                     assertEquals("", server.takeRequest().body?.string(Charsets.UTF_8))
                 }
-                assertEquals(ApiResult.Failure(ApiError.Http(500)), remoteDataSource.selectSite("site_01"))
+                assertEquals(
+                    ApiResult.Failure(ApiError.Http(500)),
+                    remoteDataSource.selectSite("site_01", sessionManager.getSnapshot().generation),
+                )
                 assertEquals("", server.takeRequest().body?.string(Charsets.UTF_8))
             } finally {
                 server.close()
