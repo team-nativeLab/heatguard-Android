@@ -60,13 +60,13 @@ class SessionManager
 
         fun getSelectedSiteId(): String? = tokenStorage.readSelectedSiteId()
 
-        /** 세션 전환과 경쟁하지 않도록 현재 앱 계정 세션에서만 현장 선택을 저장한다. */
+        /** 세션 전환과 경쟁하지 않도록 현재 Team 세션에서만 현장 선택을 저장한다. */
         suspend fun saveSelectedSiteIdForSession(
             siteId: String,
             expectedSnapshot: SessionSnapshot,
         ): Boolean =
             sessionMutex.withLock {
-                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.APP_ACCOUNT) {
+                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER) {
                     return@withLock false
                 }
                 currentCoroutineContext().ensureActive()

@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.core.network
 
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionSnapshot
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -12,15 +13,18 @@ class SelectedSiteIdInterceptor(
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
-        val requestSnapshot = request.tag(SessionSnapshot::class.java)
+        val requestSnapshot = request.tag(SessionSnapshot::class.java) ?: throw SessionChangedException()
         val currentSnapshot = sessionManager.getSnapshot()
-        if (requestSnapshot != currentSnapshot) {
+        if (requestSnapshot.role != SessionRole.TEAM_MEMBER || requestSnapshot != currentSnapshot) {
             throw SessionChangedException()
         }
 
         val selectedSiteId =
-            request.tag(SelectedSiteIdSnapshot::class.java)?.siteId
+            sessionManager.getSelectedSiteId()?.takeIf(String::isNotBlank)
                 ?: throw SiteNotSelectedException()
+        if (sessionManager.getSnapshot() != requestSnapshot) {
+            throw SessionChangedException()
+        }
         val selectedRequest =
             request
                 .newBuilder()

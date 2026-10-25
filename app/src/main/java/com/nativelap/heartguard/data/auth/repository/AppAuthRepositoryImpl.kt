@@ -49,7 +49,7 @@ class AppAuthRepositoryImpl
                         sessionManager.onLoginSucceeded(
                             SessionToken(
                                 accessToken = result.value.accessToken,
-                                role = SessionRole.APP_ACCOUNT,
+                                role = SessionRole.TEAM_MEMBER,
                             ),
                         )
                         ApiResult.Success(Unit)

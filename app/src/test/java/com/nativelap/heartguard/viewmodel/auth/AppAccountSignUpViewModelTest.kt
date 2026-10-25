@@ -41,7 +41,7 @@ class AppAccountSignUpViewModelTest {
 
                 assertEquals(listOf("email-code", "register", "login"), repository.requestOrder)
                 assertTrue(viewModel.uiState.value.isComplete)
-                assertEquals(SessionRole.APP_ACCOUNT, repository.loginRole)
+                assertEquals(SessionRole.TEAM_MEMBER, repository.loginRole)
             } finally {
                 Dispatchers.resetMain()
             }
@@ -250,7 +250,7 @@ class AppAccountSignUpViewModelTest {
             password: String,
         ): ApiResult<Unit> {
             requestOrder += "login"
-            loginRole = SessionRole.APP_ACCOUNT
+            loginRole = SessionRole.TEAM_MEMBER
             return ApiResult.Success(Unit)
         }
 

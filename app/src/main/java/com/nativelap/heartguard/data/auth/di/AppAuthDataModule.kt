@@ -43,7 +43,7 @@ abstract class AppAuthDataModule {
             apiRetrofitFactory.createService(
                 baseUrl = BuildConfig.BASE_URL,
                 serviceClass = AppAccountSessionApiService::class.java,
-                authentication = ApiAuthentication.APP_ACCOUNT_BEARER,
+                authentication = ApiAuthentication.BEARER,
                 allowRequestReplay = false,
             )
     }

@@ -11,17 +11,17 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface AppAuthApiService {
-    @POST("api/v1/auth/email-codes")
+    @POST("api/v1/auth/team/email-codes")
     suspend fun requestEmailCode(
         @Body request: RequestAppEmailCodeDto,
     ): ApiEnvelope<AppEmailCodeResponseDto>
 
-    @POST("api/v1/auth/app/register")
+    @POST("api/v1/auth/team/register")
     suspend fun register(
         @Body request: RegisterAppAccountDto,
     ): ApiEnvelope<AppAccountRegistrationDto>
 
-    @POST("api/v1/auth/app/login")
+    @POST("api/v1/auth/team/login")
     suspend fun login(
         @Body request: AppAccountLoginRequestDto,
     ): ApiEnvelope<AppAccountLoginResponseDto>

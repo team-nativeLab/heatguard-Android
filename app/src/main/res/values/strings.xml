@@ -52,7 +52,7 @@
     <string name="auth_phone_link_unavailable_error">연동 링크가 만료되었거나 이미 사용되었습니다.</string>
     <string name="auth_phone_rate_limited_error">시도 횟수를 초과했습니다. 새 연동 링크를 요청해주세요.</string>
     <string name="auth_phone_network_error">네트워크를 확인하고 다시 시도해주세요.</string>
-    <string name="auth_phone_session_required_error">앱 계정으로 로그인한 뒤 현장을 연동해주세요.</string>
+    <string name="auth_phone_session_required_error">Team 계정으로 로그인한 뒤 현장을 연동해주세요.</string>
     <string name="auth_phone_generic_error">현장 연동에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
     <string name="auth_phone_link">연동하기</string>
     <string name="auth_phone_cancel_link">현장 연결 나중에 하기</string>
@@ -62,7 +62,7 @@
     <string name="auth_login_account_disabled">사용할 수 없는 계정입니다. 관리자에게 문의해주세요</string>
     <string name="auth_login_rate_limited">로그인 시도가 많습니다. 잠시 후 다시 시도해주세요</string>
     <string name="auth_login_generic_error">로그인에 실패했습니다. 잠시 후 다시 시도해주세요</string>
-    <string name="auth_login_app_account">안전한 현장을 위해\n로그인해주세요</string>
+    <string name="auth_login_app_account">현장 작업을 위해\n로그인해주세요</string>
     <string name="auth_login_app_account_description">이메일과 비밀번호로 로그인할 수 있어요</string>
     <string name="auth_logout">로그아웃</string>
     <string name="app_account_sites_title">연동된 현장</string>

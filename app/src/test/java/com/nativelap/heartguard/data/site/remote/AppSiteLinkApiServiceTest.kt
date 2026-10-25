@@ -40,7 +40,7 @@ class AppSiteLinkApiServiceTest {
                 )
                 val storage = InMemoryTokenStorage()
                 val sessionManager = SessionManager(storage, Dispatchers.Unconfined)
-                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.TEAM_MEMBER))
                 storage.saveSelectedSiteId("site-a")
                 val service = createDashboardService(server, sessionManager)
 
@@ -53,7 +53,7 @@ class AppSiteLinkApiServiceTest {
                         ?.todayRecordCount,
                 )
                 val request = server.takeRequest()
-                assertEquals("/api/v1/site/dashboard", request.url.encodedPath)
+                assertEquals("/api/v1/team/dashboard", request.url.encodedPath)
                 assertEquals("Bearer x", request.headers["Authorization"])
                 assertEquals("site-a", request.headers["X-Site-Id"])
             } finally {
@@ -62,14 +62,14 @@ class AppSiteLinkApiServiceTest {
         }
 
     @Test
-    fun `현장 해제는 앱 계정으로 해당 현장 링크만 삭제한다`() =
+    fun `현장 해제는 Team 세션으로 해당 현장 링크만 삭제한다`() =
         runBlocking {
             val server = MockWebServer()
             server.start()
             try {
                 server.enqueue(MockResponse.Builder().code(204).build())
                 val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
-                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.TEAM_MEMBER))
                 sessionManager.saveSelectedSiteIdForSession("selected_site", sessionManager.getSnapshot())
 
                 createService(server, sessionManager).unlinkSite(
@@ -79,7 +79,7 @@ class AppSiteLinkApiServiceTest {
                 val request = server.takeRequest()
 
                 assertEquals("DELETE", request.method)
-                assertEquals("/api/v1/app/sites/site_01/link", request.url.encodedPath)
+                assertEquals("/api/v1/team/sites/site_01/link", request.url.encodedPath)
                 assertEquals("Bearer x", request.headers["Authorization"])
                 assertEquals(null, request.headers["X-Site-Id"])
             } finally {
@@ -88,7 +88,7 @@ class AppSiteLinkApiServiceTest {
         }
 
     @Test
-    fun `현장 연동 요청은 앱 계정 인증과 명세 필드를 사용한다`() =
+    fun `현장 연동 요청은 Team 인증과 기존 필드를 사용한다`() =
         runBlocking {
             val server = MockWebServer()
             server.start()
@@ -113,7 +113,7 @@ class AppSiteLinkApiServiceTest {
                         ).build(),
                 )
                 val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
-                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.TEAM_MEMBER))
                 sessionManager.saveSelectedSiteIdForSession("selected_site", sessionManager.getSnapshot())
 
                 createService(server, sessionManager).claim(
@@ -123,7 +123,7 @@ class AppSiteLinkApiServiceTest {
                 val request = server.takeRequest()
 
                 assertEquals("POST", request.method)
-                assertEquals("/api/v1/app/links/claim", request.url.encodedPath)
+                assertEquals("/api/v1/team/links/claim", request.url.encodedPath)
                 assertEquals("Bearer x", request.headers["Authorization"])
                 assertEquals(null, request.headers["X-Site-Id"])
                 assertEquals(
@@ -182,7 +182,7 @@ class AppSiteLinkApiServiceTest {
                         ).build(),
                 )
                 val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
-                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.TEAM_MEMBER))
                 sessionManager.saveSelectedSiteIdForSession("previous_site", sessionManager.getSnapshot())
                 val service = createService(server, sessionManager)
 
@@ -193,12 +193,12 @@ class AppSiteLinkApiServiceTest {
                 val selectRequest = server.takeRequest()
 
                 assertEquals("GET", listRequest.method)
-                assertEquals("/api/v1/app/sites", listRequest.url.encodedPath)
+                assertEquals("/api/v1/team/sites", listRequest.url.encodedPath)
                 assertEquals("Bearer x", listRequest.headers["Authorization"])
                 assertEquals(null, listRequest.headers["X-Site-Id"])
                 assertTrue(sites.data?.items?.size == 1)
                 assertEquals("POST", selectRequest.method)
-                assertEquals("/api/v1/app/sites/site_01/select", selectRequest.url.encodedPath)
+                assertEquals("/api/v1/team/sites/site_01/select", selectRequest.url.encodedPath)
                 assertEquals("Bearer x", selectRequest.headers["Authorization"])
                 assertEquals(null, selectRequest.headers["X-Site-Id"])
                 assertEquals("", selectRequest.body?.string(Charsets.UTF_8))
@@ -236,7 +236,7 @@ class AppSiteLinkApiServiceTest {
                         .build(),
                 )
                 val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
-                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.TEAM_MEMBER))
                 val remoteDataSource =
                     AppSiteLinkRemoteDataSourceImpl(
                         appSiteLinkApiService = createService(server, sessionManager),
@@ -278,7 +278,7 @@ class AppSiteLinkApiServiceTest {
         ).createService(
             baseUrl = server.url("/").toString(),
             serviceClass = AppSiteLinkApiService::class.java,
-            authentication = ApiAuthentication.APP_ACCOUNT_BEARER,
+            authentication = ApiAuthentication.BEARER,
             allowRequestReplay = false,
         )
     }
@@ -300,7 +300,7 @@ class AppSiteLinkApiServiceTest {
         ).createService(
             baseUrl = server.url("/").toString(),
             serviceClass = AppSiteDashboardApiService::class.java,
-            authentication = ApiAuthentication.APP_ACCOUNT_SITE_BEARER,
+            authentication = ApiAuthentication.TEAM_SITE_BEARER,
             allowRequestReplay = false,
         )
     }

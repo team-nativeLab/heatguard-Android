@@ -34,7 +34,7 @@ abstract class AppSiteLinkDataModule {
             apiRetrofitFactory.createService(
                 baseUrl = BuildConfig.BASE_URL,
                 serviceClass = AppSiteLinkApiService::class.java,
-                authentication = ApiAuthentication.APP_ACCOUNT_BEARER,
+                authentication = ApiAuthentication.BEARER,
                 allowRequestReplay = false,
             )
 
@@ -44,7 +44,7 @@ abstract class AppSiteLinkDataModule {
             apiRetrofitFactory.createService(
                 baseUrl = BuildConfig.BASE_URL,
                 serviceClass = AppSiteDashboardApiService::class.java,
-                authentication = ApiAuthentication.APP_ACCOUNT_SITE_BEARER,
+                authentication = ApiAuthentication.TEAM_SITE_BEARER,
                 allowRequestReplay = false,
             )
     }
