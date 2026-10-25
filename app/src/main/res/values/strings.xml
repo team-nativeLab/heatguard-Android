@@ -110,6 +110,14 @@
     <string name="home_manager_call_description">현장 관리자에게 연락</string>
     <string name="home_emergency_call">긴급 전화</string>
     <string name="home_emergency_call_description">본사와 즉시 연결</string>
+    <string name="home_emergency_phone_number" translatable="false">010-5080-4623</string>
+    <string name="home_call_permission_dialog_title">전화 권한이 필요합니다</string>
+    <string name="home_call_permission_dialog_message">직접 통화를 하려면 전화 권한이 필요합니다. 권한을 허용한 뒤 다시 시도해 주세요.</string>
+    <string name="home_call_open_settings">설정으로 이동</string>
+    <string name="home_call_permission_dialog_dismiss">닫기</string>
+    <string name="home_call_failed">전화를 시작하지 못했습니다. 기기에서 전화 기능을 사용할 수 있는지 확인해 주세요.</string>
+    <string name="home_emergency_call_confirm">통화</string>
+    <string name="home_emergency_call_dismiss">취소</string>
     <string name="home_record_action">기록하기</string>
     <string name="home_field_photo">현장 사진</string>
     <string name="home_field_photo_description">사진 촬영 또는 앨범에서 선택</string>
