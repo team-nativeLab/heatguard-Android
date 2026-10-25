@@ -44,7 +44,6 @@ fun HomeScreen(
     riskLabel: String,
     nextCheckDescription: String,
     checkTimelineItems: List<CheckTimelineItem>,
-    isEmergencyCallEnabled: Boolean,
     onMenuClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onManagerCallClick: () -> Unit,
@@ -145,7 +144,6 @@ fun HomeScreen(
                         emergencyDescription = stringResource(R.string.home_emergency_call_description),
                         onManagerClick = onManagerCallClick,
                         onEmergencyClick = onEmergencyClick,
-                        isEmergencyCallEnabled = isEmergencyCallEnabled,
                         modifier =
                             Modifier.padding(
                                 start = HeartGuardSpacing.HomeContentHorizontal,
@@ -229,7 +227,6 @@ private fun HomeScreenPreview() {
                     CheckTimelineItem("12시", isCompleted = false, isCurrent = true),
                     CheckTimelineItem("14시", isCompleted = false),
                 ),
-            isEmergencyCallEnabled = true,
             onMenuClick = {},
             onNotificationClick = {},
             onManagerCallClick = {},
