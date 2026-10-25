@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -49,6 +50,7 @@ fun AuthTextField(
     onTextChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    minimumHeight: Dp = HeartGuardComponentSize.AuthTextFieldHeight,
     isError: Boolean = false,
     supportingText: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
@@ -115,7 +117,7 @@ fun AuthTextField(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = HeartGuardSpacing.AuthFieldLabelInput)
-                    .heightIn(min = HeartGuardComponentSize.AuthTextFieldHeight)
+                    .heightIn(min = minimumHeight)
                     .bringIntoViewRequester(inputViewportRequester)
                     .semantics {
                         if (isError && supportingText != null) {

@@ -147,6 +147,7 @@ internal fun AuthSignUpScreen(
                                 onEvent(AuthSignUpScreenEvent.EmailChanged(value))
                             },
                             placeholder = stringResource(R.string.auth_email_hint),
+                            minimumHeight = HeartGuardComponentSize.TouchTarget,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             trailingIcon = {
                                 TextButton(
@@ -195,6 +196,8 @@ internal fun AuthSignUpScreen(
                             },
                         )
 
+                        Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpEmailCodeGap))
+
                         AuthTextField(
                             label = stringResource(R.string.auth_signup_verification_code_label),
                             text = verificationCode,
@@ -206,6 +209,7 @@ internal fun AuthSignUpScreen(
                                 )
                             },
                             placeholder = stringResource(R.string.auth_signup_verification_code_hint),
+                            minimumHeight = HeartGuardComponentSize.TouchTarget,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         )
 
@@ -218,6 +222,7 @@ internal fun AuthSignUpScreen(
                                 onEvent(AuthSignUpScreenEvent.PasswordChanged(value))
                             },
                             placeholder = stringResource(R.string.auth_signup_password_hint),
+                            minimumHeight = HeartGuardComponentSize.TouchTarget,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             visualTransformation = PasswordVisualTransformation(),
                         )
@@ -231,6 +236,7 @@ internal fun AuthSignUpScreen(
                                 onEvent(AuthSignUpScreenEvent.PasswordConfirmationChanged(value))
                             },
                             placeholder = stringResource(R.string.auth_signup_password_confirmation_hint),
+                            minimumHeight = HeartGuardComponentSize.TouchTarget,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             visualTransformation = PasswordVisualTransformation(),
                         )
