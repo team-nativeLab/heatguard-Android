@@ -64,8 +64,6 @@ fun AuthLoginScreen(
     onSignUpClick: () -> Unit = {},
     titleResource: Int = R.string.auth_login_title,
     descriptionResource: Int = R.string.auth_login_description,
-    switchLoginLabelResource: Int? = null,
-    onSwitchLoginClick: () -> Unit = {},
 ) {
     // 이전 앱에서 열려 있던 키보드 inset이 진입 직후 잠깐 남아도 키보드 레이아웃으로 바뀌지 않도록
     // 로그인 입력칸에 포커스가 있을 때만 키보드가 열린 것으로 본다.
@@ -215,15 +213,6 @@ fun AuthLoginScreen(
                         text = stringResource(R.string.auth_signup_link),
                         color = MaterialTheme.extraColors.authPrimary,
                     )
-                }
-
-                if (switchLoginLabelResource != null) {
-                    TextButton(onClick = onSwitchLoginClick) {
-                        Text(
-                            text = stringResource(switchLoginLabelResource),
-                            color = MaterialTheme.extraColors.authPrimary,
-                        )
-                    }
                 }
 
                 if (statusMessage != null) {

@@ -59,12 +59,20 @@ fun MenuDrawerContent(
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
 
                 MenuDrawerItem(
+                    title = stringResource(R.string.menu_home),
+                    onClick = { onEvent(MenuDrawerEvent.HomeClicked) },
+                )
+                MenuDrawerItem(
                     title = stringResource(R.string.menu_edit_profile),
                     onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
                 )
                 MenuDrawerItem(
                     title = stringResource(R.string.menu_inquiry),
                     onClick = { onEvent(MenuDrawerEvent.InquiryClicked) },
+                )
+                MenuDrawerItem(
+                    title = stringResource(R.string.menu_site_selection),
+                    onClick = { onEvent(MenuDrawerEvent.SiteSelectionClicked) },
                 )
             }
 

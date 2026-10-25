@@ -19,9 +19,9 @@
     <string name="auth_signup_description">이메일을 인증하고 계정을 만들어주세요</string>
     <string name="auth_signup_verification_code_label">이메일 인증코드</string>
     <string name="auth_signup_verification_code_hint">이메일로 받은 6자리 코드</string>
-    <string name="auth_signup_send_code">인증코드 받기</string>
-    <string name="auth_signup_resend_code">인증코드 다시 받기</string>
-    <string name="auth_signup_resend_wait">%1$d초 후 재전송</string>
+    <string name="auth_signup_send_code">인증 받기</string>
+    <string name="auth_signup_resend_code">재요청</string>
+    <string name="auth_signup_resend_wait">%1$d초</string>
     <string name="auth_signup_code_sent">인증코드를 보냈습니다. 10분 안에 입력해주세요.</string>
     <string name="auth_signup_email_code_error">인증코드를 보내지 못했습니다. 이메일을 확인한 뒤 다시 시도해주세요.</string>
     <string name="auth_signup_email_exists_error">이미 가입된 이메일입니다. 앱 계정 로그인을 이용해주세요.</string>
@@ -64,7 +64,6 @@
     <string name="auth_login_generic_error">로그인에 실패했습니다. 잠시 후 다시 시도해주세요</string>
     <string name="auth_login_app_account">앱 계정 로그인</string>
     <string name="auth_login_app_account_description">현장 연동 앱 계정으로 로그인할 수 있어요</string>
-    <string name="auth_login_team_account">작업자 계정 로그인</string>
     <string name="auth_logout">로그아웃</string>
     <string name="app_account_sites_title">연동된 현장</string>
     <string name="app_account_sites_description">연동한 현장을 확인하고 사용할 현장을 선택하세요.</string>
@@ -257,8 +256,16 @@
     <string name="home_load_failure">홈 정보를 불러오지 못했어요</string>
     <string name="menu_edit_profile">내 정보 수정</string>
     <string name="menu_inquiry">문의하기</string>
+    <string name="menu_home">홈</string>
+    <string name="menu_site_selection">현장선택</string>
     <string name="menu_logout">로그아웃</string>
     <string name="menu_withdraw">회원탈퇴</string>
+    <string name="team_site_selection_title">내 현장 목록</string>
+    <string name="team_site_selection_badge">선택됨</string>
+    <string name="team_site_selection_unselected_badge">선택 안됨</string>
+    <string name="team_site_selection_loading">현장 정보를 불러오는 중입니다.</string>
+    <string name="team_site_selection_unavailable">현장 정보를 확인할 수 없습니다.</string>
+    <string name="team_site_selection_add_link">새로운 현장 연동하기</string>
     <string name="menu_close_description">메뉴 닫기</string>
     <string name="menu_profile_affiliation_format">%1$s · %2$s</string>
     <!-- 회원탈퇴 -->
