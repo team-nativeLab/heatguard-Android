@@ -253,7 +253,7 @@ class AppAccountSitesViewModelTest {
                     repository.sites = newAccountSites
                     repository.selected = "new-site"
                     sessionManager.onLoginSucceeded(
-                        SessionToken("account-b", SessionRole.APP_ACCOUNT),
+                        SessionToken("account-b", SessionRole.TEAM_MEMBER),
                     )
                     ApiResult.Success(oldAccountSites)
                 }
@@ -281,7 +281,7 @@ class AppAccountSitesViewModelTest {
 
     private suspend fun createAppAccountSession(): SessionManager =
         createTestSessionManager(Dispatchers.Unconfined).apply {
-            onLoginSucceeded(SessionToken("account-a", SessionRole.APP_ACCOUNT))
+            onLoginSucceeded(SessionToken("account-a", SessionRole.TEAM_MEMBER))
         }
 
     private fun createViewModel(

@@ -8,7 +8,7 @@ import retrofit2.http.Tag
 
 /** 선택된 현장 ID를 인증 모드가 자동으로 헤더에 넣는 현장 범위 API다. */
 interface AppSiteDashboardApiService {
-    @GET("api/v1/site/dashboard")
+    @GET("api/v1/team/dashboard")
     suspend fun getDashboard(
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppSiteDashboardDto>

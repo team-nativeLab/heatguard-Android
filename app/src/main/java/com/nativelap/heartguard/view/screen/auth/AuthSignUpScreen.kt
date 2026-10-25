@@ -51,7 +51,7 @@ import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 
-/** 이메일 인증코드와 앱 계정 자격 증명을 입력받는다. */
+/** 이메일 인증코드와 Team 계정 가입 정보를 입력받는다. */
 @Composable
 internal fun AuthSignUpScreen(
     email: String,

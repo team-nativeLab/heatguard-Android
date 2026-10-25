@@ -86,7 +86,7 @@ class AppSiteLinkRepositoryImplTest {
             val expectedGeneration = sessionManager.getSnapshot().generation
             val request = async { repository.selectSite("account_a_site", expectedGeneration) }
             yield()
-            sessionManager.onLoginSucceeded(SessionToken("account-b-token", SessionRole.APP_ACCOUNT))
+            sessionManager.onLoginSucceeded(SessionToken("account-b-token", SessionRole.TEAM_MEMBER))
             storage.saveSelectedSiteId("account_b_site")
             pendingSelection.complete(ApiResult.Success(AppSiteSelectionResponseDto("account_a_site", "A 현장")))
 
@@ -181,7 +181,7 @@ class AppSiteLinkRepositoryImplTest {
     private fun createAppAccountSession(storage: InMemoryTokenStorage) =
         SessionManager(storage, Dispatchers.Unconfined).apply {
             runBlocking {
-                onLoginSucceeded(SessionToken("account-a-token", SessionRole.APP_ACCOUNT))
+                onLoginSucceeded(SessionToken("account-a-token", SessionRole.TEAM_MEMBER))
             }
         }
 

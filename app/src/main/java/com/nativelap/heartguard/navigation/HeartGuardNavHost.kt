@@ -9,6 +9,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.DialogProperties
@@ -28,7 +29,6 @@ import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
-import com.nativelap.heartguard.view.route.auth.HeartGuardAppAccountLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
@@ -53,7 +53,6 @@ import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionR
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
 import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
-import com.nativelap.heartguard.view.route.site.TeamSiteSelectionRoute
 import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
@@ -87,30 +86,19 @@ internal fun HeartGuardNavHost(
         SessionState.Authenticated -> {
             when (sessionRole) {
                 SessionRole.APP_ACCOUNT -> {
-                    if (pendingAppLink == null) {
-                        AppAccountSitesRoute(
-                            onOpenLink = appLinkTokenViewModel::accept,
-                            viewModel = hiltViewModel(key = "app-sites-$sessionGeneration"),
-                        )
-                    } else {
-                        HeartGuardPhoneNumberRoute(
-                            pendingAppLink = requireNotNull(pendingAppLink),
-                            onClaimSuccess = { completedLink ->
-                                appLinkTokenViewModel.consume(completedLink)
-                            },
-                            onCancelClaim = { canceledLink ->
-                                appLinkTokenViewModel.consume(canceledLink)
-                            },
-                            onSessionRequired = sessionViewModel::expireTeamMemberSession,
-                            isAppAccountSession = true,
-                        )
+                    LaunchedEffect(sessionGeneration) {
+                        sessionViewModel.expireLegacyAppAccountSession()
                     }
+                    IntroScreen()
                 }
 
                 SessionRole.TEAM_MEMBER,
                 -> {
                     if (pendingAppLink == null) {
-                        HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
+                        HeartGuardMainNavDisplay(
+                            sessionGeneration = sessionGeneration,
+                            appLinkTokenViewModel = appLinkTokenViewModel,
+                        )
                     } else {
                         HeartGuardPhoneNumberRoute(
                             pendingAppLink = requireNotNull(pendingAppLink),
@@ -133,7 +121,7 @@ internal fun HeartGuardNavHost(
         }
 
         SessionState.Unauthenticated -> {
-            HeartGuardAuthNavDisplay(startWithAppLogin = pendingAppLink != null)
+            HeartGuardAuthNavDisplay()
         }
     }
 }
@@ -171,20 +159,24 @@ private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
 
 /** 사전 발급 계정 로그인과 인증 전 Navigation 3 back stack을 담당한다. */
 @Composable
-private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
-    val initialDestination =
-        if (startWithAppLogin) {
-            HeartGuardDestination.AppAccountLogin
-        } else {
-            HeartGuardDestination.Login
-        }
-    val backStack = rememberNavBackStack(initialDestination)
+private fun HeartGuardAuthNavDisplay() {
+    val backStack = rememberNavBackStack(HeartGuardDestination.Login)
+    var isBackStackReady by remember { mutableStateOf(false) }
 
-    LaunchedEffect(startWithAppLogin) {
-        if (startWithAppLogin && backStack.lastOrNull() != HeartGuardDestination.AppAccountLogin) {
+    LaunchedEffect(backStack) {
+        if (
+            HeartGuardDestination.Login in backStack ||
+            HeartGuardDestination.SignUp in backStack
+        ) {
             backStack.clear()
-            backStack.add(HeartGuardDestination.AppAccountLogin)
+            backStack.add(HeartGuardDestination.Login)
         }
+        isBackStackReady = true
+    }
+
+    if (!isBackStackReady) {
+        IntroScreen()
+        return
     }
 
     NavDisplay(
@@ -225,7 +217,7 @@ private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
                     )
                 }
                 entry<HeartGuardDestination.AppAccountLogin> {
-                    HeartGuardAppAccountLoginRoute(
+                    HeartGuardLoginRoute(
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
@@ -250,7 +242,10 @@ private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
 
 /** 로그인 이후의 홈·기록·긴급 호출 흐름을 단일 Navigation 3 back stack으로 연결한다. */
 @Composable
-private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
+private fun HeartGuardMainNavDisplay(
+    sessionGeneration: Long,
+    appLinkTokenViewModel: AppLinkTokenViewModel,
+) {
     val backStack = rememberNavBackStack(HeartGuardDestination.Home)
 
     // 로그아웃→재로그인이 한 프레임 안에 지나가 이 화면이 유지돼도, 세대가 바뀌면 이전 계정의 화면 이동 기록을 홈으로 되돌린다.
@@ -523,9 +518,9 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                     )
                 }
                 entry<HeartGuardDestination.TeamSiteSelection> {
-                    TeamSiteSelectionRoute(
-                        uiState = homeUiState,
-                        onBackClick = ::goBack,
+                    AppAccountSitesRoute(
+                        onOpenLink = appLinkTokenViewModel::accept,
+                        viewModel = hiltViewModel(key = "team-sites-$sessionGeneration"),
                     )
                 }
                 entry<HeartGuardDestination.ChecklistOverview> {

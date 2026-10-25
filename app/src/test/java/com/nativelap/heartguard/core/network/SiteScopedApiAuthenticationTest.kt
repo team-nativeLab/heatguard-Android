@@ -18,32 +18,25 @@ import retrofit2.http.GET
 
 class SiteScopedApiAuthenticationTest {
     @Test
-    fun `현장 범위 앱 계정 요청에만 선택 ID가 포함된다`() =
+    fun `Team 현장 범위 요청에만 선택 ID가 포함된다`() =
         runBlocking {
             val server = MockWebServer()
             server.start()
             try {
-                repeat(3) { server.enqueue(successResponse()) }
-                val appStorage = InMemoryTokenStorage()
-                val appSession = createSessionManager(appStorage, SessionRole.APP_ACCOUNT)
-                appStorage.saveSelectedSiteId("site_01")
+                repeat(2) { server.enqueue(successResponse()) }
+                val teamStorage = InMemoryTokenStorage()
+                val teamSession = createSessionManager(teamStorage, SessionRole.TEAM_MEMBER)
+                teamStorage.saveSelectedSiteId("site_01")
 
-                createService(server, appSession, ApiAuthentication.APP_ACCOUNT_SITE_BEARER).load()
+                createService(server, teamSession, ApiAuthentication.TEAM_SITE_BEARER).load()
                 val scopedRequest = server.takeRequest()
-                createService(server, appSession, ApiAuthentication.APP_ACCOUNT_BEARER).load()
-                val unscopedAppRequest = server.takeRequest()
-
-                val workerStorage = InMemoryTokenStorage()
-                val workerSession = createSessionManager(workerStorage, SessionRole.TEAM_MEMBER)
-                workerStorage.saveSelectedSiteId("site_01")
-                createService(server, workerSession, ApiAuthentication.BEARER).load()
-                val workerRequest = server.takeRequest()
+                createService(server, teamSession, ApiAuthentication.BEARER).load()
+                val unscopedTeamRequest = server.takeRequest()
 
                 assertEquals("Bearer test-token", scopedRequest.headers["Authorization"])
                 assertEquals("site_01", scopedRequest.headers["X-Site-Id"])
-                assertNull(unscopedAppRequest.headers["X-Site-Id"])
-                assertNull(workerRequest.headers["X-Site-Id"])
-                assertEquals(3, server.requestCount)
+                assertNull(unscopedTeamRequest.headers["X-Site-Id"])
+                assertEquals(2, server.requestCount)
             } finally {
                 server.close()
             }
@@ -55,10 +48,10 @@ class SiteScopedApiAuthenticationTest {
             val server = MockWebServer()
             server.start()
             try {
-                val sessionManager = createSessionManager(InMemoryTokenStorage(), SessionRole.APP_ACCOUNT)
+                val sessionManager = createSessionManager(InMemoryTokenStorage(), SessionRole.TEAM_MEMBER)
                 val result =
                     ApiExecutor().execute {
-                        createService(server, sessionManager, ApiAuthentication.APP_ACCOUNT_SITE_BEARER).load()
+                        createService(server, sessionManager, ApiAuthentication.TEAM_SITE_BEARER).load()
                     }
 
                 assertEquals(ApiResult.Failure(ApiError.SiteNotSelected), result)
@@ -69,15 +62,33 @@ class SiteScopedApiAuthenticationTest {
         }
 
     @Test
-    fun `요청 생성 후 현장이 바뀌어도 생성 당시 현장 ID를 사용한다`() =
+    fun `기존 앱 계정 세션은 Team 현장 요청에 사용할 수 없다`() =
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            try {
+                val legacySession = createSessionManager(InMemoryTokenStorage(), SessionRole.APP_ACCOUNT)
+                val result =
+                    ApiExecutor().execute {
+                        createService(server, legacySession, ApiAuthentication.TEAM_SITE_BEARER).load()
+                    }
+
+                assertEquals(ApiResult.Failure(ApiError.SessionChanged), result)
+                assertEquals(0, server.requestCount)
+            } finally {
+                server.close()
+            }
+        }
+
+    @Test
+    fun `요청 생성 후 전송 전에 선택된 최신 현장 ID를 읽는다`() =
         runBlocking {
             val server = MockWebServer()
             server.start()
             try {
                 server.enqueue(successResponse())
                 val storage = InMemoryTokenStorage()
-                val sessionManager = createSessionManager(storage, SessionRole.APP_ACCOUNT)
-                storage.saveSelectedSiteId("site_a")
+                val sessionManager = createSessionManager(storage, SessionRole.TEAM_MEMBER)
                 val scopedClient =
                     OkHttpClient
                         .Builder()
@@ -88,14 +99,49 @@ class SiteScopedApiAuthenticationTest {
                     SessionBoundCallFactory(
                         delegateClient = scopedClient,
                         sessionManager = sessionManager,
-                        requiredRole = SessionRole.APP_ACCOUNT,
-                        requireSelectedSite = true,
+                        requiredRole = SessionRole.TEAM_MEMBER,
                     )
-                val call = callFactory.newCall(Request.Builder().url(server.url("api/v1/app/site-scoped-test")).build())
+                val call =
+                    callFactory.newCall(
+                        Request.Builder().url(server.url("api/v1/team/site-scoped-test")).build(),
+                    )
                 storage.saveSelectedSiteId("site_b")
 
                 call.execute()
-                assertEquals("site_a", server.takeRequest().headers["X-Site-Id"])
+                assertEquals("site_b", server.takeRequest().headers["X-Site-Id"])
+            } finally {
+                server.close()
+            }
+        }
+
+    @Test
+    fun `세션 태그가 없는 현장 범위 요청은 전송하지 않는다`() =
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            try {
+                val storage = InMemoryTokenStorage()
+                val sessionManager = createSessionManager(storage, SessionRole.TEAM_MEMBER)
+                storage.saveSelectedSiteId("site_01")
+                val call =
+                    OkHttpClient
+                        .Builder()
+                        .addInterceptor(SelectedSiteIdInterceptor(sessionManager))
+                        .build()
+                        .newCall(
+                            Request
+                                .Builder()
+                                .url(server.url("api/v1/team/site-scoped-test"))
+                                .build(),
+                        )
+
+                try {
+                    call.execute()
+                    throw AssertionError("A request without its owning session tag must fail closed")
+                } catch (_: SessionChangedException) {
+                    // Expected: site-scoped requests must be bound to their creating session.
+                }
+                assertEquals(0, server.requestCount)
             } finally {
                 server.close()
             }
@@ -141,7 +187,7 @@ class SiteScopedApiAuthenticationTest {
             .build()
 
     private interface ScopedTestApiService {
-        @GET("api/v1/app/site-scoped-test")
+        @GET("api/v1/team/site-scoped-test")
         suspend fun load(): ApiEnvelope<String>
     }
 }

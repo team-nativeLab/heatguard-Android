@@ -93,7 +93,26 @@ class ApiRetrofitFactory
                             delegateClient = siteScopedClient,
                             sessionManager = sessionManager,
                             requiredRole = SessionRole.APP_ACCOUNT,
-                            requireSelectedSite = true,
+                        )
+                    }
+
+                    ApiAuthentication.TEAM_SITE_BEARER -> {
+                        val authenticatedClient =
+                            if (allowRequestReplay) {
+                                authenticatedApiClient
+                            } else {
+                                singleAttemptClient
+                            }
+                        val siteScopedClient =
+                            authenticatedClient
+                                .newBuilder()
+                                .addInterceptor(SelectedSiteIdInterceptor(sessionManager))
+                                .build()
+
+                        SessionBoundCallFactory(
+                            delegateClient = siteScopedClient,
+                            sessionManager = sessionManager,
+                            requiredRole = SessionRole.TEAM_MEMBER,
                         )
                     }
                 }

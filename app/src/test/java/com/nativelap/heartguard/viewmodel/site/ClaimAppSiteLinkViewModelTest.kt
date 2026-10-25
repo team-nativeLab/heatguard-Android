@@ -93,7 +93,7 @@ class ClaimAppSiteLinkViewModelTest {
             try {
                 val response = CompletableDeferred<ApiResult<AppSiteLinkClaim>>()
                 val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
-                sessionManager.onLoginSucceeded(SessionToken("account-a", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("account-a", SessionRole.TEAM_MEMBER))
                 val viewModel =
                     ClaimAppSiteLinkViewModel(
                         ClaimAppSiteLinkUseCase(FakeAppSiteLinkRepository(response)),
@@ -104,7 +104,7 @@ class ClaimAppSiteLinkViewModelTest {
                 viewModel.claim(pendingAppLink, "01012345678")
                 runCurrent()
 
-                sessionManager.onLoginSucceeded(SessionToken("account-b", SessionRole.APP_ACCOUNT))
+                sessionManager.onLoginSucceeded(SessionToken("account-b", SessionRole.TEAM_MEMBER))
                 response.complete(ApiResult.Success(AppSiteLinkClaim("site-1", "현장", "2026-10-23")))
                 advanceUntilIdle()
 

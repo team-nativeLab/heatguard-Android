@@ -14,24 +14,24 @@ import retrofit2.http.Path
 import retrofit2.http.Tag
 
 interface AppSiteLinkApiService {
-    @DELETE("api/v1/app/sites/{siteId}/link")
+    @DELETE("api/v1/team/sites/{siteId}/link")
     suspend fun unlinkSite(
         @Path("siteId") siteId: String,
         @Tag owningSession: RequestSessionGeneration,
     )
 
-    @POST("api/v1/app/links/claim")
+    @POST("api/v1/team/links/claim")
     suspend fun claim(
         @Body request: ClaimAppSiteLinkRequestDto,
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppSiteLinkClaimResponseDto>
 
-    @GET("api/v1/app/sites")
+    @GET("api/v1/team/sites")
     suspend fun getLinkedSites(
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppLinkedSitesResponseDto>
 
-    @POST("api/v1/app/sites/{siteId}/select")
+    @POST("api/v1/team/sites/{siteId}/select")
     suspend fun selectSite(
         @Path("siteId") siteId: String,
         @Tag owningSession: RequestSessionGeneration,

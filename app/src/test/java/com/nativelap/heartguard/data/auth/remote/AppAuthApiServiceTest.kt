@@ -48,7 +48,7 @@ class AppAuthApiServiceTest {
                 val request = server.takeRequest()
 
                 assertEquals("POST", request.method)
-                assertEquals("/api/v1/auth/email-codes", request.url.encodedPath)
+                assertEquals("/api/v1/auth/team/email-codes", request.url.encodedPath)
                 assertEquals("""{"email":"worker@example.com"}""", request.body?.string(Charsets.UTF_8))
                 assertTrue(response.data?.expiresAt?.isNotBlank() == true)
             } finally {
@@ -94,7 +94,7 @@ class AppAuthApiServiceTest {
                 val body = request.body?.string(Charsets.UTF_8).orEmpty()
 
                 assertEquals("POST", request.method)
-                assertEquals("/api/v1/auth/app/register", request.url.encodedPath)
+                assertEquals("/api/v1/auth/team/register", request.url.encodedPath)
                 assertTrue(body.contains("\"email\":\"worker@example.com\""))
                 assertTrue(body.contains("\"password\":\"${testPassword()}\""))
                 assertTrue(body.contains("\"confirmPassword\""))
@@ -150,8 +150,8 @@ class AppAuthApiServiceTest {
                     ApiResult.Failure(ApiError.Http(statusCode = 400, errorCode = "INVALID_VERIFICATION_CODE")),
                     registrationResult,
                 )
-                assertEquals("/api/v1/auth/email-codes", server.takeRequest().url.encodedPath)
-                assertEquals("/api/v1/auth/app/register", server.takeRequest().url.encodedPath)
+                assertEquals("/api/v1/auth/team/email-codes", server.takeRequest().url.encodedPath)
+                assertEquals("/api/v1/auth/team/register", server.takeRequest().url.encodedPath)
             } finally {
                 server.close()
             }
@@ -230,7 +230,7 @@ class AppAuthApiServiceTest {
                 val request = server.takeRequest()
 
                 assertEquals("POST", request.method)
-                assertEquals("/api/v1/auth/app/login", request.url.encodedPath)
+                assertEquals("/api/v1/auth/team/login", request.url.encodedPath)
                 assertTrue(response.data?.accessToken?.isNotBlank() == true)
             } finally {
                 server.close()

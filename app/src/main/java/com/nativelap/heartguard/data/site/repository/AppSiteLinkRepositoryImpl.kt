@@ -27,7 +27,7 @@ class AppSiteLinkRepositoryImpl
         ): ApiResult<AppSiteDashboard> {
             val requestSession = sessionManager.getSnapshot()
             if (siteId.isBlank() ||
-                requestSession.role != SessionRole.APP_ACCOUNT ||
+                requestSession.role != SessionRole.TEAM_MEMBER ||
                 requestSession.generation != expectedSessionGeneration ||
                 sessionManager.getSelectedSiteId() != siteId
             ) {
@@ -47,7 +47,7 @@ class AppSiteLinkRepositoryImpl
             expectedSessionGeneration: Long,
         ): ApiResult<AppSiteLinkClaim> =
             sessionManager.getSnapshot().let { requestSession ->
-                if (requestSession.role != SessionRole.APP_ACCOUNT ||
+                if (requestSession.role != SessionRole.TEAM_MEMBER ||
                     requestSession.generation != expectedSessionGeneration
                 ) {
                     return ApiResult.Failure(ApiError.SessionChanged)
@@ -62,7 +62,7 @@ class AppSiteLinkRepositoryImpl
 
         override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> {
             val requestSession = sessionManager.getSnapshot()
-            if (requestSession.role != SessionRole.APP_ACCOUNT ||
+            if (requestSession.role != SessionRole.TEAM_MEMBER ||
                 requestSession.generation != expectedSessionGeneration
             ) {
                 return ApiResult.Failure(ApiError.SessionChanged)
@@ -94,7 +94,7 @@ class AppSiteLinkRepositoryImpl
                 return ApiResult.Failure(ApiError.Unknown)
             }
             val requestSession = sessionManager.getSnapshot()
-            if (requestSession.role != SessionRole.APP_ACCOUNT ||
+            if (requestSession.role != SessionRole.TEAM_MEMBER ||
                 requestSession.generation != expectedSessionGeneration
             ) {
                 return ApiResult.Failure(ApiError.SessionChanged)
@@ -123,7 +123,7 @@ class AppSiteLinkRepositoryImpl
                 return ApiResult.Failure(ApiError.Unknown)
             }
             val requestSession = sessionManager.getSnapshot()
-            if (requestSession.role != SessionRole.APP_ACCOUNT) {
+            if (requestSession.role != SessionRole.TEAM_MEMBER) {
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
             if (requestSession.generation != expectedSessionGeneration) {

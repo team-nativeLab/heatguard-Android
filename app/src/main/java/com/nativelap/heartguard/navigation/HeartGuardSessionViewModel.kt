@@ -55,6 +55,15 @@ internal class HeartGuardSessionViewModel
             }
         }
 
+        fun expireLegacyAppAccountSession() {
+            viewModelScope.launch {
+                val currentSnapshot: SessionSnapshot = sessionManager.getSnapshot()
+                if (currentSnapshot.role == SessionRole.APP_ACCOUNT) {
+                    sessionManager.expireSession(currentSnapshot.generation)
+                }
+            }
+        }
+
         init {
             // 앱 시작 시 저장된 토큰 존재 여부로 초기 인증 상태(Authenticated/Unauthenticated)를 판별한다.
             viewModelScope.launch {

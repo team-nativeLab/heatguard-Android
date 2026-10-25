@@ -250,7 +250,7 @@ internal class AppAccountSitesViewModel
         private fun onSessionChanged(owner: SessionOwner) {
             val isAppAccountSession =
                 owner.state == SessionState.Authenticated &&
-                    owner.snapshot.role == SessionRole.APP_ACCOUNT &&
+                    owner.snapshot.role == SessionRole.TEAM_MEMBER &&
                     !owner.snapshot.accessToken.isNullOrBlank()
             if (!isAppAccountSession) {
                 clearSessionState()
@@ -303,7 +303,7 @@ internal class AppAccountSitesViewModel
             activeSessionSnapshot == expectedSession &&
                 sessionManager.getSnapshot() == expectedSession &&
                 sessionManager.sessionState.value == SessionState.Authenticated &&
-                expectedSession.role == SessionRole.APP_ACCOUNT
+                expectedSession.role == SessionRole.TEAM_MEMBER
     }
 
 private data class SessionOwner(
