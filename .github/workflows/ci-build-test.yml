@@ -64,10 +64,10 @@ jobs:
         run: ./gradlew :app:compileDebugKotlin --stacktrace
 
       - name: 단위 테스트 (debug)
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest --stacktrace
 
       - name: Android Lint (debug)
-        run: ./gradlew :app:lintDebug --stacktrace
+        run: ./gradlew lintDebug --stacktrace
 
       # 실패해도 원인 확인을 위해 리포트를 항상 올린다.
       - name: 테스트·lint 리포트 업로드
@@ -78,5 +78,11 @@ jobs:
           path: |
             app/build/reports/tests/
             app/build/reports/lint-results-debug.*
+            core/build/reports/tests/
+            core/build/reports/lint-results-debug.*
+            domain/build/reports/tests/
+            domain/build/reports/lint-results-debug.*
+            data/build/reports/tests/
+            data/build/reports/lint-results-debug.*
           if-no-files-found: ignore
           retention-days: 7

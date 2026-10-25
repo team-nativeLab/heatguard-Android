@@ -1,6 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.hilt.android) apply false
@@ -27,12 +28,12 @@ val ktlintEditorConfig =
 
 spotless {
     kotlin {
-        // 단일 :app 모듈 소스만 대상으로 해 로컬 worktree·빌드 산출물이 포맷되지 않게 한다
-        target("app/src/**/*.kt")
+        // 명시한 모듈 소스만 검사해 로컬 worktree·빌드 산출물을 제외한다
+        target("app/src/**/*.kt", "core/src/**/*.kt", "domain/src/**/*.kt", "data/src/**/*.kt")
         ktlint(libs.versions.ktlint.get()).editorConfigOverride(ktlintEditorConfig)
     }
     kotlinGradle {
-        target("*.gradle.kts", "app/*.gradle.kts")
+        target("*.gradle.kts", "app/*.gradle.kts", "core/*.gradle.kts", "domain/*.gradle.kts", "data/*.gradle.kts")
         ktlint(libs.versions.ktlint.get()).editorConfigOverride(ktlintEditorConfig)
     }
 }

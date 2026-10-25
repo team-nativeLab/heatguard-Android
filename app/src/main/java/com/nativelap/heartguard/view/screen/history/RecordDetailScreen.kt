@@ -171,10 +171,11 @@ private fun RecordDetailContent(
         )
     }
 
-    if (recordEntry.memo != null) {
+    val recordMemo = recordEntry.memo
+    if (recordMemo != null) {
         RecordDetailTextCard(
             title = stringResource(R.string.history_detail_memo),
-            bodyText = recordEntry.memo,
+            bodyText = recordMemo,
         )
     }
 

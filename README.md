@@ -117,7 +117,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 - **계약 확인**: `sha256` 인코딩(Base64/hex), `slot` 의미, `POST /team/records`의 Idempotency-Key 지원, 허용 이미지 형식·최대 크기
 
 ## 기술 스택
-`gradle/libs.versions.toml`, `app/build.gradle.kts` 기준으로 확인한 값입니다.
+`gradle/libs.versions.toml`과 각 모듈의 `build.gradle.kts` 기준으로 확인한 값입니다.
 
 | 영역 | 사용 기술 |
 |---|---|
@@ -135,50 +135,85 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 Hilt와 Retrofit/OkHttp를 사용합니다. `core/di`, `core/network`, `core/session`에는 DI 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리가 있습니다. `domain`과 `data`에는 로그인·로그아웃, 내 정보·비밀번호, 홈, 사진 업로드·기록 저장, 기록 내역, 긴급 호출, 문의, 회원탈퇴 기능의 UseCase·Repository·RemoteDataSource 흐름이 있습니다. 화면 상태는 `viewmodel`에 있습니다. 로컬 데이터베이스(Room 등)는 없으며, 결과 불명 기록 제출 표식은 Android `AtomicFile`로 별도 영속화합니다.
 
 ## 아키텍처
-`AGENTS.md`가 안내하는 Presentation/Domain/Data/Core 구분을 단일 `app` 모듈 안에서 패키지로 나누어 사용합니다. Compose Route/Screen이 ViewModel의 상태와 이벤트를 연결하고, ViewModel은 UseCase를 호출합니다. Repository 구현은 RemoteDataSource를 통해 Retrofit API와 사진 파일 업로드를 처리하고, 기록 제출 표식은 LocalDataSource를 통해 처리합니다. `RecordDataModule`이 제출 Repository와 LocalDataSource 인터페이스를 Hilt로 연결하며, 로컬 파일 접근은 Application Context에서 얻은 경로·IO dispatcher·Singleton Mutex를 사용합니다.
+`AGENTS.md`가 안내하는 Presentation/Domain/Data/Core 책임을 `:app`, `:domain`, `:data`, `:core` Gradle 모듈로 나눕니다. 기존 Kotlin 패키지명과 화면·API 흐름은 유지합니다. Compose Route/Screen이 ViewModel의 상태와 이벤트를 연결하고, ViewModel은 UseCase를 호출합니다. Repository 구현은 RemoteDataSource를 통해 Retrofit API와 사진 파일 업로드를 처리하고, 기록 제출 표식은 LocalDataSource를 통해 처리합니다. `RecordDataModule`이 제출 Repository와 LocalDataSource 인터페이스를 Hilt로 연결하며, 로컬 파일 접근은 Application Context에서 얻은 경로·IO dispatcher·Singleton Mutex를 사용합니다.
 
+모듈 간 컴파일 의존성은 다음과 같습니다. `:app`은 Hilt 조립을 위해 `:data`도 포함하지만, ViewModel은 기존처럼 UseCase와 Domain 계약을 사용합니다. `:domain`은 기존 사진 모델의 Android `Uri` 계약을 유지하기 위해 Android Library로 구성합니다.
+
+```text
+:app ──▶ :domain ──▶ :core
+  ├────▶ :data ────▶ :domain, :core
+  └────▶ :core
 ```
+
+아래 패키지명은 소속 모듈의 `src/main/java/com/nativelap/heartguard/` 아래를 기준으로 합니다.
+
+```text
+:app
 view/
 ├── route/       # 화면별 진입점(Route) — 콜백을 받아 Screen을 조립
 ├── screen/      # 화면 단위 Composable(Scaffold 포함)
 └── component/   # 화면별 재사용 Composable (account, auth, emergency, feedback, history, home, inquiry, menu, photo, profile, temperature 등)
 viewmodel/       # account / auth / emergency / history / home / inquiry / menu / password / profile / record 상태와 이벤트
-domain/          # account / auth / emergency / inquiry / profile / record / site 모델, Repository 계약, UseCase
-data/            # account / auth / emergency / inquiry / profile / record / site DTO·Mapper·RemoteDataSource·Repository 구현, record/local 제출 표식
 navigation/      # HeartGuardDestination(Navigation3 목적지), HeartGuardNavHost, 커스텀 SceneStrategy
 core/component/  # 다이얼로그 배경 블러 등 공통 UI 유틸
+core/util/       # 사진 파일·촬영 URI·전화 앱 실행 유틸
+ui/theme/        # Theme, Shapes, Type, Dimension
+
+:domain
+domain/          # 모델, Repository 계약, UseCase
+
+:data
+data/            # DTO·Mapper·RemoteDataSource·Repository 구현, record/local 제출 표식
+
+:core
+core/di/         # 공통 Hilt 모듈·dispatcher
 core/network/    # Retrofit·OkHttp, API 결과 및 인증 처리
 core/session/    # 세션 상태와 Keystore 기반 토큰 저장
-ui/theme/        # Theme, Shapes, Type, Dimension
 ```
 
 사진 Route에서 카메라 또는 앨범 출처를 선택합니다. CameraX 촬영 결과와 Photo Picker URI는 기록 종류별 목록을 보유한 공유 `RecordDraftViewModel`에 추가됩니다. 저장 버튼은 사진 1~2장을 업로드(URL 발급 → PUT)한 뒤 받은 `objectKey`로 `/api/v1/team/records`에 기록을 제출하며 `measuredAt`에는 첫 저장 버튼 시각을 사용하며, 같은 제출의 명확한 실패 후 재시도에서도 제출 ID와 해당 시각을 유지합니다.
 
 ## 프로젝트 구조
-```
+```text
 HeartGuard/
-├── app/
-│   └── src/main/
-│       ├── java/com/nativelap/heartguard/
-│       │   ├── MainActivity.kt
-│       │   ├── navigation/   # Navigation3 목적지·NavHost·SceneStrategy
-│       │   ├── ui/theme/     # 디자인 토큰(Theme, Shapes, Type, Dimension)
-│       │   ├── core/         # di / network(Retrofit·OkHttp 설정) / session(인증 상태) / util / component(공통 오버레이)
-│       │   ├── data/         # account / auth / emergency / inquiry / profile / record / site 원격 데이터와 Repository 구현, record/local 제출 표식
-│       │   ├── domain/       # account / auth / emergency / inquiry / profile / record / site 모델, Repository 계약, UseCase
-│       │   ├── viewmodel/    # account / auth / emergency / history / home / inquiry / menu / password / profile / record 상태와 이벤트
-│       │   └── view/         # route / screen / component
-│       ├── assets/licenses/pretendard/  # 폰트 라이선스
-│       └── res/
-├── .agents/skills/            # 이 저장소 계열 공통 개발 규칙(SKILL.md 모음)
-├── AGENTS.md                  # 저장소 공통 에이전트 계약
+├── app/                      # Android Application: 진입점, UI, Navigation, ViewModel
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/nativelap/heartguard/
+│       │   │   ├── MainActivity.kt
+│       │   │   ├── navigation/
+│       │   │   ├── ui/theme/
+│       │   │   ├── core/      # component / util
+│       │   │   ├── viewmodel/
+│       │   │   └── view/      # route / screen / component
+│       │   ├── assets/licenses/pretendard/
+│       │   └── res/
+│       ├── test/             # ViewModel 단위 테스트
+│       └── androidTest/      # 화면·SavedState 계측 테스트
+├── core/                     # Android Library: 공통 네트워크·세션·DI
+│   └── src/
+│       ├── main/java/com/nativelap/heartguard/core/
+│       ├── test/             # 네트워크·세션 단위 테스트
+│       └── testFixtures/     # 모듈 간 공유 TestSessionManager
+├── domain/                   # Android Library: 모델·Repository 계약·UseCase
+│   └── src/
+│       ├── main/java/com/nativelap/heartguard/domain/
+│       └── test/             # 모델·UseCase 단위 테스트
+├── data/                     # Android Library: API·Repository·로컬 저장 구현
+│   └── src/
+│       ├── main/java/com/nativelap/heartguard/data/
+│       ├── test/             # API 계약·Mapper·Repository 단위 테스트
+│       └── androidTest/      # 기록 제출 표식 영속화 계측 테스트
+├── .agents/skills/           # 이 저장소 계열 공통 개발 규칙
+├── AGENTS.md                 # 저장소 공통 에이전트 계약
 ├── gradle/libs.versions.toml  # 의존성 버전 카탈로그
-└── settings.gradle.kts        # 모듈 구성 (:app 단일 모듈)
+└── settings.gradle.kts       # :app, :core, :domain, :data
 ```
 
 ## 시작하기
 ### 요구사항
-- JDK 및 Android Studio 버전: `확인 필요` (저장소에 명시된 값 없음)
+- Gradle Daemon JDK 21 (`gradle/gradle-daemon-jvm.properties`), Java 소스·타깃 호환성 17
+- Android Studio 버전: `확인 필요` (저장소에 명시된 값 없음)
 - Android SDK: compileSdk/targetSdk 37, minSdk 34 (`app/build.gradle.kts` 기준)
 
 ### 설치 및 실행
@@ -189,7 +224,7 @@ cd heatguard-Android
 ```
 
 ### 환경 설정
-서버 기본 주소는 Gradle 속성으로 설정합니다. Debug는 `HEARTGUARD_DEBUG_BASE_URL`을 지정할 수 있고, 지정하지 않으면 제공받은 테스트 서버 주소(`https://heatguard-temp.https.gsmsv.site/`)를 사용합니다. 다른 API 서버에 연결하려면 유효한 HTTPS 주소와 마지막 `/`를 포함해 설정하세요.
+서버 기본 주소는 Gradle 속성으로 설정하며, `data/build.gradle.kts`에서 `com.nativelap.heartguard.data.BuildConfig.BASE_URL`을 생성합니다. Debug는 `HEARTGUARD_DEBUG_BASE_URL`을 지정할 수 있고, 지정하지 않으면 제공받은 테스트 서버 주소(`https://heatguard-temp.https.gsmsv.site/`)를 사용합니다. 다른 API 서버에 연결하려면 유효한 HTTPS 주소와 마지막 `/`를 포함해 설정하세요.
 
 ```properties
 # ~/.gradle/gradle.properties 또는 -P Gradle 속성으로 설정
@@ -197,16 +232,19 @@ HEARTGUARD_DEBUG_BASE_URL=https://YOUR_DEBUG_API_HOST/
 HEARTGUARD_RELEASE_BASE_URL=https://YOUR_RELEASE_API_HOST/
 ```
 
-Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 검증 단계에서 실패합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 명세 기반 단위 테스트까지만 검증합니다.
+Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 `:data:validateReleaseServerConfiguration` 검증 단계에서 실패합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 명세 기반 단위 테스트까지만 검증합니다.
 
 ## 테스트
-`app/build.gradle.kts`에 선언된 테스트 의존성 기준입니다. 검증 시에는 아래 프로젝트 태스크를 사용합니다.
+각 모듈의 `build.gradle.kts`에 선언된 테스트 의존성 기준입니다. 검증 시에는 특정 모듈로 범위를 제한하지 않은 아래 프로젝트 태스크를 사용합니다.
 
 | 목적 | 명령 |
 |---|---|
 | 단위 테스트(JUnit4) | `./gradlew testDebugUnitTest` |
 | 계측 테스트(Espresso, Compose UI Test) | `./gradlew connectedDebugAndroidTest` |
 | Lint | `./gradlew lintDebug` |
+| Kotlin·Gradle 포맷 검사 | `./gradlew spotlessCheck` |
+
+기본 생성 예제인 `ExampleUnitTest`와 `ExampleInstrumentedTest`만 제거했습니다. 기능·보안 회귀 테스트는 담당 모듈의 `src/test` 또는 `src/androidTest`로 옮겨 유지합니다. 공유 세션 테스트 도우미 `TestSessionManager`는 `core/src/testFixtures`에 두고, 각 모듈이 테스트 의존성으로 사용합니다. 아래 날짜별 검증 결과는 모듈 분리 전 이력입니다.
 
 알림 테스트는 API 경로·query/body 계약, 유형·분류 매핑, cursor 페이지, 개별·전체 읽음 성공/실패, 지연 응답·재진입·세션 전환, PATCH와 페이지 조회 교차, 최신 분류 대기 조회, 포그라운드 5초 갱신 간격과 읽음 완료 후 예약 갱신, 느린 오류 안내 중 분류 조회, PATCH 성공 후 GET 실패와 재시도를 다룹니다. REST 테스트는 자정 경과·1440분 경계·필수 입력·한국 날짜·SavedState 복원과 초기화를 검증합니다. 긴급호출 테스트는 409 후 Network·429·500 재조회 실패와 NONE 종료를, 문의·기록 테스트는 마지막 허용 페이지·커서 순환·누락·취소를 검증합니다. 화면 계측 테스트는 빈 목록의 새로고침 오류·읽음 완료 후 자동 페이지 조회 재개, 로그인 짧은 화면·확대 글꼴·실제 IME·오류 안내 조합, 탈퇴 중앙 폭 제한·스크롤·IME 실패 안내를 검증합니다. 2026-10-01 `testDebugUnitTest` 167개와 `connectedDebugAndroidTest` 20개가 통과했으며, `lintDebug` 오류 0개(기존 경고 46개), `assembleDebug` 성공을 확인했습니다. 실제 서버 사진 업로드·REST 저장은 이번 변경에서 아직 재검증하지 않았습니다.
 
