@@ -76,6 +76,8 @@ internal fun HeartGuardHomeRoute(
     onChecklistClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onWithdrawClick: () -> Unit,
+    onHomeClick: () -> Unit,
+    onSiteSelectionClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -237,6 +239,11 @@ internal fun HeartGuardHomeRoute(
                 profile = menuDrawerProfile,
                 onEvent = { event ->
                     when (event) {
+                        MenuDrawerEvent.HomeClicked -> {
+                            isMenuDrawerOpen = false
+                            onHomeClick()
+                        }
+
                         MenuDrawerEvent.EditProfileClicked -> {
                             isMenuDrawerOpen = false
                             onProfileEditClick()
@@ -245,6 +252,11 @@ internal fun HeartGuardHomeRoute(
                         MenuDrawerEvent.InquiryClicked -> {
                             isMenuDrawerOpen = false
                             onInquiryClick()
+                        }
+
+                        MenuDrawerEvent.SiteSelectionClicked -> {
+                            isMenuDrawerOpen = false
+                            onSiteSelectionClick()
                         }
 
                         MenuDrawerEvent.LogoutClicked -> {
