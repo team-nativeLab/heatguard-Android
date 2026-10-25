@@ -2,6 +2,7 @@ package com.nativelap.heartguard.view.screen.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -30,8 +31,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -97,28 +100,46 @@ internal fun AuthSignUpScreen(
                     },
                     placeholder = stringResource(R.string.auth_email_hint),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                )
-
-                TextButton(
-                    onClick = { onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked) },
-                    enabled = !isSendingEmailCode && !isSubmitting && resendCooldownSeconds == 0,
-                ) {
-                    Text(
-                        text =
-                            if (resendCooldownSeconds > 0) {
-                                stringResource(R.string.auth_signup_resend_wait, resendCooldownSeconds)
-                            } else {
-                                stringResource(
-                                    if (isEmailCodeSent) {
-                                        R.string.auth_signup_resend_code
-                                    } else {
-                                        R.string.auth_signup_send_code
-                                    },
-                                )
+                    trailingIcon = {
+                        TextButton(
+                            onClick = {
+                                onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked)
                             },
-                        color = MaterialTheme.extraColors.authPrimary,
-                    )
-                }
+                            modifier =
+                                Modifier
+                                    .padding(end = EMAIL_CODE_BUTTON_END_PADDING),
+                            enabled = !isSendingEmailCode && !isSubmitting && resendCooldownSeconds == 0,
+                            contentPadding = PaddingValues(horizontal = EMAIL_CODE_BUTTON_HORIZONTAL_PADDING),
+                        ) {
+                            Text(
+                                text =
+                                    if (resendCooldownSeconds > 0) {
+                                        stringResource(
+                                            R.string.auth_signup_resend_wait,
+                                            resendCooldownSeconds,
+                                        )
+                                    } else {
+                                        stringResource(
+                                            if (isEmailCodeSent) {
+                                                R.string.auth_signup_resend_code
+                                            } else {
+                                                R.string.auth_signup_send_code
+                                            },
+                                        )
+                                    },
+                                color = MaterialTheme.extraColors.authPrimary,
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontSize = EMAIL_CODE_BUTTON_FONT_SIZE,
+                                        lineHeight = EMAIL_CODE_BUTTON_LINE_HEIGHT,
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    },
+                )
 
                 AuthTextField(
                     label = stringResource(R.string.auth_signup_verification_code_label),
@@ -204,18 +225,15 @@ internal fun AuthSignUpScreen(
                     }
                 }
 
-                TextButton(
-                    onClick = { onEvent(AuthSignUpScreenEvent.AppAccountLoginClicked) },
-                ) {
-                    Text(
-                        text = stringResource(R.string.auth_login_app_account),
-                        color = MaterialTheme.extraColors.authPrimary,
-                    )
-                }
             }
         }
     }
 }
+
+private val EMAIL_CODE_BUTTON_END_PADDING = 4.dp
+private val EMAIL_CODE_BUTTON_HORIZONTAL_PADDING = 2.dp
+private val EMAIL_CODE_BUTTON_FONT_SIZE = 13.sp
+private val EMAIL_CODE_BUTTON_LINE_HEIGHT = 18.sp
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 874)
 @Composable

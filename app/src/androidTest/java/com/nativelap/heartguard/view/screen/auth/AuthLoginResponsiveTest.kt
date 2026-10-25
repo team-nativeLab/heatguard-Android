@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.test.espresso.Espresso
+import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -34,6 +36,38 @@ import org.junit.Test
 class AuthLoginResponsiveTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun workerLoginDoesNotShowAppAccountSwitchButton() {
+        composeTestRule.setContent {
+            HeartGuardTheme {
+                AuthLoginScreen("", "", {}, {}, {})
+            }
+        }
+
+        assertTrue(composeTestRule.onAllNodes(hasText("앱 계정 로그인")).fetchSemanticsNodes().isEmpty())
+        composeTestRule.onNodeWithText("회원가입").assertIsDisplayed()
+    }
+
+    @Test
+    fun appAccountLoginDoesNotShowWorkerSwitchButton() {
+        composeTestRule.setContent {
+            HeartGuardTheme {
+                AuthLoginScreen(
+                    email = "",
+                    password = "",
+                    onEmailChange = {},
+                    onPasswordChange = {},
+                    onLoginClick = {},
+                    titleResource = R.string.auth_login_app_account,
+                    descriptionResource = R.string.auth_login_app_account_description,
+                )
+            }
+        }
+
+        assertTrue(composeTestRule.onAllNodes(hasText("작업자 계정 로그인")).fetchSemanticsNodes().isEmpty())
+        composeTestRule.onNodeWithText("회원가입").assertIsDisplayed()
+    }
 
     @Test
     fun shortViewportShowsEntirePasswordFieldAboveLoginAction() {

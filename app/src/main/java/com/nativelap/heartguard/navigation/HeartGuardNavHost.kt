@@ -221,18 +221,10 @@ private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
-                        onNavigateToAppLogin = {
-                            backStack.add(HeartGuardDestination.AppAccountLogin)
-                        },
                     )
                 }
                 entry<HeartGuardDestination.AppAccountLogin> {
                     HeartGuardAppAccountLoginRoute(
-                        onNavigateToTeamLogin = {
-                            if (backStack.lastOrNull() == HeartGuardDestination.AppAccountLogin) {
-                                backStack.removeLastOrNull()
-                            }
-                        },
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
@@ -248,9 +240,6 @@ private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
                             if (backStack.size > 1) {
                                 backStack.removeLastOrNull()
                             }
-                        },
-                        onNavigateToAppLogin = {
-                            backStack.add(HeartGuardDestination.AppAccountLogin)
                         },
                     )
                 }
