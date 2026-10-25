@@ -142,7 +142,10 @@ class AppAccountSitesViewModelTest {
                 viewModel.refresh()
                 advanceUntilIdle()
 
-                assertTrue(viewModel.uiState.value.linkedSites.none { it.siteId == "old-site" })
+                assertTrue(
+                    viewModel.uiState.value.linkedSites
+                        .none { it.siteId == "old-site" },
+                )
                 assertEquals(newAccountSites, viewModel.uiState.value.linkedSites)
                 assertEquals("new-site", viewModel.uiState.value.selectedSiteId)
                 assertNull(viewModel.uiState.value.dashboard)
@@ -153,7 +156,6 @@ class AppAccountSitesViewModelTest {
                             state.selectedSiteId == "old-site"
                     },
                 )
-
             } finally {
                 Dispatchers.resetMain()
             }
