@@ -40,6 +40,9 @@ import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveSuccessRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordDetailRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
+import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallConfirmationRoute
+import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallPermissionRoute
+import com.nativelap.heartguard.view.route.home.HomeHeadquartersContactRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
 import com.nativelap.heartguard.view.route.menu.MenuDrawerHost
 import com.nativelap.heartguard.view.route.notification.HeartGuardTeamNotificationsRoute
@@ -474,7 +477,7 @@ private fun HeartGuardMainNavDisplay(
                 entry<HeartGuardDestination.Home> {
                     HeartGuardHomeRoute(
                         homeViewModel = homeViewModel,
-                        // 관리자 전화는 현장관리자 긴급호출 흐름으로 이동한다(본사 긴급 전화는 Route가 바로 다이얼한다).
+                        // 관리자 전화는 현장관리자 긴급호출 흐름, 긴급 전화는 본사 연락처 시트로 이동한다.
                         // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
                         onManagerCallClick = {
                             val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
@@ -483,6 +486,9 @@ private fun HeartGuardMainNavDisplay(
                             } else {
                                 backStack.add(HeartGuardDestination.Emergency)
                             }
+                        },
+                        onEmergencyClick = {
+                            backStack.add(HeartGuardDestination.HeadquartersContact)
                         },
                         // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
                         // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
@@ -707,6 +713,46 @@ private fun HeartGuardMainNavDisplay(
                         emergencyViewModel = emergencyViewModel,
                         homeViewModel = homeViewModel,
                         onCallClosed = ::goHome,
+                    )
+                }
+                entry<HeartGuardDestination.HeadquartersContact>(
+                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
+                ) {
+                    HomeHeadquartersContactRoute(
+                        onCallClick = {
+                            backStack.add(HeartGuardDestination.HeadquartersCallConfirmation)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.HeadquartersCallConfirmation>(
+                    metadata =
+                        DialogSceneStrategy.dialog(
+                            DialogProperties(usePlatformDefaultWidth = false),
+                        ),
+                ) {
+                    HomeHeadquartersCallConfirmationRoute(
+                        onDismissRequest = ::goBack,
+                        onPermissionDenied = {
+                            backStack.add(HeartGuardDestination.HeadquartersCallPermission)
+                        },
+                        onCallStarted = {
+                            while (
+                                backStack.lastOrNull() == HeartGuardDestination.HeadquartersCallConfirmation ||
+                                backStack.lastOrNull() == HeartGuardDestination.HeadquartersContact
+                            ) {
+                                backStack.removeLastOrNull()
+                            }
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.HeadquartersCallPermission>(
+                    metadata =
+                        DialogSceneStrategy.dialog(
+                            DialogProperties(usePlatformDefaultWidth = false),
+                        ),
+                ) {
+                    HomeHeadquartersCallPermissionRoute(
+                        onDismissRequest = ::goBack,
                     )
                 }
                 entry<HeartGuardDestination.RecordTypeSelection>(
