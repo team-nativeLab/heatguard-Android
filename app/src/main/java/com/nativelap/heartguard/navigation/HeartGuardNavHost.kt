@@ -41,7 +41,6 @@ import com.nativelap.heartguard.view.route.history.HeartGuardRecordDetailRoute
 import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallConfirmationRoute
-import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallPermissionRoute
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersContactRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
 import com.nativelap.heartguard.view.route.menu.MenuDrawerHost
@@ -732,10 +731,7 @@ private fun HeartGuardMainNavDisplay(
                 ) {
                     HomeHeadquartersCallConfirmationRoute(
                         onDismissRequest = ::goBack,
-                        onPermissionDenied = {
-                            backStack.add(HeartGuardDestination.HeadquartersCallPermission)
-                        },
-                        onCallStarted = {
+                        onDialerOpened = {
                             while (
                                 backStack.lastOrNull() == HeartGuardDestination.HeadquartersCallConfirmation ||
                                 backStack.lastOrNull() == HeartGuardDestination.HeadquartersContact
@@ -743,16 +739,6 @@ private fun HeartGuardMainNavDisplay(
                                 backStack.removeLastOrNull()
                             }
                         },
-                    )
-                }
-                entry<HeartGuardDestination.HeadquartersCallPermission>(
-                    metadata =
-                        DialogSceneStrategy.dialog(
-                            DialogProperties(usePlatformDefaultWidth = false),
-                        ),
-                ) {
-                    HomeHeadquartersCallPermissionRoute(
-                        onDismissRequest = ::goBack,
                     )
                 }
                 entry<HeartGuardDestination.RecordTypeSelection>(

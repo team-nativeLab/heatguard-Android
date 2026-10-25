@@ -23,7 +23,6 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 
 @Composable
-@Suppress("UNUSED_PARAMETER")
 fun HomeEmergencyPhoneCallDialog(
     phoneNumber: String,
     onDismissRequest: () -> Unit,
@@ -53,6 +52,16 @@ fun HomeEmergencyPhoneCallDialog(
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
             )
+            Text(
+                text = phoneNumber,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(HOME_EMERGENCY_CALL_PHONE_NUMBER_TEST_TAG),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -76,3 +85,4 @@ fun HomeEmergencyPhoneCallDialog(
 
 private const val HOME_EMERGENCY_CALL_DIALOG_TEST_TAG = "homeEmergencyCallConfirmation"
 private const val HOME_EMERGENCY_CALL_DIALOG_TEXT_TEST_TAG = "homeEmergencyCallConfirmationText"
+private const val HOME_EMERGENCY_CALL_PHONE_NUMBER_TEST_TAG = "homeEmergencyCallPhoneNumber"

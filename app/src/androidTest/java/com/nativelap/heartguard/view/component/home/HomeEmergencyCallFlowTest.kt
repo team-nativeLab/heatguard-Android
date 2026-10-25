@@ -1,12 +1,19 @@
 package com.nativelap.heartguard.view.component.home
 
+import android.content.ActivityNotFoundException
+import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
@@ -28,7 +35,6 @@ import com.nativelap.heartguard.navigation.HeartGuardBottomSheetSceneStrategy
 import com.nativelap.heartguard.navigation.HeartGuardDestination
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallConfirmationRoute
-import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallPermissionRoute
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersContactRoute
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -42,12 +48,14 @@ class HomeEmergencyCallFlowTest {
     fun headquartersContactOpensConfirmationAndCancelReturnsWithoutCalling() {
         var didRequestCall = false
         var dialogBlurRadius = 0
+        var launchedIntent: Intent? = null
         composeTestRule.setContent {
             HeartGuardTheme {
                 HeadquartersCallNavigationTestContent(
-                    onCallStarted = {
+                    onDialerOpened = {
                         didRequestCall = true
                     },
+                    onIntentLaunched = { launchedIntent = it },
                     onDialogBlurMeasured = {
                         dialogBlurRadius = it
                     },
@@ -78,30 +86,90 @@ class HomeEmergencyCallFlowTest {
 
         composeTestRule.runOnIdle {
             assertEquals(false, didRequestCall)
+            assertEquals(null, launchedIntent)
         }
     }
 
     @Test
-    fun permissionNoticeIsPresentedAsDialogOverHeadquartersContact() {
+    fun confirmationShowsDestinationAndOpensSystemDialer() {
+        var launchedIntent: Intent? = null
+        var didOpenDialer = false
         composeTestRule.setContent {
             HeartGuardTheme {
                 HeadquartersCallNavigationTestContent(
-                    startAtPermissionNotice = true,
-                    onCallStarted = {},
+                    onDialerOpened = {
+                        didOpenDialer = true
+                    },
+                    onIntentLaunched = { launchedIntent = it },
                 )
             }
         }
 
-        composeTestRule.onNodeWithText("전화 권한이 필요합니다").assertExists()
-        composeTestRule.onNodeWithTag("homeEmergencyCallConfirmation").assertExists()
-        composeTestRule.onNodeWithText("설정으로 이동").assertExists()
+        composeTestRule.onNodeWithText("긴급 전화 열기").performClick()
+        composeTestRule.onNodeWithContentDescription("전화 걸기").performClick()
+        composeTestRule.onNodeWithText("본사 연락하기").assertExists()
+        composeTestRule
+            .onNodeWithTag("homeEmergencyCallPhoneNumber")
+            .assertTextEquals("010-5080-4623")
+        composeTestRule.onNodeWithText("전화 앱 열기").performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(Intent.ACTION_DIAL, launchedIntent?.action)
+            assertEquals(Uri.fromParts("tel", "01050804623", null), launchedIntent?.data)
+            assertEquals(true, didOpenDialer)
+        }
+    }
+
+    @Test
+    fun failedDialerLaunchCanBeRetried() {
+        var launchAttempts = 0
+        var launchedIntent: Intent? = null
+        var didOpenDialer = false
+        composeTestRule.setContent {
+            HeartGuardTheme {
+                HeadquartersCallNavigationTestContent(
+                    onDialerOpened = {
+                        didOpenDialer = true
+                    },
+                    onIntentLaunched = { intent ->
+                        launchAttempts += 1
+                        if (launchAttempts == 1) {
+                            throw ActivityNotFoundException("No dialer activity")
+                        }
+                        launchedIntent = intent
+                    },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("긴급 전화 열기").performClick()
+        composeTestRule.onNodeWithContentDescription("전화 걸기").performClick()
+        composeTestRule.onNodeWithText("전화 앱 열기").performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(1, launchAttempts)
+            assertEquals(null, launchedIntent)
+            assertEquals(false, didOpenDialer)
+        }
+
+        composeTestRule.onNodeWithText("전화 앱 열기").performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(2, launchAttempts)
+            assertEquals(Intent.ACTION_DIAL, launchedIntent?.action)
+            assertEquals(true, didOpenDialer)
+        }
     }
 
     @Test
     fun systemBackFromConfirmationReturnsToHeadquartersContact() {
+        var launchedIntent: Intent? = null
         composeTestRule.setContent {
             HeartGuardTheme {
-                HeadquartersCallNavigationTestContent(onCallStarted = {})
+                HeadquartersCallNavigationTestContent(
+                    onDialerOpened = {},
+                    onIntentLaunched = { launchedIntent = it },
+                )
             }
         }
 
@@ -113,10 +181,13 @@ class HomeEmergencyCallFlowTest {
 
         composeTestRule.onNodeWithText("본사").assertExists()
         composeTestRule.onNodeWithText("010-5080-4623").assertExists()
+        composeTestRule.runOnIdle {
+            assertEquals(null, launchedIntent)
+        }
     }
 
     @Test
-    fun headquartersConfirmationInvokesCallCallback() {
+    fun headquartersConfirmationInvokesDialerRequestCallback() {
         var didRequestCall = false
         composeTestRule.setContent {
             HeartGuardTheme {
@@ -130,7 +201,7 @@ class HomeEmergencyCallFlowTest {
             }
         }
 
-        composeTestRule.onNodeWithText("통화").performClick()
+        composeTestRule.onNodeWithText("전화 앱 열기").performClick()
 
         composeTestRule.runOnIdle {
             assertEquals(true, didRequestCall)
@@ -140,94 +211,81 @@ class HomeEmergencyCallFlowTest {
 
 @Composable
 private fun HeadquartersCallNavigationTestContent(
-    startAtPermissionNotice: Boolean = false,
-    onCallStarted: () -> Unit,
+    onDialerOpened: () -> Unit,
+    onIntentLaunched: (Intent) -> Unit = {},
     onDialogBlurMeasured: ((Int) -> Unit)? = null,
 ) {
-    val backStack =
-        rememberNavBackStack(
-            HeartGuardDestination.Home,
-            *if (startAtPermissionNotice) {
-                arrayOf(
-                    HeartGuardDestination.HeadquartersContact,
-                    HeartGuardDestination.HeadquartersCallConfirmation,
-                    HeartGuardDestination.HeadquartersCallPermission,
-                )
-            } else {
-                emptyArray()
-            },
-        )
-    val sceneStrategies: List<SceneStrategy<androidx.navigation3.runtime.NavKey>> =
-        listOf(
-            DialogSceneStrategy(),
-            HeartGuardBottomSheetSceneStrategy(),
-            SinglePaneSceneStrategy(),
-        )
-
-    NavDisplay(
-        backStack = backStack,
-        onBack = {
-            if (backStack.size > 1) {
-                backStack.removeLastOrNull()
+    val baseContext = LocalContext.current
+    val dialerContext =
+        remember(baseContext, onIntentLaunched) {
+            object : ContextWrapper(baseContext) {
+                override fun startActivity(intent: Intent) {
+                    onIntentLaunched(intent)
+                }
             }
-        },
-        sceneStrategies = sceneStrategies,
-        entryProvider =
-            entryProvider {
-                entry<HeartGuardDestination.Home> {
-                    Column {
-                        Text("홈")
-                        Button(
-                            onClick = {
-                                backStack.add(HeartGuardDestination.HeadquartersContact)
-                            },
-                        ) {
-                            Text("긴급 전화 열기")
+        }
+
+    CompositionLocalProvider(LocalContext provides dialerContext) {
+        val backStack = rememberNavBackStack(HeartGuardDestination.Home)
+        val sceneStrategies: List<SceneStrategy<androidx.navigation3.runtime.NavKey>> =
+            listOf(
+                DialogSceneStrategy(),
+                HeartGuardBottomSheetSceneStrategy(),
+                SinglePaneSceneStrategy(),
+            )
+
+        NavDisplay(
+            backStack = backStack,
+            onBack = {
+                if (backStack.size > 1) {
+                    backStack.removeLastOrNull()
+                }
+            },
+            sceneStrategies = sceneStrategies,
+            entryProvider =
+                entryProvider {
+                    entry<HeartGuardDestination.Home> {
+                        Column {
+                            Text("홈")
+                            Button(
+                                onClick = {
+                                    backStack.add(HeartGuardDestination.HeadquartersContact)
+                                },
+                            ) {
+                                Text("긴급 전화 열기")
+                            }
                         }
                     }
-                }
-                entry<HeartGuardDestination.HeadquartersContact>(
-                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
-                ) {
-                    HomeHeadquartersContactRoute(
-                        onCallClick = {
-                            backStack.add(HeartGuardDestination.HeadquartersCallConfirmation)
-                        },
-                    )
-                }
-                entry<HeartGuardDestination.HeadquartersCallConfirmation>(
-                    metadata =
-                        DialogSceneStrategy.dialog(
-                            DialogProperties(usePlatformDefaultWidth = false),
-                        ),
-                ) {
-                    HomeHeadquartersCallConfirmationRoute(
-                        onDismissRequest = {
-                            backStack.removeLastOrNull()
-                        },
-                        onPermissionDenied = {
-                            backStack.add(HeartGuardDestination.HeadquartersCallPermission)
-                        },
-                        onCallStarted = onCallStarted,
-                    )
-                    if (onDialogBlurMeasured != null) {
-                        DialogBlurRadiusProbe(onBlurRadiusMeasured = onDialogBlurMeasured)
+                    entry<HeartGuardDestination.HeadquartersContact>(
+                        metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
+                    ) {
+                        HomeHeadquartersContactRoute(
+                            onCallClick = {
+                                backStack.add(HeartGuardDestination.HeadquartersCallConfirmation)
+                            },
+                        )
                     }
-                }
-                entry<HeartGuardDestination.HeadquartersCallPermission>(
-                    metadata =
-                        DialogSceneStrategy.dialog(
-                            DialogProperties(usePlatformDefaultWidth = false),
-                        ),
-                ) {
-                    HomeHeadquartersCallPermissionRoute(
-                        onDismissRequest = {
-                            backStack.removeLastOrNull()
-                        },
-                    )
-                }
-            },
-    )
+                    entry<HeartGuardDestination.HeadquartersCallConfirmation>(
+                        metadata =
+                            DialogSceneStrategy.dialog(
+                                DialogProperties(usePlatformDefaultWidth = false),
+                            ),
+                    ) {
+                        CompositionLocalProvider(LocalContext provides dialerContext) {
+                            HomeHeadquartersCallConfirmationRoute(
+                                onDismissRequest = {
+                                    backStack.removeLastOrNull()
+                                },
+                                onDialerOpened = onDialerOpened,
+                            )
+                            if (onDialogBlurMeasured != null) {
+                                DialogBlurRadiusProbe(onBlurRadiusMeasured = onDialogBlurMeasured)
+                            }
+                        }
+                    }
+                },
+        )
+    }
 }
 
 @Composable

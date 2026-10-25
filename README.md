@@ -31,7 +31,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | 화면 | 설명 |
 |---|---|
 | Login / SignUpForm / PhoneNumberLink | Team 로그인, 이메일 인증코드 기반 Team 가입·로그인, Android App Link에서 전달된 현장 토큰과 담당자 전화번호로 현장 연동 |
-| Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 기존 현장관리자 긴급호출 화면으로 이동한다. "긴급 전화"는 임시 본사 번호(010-5080-4623) 확인 팝업에서 통화를 선택하면 권한 확인 후 직접 전화한다. 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
+| Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 기존 현장관리자 긴급호출 화면으로 이동한다. "긴급 전화"는 임시 본사 번호(010-5080-4623)를 확인창과 전화 앱에 표시하며, 전화 앱에서 사용자가 발신을 확인한다. 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
 | ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
 | Inquiry | 문의 등록과 내 문의 목록(상태 배지·등록일). 문의 상세 화면은 범위 밖 |
 | Notifications | 홈·기록 화면의 벨에서 진입. 전체/기록/긴급/공지 분류 필터와 20개 단위 cursor 페이지를 제공합니다. 응답의 `type`과 `resourceId`는 데이터 계층에서 알림 대상(기록 `recordId`·긴급호출 `callId`·문의 답변 `inquiryId`)으로 구분해 매핑하며, 명세에 없는 `type`은 대상이 없습니다. 행 탭은 안 읽은 알림을 읽음 처리하고 관련 화면을 엽니다(기록 → 기록 상세, 문의 답변 → 문의하기, 긴급호출 확인 → 진행 중인 호출이 있을 때만 호출 중 화면). 이미 읽은 알림도 탭할 수 있으며, ‘모두 읽음’ 버튼은 서버의 일괄 API를 한 번 호출한 뒤 목록을 다시 조회합니다. 서버에 알림 본문 필드가 없어 제목·시각·읽음 상태를 표시합니다. 초기 로딩·오류/재시도·전체/분류별 빈 상태·추가 페이지 로딩/재시도 상태를 제공합니다 ([Figma 목록 프레임](https://www.figma.com/design/d9MzGARXpSX1Y53E64hdog/%EC%9D%B4%EC%9D%8C%EC%82%B0%EC%97%85%EA%B1%B4%EC%84%A4?node-id=914-1016), [빈 상태 프레임](https://www.figma.com/design/d9MzGARXpSX1Y53E64hdog/%EC%9D%B4%EC%9D%8C%EC%82%B0%EC%97%85%EA%B1%B4%EC%84%A4?node-id=914-1236)) |
