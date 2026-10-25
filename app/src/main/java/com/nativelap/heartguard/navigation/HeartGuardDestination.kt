@@ -33,6 +33,7 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object ChecklistOverview : HeartGuardDestination
 
     @Serializable
+    // 이전 버전의 저장된 데모 back stack을 서버 화면으로 복원할 때만 사용한다.
     data object ChecklistDemoOverview : HeartGuardDestination
 
     @Serializable
@@ -41,6 +42,7 @@ internal sealed interface HeartGuardDestination : NavKey {
     ) : HeartGuardDestination
 
     @Serializable
+    // 이전 버전의 저장된 데모 back stack을 서버 화면으로 복원할 때만 사용한다.
     data class ChecklistDemoPeriod(
         val time: String,
     ) : HeartGuardDestination

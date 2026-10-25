@@ -35,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,23 +92,19 @@ internal fun ChecklistOverviewScreen(
     onRetryClick: () -> Unit,
     onPeriodClick: (LocalTime) -> Unit,
     onNewDay: () -> Unit = {},
-    onDemoClick: (() -> Unit)? = null,
-    fixedOverviewDate: LocalDate? = null,
     modifier: Modifier = Modifier,
 ) {
     var overviewDate by remember { mutableStateOf(LocalDate.now(KOREA_ZONE)) }
     val periods = schedule.toOverviewPeriods()
     val completedCount = periods.count { period -> period.status == PeriodStatus.COMPLETED }
 
-    LaunchedEffect(fixedOverviewDate) {
-        if (fixedOverviewDate == null) {
-            while (true) {
-                delay(CHECKLIST_OVERVIEW_DATE_POLL_MILLIS)
-                val currentDate = LocalDate.now(KOREA_ZONE)
-                if (currentDate != overviewDate) {
-                    overviewDate = currentDate
-                    onNewDay()
-                }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(CHECKLIST_OVERVIEW_DATE_POLL_MILLIS)
+            val currentDate = LocalDate.now(KOREA_ZONE)
+            if (currentDate != overviewDate) {
+                overviewDate = currentDate
+                onNewDay()
             }
         }
     }
@@ -158,19 +153,8 @@ internal fun ChecklistOverviewScreen(
                         warningCount = periods.count { period -> period.status == PeriodStatus.WARNING },
                         totalCount = periods.size,
                         siteLabel = siteLabel,
-                        date = fixedOverviewDate ?: overviewDate,
+                        date = overviewDate,
                     )
-                }
-            }
-
-            if (onDemoClick != null) {
-                item(key = "overview-demo-entry") {
-                    TextButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = onDemoClick,
-                    ) {
-                        Text(text = stringResource(R.string.checklist_demo_entry))
-                    }
                 }
             }
 
@@ -249,7 +233,6 @@ internal fun ChecklistOverviewScreen(
                     items(periods, key = { period -> period.time.toString() }) { period ->
                         OverviewPeriodCard(
                             period = period,
-                            isDemo = fixedOverviewDate != null,
                             onClick = { onPeriodClick(period.time) },
                         )
                     }
@@ -262,7 +245,6 @@ internal fun ChecklistOverviewScreen(
 @Composable
 private fun OverviewPeriodCard(
     period: OverviewPeriod,
-    isDemo: Boolean,
     onClick: () -> Unit,
 ) {
     val (statusLabel, labelColor, badgeColor) =
@@ -299,8 +281,6 @@ private fun OverviewPeriodCard(
                 )
             }
         }
-    val detailLabel = if (isDemo) period.demoMetadata() else null
-
     Row(
         modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(CHECKLIST_TIMELINE_CARD_GAP),
@@ -426,22 +406,6 @@ private fun OverviewPeriodCard(
                         color =
                             MaterialTheme.extraColors.strongText,
                     )
-                    detailLabel?.let { metadata ->
-                        Text(
-                            text = metadata,
-                            style =
-                                MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = CHECKLIST_ROUND_DETAIL_SIZE,
-                                    lineHeight = CHECKLIST_ROUND_DETAIL_LINE_HEIGHT,
-                                ),
-                            color =
-                                if (period.status == PeriodStatus.WARNING) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.extraColors.strongText
-                                },
-                        )
-                    }
                 }
                 Surface(
                     shape = RoundedCornerShape(HeartGuardRadius.Pill),
@@ -479,52 +443,6 @@ private fun statusColor(status: PeriodStatus): Color =
         PeriodStatus.WARNING -> MaterialTheme.colorScheme.error
         PeriodStatus.CURRENT -> MaterialTheme.colorScheme.primary
         PeriodStatus.UPCOMING -> MaterialTheme.extraColors.secondaryText
-    }
-
-@Composable
-private fun OverviewPeriod.demoMetadata(): String =
-    when (status) {
-        PeriodStatus.COMPLETED -> {
-            val completedAt =
-                when (time.hour) {
-                    8 -> "08:12"
-                    10 -> "10:05"
-                    14 -> "14:20"
-                    18 -> "18:09"
-                    else -> null
-                }
-            if (completedAt == null) {
-                stringResource(R.string.checklist_demo_completed_metadata_generic, CHECKLIST_DEMO_ITEM_COUNT)
-            } else {
-                stringResource(
-                    R.string.checklist_demo_completed_metadata_format,
-                    CHECKLIST_DEMO_ITEM_COUNT,
-                    completedAt,
-                )
-            }
-        }
-
-        PeriodStatus.WARNING -> {
-            stringResource(
-                R.string.checklist_demo_missed_metadata_format,
-                if (time.hour == 12) CHECKLIST_DEMO_PARTIAL_ITEM_COUNT else 0,
-            )
-        }
-
-        PeriodStatus.CURRENT -> {
-            stringResource(
-                R.string.checklist_demo_current_metadata_format,
-                if (time.hour == 20) CHECKLIST_DEMO_PARTIAL_ITEM_COUNT else 0,
-                time.plusMinutes(CHECKLIST_DEMO_PERIOD_DEADLINE_MINUTES).format(CHECKLIST_OVERVIEW_TIME_FORMATTER),
-            )
-        }
-
-        PeriodStatus.UPCOMING -> {
-            stringResource(
-                R.string.checklist_demo_upcoming_metadata_format,
-                time.format(CHECKLIST_OVERVIEW_TIME_FORMATTER),
-            )
-        }
     }
 
 @Composable
@@ -838,12 +756,6 @@ private val CHECKLIST_STATUS_BADGE_VERTICAL = 3.dp
 private val CHECKLIST_STATUS_BADGE_SIZE = 11.sp
 private val CHECKLIST_ROUND_TITLE_SIZE = 15.sp
 private val CHECKLIST_ROUND_TITLE_LINE_HEIGHT = 18.sp
-private val CHECKLIST_ROUND_DETAIL_SIZE = 12.sp
-private val CHECKLIST_ROUND_DETAIL_LINE_HEIGHT = 14.sp
-private const val CHECKLIST_DEMO_ITEM_COUNT = 6
-private const val CHECKLIST_DEMO_PARTIAL_ITEM_COUNT = 3
-private const val CHECKLIST_DEMO_PERIOD_DEADLINE_MINUTES = 59L
-private val CHECKLIST_OVERVIEW_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
 private val CHECKLIST_OVERVIEW_CARD_ELEVATION = 10.dp
 private val CHECKLIST_OVERVIEW_RADIUS = 22.dp
 private val CHECKLIST_OVERVIEW_CARD_HEIGHT = 168.dp
