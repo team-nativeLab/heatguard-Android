@@ -20,6 +20,46 @@ import org.junit.Test
 
 class AppSiteLinkApiServiceTest {
     @Test
+    fun `선택 현장 대시보드는 현장마다 별도 범위 헤더를 보낸다`() =
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            try {
+                repeat(2) {
+                    server.enqueue(
+                        MockResponse
+                            .Builder()
+                            .code(200)
+                            .body(
+                                """{"success":true,"data":{"summary":{"todayRecordCount":2,"activeEmergencyCount":0}}}""",
+                            ).build(),
+                    )
+                }
+                val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+                val service = createService(server, sessionManager)
+
+                assertEquals(
+                    2,
+                    service
+                        .getDashboard("a")
+                        .data
+                        ?.summary
+                        ?.todayRecordCount,
+                )
+                service.getDashboard("b")
+                val first = server.takeRequest()
+                val second = server.takeRequest()
+                assertEquals("/api/v1/site/dashboard", first.url.encodedPath)
+                assertEquals("Bearer x", first.headers["Authorization"])
+                assertEquals("a", first.headers["X-Site-Id"])
+                assertEquals("b", second.headers["X-Site-Id"])
+            } finally {
+                server.close()
+            }
+        }
+
+    @Test
     fun `현장 해제는 앱 계정으로 해당 현장 링크만 삭제한다`() =
         runBlocking {
             val server = MockWebServer()

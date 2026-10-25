@@ -18,12 +18,14 @@ class AppLinkTokenStore
 
         val pendingLink: StateFlow<PendingAppLink?> = mutablePendingLink.asStateFlow()
 
-        fun accept(link: String?) {
+        fun accept(link: String?): Boolean {
             val token = link?.let(::extractToken)
             if (token != null) {
                 nextLinkId += 1L
                 mutablePendingLink.value = PendingAppLink(token, nextLinkId)
+                return true
             }
+            return false
         }
 
         fun consume(link: PendingAppLink) {

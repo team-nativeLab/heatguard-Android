@@ -6,7 +6,9 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.domain.auth.usecase.LogoutAppAccountUseCase
 import com.nativelap.heartguard.domain.site.model.AppLinkedSite
+import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
 import com.nativelap.heartguard.domain.site.usecase.GetAppLinkedSitesUseCase
+import com.nativelap.heartguard.domain.site.usecase.GetAppSiteDashboardUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetSelectedAppSiteIdUseCase
 import com.nativelap.heartguard.domain.site.usecase.SelectAppSiteUseCase
 import com.nativelap.heartguard.domain.site.usecase.UnlinkAppSiteUseCase
@@ -26,6 +28,7 @@ internal class AppAccountSitesViewModel
         private val getSelectedAppSiteIdUseCase: GetSelectedAppSiteIdUseCase,
         private val selectAppSiteUseCase: SelectAppSiteUseCase,
         private val unlinkAppSiteUseCase: UnlinkAppSiteUseCase,
+        private val getAppSiteDashboardUseCase: GetAppSiteDashboardUseCase,
         private val logoutAppAccountUseCase: LogoutAppAccountUseCase,
         private val sessionManager: SessionManager,
     ) : ViewModel() {
@@ -46,7 +49,7 @@ internal class AppAccountSitesViewModel
             if (isBusy()) {
                 return
             }
-            mutableUiState.update { it.copy(isLoading = true, hasFailure = false) }
+            mutableUiState.update { it.copy(isLoading = true, hasFailure = false, dashboard = null) }
             viewModelScope.launch {
                 when (val result = getAppLinkedSitesUseCase()) {
                     is ApiResult.Success -> {
@@ -55,12 +58,20 @@ internal class AppAccountSitesViewModel
                                 isLoading = false,
                                 linkedSites = result.value,
                                 selectedSiteId = getSelectedAppSiteIdUseCase(),
+                                openedSiteId =
+                                    it.openedSiteId?.takeIf { openedId ->
+                                        result.value.any { site ->
+                                            site.siteId ==
+                                                openedId
+                                        }
+                                    },
                             )
                         }
+                        mutableUiState.value.openedSiteId?.let { loadDashboard(it) }
                     }
 
                     is ApiResult.Failure -> {
-                        mutableUiState.update { it.copy(isLoading = false, hasFailure = true) }
+                        mutableUiState.update { it.copy(isLoading = false, hasFailure = true, dashboard = null) }
                     }
                 }
             }
@@ -78,8 +89,11 @@ internal class AppAccountSitesViewModel
                             it.copy(
                                 isSelectingSite = false,
                                 selectedSiteId = result.value.siteId,
+                                openedSiteId = result.value.siteId,
+                                dashboard = null,
                             )
                         }
+                        loadDashboard(result.value.siteId)
                     }
 
                     is ApiResult.Failure -> {
@@ -90,7 +104,34 @@ internal class AppAccountSitesViewModel
         }
 
         private fun isBusy(): Boolean =
-            mutableUiState.value.let { it.isLoading || it.isSelectingSite || it.isUnlinkingSite }
+            mutableUiState.value.let {
+                it.isLoading || it.isSelectingSite || it.isUnlinkingSite || it.isLoadingDashboard
+            }
+
+        private suspend fun loadDashboard(siteId: String) {
+            mutableUiState.update { it.copy(isLoadingDashboard = true, dashboard = null, hasDashboardFailure = false) }
+            when (val result = getAppSiteDashboardUseCase(siteId)) {
+                is ApiResult.Success -> {
+                    mutableUiState.update { it.copy(isLoadingDashboard = false, dashboard = result.value) }
+                }
+
+                is ApiResult.Failure -> {
+                    mutableUiState.update {
+                        it.copy(
+                            isLoadingDashboard = false,
+                            dashboard = null,
+                            hasDashboardFailure = true,
+                        )
+                    }
+                }
+            }
+        }
+
+        fun closeDashboard() {
+            if (!isBusy()) {
+                mutableUiState.update { it.copy(openedSiteId = null, dashboard = null, hasDashboardFailure = false) }
+            }
+        }
 
         fun unlinkSite(siteId: String) {
             if (isBusy()) {
@@ -105,6 +146,8 @@ internal class AppAccountSitesViewModel
                                 isUnlinkingSite = false,
                                 linkedSites = it.linkedSites.filterNot { site -> site.siteId == siteId },
                                 selectedSiteId = getSelectedAppSiteIdUseCase(),
+                                openedSiteId = it.openedSiteId?.takeUnless { openedId -> openedId == siteId },
+                                dashboard = null,
                             )
                         }
                         refresh()
@@ -133,5 +176,9 @@ internal data class AppAccountSitesUiState(
     val isSelectingSite: Boolean = false,
     val isUnlinkingSite: Boolean = false,
     val hasUnlinkFailure: Boolean = false,
+    val openedSiteId: String? = null,
+    val dashboard: AppSiteDashboard? = null,
+    val isLoadingDashboard: Boolean = false,
+    val hasDashboardFailure: Boolean = false,
     val hasFailure: Boolean = false,
 )

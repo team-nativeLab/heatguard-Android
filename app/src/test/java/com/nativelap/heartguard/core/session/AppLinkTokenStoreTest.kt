@@ -1,9 +1,41 @@
 package com.nativelap.heartguard.core.session
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppLinkTokenStoreTest {
+    @Test
+    fun pendingLinkSurvivesAccountLoginUntilPhoneClaimCompletes() =
+        runTest {
+            val store = AppLinkTokenStore()
+            val session = createTestSessionManager(Dispatchers.Unconfined)
+            assertTrue(store.accept("https://heatguard-temp.https.gsmsv.site/api/v1/app/links/pending-token"))
+            val pending = requireNotNull(store.pendingLink.value)
+
+            session.onLoginSucceeded(SessionToken("app-account", SessionRole.APP_ACCOUNT))
+
+            assertEquals(pending, store.pendingLink.value)
+            store.consume(pending)
+            assertEquals(null, store.pendingLink.value)
+        }
+
+    @Test
+    fun additionalSiteLinkUsesSamePendingClaimFlowAndRejectsInvalidInput() {
+        val store = AppLinkTokenStore()
+        assertTrue(store.accept("https://heatguard-temp.https.gsmsv.site/api/v1/app/links/first-site"))
+        store.consume(requireNotNull(store.pendingLink.value))
+        assertFalse(store.accept("https://example.com/invalid"))
+        assertEquals(null, store.pendingLink.value)
+
+        assertTrue(store.accept("https://heatguard-temp.https.gsmsv.site/api/v1/app/links/second-site"))
+
+        assertEquals("second-site", store.pendingLink.value?.token)
+    }
+
     @Test
     fun acceptsTokenFromSupportedAppLink() {
         val store = AppLinkTokenStore()

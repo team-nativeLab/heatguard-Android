@@ -8,6 +8,7 @@ import com.nativelap.heartguard.data.site.mapper.toDomain
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkRemoteDataSource
 import com.nativelap.heartguard.domain.site.model.AppLinkedSite
 import com.nativelap.heartguard.domain.site.model.AppSelectedSite
+import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
 import com.nativelap.heartguard.domain.site.model.AppSiteLinkClaim
 import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import kotlinx.coroutines.CancellationException
@@ -19,6 +20,18 @@ class AppSiteLinkRepositoryImpl
         private val appSiteLinkRemoteDataSource: AppSiteLinkRemoteDataSource,
         private val tokenStorage: TokenStorage,
     ) : AppSiteLinkRepository {
+        override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboard> {
+            if (siteId.isBlank()) {
+                return ApiResult.Failure(ApiError.Unknown)
+            }
+            return appSiteLinkRemoteDataSource.getDashboard(siteId).map { response ->
+                AppSiteDashboard(
+                    todayRecordCount = response.summary.todayRecordCount,
+                    activeEmergencyCount = response.summary.activeEmergencyCount,
+                )
+            }
+        }
+
         override suspend fun claim(
             token: String,
             managerPhone: String,

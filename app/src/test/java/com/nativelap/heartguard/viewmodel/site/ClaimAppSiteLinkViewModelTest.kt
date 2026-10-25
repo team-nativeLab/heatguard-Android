@@ -5,6 +5,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.PendingAppLink
 import com.nativelap.heartguard.domain.site.model.AppLinkedSite
 import com.nativelap.heartguard.domain.site.model.AppSelectedSite
+import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
 import com.nativelap.heartguard.domain.site.model.AppSiteLinkClaim
 import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import com.nativelap.heartguard.domain.site.usecase.ClaimAppSiteLinkUseCase
@@ -119,6 +120,8 @@ private class FakeAppSiteLinkRepository(
     }
 
     override suspend fun unlinkSite(siteId: String): ApiResult<Unit> = ApiResult.Success(Unit)
+
+    override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboard> = error("Not used")
 
     override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> = ApiResult.Success(emptyList())
 

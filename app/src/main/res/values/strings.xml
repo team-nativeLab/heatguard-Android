@@ -75,6 +75,15 @@
     <string name="app_account_site_select">이 현장 선택</string>
     <string name="app_account_site_selected">선택됨</string>
     <string name="app_account_site_unlink">연동 해제</string>
+    <string name="app_account_sites_switch">내 현장 목록 · 현장 전환</string>
+    <string name="app_account_add_site">새로운 현장 연동하기</string>
+    <string name="app_account_link_input_label">전달받은 연동 링크</string>
+    <string name="app_account_link_input_hint">현장 관리자가 전달한 링크를 붙여넣으세요. 다음 화면에서 담당자 전화번호를 확인합니다.</string>
+    <string name="app_account_link_invalid">유효한 현장 연동 링크를 입력해주세요.</string>
+    <string name="app_account_dashboard_loading">현장 대시보드를 불러오는 중입니다.</string>
+    <string name="app_account_dashboard_error">현장 정보에 접근할 수 없습니다. 연동 상태와 네트워크를 확인해주세요.</string>
+    <string name="app_account_dashboard_records">오늘 기록: %1$d건</string>
+    <string name="app_account_dashboard_emergencies">긴급호출: %1$d건</string>
     <string name="app_account_site_unlink_confirmation">%1$s 연동을 해제할까요? 해제하면 이 현장에 접근할 수 없습니다. 다른 현장 연동은 유지됩니다.</string>
     <string name="app_account_site_unlink_error">연동 해제를 완료하지 못했습니다. 현장 목록을 확인하고 다시 시도해주세요.</string>
     <string name="home_weather_status">현재 온도</string>

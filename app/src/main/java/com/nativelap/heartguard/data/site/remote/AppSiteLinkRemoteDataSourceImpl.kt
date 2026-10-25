@@ -4,6 +4,7 @@ import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.site.dto.AppLinkedSitesResponseDto
+import com.nativelap.heartguard.data.site.dto.AppSiteDashboardDto
 import com.nativelap.heartguard.data.site.dto.AppSiteLinkClaimResponseDto
 import com.nativelap.heartguard.data.site.dto.AppSiteSelectionResponseDto
 import com.nativelap.heartguard.data.site.dto.ClaimAppSiteLinkRequestDto
@@ -15,6 +16,13 @@ class AppSiteLinkRemoteDataSourceImpl
         private val appSiteLinkApiService: AppSiteLinkApiService,
         private val apiExecutor: ApiExecutor,
     ) : AppSiteLinkRemoteDataSource {
+        override suspend fun getDashboard(siteId: String): ApiResult<AppSiteDashboardDto> =
+            apiExecutor
+                .execute { appSiteLinkApiService.getDashboard(siteId) }
+                .requireSuccessData { response ->
+                    response.summary.todayRecordCount >= 0 && response.summary.activeEmergencyCount >= 0
+                }
+
         override suspend fun unlinkSite(siteId: String): ApiResult<Unit> =
             apiExecutor.execute { appSiteLinkApiService.unlinkSite(siteId) }
 

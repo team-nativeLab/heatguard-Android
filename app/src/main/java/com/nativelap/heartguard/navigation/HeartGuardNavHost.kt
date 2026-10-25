@@ -90,7 +90,10 @@ internal fun HeartGuardNavHost(
             when (sessionRole) {
                 SessionRole.APP_ACCOUNT -> {
                     if (pendingAppLink == null) {
-                        AppAccountSitesRoute()
+                        AppAccountSitesRoute(
+                            onOpenLink = appLinkTokenViewModel::accept,
+                            viewModel = hiltViewModel(key = "app-sites-$sessionGeneration"),
+                        )
                     } else {
                         HeartGuardPhoneNumberRoute(
                             pendingAppLink = requireNotNull(pendingAppLink),
