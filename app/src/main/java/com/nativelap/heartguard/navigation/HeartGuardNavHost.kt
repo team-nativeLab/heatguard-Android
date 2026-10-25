@@ -32,8 +32,6 @@ import com.nativelap.heartguard.view.route.auth.HeartGuardAppAccountLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
-import com.nativelap.heartguard.view.route.checklist.ChecklistDemoOverviewRoute
-import com.nativelap.heartguard.view.route.checklist.ChecklistDemoPeriodRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
@@ -59,7 +57,6 @@ import com.nativelap.heartguard.view.route.site.TeamSiteSelectionRoute
 import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
-import com.nativelap.heartguard.viewmodel.checklist.ChecklistDemoViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
@@ -301,7 +298,6 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
     val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val checklistViewModel: ChecklistViewModel = hiltViewModel()
-    val checklistDemoViewModel: ChecklistDemoViewModel = hiltViewModel()
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
@@ -544,28 +540,80 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                         onPeriodClick = { time ->
                             backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
                         },
-                        onDemoClick = {
-                            checklistDemoViewModel.startDemo()
-                            backStack.add(HeartGuardDestination.ChecklistDemoOverview)
-                        },
                     )
                 }
                 entry<HeartGuardDestination.ChecklistDemoOverview> {
-                    ChecklistDemoOverviewRoute(
-                        checklistDemoViewModel = checklistDemoViewModel,
+                    ChecklistOverviewScreen(
+                        schedule = checkSchedule.takeIf { homeUiState is HomeUiState.Success },
+                        siteLabel = checklistSiteLabel,
+                        isLoading = homeUiState is HomeUiState.Loading,
+                        hasLoadError = homeUiState is HomeUiState.Error,
                         onBackClick = ::goBack,
+                        onRetryClick = homeViewModel::loadTeamSiteOverview,
+                        onNewDay = homeViewModel::refreshForNewDay,
                         onPeriodClick = { time ->
-                            backStack.add(HeartGuardDestination.ChecklistDemoPeriod(time = time.toString()))
+                            backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
                         },
                     )
                 }
                 entry<HeartGuardDestination.ChecklistDemoPeriod> { destination ->
-                    ChecklistDemoPeriodRoute(
-                        checklistDemoViewModel = checklistDemoViewModel,
-                        time = destination.time,
-                        onBackClick = ::goBack,
-                        onCompleteClick = ::goBack,
-                    )
+                    val restoredTime = runCatching { java.time.LocalTime.parse(destination.time) }.getOrNull()
+                    when (val currentHomeUiState = homeUiState) {
+                        is HomeUiState.Loading -> {
+                            ChecklistOverviewScreen(
+                                schedule = null,
+                                siteLabel = checklistSiteLabel,
+                                isLoading = true,
+                                hasLoadError = false,
+                                onBackClick = ::goBack,
+                                onRetryClick = homeViewModel::loadTeamSiteOverview,
+                                onNewDay = homeViewModel::refreshForNewDay,
+                                onPeriodClick = { time ->
+                                    backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
+                                },
+                            )
+                        }
+
+                        is HomeUiState.Error -> {
+                            ChecklistOverviewScreen(
+                                schedule = null,
+                                siteLabel = checklistSiteLabel,
+                                isLoading = false,
+                                hasLoadError = true,
+                                onBackClick = ::goBack,
+                                onRetryClick = homeViewModel::loadTeamSiteOverview,
+                                onNewDay = homeViewModel::refreshForNewDay,
+                                onPeriodClick = { time ->
+                                    backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
+                                },
+                            )
+                        }
+
+                        is HomeUiState.Success -> {
+                            val isScheduledTime =
+                                restoredTime != null &&
+                                    currentHomeUiState.overview.checkTimes.any { rawTime ->
+                                        runCatching { java.time.LocalTime.parse(rawTime) }.getOrNull() == restoredTime
+                                    }
+                            if (isScheduledTime) {
+                                ChecklistRoute(
+                                    checklistViewModel = checklistViewModel,
+                                    checkSchedule = checkSchedule,
+                                    selectedTime = restoredTime,
+                                    siteLabel = checklistSiteLabel,
+                                    onBackClick = ::goBack,
+                                    onCompleteClick = ::goHome,
+                                )
+                            } else {
+                                LaunchedEffect(destination) {
+                                    if (backStack.lastOrNull() == destination) {
+                                        backStack.removeLastOrNull()
+                                        backStack.add(HeartGuardDestination.ChecklistOverview)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 entry<HeartGuardDestination.Checklist> {
                     ChecklistRoute(
