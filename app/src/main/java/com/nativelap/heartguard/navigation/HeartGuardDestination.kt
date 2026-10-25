@@ -1,0 +1,119 @@
+package com.nativelap.heartguard.navigation
+
+import androidx.navigation3.runtime.NavKey
+import com.nativelap.heartguard.view.component.RecordType
+import kotlinx.serialization.Serializable
+
+/** 폭염가드에서 사용하는 모든 화면과 오버레이를 타입 안전한 Navigation 3 목적지로 정의한다. */
+@Serializable
+internal sealed interface HeartGuardDestination : NavKey {
+    @Serializable
+    data object Login : HeartGuardDestination
+
+    @Serializable
+    data object AppAccountLogin : HeartGuardDestination
+
+    // Navigation 3가 이전 버전의 저장된 back stack을 복원할 때 사용할 호환 키다.
+    @Serializable
+    data object SignUp : HeartGuardDestination
+
+    @Serializable
+    data object SignUpForm : HeartGuardDestination
+
+    @Serializable
+    data object Home : HeartGuardDestination
+
+    @Serializable
+    data object TeamSiteSelection : HeartGuardDestination
+
+    @Serializable
+    data object Checklist : HeartGuardDestination
+
+    @Serializable
+    data object ChecklistOverview : HeartGuardDestination
+
+    @Serializable
+    // 이전 버전의 저장된 데모 back stack을 서버 화면으로 복원할 때만 사용한다.
+    data object ChecklistDemoOverview : HeartGuardDestination
+
+    @Serializable
+    data class ChecklistPeriod(
+        val time: String,
+    ) : HeartGuardDestination
+
+    @Serializable
+    // 이전 버전의 저장된 데모 back stack을 서버 화면으로 복원할 때만 사용한다.
+    data class ChecklistDemoPeriod(
+        val time: String,
+    ) : HeartGuardDestination
+
+    @Serializable
+    data object ProfileEdit : HeartGuardDestination
+
+    @Serializable
+    data object PasswordChange : HeartGuardDestination
+
+    @Serializable
+    data object Inquiry : HeartGuardDestination
+
+    @Serializable
+    data object TeamNotifications : HeartGuardDestination
+
+    @Serializable
+    data object RecordHistory : HeartGuardDestination
+
+    @Serializable
+    data class RecordHistoryDetail(
+        val recordId: String,
+    ) : HeartGuardDestination
+
+    @Serializable
+    data object Emergency : HeartGuardDestination
+
+    @Serializable
+    data object Calling : HeartGuardDestination
+
+    @Serializable
+    data object HeadquartersContact : HeartGuardDestination
+
+    @Serializable
+    data object HeadquartersCallConfirmation : HeartGuardDestination
+
+    @Serializable
+    data object RecordTypeSelection : HeartGuardDestination
+
+    @Serializable
+    data object TemperatureRecord : HeartGuardDestination
+
+    @Serializable
+    data object FieldPhoto : HeartGuardDestination
+
+    @Serializable
+    data object WorkPhoto : HeartGuardDestination
+
+    @Serializable
+    data object RestPhoto : HeartGuardDestination
+
+    @Serializable
+    data class PhotoCamera(
+        val recordType: RecordType,
+    ) : HeartGuardDestination
+
+    @Serializable
+    data object SaveSuccess : HeartGuardDestination
+
+    @Serializable
+    data object SaveFailure : HeartGuardDestination
+
+    @Serializable
+    data object RecordCancelConfirm : HeartGuardDestination
+
+    @Serializable
+    data object WithdrawNotice : HeartGuardDestination
+
+    @Serializable
+    data object WithdrawConfirm : HeartGuardDestination
+
+    @Serializable
+    data object WithdrawDone : HeartGuardDestination
+}

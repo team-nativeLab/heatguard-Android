@@ -1,0 +1,260 @@
+package com.nativelap.heartguard.viewmodel.auth
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.network.ApiError
+import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.domain.auth.usecase.LoginAppAccountUseCase
+import com.nativelap.heartguard.domain.auth.usecase.RegisterAppAccountUseCase
+import com.nativelap.heartguard.domain.auth.usecase.RequestAppEmailCodeUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+internal class AppAccountSignUpViewModel
+    @Inject
+    constructor(
+        private val requestAppEmailCodeUseCase: RequestAppEmailCodeUseCase,
+        private val registerAppAccountUseCase: RegisterAppAccountUseCase,
+        private val loginAppAccountUseCase: LoginAppAccountUseCase,
+    ) : ViewModel() {
+        private val mutableUiState = MutableStateFlow(AppAccountSignUpUiState())
+
+        val uiState: StateFlow<AppAccountSignUpUiState> = mutableUiState.asStateFlow()
+
+        fun requestEmailCode(email: String) {
+            val normalizedEmail = email.trim()
+            if (normalizedEmail.isBlank() || mutableUiState.value.isRequestingEmailCode ||
+                mutableUiState.value.isSubmitting || mutableUiState.value.resendCooldownSeconds > 0
+            ) {
+                return
+            }
+            mutableUiState.update {
+                it.copy(
+                    isRequestingEmailCode = true,
+                    failure = null,
+                )
+            }
+            viewModelScope.launch {
+                val result = requestAppEmailCodeUseCase(normalizedEmail)
+                when (result) {
+                    is ApiResult.Success -> {
+                        mutableUiState.update {
+                            it.copy(
+                                isRequestingEmailCode = false,
+                                isEmailCodeSent = true,
+                                emailForRequestedCode = normalizedEmail,
+                                resendCooldownSeconds = EMAIL_CODE_RESEND_COOLDOWN_SECONDS,
+                            )
+                        }
+                        startEmailCodeCooldown()
+                    }
+
+                    is ApiResult.Failure -> {
+                        mutableUiState.update {
+                            it.copy(
+                                isRequestingEmailCode = false,
+                                failure = result.error.toEmailCodeFailure(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun startEmailCodeCooldown() {
+            viewModelScope.launch {
+                for (remainingSeconds in EMAIL_CODE_RESEND_COOLDOWN_SECONDS downTo 1) {
+                    delay(ONE_SECOND_MILLIS)
+                    mutableUiState.update {
+                        it.copy(resendCooldownSeconds = remainingSeconds - 1)
+                    }
+                }
+            }
+        }
+
+        fun signUp(
+            email: String,
+            password: String,
+            confirmPassword: String,
+            verificationCode: String,
+        ) {
+            val normalizedEmail = email.trim()
+            val normalizedCode = verificationCode.filter(Char::isDigit)
+            if (mutableUiState.value.isSubmitting || mutableUiState.value.isRequestingEmailCode) {
+                return
+            }
+            if (!mutableUiState.value.isEmailCodeSent ||
+                mutableUiState.value.emailForRequestedCode != normalizedEmail
+            ) {
+                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
+                return
+            }
+            if (password.length < MIN_PASSWORD_LENGTH ||
+                password != confirmPassword ||
+                normalizedCode.length != VERIFICATION_CODE_LENGTH
+            ) {
+                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.INVALID_FORM) }
+                return
+            }
+
+            mutableUiState.update {
+                it.copy(
+                    isSubmitting = true,
+                    failure = null,
+                )
+            }
+            viewModelScope.launch {
+                val registrationResult =
+                    registerAppAccountUseCase(
+                        email = normalizedEmail,
+                        password = password,
+                        confirmPassword = confirmPassword,
+                        verificationCode = normalizedCode,
+                    )
+                when (registrationResult) {
+                    is ApiResult.Failure -> {
+                        mutableUiState.update {
+                            it.copy(
+                                isSubmitting = false,
+                                failure = registrationResult.error.toRegistrationFailure(),
+                            )
+                        }
+                    }
+
+                    is ApiResult.Success -> {
+                        when (loginAppAccountUseCase(normalizedEmail, password)) {
+                            is ApiResult.Success -> {
+                                mutableUiState.update {
+                                    it.copy(
+                                        isSubmitting = false,
+                                        isComplete = true,
+                                    )
+                                }
+                            }
+
+                            is ApiResult.Failure -> {
+                                mutableUiState.update {
+                                    it.copy(
+                                        isSubmitting = false,
+                                        failure = AppAccountSignUpFailure.LOGIN_AFTER_REGISTRATION,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun ApiError.toEmailCodeFailure(): AppAccountSignUpFailure =
+            when (this) {
+                is ApiError.Http -> {
+                    when {
+                        statusCode == HTTP_TOO_MANY_REQUESTS -> {
+                            AppAccountSignUpFailure.RATE_LIMITED
+                        }
+
+                        else -> {
+                            AppAccountSignUpFailure.EMAIL_CODE_REQUEST
+                        }
+                    }
+                }
+
+                ApiError.Network -> {
+                    AppAccountSignUpFailure.NETWORK
+                }
+
+                ApiError.SessionChanged,
+                ApiError.SiteNotSelected,
+                ApiError.Serialization,
+                ApiError.Unknown,
+                ApiError.LocalStorage,
+                is ApiError.ServerRejected,
+                -> {
+                    AppAccountSignUpFailure.EMAIL_CODE_REQUEST
+                }
+            }
+
+        private fun ApiError.toRegistrationFailure(): AppAccountSignUpFailure =
+            when (this) {
+                is ApiError.Http -> {
+                    when {
+                        errorCode == INVALID_VERIFICATION_CODE -> {
+                            AppAccountSignUpFailure.INVALID_VERIFICATION_CODE
+                        }
+
+                        statusCode == HTTP_CONFLICT && errorCode == EMAIL_ALREADY_EXISTS_CODE -> {
+                            AppAccountSignUpFailure.EMAIL_ALREADY_EXISTS
+                        }
+
+                        statusCode == HTTP_CONFLICT && errorCode == SILO_NOT_BOOTSTRAPPED -> {
+                            AppAccountSignUpFailure.ACCOUNT_NOT_READY
+                        }
+
+                        statusCode == HTTP_TOO_MANY_REQUESTS -> {
+                            AppAccountSignUpFailure.RATE_LIMITED
+                        }
+
+                        else -> {
+                            AppAccountSignUpFailure.REGISTRATION
+                        }
+                    }
+                }
+
+                ApiError.Network -> {
+                    AppAccountSignUpFailure.NETWORK
+                }
+
+                ApiError.SessionChanged,
+                ApiError.SiteNotSelected,
+                ApiError.Serialization,
+                ApiError.Unknown,
+                ApiError.LocalStorage,
+                is ApiError.ServerRejected,
+                -> {
+                    AppAccountSignUpFailure.REGISTRATION
+                }
+            }
+
+        private companion object {
+            const val VERIFICATION_CODE_LENGTH = 6
+            const val EMAIL_CODE_RESEND_COOLDOWN_SECONDS = 60
+            const val ONE_SECOND_MILLIS = 1_000L
+            const val MIN_PASSWORD_LENGTH = 8
+            const val HTTP_CONFLICT = 409
+            const val HTTP_TOO_MANY_REQUESTS = 429
+            const val EMAIL_ALREADY_EXISTS_CODE = "EMAIL_ALREADY_EXISTS"
+            const val INVALID_VERIFICATION_CODE = "INVALID_VERIFICATION_CODE"
+            const val SILO_NOT_BOOTSTRAPPED = "SILO_NOT_BOOTSTRAPPED"
+        }
+    }
+
+internal data class AppAccountSignUpUiState(
+    val isRequestingEmailCode: Boolean = false,
+    val isEmailCodeSent: Boolean = false,
+    val resendCooldownSeconds: Int = 0,
+    val emailForRequestedCode: String? = null,
+    val isSubmitting: Boolean = false,
+    val isComplete: Boolean = false,
+    val failure: AppAccountSignUpFailure? = null,
+)
+
+internal enum class AppAccountSignUpFailure {
+    EMAIL_CODE_REQUIRED,
+    EMAIL_CODE_REQUEST,
+    EMAIL_ALREADY_EXISTS,
+    RATE_LIMITED,
+    NETWORK,
+    INVALID_FORM,
+    INVALID_VERIFICATION_CODE,
+    ACCOUNT_NOT_READY,
+    REGISTRATION,
+    LOGIN_AFTER_REGISTRATION,
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Android GitHub Workflow"
+  short_description: "Manage Android GitHub issues, branches, commits, and PRs."
+  default_prompt: "Use this skill to create an Android GitHub issue, issue-linked branch, commit, and pull request following the project convention."

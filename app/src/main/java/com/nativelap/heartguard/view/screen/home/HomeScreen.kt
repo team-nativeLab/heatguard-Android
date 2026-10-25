@@ -1,0 +1,240 @@
+package com.nativelap.heartguard.view.screen.home
+
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.home.CheckTimelineItem
+import com.nativelap.heartguard.view.component.home.HomeAdditionalRecordCard
+import com.nativelap.heartguard.view.component.home.HomeCheckTimeline
+import com.nativelap.heartguard.view.component.home.HomeContactCard
+import com.nativelap.heartguard.view.component.home.WeatherStatusCard
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
+
+/** Figma 홈 리디자인의 날씨, 점검, 연락처, 추가 기록 영역을 하나의 화면으로 조립한다. */
+@Composable
+fun HomeScreen(
+    currentTemperature: String,
+    feelsLikeTemperature: String,
+    humidity: String,
+    temperatureDelta: String,
+    isTemperatureIncreasing: Boolean?,
+    weatherValue: String,
+    @DrawableRes weatherImageRes: Int,
+    riskLabel: String,
+    nextCheckDescription: String,
+    checkTimelineItems: List<CheckTimelineItem>,
+    onMenuClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onManagerCallClick: () -> Unit,
+    onEmergencyClick: () -> Unit,
+    onFieldPhotoClick: () -> Unit,
+    onRecordHistoryClick: () -> Unit,
+    onChecklistClick: () -> Unit,
+    onRecordClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.extraColors.pageBackground,
+    ) { innerPadding ->
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxSize(),
+                contentPadding =
+                    PaddingValues(
+                        top = HeartGuardSpacing.PageContentTop,
+                        bottom = HeartGuardSpacing.LargeSection,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+            ) {
+                item {
+                    HeartGuardHeader(
+                        title = stringResource(R.string.brand_name),
+                        menuPainter = painterResource(R.drawable.menu_hamburger),
+                        notificationPainter = painterResource(R.drawable.notification_bell),
+                        onMenuClick = onMenuClick,
+                        onNotificationClick = onNotificationClick,
+                    )
+                }
+
+                item {
+                    WeatherStatusCard(
+                        modifier =
+                            Modifier.padding(
+                                top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                            ),
+                        weatherPainter = painterResource(weatherImageRes),
+                        weatherContentDescription = null,
+                        statusTitle = stringResource(R.string.home_weather_status),
+                        currentTemperature = currentTemperature,
+                        feelsLikeTemperature = feelsLikeTemperature,
+                        feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),
+                        humidity = humidity,
+                        humidityLabel = stringResource(R.string.home_humidity),
+                        weatherValue = weatherValue,
+                        weatherLabel = stringResource(R.string.home_weather_label),
+                        temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
+                        temperatureDelta = temperatureDelta,
+                        riskLabel = riskLabel,
+                        isTemperatureIncreasing = isTemperatureIncreasing,
+                    )
+                }
+
+                item {
+                    Text(
+                        text = stringResource(R.string.home_data_records),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = HeartGuardSpacing.SectionTitleHorizontal,
+                                    top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                                    end = HeartGuardSpacing.SectionTitleHorizontal,
+                                ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+
+                item {
+                    HomeCheckTimeline(
+                        title = stringResource(R.string.home_today_check_title),
+                        nextCheckDescription = nextCheckDescription,
+                        items = checkTimelineItems,
+                        onClick = onChecklistClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    )
+                }
+
+                item {
+                    HomeContactCard(
+                        managerTitle = stringResource(R.string.home_manager_call),
+                        managerDescription = stringResource(R.string.home_manager_call_description),
+                        emergencyTitle = stringResource(R.string.home_emergency_call),
+                        emergencyDescription = stringResource(R.string.home_emergency_call_description),
+                        onManagerClick = onManagerCallClick,
+                        onEmergencyClick = onEmergencyClick,
+                        modifier =
+                            Modifier.padding(
+                                start = HeartGuardSpacing.HomeContentHorizontal,
+                                top = HeartGuardSpacing.Compact,
+                                end = HeartGuardSpacing.HomeContentHorizontal,
+                            ),
+                    )
+                }
+
+                item {
+                    Text(
+                        text = stringResource(R.string.home_additional_records),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = HeartGuardSpacing.SectionTitleHorizontal,
+                                    top = HeartGuardSpacing.Compact,
+                                    end = HeartGuardSpacing.SectionTitleHorizontal,
+                                ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+
+                item {
+                    HomeAdditionalRecordCard(
+                        title = stringResource(R.string.home_field_photo),
+                        description = stringResource(R.string.home_field_photo_description),
+                        iconPainter = painterResource(R.drawable.home_photo),
+                        onClick = onFieldPhotoClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    )
+                }
+
+                item {
+                    HomeAdditionalRecordCard(
+                        title = stringResource(R.string.home_record_history),
+                        description = stringResource(R.string.home_record_history_description),
+                        iconPainter = painterResource(R.drawable.home_history),
+                        onClick = onRecordHistoryClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                    )
+                }
+
+                item {
+                    RecordSaveButton(
+                        title = stringResource(R.string.home_record_action),
+                        onClick = onRecordClick,
+                        modifier =
+                            Modifier.padding(
+                                start = HeartGuardSpacing.HomeContentHorizontal,
+                                top = HeartGuardSpacing.Tight / 2,
+                                end = HeartGuardSpacing.HomeContentHorizontal,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 402, heightDp = 978)
+@Composable
+private fun HomeScreenPreview() {
+    HeartGuardTheme {
+        HomeScreen(
+            currentTemperature = "47.5°C",
+            feelsLikeTemperature = "40.5°C",
+            humidity = "55%",
+            temperatureDelta = "+3.2°C",
+            isTemperatureIncreasing = true,
+            weatherValue = "맑음",
+            weatherImageRes = R.drawable.weather_sunny,
+            riskLabel = "폭염 주의 단계",
+            nextCheckDescription = "다음 체크까지 57분 · 22:00 예정",
+            checkTimelineItems =
+                listOf(
+                    CheckTimelineItem("08시", isCompleted = false),
+                    CheckTimelineItem("10시", isCompleted = false),
+                    CheckTimelineItem("12시", isCompleted = false, isCurrent = true),
+                    CheckTimelineItem("14시", isCompleted = false),
+                ),
+            onMenuClick = {},
+            onNotificationClick = {},
+            onManagerCallClick = {},
+            onEmergencyClick = {},
+            onFieldPhotoClick = {},
+            onRecordHistoryClick = {},
+            onChecklistClick = {},
+            onRecordClick = {},
+        )
+    }
+}

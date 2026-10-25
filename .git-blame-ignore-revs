@@ -1,0 +1,2 @@
+# Spotless(ktlint) 일괄 포맷 커밋. git blame 시 무시한다: git config blame.ignoreRevsFile .git-blame-ignore-revs
+140af94b236437b2554c197a2fec4e286cfff95c

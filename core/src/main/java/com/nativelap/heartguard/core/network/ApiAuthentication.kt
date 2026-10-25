@@ -1,0 +1,10 @@
+package com.nativelap.heartguard.core.network
+
+/** Retrofit 인스턴스에 적용할 인증 정책이다. */
+enum class ApiAuthentication {
+    NONE,
+    BEARER,
+    APP_ACCOUNT_BEARER,
+    APP_ACCOUNT_SITE_BEARER,
+    TEAM_SITE_BEARER,
+}

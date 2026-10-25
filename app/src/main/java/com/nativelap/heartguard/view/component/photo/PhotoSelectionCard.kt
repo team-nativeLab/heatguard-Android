@@ -1,0 +1,151 @@
+package com.nativelap.heartguard.view.component.photo
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
+import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.ui.theme.extraColors
+
+/** 작업·휴식 사진 화면의 큰 사진 선택 영역과 촬영 안내를 담당한다. */
+@Composable
+fun PhotoSelectionCard(
+    title: String,
+    description: String?,
+    cameraPainter: Painter,
+    cameraContentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selectedPhotoCountLabel: String? = null,
+    isEnabled: Boolean = true,
+    minHeight: Dp = HeartGuardComponentSize.PhotoSelectionHeight,
+) {
+    Surface(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = minHeight)
+                .clickable(
+                    enabled = isEnabled,
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
+        shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
+        color =
+            if (isEnabled) {
+                MaterialTheme.extraColors.photoContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(HeartGuardSpacing.LargeSection),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Image(
+                painter = cameraPainter,
+                contentDescription = cameraContentDescription,
+                modifier = Modifier.size(HeartGuardIconSize.CameraAction),
+                colorFilter =
+                    ColorFilter.tint(
+                        if (isEnabled) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.extraColors.disabledContent
+                        },
+                    ),
+            )
+            Text(
+                text = title,
+                modifier =
+                    Modifier
+                        .padding(top = HeartGuardSpacing.Item)
+                        .widthIn(max = HeartGuardComponentSize.PhotoSelectionTitleMaxWidth),
+                color =
+                    if (isEnabled) {
+                        MaterialTheme.extraColors.homeMutedText
+                    } else {
+                        MaterialTheme.extraColors.disabledText
+                    },
+                textAlign = TextAlign.Center,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontSize = HeartGuardFontSize.CardTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
+            )
+            description?.let { descriptionText ->
+                Text(
+                    text = descriptionText,
+                    modifier = Modifier.padding(top = HeartGuardSpacing.PhotoSelectionDescriptionTop),
+                    color =
+                        if (isEnabled) {
+                            MaterialTheme.extraColors.strongText
+                        } else {
+                            MaterialTheme.extraColors.disabledText
+                        },
+                    textAlign = TextAlign.Center,
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontSize = HeartGuardFontSize.CardTitle,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                )
+            }
+            selectedPhotoCountLabel?.let { countLabel ->
+                Text(
+                    text = countLabel,
+                    modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 402)
+@Composable
+private fun PhotoSelectionCardPreview() {
+    HeartGuardTheme {
+        PhotoSelectionCard(
+            title = "사진을 촬영해 주세요",
+            description = "작업 현장이 잘 보이도록 촬영해 주세요",
+            cameraPainter =
+                androidx.compose.ui.res
+                    .painterResource(R.drawable.record_camera),
+            cameraContentDescription = "사진 촬영",
+            onClick = {},
+            selectedPhotoCountLabel = "0/2",
+        )
+    }
+}
