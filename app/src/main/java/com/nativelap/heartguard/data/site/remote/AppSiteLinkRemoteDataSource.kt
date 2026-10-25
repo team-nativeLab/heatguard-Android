@@ -6,6 +6,8 @@ import com.nativelap.heartguard.data.site.dto.AppSiteLinkClaimResponseDto
 import com.nativelap.heartguard.data.site.dto.AppSiteSelectionResponseDto
 
 interface AppSiteLinkRemoteDataSource {
+    suspend fun unlinkSite(siteId: String): ApiResult<Unit>
+
     suspend fun claim(
         token: String,
         managerPhone: String,

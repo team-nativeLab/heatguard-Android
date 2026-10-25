@@ -118,6 +118,8 @@ private class FakeAppSiteLinkRepository(
         return claimResponse?.await() ?: defaultClaimResult
     }
 
+    override suspend fun unlinkSite(siteId: String): ApiResult<Unit> = ApiResult.Success(Unit)
+
     override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> = ApiResult.Success(emptyList())
 
     override suspend fun selectSite(siteId: String): ApiResult<AppSelectedSite> = error("Not used by claim tests")

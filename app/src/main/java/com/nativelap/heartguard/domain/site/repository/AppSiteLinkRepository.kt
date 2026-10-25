@@ -6,6 +6,8 @@ import com.nativelap.heartguard.domain.site.model.AppSelectedSite
 import com.nativelap.heartguard.domain.site.model.AppSiteLinkClaim
 
 interface AppSiteLinkRepository {
+    suspend fun unlinkSite(siteId: String): ApiResult<Unit>
+
     suspend fun claim(
         token: String,
         managerPhone: String,

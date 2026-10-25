@@ -20,6 +20,27 @@ import org.junit.Test
 
 class AppSiteLinkApiServiceTest {
     @Test
+    fun `현장 해제는 앱 계정으로 해당 현장 링크만 삭제한다`() =
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            try {
+                server.enqueue(MockResponse.Builder().code(204).build())
+                val sessionManager = createTestSessionManager(Dispatchers.Unconfined)
+                sessionManager.onLoginSucceeded(SessionToken("x", SessionRole.APP_ACCOUNT))
+
+                createService(server, sessionManager).unlinkSite("site_01")
+                val request = server.takeRequest()
+
+                assertEquals("DELETE", request.method)
+                assertEquals("/api/v1/app/sites/site_01/link", request.url.encodedPath)
+                assertEquals("Bearer x", request.headers["Authorization"])
+            } finally {
+                server.close()
+            }
+        }
+
+    @Test
     fun `현장 연동 요청은 앱 계정 인증과 명세 필드를 사용한다`() =
         runBlocking {
             val server = MockWebServer()

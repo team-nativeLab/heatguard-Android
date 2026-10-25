@@ -74,6 +74,9 @@
     <string name="app_account_sites_error">현장 목록을 불러오지 못했습니다.</string>
     <string name="app_account_site_select">이 현장 선택</string>
     <string name="app_account_site_selected">선택됨</string>
+    <string name="app_account_site_unlink">연동 해제</string>
+    <string name="app_account_site_unlink_confirmation">%1$s 연동을 해제할까요? 해제하면 이 현장에 접근할 수 없습니다. 다른 현장 연동은 유지됩니다.</string>
+    <string name="app_account_site_unlink_error">연동 해제를 완료하지 못했습니다. 현장 목록을 확인하고 다시 시도해주세요.</string>
     <string name="home_weather_status">현재 온도</string>
     <string name="home_weather_label">날씨</string>
     <string name="home_current_temperature">현재 온도</string>

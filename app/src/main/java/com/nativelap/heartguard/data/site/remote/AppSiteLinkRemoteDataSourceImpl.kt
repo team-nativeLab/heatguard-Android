@@ -15,6 +15,9 @@ class AppSiteLinkRemoteDataSourceImpl
         private val appSiteLinkApiService: AppSiteLinkApiService,
         private val apiExecutor: ApiExecutor,
     ) : AppSiteLinkRemoteDataSource {
+        override suspend fun unlinkSite(siteId: String): ApiResult<Unit> =
+            apiExecutor.execute { appSiteLinkApiService.unlinkSite(siteId) }
+
         override suspend fun claim(
             token: String,
             managerPhone: String,

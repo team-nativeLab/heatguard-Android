@@ -29,10 +29,43 @@ class AppSiteLinkRepositoryImpl
                     managerPhone = managerPhone.filter(Char::isDigit),
                 ).map { response -> response.toDomain() }
 
-        override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> =
-            appSiteLinkRemoteDataSource
-                .getLinkedSites()
-                .map { response -> response.items.map { site -> site.toDomain() } }
+        override suspend fun getLinkedSites(): ApiResult<List<AppLinkedSite>> {
+            val result = appSiteLinkRemoteDataSource.getLinkedSites()
+            if (result is ApiResult.Failure) {
+                return result
+            }
+            result as ApiResult.Success
+            return try {
+                val sites = result.value.items.map { site -> site.toDomain() }
+                if (sites.none { it.siteId == tokenStorage.readSelectedSiteId() }) {
+                    tokenStorage.clearSelectedSiteId()
+                }
+                ApiResult.Success(sites)
+            } catch (cancellationException: CancellationException) {
+                throw cancellationException
+            } catch (_: Exception) {
+                ApiResult.Failure(ApiError.LocalStorage)
+            }
+        }
+
+        override suspend fun unlinkSite(siteId: String): ApiResult<Unit> {
+            if (siteId.isBlank()) {
+                return ApiResult.Failure(ApiError.Unknown)
+            }
+            val result = appSiteLinkRemoteDataSource.unlinkSite(siteId)
+            if (result is ApiResult.Success) {
+                try {
+                    if (tokenStorage.readSelectedSiteId() == siteId) {
+                        tokenStorage.clearSelectedSiteId()
+                    }
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (_: Exception) {
+                    return ApiResult.Failure(ApiError.LocalStorage)
+                }
+            }
+            return result
+        }
 
         override suspend fun selectSite(siteId: String): ApiResult<AppSelectedSite> {
             if (siteId.isBlank()) {

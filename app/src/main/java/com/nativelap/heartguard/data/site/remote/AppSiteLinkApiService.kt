@@ -7,10 +7,14 @@ import com.nativelap.heartguard.data.site.dto.AppSiteSelectionResponseDto
 import com.nativelap.heartguard.data.site.dto.ClaimAppSiteLinkRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.DELETE
 import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface AppSiteLinkApiService {
+    @DELETE("api/v1/app/sites/{siteId}/link")
+    suspend fun unlinkSite(@Path("siteId") siteId: String)
+
     @POST("api/v1/app/links/claim")
     suspend fun claim(
         @Body request: ClaimAppSiteLinkRequestDto,
