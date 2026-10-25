@@ -13,8 +13,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

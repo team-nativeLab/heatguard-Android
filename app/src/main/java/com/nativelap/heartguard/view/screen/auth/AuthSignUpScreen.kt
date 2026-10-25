@@ -224,7 +224,6 @@ internal fun AuthSignUpScreen(
                         )
                     }
                 }
-
             }
         }
     }
