@@ -27,8 +27,8 @@ import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.temperature.TemperatureRecordCard
 import com.nativelap.heartguard.view.screen.feedback.SaveFailureScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveSuccessScreen
-import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
+import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -78,10 +78,9 @@ class WorkerComponentResponsiveTest {
             R.string.menu_site_selection,
             R.string.menu_logout,
             R.string.menu_withdraw,
-        )
-            .forEach { titleResource ->
-                composeTestRule.onNodeWithText(string(titleResource)).performScrollTo().assertIsDisplayed()
-            }
+        ).forEach { titleResource ->
+            composeTestRule.onNodeWithText(string(titleResource)).performScrollTo().assertIsDisplayed()
+        }
     }
 
     @Test
