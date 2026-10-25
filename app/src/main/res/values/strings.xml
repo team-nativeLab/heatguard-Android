@@ -15,7 +15,7 @@
     <string name="auth_password">비밀번호</string>
     <string name="auth_login">로그인</string>
     <string name="auth_signup">회원가입</string>
-    <string name="auth_signup_title">앱 계정 회원가입</string>
+    <string name="auth_signup_title">회원가입</string>
     <string name="auth_signup_description">이메일을 인증하고 계정을 만들어주세요</string>
     <string name="auth_signup_verification_code_label">이메일 인증코드</string>
     <string name="auth_signup_verification_code_hint">이메일로 받은 6자리 코드</string>
@@ -24,7 +24,7 @@
     <string name="auth_signup_resend_wait">%1$d초</string>
     <string name="auth_signup_code_sent">인증코드를 보냈습니다. 10분 안에 입력해주세요.</string>
     <string name="auth_signup_email_code_error">인증코드를 보내지 못했습니다. 이메일을 확인한 뒤 다시 시도해주세요.</string>
-    <string name="auth_signup_email_exists_error">이미 가입된 이메일입니다. 앱 계정 로그인을 이용해주세요.</string>
+    <string name="auth_signup_email_exists_error">이미 가입된 이메일입니다. 로그인해주세요.</string>
     <string name="auth_signup_rate_limited_error">요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.</string>
     <string name="auth_signup_network_error">네트워크를 확인하고 다시 시도해주세요.</string>
     <string name="auth_signup_code_required">먼저 이메일 인증코드를 받아주세요.</string>
@@ -32,15 +32,15 @@
     <string name="auth_signup_registration_error">가입에 실패했습니다. 코드 만료·이메일 중복 여부를 확인해주세요.</string>
     <string name="auth_signup_invalid_code_error">인증코드가 올바르지 않거나 만료되었습니다. 코드를 다시 확인해주세요.</string>
     <string name="auth_signup_account_not_ready_error">회사 계정 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.</string>
-    <string name="auth_signup_login_after_register_error">계정은 만들어졌지만 로그인에 실패했습니다. 앱 계정으로 로그인해주세요.</string>
-    <string name="auth_signup_app_login">앱 계정 로그인</string>
+    <string name="auth_signup_login_after_register_error">계정은 만들어졌지만 로그인에 실패했습니다. 다시 로그인해주세요.</string>
+    <string name="auth_signup_app_login">로그인</string>
     <string name="auth_signup_password_hint">8자 이상 입력해주세요</string>
     <string name="auth_signup_password_confirmation_label">비밀번호 확인</string>
     <string name="auth_signup_password_confirmation_hint">비밀번호를 한 번 더 입력해주세요</string>
     <string name="auth_signup_existing_account">이미 계정이 있으신가요?</string>
     <string name="auth_signup_link">회원가입</string>
     <string name="auth_login_title">안전한 현장을 위해\n로그인해주세요</string>
-    <string name="auth_login_description">팀 계정 이메일과 비밀번호로 로그인할 수 있어요</string>
+    <string name="auth_login_description">이메일과 비밀번호로 로그인할 수 있어요</string>
     <string name="auth_login_password_hint">비밀번호를 입력해주세요</string>
     <string name="auth_phone_title">휴대폰 번호를\n입력해주세요</string>
     <string name="auth_phone_description">현장 관리자에게 전달받은 담당자 전화번호를 입력해주세요.</string>
@@ -62,8 +62,8 @@
     <string name="auth_login_account_disabled">사용할 수 없는 계정입니다. 관리자에게 문의해주세요</string>
     <string name="auth_login_rate_limited">로그인 시도가 많습니다. 잠시 후 다시 시도해주세요</string>
     <string name="auth_login_generic_error">로그인에 실패했습니다. 잠시 후 다시 시도해주세요</string>
-    <string name="auth_login_app_account">앱 계정 로그인</string>
-    <string name="auth_login_app_account_description">현장 연동 앱 계정으로 로그인할 수 있어요</string>
+    <string name="auth_login_app_account">안전한 현장을 위해\n로그인해주세요</string>
+    <string name="auth_login_app_account_description">이메일과 비밀번호로 로그인할 수 있어요</string>
     <string name="auth_logout">로그아웃</string>
     <string name="app_account_sites_title">연동된 현장</string>
     <string name="app_account_sites_description">연동한 현장을 확인하고 사용할 현장을 선택하세요.</string>
