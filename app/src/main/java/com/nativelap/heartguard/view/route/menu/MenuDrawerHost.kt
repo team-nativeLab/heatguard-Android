@@ -20,8 +20,10 @@ import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
 /** 기록·사진 화면 헤더의 메뉴와 알림 동작을 연결한다. */
 @Composable
 internal fun MenuDrawerHost(
+    onHomeClick: () -> Unit,
     onProfileEditClick: () -> Unit,
     onInquiryClick: () -> Unit,
+    onSiteSelectionClick: () -> Unit,
     onWithdrawClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
@@ -56,8 +58,10 @@ internal fun MenuDrawerHost(
                 onEvent = { event ->
                     isMenuDrawerOpen = false
                     when (event) {
+                        MenuDrawerEvent.HomeClicked -> onHomeClick()
                         MenuDrawerEvent.EditProfileClicked -> onProfileEditClick()
                         MenuDrawerEvent.InquiryClicked -> onInquiryClick()
+                        MenuDrawerEvent.SiteSelectionClicked -> onSiteSelectionClick()
                         MenuDrawerEvent.LogoutClicked -> menuDrawerViewModel.logout()
                         MenuDrawerEvent.WithdrawClicked -> onWithdrawClick()
                     }

@@ -55,6 +55,7 @@ import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionR
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
 import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
+import com.nativelap.heartguard.view.route.site.TeamSiteSelectionRoute
 import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
@@ -516,6 +517,16 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                         onWithdrawClick = {
                             backStack.add(HeartGuardDestination.WithdrawNotice)
                         },
+                        onHomeClick = ::leaveRecordFlow,
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.TeamSiteSelection> {
+                    TeamSiteSelectionRoute(
+                        uiState = homeUiState,
+                        onBackClick = ::goBack,
                     )
                 }
                 entry<HeartGuardDestination.ChecklistOverview> {
@@ -673,8 +684,12 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 }
                 entry<HeartGuardDestination.TemperatureRecord> {
                     MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
                         onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
                         onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
                         onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
                         onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                     ) { onMenuClick, onNotificationClick ->
@@ -693,8 +708,12 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 }
                 entry<HeartGuardDestination.FieldPhoto> {
                     MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
                         onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
                         onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
                         onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
                         onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                     ) { onMenuClick, onNotificationClick ->
@@ -712,8 +731,12 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 }
                 entry<HeartGuardDestination.WorkPhoto> {
                     MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
                         onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
                         onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
                         onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
                         onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                     ) { onMenuClick, onNotificationClick ->
@@ -731,8 +754,12 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 }
                 entry<HeartGuardDestination.RestPhoto> {
                     MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
                         onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
                         onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
                         onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
                         onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                     ) { onMenuClick, onNotificationClick ->
