@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.test.espresso.Espresso
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -71,7 +73,9 @@ class AuthSignUpResponsiveTest {
         assertTrue(buttonBounds.left >= emailFieldBounds.left)
         assertTrue(buttonBounds.top >= emailFieldBounds.top)
         assertTrue(buttonBounds.bottom <= emailFieldBounds.bottom)
-        composeTestRule.onNodeWithText("회원가입").assertIsDisplayed()
+        composeTestRule
+            .onAllNodes(hasText("회원가입") and hasClickAction())[0]
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("로그인").assertIsDisplayed()
         val actualRightPadding = emailFieldBounds.right - buttonBounds.right
         assertTrue(
@@ -128,6 +132,82 @@ class AuthSignUpResponsiveTest {
     }
 
     @Test
+    fun signupInputFieldsUseTheSameHeight() {
+        composeTestRule.setContent {
+            HeartGuardTheme {
+                Box(Modifier.requiredSize(393.dp, 874.dp)) {
+                    AuthSignUpScreen(
+                        email = "",
+                        verificationCode = "",
+                        password = "",
+                        passwordConfirmation = "",
+                        isSendingEmailCode = false,
+                        isEmailCodeSent = false,
+                        resendCooldownSeconds = 0,
+                        isSubmitting = false,
+                        statusMessage = null,
+                        onEvent = {},
+                    )
+                }
+            }
+        }
+
+        val inputFieldHeights =
+            composeTestRule
+                .onAllNodes(hasSetTextAction())
+                .fetchSemanticsNodes()
+                .map { semanticsNode -> semanticsNode.boundsInRoot.height }
+
+        assertEquals(4, inputFieldHeights.size)
+        inputFieldHeights.forEach { inputFieldHeight ->
+            assertTrue(
+                "Expected all sign-up inputs to have equal height: $inputFieldHeights",
+                abs(inputFieldHeight - inputFieldHeights.first()) < 1f,
+            )
+        }
+    }
+
+    @Test
+    fun emailAndVerificationCodeFieldsUseTheCloseFigmaSpacing() {
+        composeTestRule.setContent {
+            HeartGuardTheme {
+                Box(Modifier.requiredSize(393.dp, 874.dp)) {
+                    AuthSignUpScreen(
+                        email = "",
+                        verificationCode = "",
+                        password = "",
+                        passwordConfirmation = "",
+                        isSendingEmailCode = false,
+                        isEmailCodeSent = false,
+                        resendCooldownSeconds = 0,
+                        isSubmitting = false,
+                        statusMessage = null,
+                        onEvent = {},
+                    )
+                }
+            }
+        }
+
+        val emailFieldBounds =
+            composeTestRule
+                .onAllNodes(hasSetTextAction())[0]
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val verificationLabelBounds =
+            composeTestRule
+                .onNodeWithText("이메일 인증코드")
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val expectedGap = with(composeTestRule.density) { HeartGuardSpacing.AuthSignUpEmailCodeGap.toPx() }
+        val actualGap = verificationLabelBounds.top - emailFieldBounds.bottom
+
+        assertTrue(
+            "Expected email-to-code gap $expectedGap px but was $actualGap px",
+            abs(actualGap - expectedGap) < 1f,
+        )
+    }
+
+    @Test
     fun shortViewportPinsActionsAndKeepsLastFormFieldScrollable() {
         composeTestRule.setContent {
             HeartGuardTheme {
@@ -148,7 +228,7 @@ class AuthSignUpResponsiveTest {
             }
         }
 
-        val signUpButton = composeTestRule.onNodeWithText("회원가입")
+        val signUpButton = composeTestRule.onAllNodes(hasText("회원가입") and hasClickAction())[0]
         val loginFooter = composeTestRule.onNodeWithText("로그인")
         signUpButton.assertIsDisplayed()
         loginFooter.assertIsDisplayed()
@@ -216,12 +296,17 @@ class AuthSignUpResponsiveTest {
             .performTextInput("confirm-check")
         composeTestRule.waitUntil(5_000) { confirmationState.value == "confirm-check" }
         composeTestRule.runOnIdle { assertEquals("confirm-check", confirmationState.value) }
-        composeTestRule.onNodeWithText("회원가입").performScrollTo().assertIsDisplayed()
+        composeTestRule
+            .onAllNodes(hasText("회원가입") and hasClickAction())[0]
+            .performScrollTo()
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("로그인").performScrollTo().assertIsDisplayed()
 
         Espresso.pressBack()
         composeTestRule.waitUntil(5_000) { !isKeyboardVisible }
-        composeTestRule.onNodeWithText("회원가입").assertIsDisplayed()
+        composeTestRule
+            .onAllNodes(hasText("회원가입") and hasClickAction())[0]
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("로그인").assertIsDisplayed()
     }
 }
