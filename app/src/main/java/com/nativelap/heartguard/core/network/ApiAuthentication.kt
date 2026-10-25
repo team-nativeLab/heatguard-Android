@@ -5,4 +5,5 @@ enum class ApiAuthentication {
     NONE,
     BEARER,
     APP_ACCOUNT_BEARER,
+    APP_ACCOUNT_SITE_BEARER,
 }

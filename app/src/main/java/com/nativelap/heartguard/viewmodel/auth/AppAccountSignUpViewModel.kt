@@ -172,6 +172,7 @@ internal class AppAccountSignUpViewModel
                 }
 
                 ApiError.SessionChanged,
+                ApiError.SiteNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,
@@ -212,6 +213,7 @@ internal class AppAccountSignUpViewModel
                 }
 
                 ApiError.SessionChanged,
+                ApiError.SiteNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,

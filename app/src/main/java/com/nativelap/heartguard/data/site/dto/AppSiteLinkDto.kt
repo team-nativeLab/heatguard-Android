@@ -4,6 +4,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class AppSiteDashboardDto(
+    val summary: AppSiteDashboardSummaryDto,
+)
+
+@Serializable
+data class AppSiteDashboardSummaryDto(
+    val todayRecordCount: Int,
+    val activeEmergencyCount: Int,
+)
+
+@Serializable
 data class ClaimAppSiteLinkRequestDto(
     @SerialName("token")
     val token: String,

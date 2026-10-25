@@ -14,6 +14,8 @@ internal class AppLinkTokenViewModel
     ) : ViewModel() {
         val pendingLink = appLinkTokenStore.pendingLink
 
+        fun accept(link: String): Boolean = appLinkTokenStore.accept(link.trim())
+
         fun consume(link: PendingAppLink) {
             appLinkTokenStore.consume(link)
         }

@@ -14,6 +14,7 @@ class SessionBoundCallFactory(
     private val delegateClient: OkHttpClient,
     private val sessionManager: SessionManager,
     private val requiredRole: SessionRole = SessionRole.TEAM_MEMBER,
+    private val requireSelectedSite: Boolean = false,
 ) : Call.Factory {
     override fun newCall(request: Request): Call {
         val owningSnapshot = sessionManager.getSnapshot()
@@ -24,14 +25,28 @@ class SessionBoundCallFactory(
         if (owningSnapshot.role != requiredRole || owningSnapshot.accessToken.isNullOrBlank()) {
             throw SessionChangedException()
         }
+        val selectedSiteIdSnapshot =
+            if (requireSelectedSite) {
+                val selectedSiteId =
+                    sessionManager.getSelectedSiteId()?.takeIf(String::isNotBlank)
+                        ?: throw SiteNotSelectedException()
+                SelectedSiteIdSnapshot(selectedSiteId)
+            } else {
+                null
+            }
         val sessionBoundRequest =
             request
                 .newBuilder()
                 .tag(SessionSnapshot::class.java, owningSnapshot)
+                .tag(SelectedSiteIdSnapshot::class.java, selectedSiteIdSnapshot)
                 .build()
         return delegateClient.newCall(sessionBoundRequest)
     }
 }
+
+data class SelectedSiteIdSnapshot(
+    val siteId: String,
+)
 
 /** 요청을 만든 세션이 전송 전에 끝나거나 다른 세션으로 바뀌어 전송을 중단했음을 알린다.
  * OkHttp 비동기 호출에서 크래시 없이 실패로 전달되도록 IOException을 상속한다. */

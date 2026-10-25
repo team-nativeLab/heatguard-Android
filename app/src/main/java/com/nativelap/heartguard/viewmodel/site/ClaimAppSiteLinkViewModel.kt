@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.PendingAppLink
+import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.domain.site.usecase.ClaimAppSiteLinkUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ internal class ClaimAppSiteLinkViewModel
     @Inject
     constructor(
         private val claimAppSiteLinkUseCase: ClaimAppSiteLinkUseCase,
+        private val sessionManager: SessionManager,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(ClaimAppSiteLinkUiState())
 
@@ -51,9 +53,21 @@ internal class ClaimAppSiteLinkViewModel
                 return
             }
             mutableUiState.update { it.copy(isSubmitting = true, failure = null) }
+            val expectedSession = sessionManager.getSnapshot()
             viewModelScope.launch {
-                when (val result = claimAppSiteLinkUseCase(pendingAppLink.token, normalizedPhone)) {
+                when (
+                    val result =
+                        claimAppSiteLinkUseCase(
+                            pendingAppLink.token,
+                            normalizedPhone,
+                            expectedSession.generation,
+                        )
+                ) {
                     is ApiResult.Success -> {
+                        if (sessionManager.getSnapshot() != expectedSession) {
+                            markSessionChanged(pendingAppLink.linkId)
+                            return@launch
+                        }
                         mutableUiState.update {
                             if (it.linkId == pendingAppLink.linkId) {
                                 it.copy(
@@ -67,6 +81,10 @@ internal class ClaimAppSiteLinkViewModel
                     }
 
                     is ApiResult.Failure -> {
+                        if (sessionManager.getSnapshot() != expectedSession) {
+                            markSessionChanged(pendingAppLink.linkId)
+                            return@launch
+                        }
                         mutableUiState.update {
                             if (it.linkId == pendingAppLink.linkId) {
                                 it.copy(
@@ -78,6 +96,19 @@ internal class ClaimAppSiteLinkViewModel
                             }
                         }
                     }
+                }
+            }
+        }
+
+        private fun markSessionChanged(linkId: Long) {
+            mutableUiState.update { state ->
+                if (state.linkId == linkId && state.isSubmitting) {
+                    state.copy(
+                        isSubmitting = false,
+                        failure = ClaimAppSiteLinkFailure.SESSION_REQUIRED,
+                    )
+                } else {
+                    state
                 }
             }
         }
@@ -99,6 +130,10 @@ internal class ClaimAppSiteLinkViewModel
 
                 ApiError.SessionChanged -> {
                     ClaimAppSiteLinkFailure.SESSION_REQUIRED
+                }
+
+                ApiError.SiteNotSelected -> {
+                    ClaimAppSiteLinkFailure.GENERIC
                 }
 
                 ApiError.Serialization,

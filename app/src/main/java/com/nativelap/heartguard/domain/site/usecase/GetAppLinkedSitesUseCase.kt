@@ -10,5 +10,6 @@ class GetAppLinkedSitesUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        suspend operator fun invoke(): ApiResult<List<AppLinkedSite>> = appSiteLinkRepository.getLinkedSites()
+        suspend operator fun invoke(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> =
+            appSiteLinkRepository.getLinkedSites(expectedSessionGeneration)
     }

@@ -75,6 +75,27 @@ class ApiRetrofitFactory
                                 },
                         )
                     }
+
+                    ApiAuthentication.APP_ACCOUNT_SITE_BEARER -> {
+                        val authenticatedClient =
+                            if (allowRequestReplay) {
+                                authenticatedApiClient
+                            } else {
+                                singleAttemptClient
+                            }
+                        val siteScopedClient =
+                            authenticatedClient
+                                .newBuilder()
+                                .addInterceptor(SelectedSiteIdInterceptor(sessionManager))
+                                .build()
+
+                        SessionBoundCallFactory(
+                            delegateClient = siteScopedClient,
+                            sessionManager = sessionManager,
+                            requiredRole = SessionRole.APP_ACCOUNT,
+                            requireSelectedSite = true,
+                        )
+                    }
                 }
             val contentType = JSON_MEDIA_TYPE.toMediaType()
 

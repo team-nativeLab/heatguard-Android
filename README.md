@@ -77,6 +77,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
 | `POST /auth/email-codes`, `POST /auth/app/register`, `POST /auth/app/login`, `POST /auth/app/logout` | 명세 계약 기준 구현, 서버 검증 대기 | 이메일 인증코드 발송·앱 계정 가입·로그인·로그아웃. 앱 계정 토큰은 `APP_ACCOUNT` 역할로 저장·라우팅한다. 가입 이메일 API는 Draft PR #28 계약이며 실제 SMTP/서버 검증은 하지 않았다. |
 | `POST /app/links/claim`, `GET /app/sites`, `POST /app/sites/{siteId}/select` | 명세 계약 기준 구현, 서버 검증 대기 | `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}` App Link 토큰과 담당자 전화번호를 대조해 현장을 연동한 뒤 목록 조회·선택. 전화번호 대조는 SMS 인증이 아니다. App Link 토큰은 성공·취소까지 메모리에만 보관한다. |
+| `GET /site/dashboard`, `DELETE /app/sites/{siteId}/link` | 구현, 서버·기기 검증 대기 | 앱 계정으로 선택 현장 대시보드 요약을 조회하며 `X-Site-Id`로 요청 현장을 구분한다. 현장 연동 해제와 앱 복귀 시 목록 재조회·선택값 정리를 지원한다. 작업·자료·팀원 관리 전체 화면은 아직 구현하지 않았다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
 
 알림·기록 내역·홈·긴급 호출·문의·프로필 변경의 RemoteDataSource는 성공 envelope의 `success`·`error`·필수 `data`를 검증하며, 모순되거나 누락된 응답을 성공으로 표시하지 않습니다. 정상 빈 목록과 현재 호출 `NONE`/`callId=null`은 유지합니다. 비밀번호 변경은 오류 없는 `success=true/data=null` 응답과 호환되며, Unit 응답인 로그아웃·회원탈퇴에는 필수-data 검증을 적용하지 않습니다. HTTP 200의 명시적 거절 코드가 HTTP 상태별 화면 안내와 같은 의미인지 여부는 서버 계약 확인이 필요합니다.
