@@ -23,4 +23,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "HeartGuard"
-include(":app")
+include(":app", ":core", ":domain", ":data")

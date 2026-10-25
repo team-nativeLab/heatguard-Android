@@ -205,8 +205,9 @@ internal class ChecklistViewModel
                                             },
                                         hasSaveError = result.error != ApiError.SessionChanged,
                                     )
-                                if (result.error is ApiError.Http &&
-                                    result.error.statusCode in CHECKLIST_REFRESH_ERROR_CODES
+                                val saveError = result.error
+                                if (saveError is ApiError.Http &&
+                                    saveError.statusCode in CHECKLIST_REFRESH_ERROR_CODES
                                 ) {
                                     loadChecklist()
                                 }

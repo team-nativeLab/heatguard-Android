@@ -1,5 +1,18 @@
 # 작업 인계: Figma 미구현 화면
 
+## 2026-10-26: 멀티모듈화 및 템플릿 테스트 정리 (#152)
+
+- 작업 브랜치: `refactor/#152-modularize-and-prune-tests`, 기준 dev `13cc8074c33de5b3bdf8314b051584e5de17448f`.
+- 사용자 승인 범위는 기능 보존 멀티모듈화, 불필요 테스트 제거, 보안 검토, dev 반영 후 main 병합이다.
+- app은 화면/Navigation/리소스, core는 network/session/di, domain은 모델/계약/UseCase, data는 DTO/DataSource/Repository/Hilt binding을 소유한다. app core/util/component는 유지했다.
+- 템플릿 산술·packageName 테스트 2개만 삭제했다. 실제 회귀 테스트를 모듈별로 옮기고 core testFixtures로 테스트 도우미를 공유한다.
+- data에서 기존 BASE_URL 생성/검증을 단일 소유한다. 값·저장 키·release HTTPS 검증 및 앱 Manifest/보안 XML은 보존했다.
+- 전체 단위 테스트 348개, assembleDebug, lintDebug(오류0/app경고59), Spotless, app/data 계측 APK 빌드 통과. 계측 최종 상태는 아래 검증 문서에 기록한다.
+- 사후 코드 리뷰 및 최종 보안 diff CLEAN. 기존 비활성 Claude autofix CI의 쓰기 토큰 위험은 활성화 전에 수정해야 한다. dev/main 보호 규칙도 없는 상태다.
+- [상세 검증](verification/2026-10-26-modularization.md)을 우선 참고한다. 실서버 기능과 최신 CVE/GHSA는 이번에 재검증하지 않았다.
+- 게시 담당은 #152 연결 PR의 최신 CI/충돌 여부를 확인해 dev→main 순으로 병합한다. main 통합에는 기존 dev 235커밋도 포함되며 사용자에게 알렸다.
+
+
 ## 목표와 범위
 
 Figma 파일 `이음산업건설`의 체크리스트 화면과 기록 취소 확인창을 구현했다. 서버 연동은 범위 밖이며, 체크리스트는 데모 상태를 로컬에서만 변경한다.
