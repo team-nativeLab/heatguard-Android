@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
@@ -27,6 +28,7 @@ import com.nativelap.heartguard.view.component.temperature.TemperatureRecordCard
 import com.nativelap.heartguard.view.screen.feedback.SaveFailureScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveSuccessScreen
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
+import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -69,10 +71,40 @@ class WorkerComponentResponsiveTest {
         setViewport(300, 240, 2f) {
             MenuDrawerContent(MenuDrawerProfileUiModel(userName = "작업자"), {})
         }
-        listOf(R.string.menu_edit_profile, R.string.menu_inquiry, R.string.menu_logout, R.string.menu_withdraw)
+        listOf(
+            R.string.menu_home,
+            R.string.menu_edit_profile,
+            R.string.menu_inquiry,
+            R.string.menu_site_selection,
+            R.string.menu_logout,
+            R.string.menu_withdraw,
+        )
             .forEach { titleResource ->
                 composeTestRule.onNodeWithText(string(titleResource)).performScrollTo().assertIsDisplayed()
             }
+    }
+
+    @Test
+    fun homeAndSiteSelectionMenuItemsDispatchTheirEvents() {
+        val receivedEvents = mutableListOf<MenuDrawerEvent>()
+        setViewport(393, 582, 1f) {
+            MenuDrawerContent(
+                profile = MenuDrawerProfileUiModel(userName = "작업자"),
+                onEvent = receivedEvents::add,
+            )
+        }
+
+        composeTestRule
+            .onNodeWithText(string(R.string.menu_home))
+            .performClick()
+        composeTestRule
+            .onNodeWithText(string(R.string.menu_site_selection))
+            .performClick()
+
+        assertEquals(
+            listOf(MenuDrawerEvent.HomeClicked, MenuDrawerEvent.SiteSelectionClicked),
+            receivedEvents,
+        )
     }
 
     @Test
