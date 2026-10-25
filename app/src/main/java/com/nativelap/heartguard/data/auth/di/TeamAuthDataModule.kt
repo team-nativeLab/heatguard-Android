@@ -21,35 +21,29 @@ import javax.inject.Singleton
 abstract class TeamAuthDataModule {
     @Binds
     @Singleton
-    abstract fun bindTeamAuthRemoteDataSource(
-        impl: TeamAuthRemoteDataSourceImpl,
-    ): TeamAuthRemoteDataSource
+    abstract fun bindTeamAuthRemoteDataSource(impl: TeamAuthRemoteDataSourceImpl): TeamAuthRemoteDataSource
 
     @Binds
     @Singleton
-    abstract fun bindTeamAuthRepository(
-        impl: TeamAuthRepositoryImpl,
-    ): TeamAuthRepository
+    abstract fun bindTeamAuthRepository(impl: TeamAuthRepositoryImpl): TeamAuthRepository
 
     companion object {
         @Provides
         @Singleton
-        fun provideTeamLoginApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): TeamLoginApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = TeamLoginApiService::class.java,
-            authentication = ApiAuthentication.NONE,
-        )
+        fun provideTeamLoginApiService(apiRetrofitFactory: ApiRetrofitFactory): TeamLoginApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = TeamLoginApiService::class.java,
+                authentication = ApiAuthentication.NONE,
+            )
 
         @Provides
         @Singleton
-        fun provideTeamSessionApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): TeamSessionApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = TeamSessionApiService::class.java,
-            authentication = ApiAuthentication.BEARER,
-        )
+        fun provideTeamSessionApiService(apiRetrofitFactory: ApiRetrofitFactory): TeamSessionApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = TeamSessionApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+            )
     }
 }

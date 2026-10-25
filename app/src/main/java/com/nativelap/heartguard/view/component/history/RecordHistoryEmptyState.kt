@@ -33,29 +33,32 @@ fun RecordHistoryEmptyState(
     selectedFilter: RecordHistoryFilter,
     modifier: Modifier = Modifier,
 ) {
-    val emptyTitle = if (selectedFilter == RecordHistoryFilter.ALL) {
-        stringResource(R.string.history_empty_title_all)
-    } else {
-        stringResource(
-            R.string.history_empty_title_format,
-            recordHistoryFilterText(selectedFilter),
-        )
-    }
+    val emptyTitle =
+        if (selectedFilter == RecordHistoryFilter.ALL) {
+            stringResource(R.string.history_empty_title_all)
+        } else {
+            stringResource(
+                R.string.history_empty_title_format,
+                recordHistoryFilterText(selectedFilter),
+            )
+        }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = HeartGuardSpacing.LargeSection),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(vertical = HeartGuardSpacing.LargeSection),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
     ) {
         Box(
-            modifier = Modifier
-                .size(HeartGuardIconSize.EmptyStateIllustration)
-                .background(
-                    color = MaterialTheme.extraColors.infoContainer,
-                    shape = CircleShape,
-                ),
+            modifier =
+                Modifier
+                    .size(HeartGuardIconSize.EmptyStateIllustration)
+                    .background(
+                        color = MaterialTheme.extraColors.infoContainer,
+                        shape = CircleShape,
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

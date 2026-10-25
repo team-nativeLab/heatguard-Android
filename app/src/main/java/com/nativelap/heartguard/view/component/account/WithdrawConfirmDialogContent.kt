@@ -50,29 +50,32 @@ fun WithdrawConfirmDialogContent(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .widthIn(max = HeartGuardComponentSize.DialogMaxWidth)
-            .fillMaxWidth(),
+        modifier =
+            modifier
+                .widthIn(max = HeartGuardComponentSize.DialogMaxWidth)
+                .fillMaxWidth(),
         shape = RoundedCornerShape(HeartGuardRadius.Dialog),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(
-                start = HeartGuardSpacing.Section,
-                top = HeartGuardSpacing.DialogTop,
-                end = HeartGuardSpacing.Section,
-                bottom = HeartGuardSpacing.Section,
-            ),
+            modifier =
+                Modifier.padding(
+                    start = HeartGuardSpacing.Section,
+                    top = HeartGuardSpacing.DialogTop,
+                    end = HeartGuardSpacing.Section,
+                    bottom = HeartGuardSpacing.Section,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Box(
-                modifier = Modifier
-                    .size(HeartGuardIconSize.DialogIcon)
-                    .background(
-                        color = MaterialTheme.extraColors.dangerContainer,
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(HeartGuardIconSize.DialogIcon)
+                        .background(
+                            color = MaterialTheme.extraColors.dangerContainer,
+                            shape = CircleShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -88,19 +91,21 @@ fun WithdrawConfirmDialogContent(
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = HeartGuardFontSize.DialogTitle,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontSize = HeartGuardFontSize.DialogTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 textAlign = TextAlign.Center,
             )
 
             Text(
                 text = message,
                 color = MaterialTheme.extraColors.secondaryText,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    lineHeight = HeartGuardFontSize.BodyLineHeight,
-                ),
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        lineHeight = HeartGuardFontSize.BodyLineHeight,
+                    ),
                 textAlign = TextAlign.Center,
             )
 
@@ -113,20 +118,23 @@ fun WithdrawConfirmDialogContent(
                 Button(
                     onClick = onCancelClick,
                     enabled = !isSubmitting,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
                     shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.extraColors.strongText,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.extraColors.strongText,
+                        ),
                 ) {
                     Text(
                         text = cancelTitle,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
                     )
                 }
 

@@ -25,20 +25,21 @@ fun RecordTypeIconBox(
     recordType: FieldRecordType?,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor = if (recordType == FieldRecordType.REST) {
-        MaterialTheme.extraColors.successContainer
-    } else {
-        MaterialTheme.extraColors.infoContainer
-    }
+    val containerColor =
+        if (recordType == FieldRecordType.REST) {
+            MaterialTheme.extraColors.successContainer
+        } else {
+            MaterialTheme.extraColors.infoContainer
+        }
 
     Box(
-        modifier = modifier
-            .size(HeartGuardIconSize.RecordHistoryType)
-            .background(
-                color = containerColor,
-                shape = RoundedCornerShape(HeartGuardRadius.HomeAction),
-            )
-            .padding(HeartGuardSpacing.Compact),
+        modifier =
+            modifier
+                .size(HeartGuardIconSize.RecordHistoryType)
+                .background(
+                    color = containerColor,
+                    shape = RoundedCornerShape(HeartGuardRadius.HomeAction),
+                ).padding(HeartGuardSpacing.Compact),
         contentAlignment = Alignment.Center,
     ) {
         Image(

@@ -1,8 +1,8 @@
 package com.nativelap.heartguard.data.notification.remote
 
 import com.nativelap.heartguard.core.network.ApiEnvelope
-import com.nativelap.heartguard.data.notification.dto.NotificationReadReceiptDto
 import com.nativelap.heartguard.data.notification.dto.NotificationReadAllReceiptDto
+import com.nativelap.heartguard.data.notification.dto.NotificationReadReceiptDto
 import com.nativelap.heartguard.data.notification.dto.TeamNotificationPageDto
 import retrofit2.http.GET
 import retrofit2.http.PATCH

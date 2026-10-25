@@ -10,12 +10,40 @@ internal sealed interface HeartGuardDestination : NavKey {
     @Serializable
     data object Login : HeartGuardDestination
 
+    @Serializable
+    data object AppAccountLogin : HeartGuardDestination
+
     // Navigation 3가 이전 버전의 저장된 back stack을 복원할 때 사용할 호환 키다.
     @Serializable
     data object SignUp : HeartGuardDestination
 
     @Serializable
+    data object SignUpForm : HeartGuardDestination
+
+    @Serializable
     data object Home : HeartGuardDestination
+
+    @Serializable
+    data object TeamSiteSelection : HeartGuardDestination
+
+    @Serializable
+    data object Checklist : HeartGuardDestination
+
+    @Serializable
+    data object ChecklistOverview : HeartGuardDestination
+
+    @Serializable
+    data object ChecklistDemoOverview : HeartGuardDestination
+
+    @Serializable
+    data class ChecklistPeriod(
+        val time: String,
+    ) : HeartGuardDestination
+
+    @Serializable
+    data class ChecklistDemoPeriod(
+        val time: String,
+    ) : HeartGuardDestination
 
     @Serializable
     data object ProfileEdit : HeartGuardDestination
@@ -33,7 +61,9 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object RecordHistory : HeartGuardDestination
 
     @Serializable
-    data class RecordHistoryDetail(val recordId: String) : HeartGuardDestination
+    data class RecordHistoryDetail(
+        val recordId: String,
+    ) : HeartGuardDestination
 
     @Serializable
     data object Emergency : HeartGuardDestination
@@ -57,13 +87,18 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object RestPhoto : HeartGuardDestination
 
     @Serializable
-    data class PhotoCamera(val recordType: RecordType) : HeartGuardDestination
+    data class PhotoCamera(
+        val recordType: RecordType,
+    ) : HeartGuardDestination
 
     @Serializable
     data object SaveSuccess : HeartGuardDestination
 
     @Serializable
     data object SaveFailure : HeartGuardDestination
+
+    @Serializable
+    data object RecordCancelConfirm : HeartGuardDestination
 
     @Serializable
     data object WithdrawNotice : HeartGuardDestination

@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
@@ -23,6 +23,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 @Composable
 fun BottomActionBar(
     modifier: Modifier = Modifier,
+    applyWindowInsets: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
@@ -30,14 +31,20 @@ fun BottomActionBar(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier
-                .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-                .padding(
-                    horizontal = HeartGuardSpacing.BottomActionHorizontal,
-                    vertical = HeartGuardSpacing.Item,
-                ),
+            modifier =
+                Modifier
+                    .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
+                    .fillMaxWidth()
+                    .then(
+                        if (applyWindowInsets) {
+                            Modifier.windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                        } else {
+                            Modifier
+                        },
+                    ).padding(
+                        horizontal = HeartGuardSpacing.BottomActionHorizontal,
+                        vertical = HeartGuardSpacing.Item,
+                    ),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             content = content,
         )

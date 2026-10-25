@@ -35,11 +35,12 @@ internal fun HeartGuardEmergencyRoute(
     val dialPhoneNumber = rememberPhoneDialLauncher()
     val managerPhoneNumber = siteStatus.managerPhoneNumber
     val currentOnCallStarted by rememberUpdatedState(onCallStarted)
+    val currentOnCancelClick by rememberUpdatedState(onCancelClick)
 
     CollectEmergencyEffects(
         emergencyViewModel = emergencyViewModel,
         onCallStarted = { currentOnCallStarted() },
-        onCallClosed = {},
+        onCallClosed = { currentOnCancelClick() },
     )
 
     // 등록 요청 중에는 뒤로가기로 시트를 닫지 않는다(응답 전에 닫으면 호출 결과를 놓친다).
@@ -119,11 +120,14 @@ private fun CollectEmergencyEffects(
     val currentOnCallClosed by rememberUpdatedState(onCallClosed)
 
     LaunchedEffect(emergencyViewModel, lifecycleOwner) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             emergencyViewModel.effects.collect { emergencyEffect ->
+                if (!emergencyViewModel.isCurrentEffect(emergencyEffect)) {
+                    return@collect
+                }
                 when (emergencyEffect) {
-                    EmergencyEffect.CallStarted -> currentOnCallStarted()
-                    EmergencyEffect.CallClosed -> currentOnCallClosed()
+                    is EmergencyEffect.CallStarted -> currentOnCallStarted()
+                    is EmergencyEffect.CallClosed -> currentOnCallClosed()
                 }
             }
         }

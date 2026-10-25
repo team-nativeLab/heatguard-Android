@@ -26,19 +26,16 @@ abstract class WorkerProfileDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindWorkerProfileRepository(
-        implementation: WorkerProfileRepositoryImpl,
-    ): WorkerProfileRepository
+    abstract fun bindWorkerProfileRepository(implementation: WorkerProfileRepositoryImpl): WorkerProfileRepository
 
     companion object {
         @Provides
         @Singleton
-        fun provideWorkerProfileApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): WorkerProfileApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = WorkerProfileApiService::class.java,
-            authentication = ApiAuthentication.BEARER,
-        )
+        fun provideWorkerProfileApiService(apiRetrofitFactory: ApiRetrofitFactory): WorkerProfileApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = WorkerProfileApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+            )
     }
 }

@@ -43,8 +43,9 @@ fun CallingScreen(
 ) {
     // Figma 03·04는 아래에서 올라오는 시트다. 호출 상태 변경이 확인되기 전에는 닫기 시도를 소비한다.
     HeartGuardSheetSurface(modifier = modifier) {
-            Column(
-                modifier = Modifier
+        Column(
+            modifier =
+                Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
@@ -53,20 +54,22 @@ fun CallingScreen(
                         top = HeartGuardSpacing.LargeSection,
                         bottom = HeartGuardSpacing.LargeSection,
                     ),
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
-            ) {
+            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+        ) {
             Text(
                 text = stringResource(R.string.emergency_screen_title),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = HeartGuardSpacing.Tight),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = HeartGuardSpacing.Tight),
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = HeartGuardFontSize.PageTitle,
-                    lineHeight = HeartGuardFontSize.PageTitle,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = HeartGuardFontSize.PageTitle,
+                        lineHeight = HeartGuardFontSize.PageTitle,
+                    ),
             )
 
             EmergencyAlertBanner(
@@ -76,16 +79,18 @@ fun CallingScreen(
             )
 
             EmergencyCallIndicator(
-                title = if (isConnected) {
-                    stringResource(R.string.emergency_connected_status)
-                } else {
-                    stringResource(R.string.emergency_calling_indicator_title)
-                },
-                description = if (isConnected) {
-                    stringResource(R.string.emergency_connected_status_description)
-                } else {
-                    stringResource(R.string.emergency_calling_indicator_description)
-                },
+                title =
+                    if (isConnected) {
+                        stringResource(R.string.emergency_connected_status)
+                    } else {
+                        stringResource(R.string.emergency_calling_indicator_title)
+                    },
+                description =
+                    if (isConnected) {
+                        stringResource(R.string.emergency_connected_status_description)
+                    } else {
+                        stringResource(R.string.emergency_calling_indicator_description)
+                    },
                 isCalling = false,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -129,12 +134,13 @@ fun CallingScreen(
                     title = stringResource(R.string.emergency_call_cancel),
                     onClick = onCancelClick,
                     enabled = !isUpdatingStatus,
-                    modifier = Modifier
-                        .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
-                        .padding(top = HeartGuardSpacing.RecordFieldInset),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
+                            .padding(top = HeartGuardSpacing.RecordFieldInset),
                 )
             }
-            }
+        }
     }
 }
 

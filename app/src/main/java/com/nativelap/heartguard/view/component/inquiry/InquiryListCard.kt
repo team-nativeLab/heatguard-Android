@@ -38,10 +38,11 @@ fun InquiryListCard(
     inquiries: List<InquirySummary>,
     modifier: Modifier = Modifier,
 ) {
-    val dateFormatter = DateTimeFormatter.ofPattern(
-        stringResource(R.string.inquiry_date_format),
-        Locale.KOREAN,
-    )
+    val dateFormatter =
+        DateTimeFormatter.ofPattern(
+            stringResource(R.string.inquiry_date_format),
+            Locale.KOREAN,
+        )
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -57,10 +58,11 @@ fun InquiryListCard(
                     )
                 }
                 Column(
-                    modifier = Modifier.padding(
-                        horizontal = HeartGuardSpacing.Card,
-                        vertical = HeartGuardSpacing.Item,
-                    ),
+                    modifier =
+                        Modifier.padding(
+                            horizontal = HeartGuardSpacing.Card,
+                            vertical = HeartGuardSpacing.Item,
+                        ),
                     verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
                 ) {
                     Row(
@@ -78,10 +80,11 @@ fun InquiryListCard(
                         )
                     }
                     Text(
-                        text = inquirySummary.createdAt
-                            ?.atZoneSameInstant(KOREA_ZONE)
-                            ?.format(dateFormatter)
-                            ?: stringResource(R.string.common_empty_value),
+                        text =
+                            inquirySummary.createdAt
+                                ?.atZoneSameInstant(KOREA_ZONE)
+                                ?.format(dateFormatter)
+                                ?: stringResource(R.string.common_empty_value),
                         color = MaterialTheme.extraColors.secondaryText,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -99,15 +102,16 @@ private val KOREA_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
 private fun InquiryListCardPreview() {
     HeartGuardTheme {
         InquiryListCard(
-            inquiries = listOf(
-                InquirySummary(
-                    inquiryId = "inq_01",
-                    title = "앱에서 사진 업로드가 안 돼요",
-                    status = InquiryStatus.ANSWERED,
-                    replyCount = 1,
-                    createdAt = OffsetDateTime.parse("2026-09-25T01:00:00Z"),
+            inquiries =
+                listOf(
+                    InquirySummary(
+                        inquiryId = "inq_01",
+                        title = "앱에서 사진 업로드가 안 돼요",
+                        status = InquiryStatus.ANSWERED,
+                        replyCount = 1,
+                        createdAt = OffsetDateTime.parse("2026-09-25T01:00:00Z"),
+                    ),
                 ),
-            ),
         )
     }
 }

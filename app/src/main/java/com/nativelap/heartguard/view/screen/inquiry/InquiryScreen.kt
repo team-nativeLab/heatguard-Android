@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.screen.inquiry
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,20 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
@@ -33,14 +33,14 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
-import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.LoadErrorCard
-import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
-import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
+import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
 import com.nativelap.heartguard.view.component.list.LoadMoreWhenScrolledToEnd
 import com.nativelap.heartguard.view.component.list.PagedListFooter
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
 
@@ -55,10 +55,11 @@ fun InquiryScreen(
     val loadedListState = uiState.listState as? InquiryListState.Loaded
     LoadMoreWhenScrolledToEnd(
         scrollState = scrollState,
-        canLoadMore = loadedListState != null &&
-            loadedListState.nextCursor != null &&
-            !loadedListState.isLoadingMore &&
-            !loadedListState.hasLoadMoreError,
+        canLoadMore =
+            loadedListState != null &&
+                loadedListState.nextCursor != null &&
+                !loadedListState.isLoadingMore &&
+                !loadedListState.hasLoadMoreError,
         onLoadMore = { onEvent(InquiryScreenEvent.LoadMore) },
     )
 
@@ -67,9 +68,10 @@ fun InquiryScreen(
         containerColor = MaterialTheme.extraColors.pageBackground,
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.inquiry_title),
@@ -79,12 +81,13 @@ fun InquiryScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-                    .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
+                        .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
                 InquiryInputField(
@@ -109,9 +112,10 @@ fun InquiryScreen(
                 RecordSaveButton(
                     title = stringResource(R.string.inquiry_submit),
                     onClick = { onEvent(InquiryScreenEvent.SubmitClicked) },
-                    enabled = !uiState.isSubmitting &&
-                        uiState.title.isNotBlank() &&
-                        uiState.content.isNotBlank(),
+                    enabled =
+                        !uiState.isSubmitting &&
+                            uiState.title.isNotBlank() &&
+                            uiState.content.isNotBlank(),
                 )
                 if (uiState.isSubmitting) {
                     Text(
@@ -167,11 +171,12 @@ fun InquiryScreen(
                     if (listState is InquiryListState.Loaded) {
                         Text(
                             // 아직 받을 문의가 남았으면 '+'를 붙여 전체 건수가 아님을 드러낸다.
-                            text = if (listState.nextCursor != null) {
-                                stringResource(R.string.list_partial_count_format, listState.inquiries.size)
-                            } else {
-                                stringResource(R.string.inquiry_list_count_format, listState.inquiries.size)
-                            },
+                            text =
+                                if (listState.nextCursor != null) {
+                                    stringResource(R.string.list_partial_count_format, listState.inquiries.size)
+                                } else {
+                                    stringResource(R.string.inquiry_list_count_format, listState.inquiries.size)
+                                },
                             color = MaterialTheme.extraColors.secondaryText,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -181,9 +186,10 @@ fun InquiryScreen(
                 when (val listState = uiState.listState) {
                     InquiryListState.Loading -> {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = HeartGuardSpacing.Section),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = HeartGuardSpacing.Section),
                             contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator()
@@ -202,9 +208,10 @@ fun InquiryScreen(
                         if (listState.inquiries.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.inquiry_list_empty),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = HeartGuardSpacing.Section),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = HeartGuardSpacing.Section),
                                 color = MaterialTheme.extraColors.secondaryText,
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center,
@@ -244,21 +251,23 @@ private fun InquiryInputField(
         TextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = HeartGuardSpacing.Compact)
-                .heightIn(min = minHeight),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = HeartGuardSpacing.Compact)
+                    .heightIn(min = minHeight),
             placeholder = {
                 Text(placeholder)
             },
             minLines = minLines,
             shape = RoundedCornerShape(HeartGuardRadius.InputBox),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
-                unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.extraColors.authInputBackground,
-            ),
+            colors =
+                TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
+                    unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.extraColors.authInputBackground,
+                ),
             textStyle = MaterialTheme.typography.bodyMedium,
             singleLine = minLines == 1,
             maxLines = if (minLines == 1) 1 else Int.MAX_VALUE,

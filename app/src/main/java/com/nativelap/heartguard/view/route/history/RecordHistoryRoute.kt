@@ -26,36 +26,74 @@ internal fun HeartGuardRecordHistoryRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val pendingSubmissions by recordDraftViewModel.pendingSubmissions.collectAsStateWithLifecycle()
+    val hasPendingCleanup by recordDraftViewModel.hasPendingCleanup.collectAsStateWithLifecycle()
+    val hasPendingLoadFailed by recordDraftViewModel.hasPendingLoadFailed.collectAsStateWithLifecycle()
     val today = uiState.today
 
     LaunchedEffect(viewModel) {
         viewModel.openHistory()
+        recordDraftViewModel.refreshPendingSubmissions()
     }
 
     RecordHistoryScreen(
         uiState = uiState,
+        pendingSubmissions = pendingSubmissions,
+        hasPendingLoadFailed = hasPendingLoadFailed,
+        hasPendingCleanup = hasPendingCleanup,
         temporaryDraftType = draftState.selectedRecordType.takeIf { draftState.isTemporarilySaved },
         temporaryDraftSavedAt = draftState.temporarilySavedAt,
         onEvent = { event ->
             when (event) {
-                RecordHistoryScreenEvent.BackClicked -> onBackClick()
-                RecordHistoryScreenEvent.DateRangeClicked -> viewModel.showDateRangePicker()
-                RecordHistoryScreenEvent.DateRangeDismissed -> viewModel.hideDateRangePicker()
-                is RecordHistoryScreenEvent.DateRangeSelected -> viewModel.selectDateRange(
-                    startDate = event.startDate,
-                    endDate = event.endDate,
-                )
-                is RecordHistoryScreenEvent.FilterSelected -> viewModel.selectFilter(event.filter)
-                is RecordHistoryScreenEvent.RecordClicked -> onRecordClick(event.recordId)
+                RecordHistoryScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
+                RecordHistoryScreenEvent.DateRangeClicked -> {
+                    viewModel.showDateRangePicker()
+                }
+
+                RecordHistoryScreenEvent.DateRangeDismissed -> {
+                    viewModel.hideDateRangePicker()
+                }
+
+                is RecordHistoryScreenEvent.DateRangeSelected -> {
+                    viewModel.selectDateRange(
+                        startDate = event.startDate,
+                        endDate = event.endDate,
+                    )
+                }
+
+                is RecordHistoryScreenEvent.FilterSelected -> {
+                    viewModel.selectFilter(event.filter)
+                }
+
+                is RecordHistoryScreenEvent.RecordClicked -> {
+                    onRecordClick(event.recordId)
+                }
+
                 RecordHistoryScreenEvent.TemporaryDraftClicked -> {
                     draftState.selectedRecordType?.let { recordType ->
                         recordDraftViewModel.resumeTemporarilySavedDraft()
                         onResumeDraftClick(recordType)
                     }
                 }
-                RecordHistoryScreenEvent.RetryClicked -> viewModel.loadRecords()
-                RecordHistoryScreenEvent.LoadMore -> viewModel.loadMoreRecords()
-                RecordHistoryScreenEvent.CreateRecordClicked -> onCreateRecordClick()
+
+                RecordHistoryScreenEvent.PendingSubmissionsRetryClicked -> {
+                    recordDraftViewModel.refreshPendingSubmissions()
+                }
+
+                RecordHistoryScreenEvent.RetryClicked -> {
+                    viewModel.loadRecords()
+                }
+
+                RecordHistoryScreenEvent.LoadMore -> {
+                    viewModel.loadMoreRecords()
+                }
+
+                RecordHistoryScreenEvent.CreateRecordClicked -> {
+                    onCreateRecordClick()
+                }
             }
         },
     )

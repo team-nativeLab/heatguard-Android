@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
@@ -26,6 +27,7 @@ import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.temperature.TemperatureRecordCard
 import com.nativelap.heartguard.view.screen.feedback.SaveFailureScreen
 import com.nativelap.heartguard.view.screen.feedback.SaveSuccessScreen
+import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,10 +71,39 @@ class WorkerComponentResponsiveTest {
         setViewport(300, 240, 2f) {
             MenuDrawerContent(MenuDrawerProfileUiModel(userName = "작업자"), {})
         }
-        listOf(R.string.menu_edit_profile, R.string.menu_inquiry, R.string.menu_logout, R.string.menu_withdraw)
-            .forEach { titleResource ->
-                composeTestRule.onNodeWithText(string(titleResource)).performScrollTo().assertIsDisplayed()
-            }
+        listOf(
+            R.string.menu_home,
+            R.string.menu_edit_profile,
+            R.string.menu_inquiry,
+            R.string.menu_site_selection,
+            R.string.menu_logout,
+            R.string.menu_withdraw,
+        ).forEach { titleResource ->
+            composeTestRule.onNodeWithText(string(titleResource)).performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun homeAndSiteSelectionMenuItemsDispatchTheirEvents() {
+        val receivedEvents = mutableListOf<MenuDrawerEvent>()
+        setViewport(393, 582, 1f) {
+            MenuDrawerContent(
+                profile = MenuDrawerProfileUiModel(userName = "작업자"),
+                onEvent = receivedEvents::add,
+            )
+        }
+
+        composeTestRule
+            .onNodeWithText(string(R.string.menu_home))
+            .performClick()
+        composeTestRule
+            .onNodeWithText(string(R.string.menu_site_selection))
+            .performClick()
+
+        assertEquals(
+            listOf(MenuDrawerEvent.HomeClicked, MenuDrawerEvent.SiteSelectionClicked),
+            receivedEvents,
+        )
     }
 
     @Test
@@ -80,10 +111,16 @@ class WorkerComponentResponsiveTest {
         setViewport(840, 1180, 1f, density = 1f) {
             SaveSuccessScreen(emptyList(), {})
         }
-        val titleBounds = composeTestRule.onNodeWithText(string(R.string.save_record_title))
-            .fetchSemanticsNode().boundsInRoot
-        val actionBounds = composeTestRule.onNodeWithText(string(R.string.save_complete))
-            .fetchSemanticsNode().boundsInRoot
+        val titleBounds =
+            composeTestRule
+                .onNodeWithText(string(R.string.save_record_title))
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val actionBounds =
+            composeTestRule
+                .onNodeWithText(string(R.string.save_complete))
+                .fetchSemanticsNode()
+                .boundsInRoot
         assertEquals(420f, titleBounds.center.x, 1f)
         assertEquals(420f, actionBounds.center.x, 1f)
         assertTrue(titleBounds.width <= 600f)
@@ -93,11 +130,20 @@ class WorkerComponentResponsiveTest {
     fun manualInputSwitchHasAccessibleNameAndSelectionState() {
         setViewport(393, 582, 2f) {
             TemperatureRecordCard(
-                temperatureLabel = "온도", temperatureText = "", temperatureUnit = "°C",
-                onTemperatureChange = {}, humidityLabel = "습도", humidityText = "", humidityUnit = "%",
-                onHumidityChange = {}, feelsLikeLabel = "체감온도", feelsLikeText = "",
-                installationLabel = "온도계 설치 안내", isManualInputEnabled = false,
-                onManualInputChange = {}, checkboxContentDescription = "온도계 직접 입력",
+                temperatureLabel = "온도",
+                temperatureText = "",
+                temperatureUnit = "°C",
+                onTemperatureChange = {},
+                humidityLabel = "습도",
+                humidityText = "",
+                humidityUnit = "%",
+                onHumidityChange = {},
+                feelsLikeLabel = "체감온도",
+                feelsLikeText = "",
+                installationLabel = "온도계 설치 안내",
+                isManualInputEnabled = false,
+                onManualInputChange = {},
+                checkboxContentDescription = "온도계 직접 입력",
                 title = "온도계 직접 입력",
             )
         }
@@ -132,7 +178,6 @@ class WorkerComponentResponsiveTest {
         }
     }
 
-    private fun string(resource: Int): String {
-        return InstrumentationRegistry.getInstrumentation().targetContext.getString(resource)
-    }
+    private fun string(resource: Int): String =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(resource)
 }

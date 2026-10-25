@@ -8,7 +8,18 @@ sealed interface RecordSubmissionState {
 
     data object Submitting : RecordSubmissionState
 
-    data class Success(val record: FieldRecord) : RecordSubmissionState
+    data class Success(
+        val record: FieldRecord,
+    ) : RecordSubmissionState
 
-    data class Failure(val error: ApiError) : RecordSubmissionState
+    data class Unknown(
+        val error: ApiError,
+    ) : RecordSubmissionState
+
+    data class Failure(
+        val error: ApiError,
+    ) : RecordSubmissionState
 }
+
+val RecordSubmissionState.canAttemptSubmission: Boolean
+    get() = this is RecordSubmissionState.Idle || this is RecordSubmissionState.Failure

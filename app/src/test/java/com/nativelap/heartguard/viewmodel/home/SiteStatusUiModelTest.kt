@@ -7,7 +7,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SiteStatusUiModelTest {
-
     @Test
     fun `온도가 오르면 부호가 붙은 변화량과 상승 방향을 만든다`() {
         val siteStatus = HomeUiState.Success(overview(temperatureDelta = 3.2)).toSiteStatusUiModel()
@@ -42,12 +41,14 @@ class SiteStatusUiModelTest {
 
     @Test
     fun `본사 연락처와 하늘 상태를 그대로 전달한다`() {
-        val siteStatus = HomeUiState.Success(
-            overview(
-                headquartersPhoneNumber = "02-000-0000",
-                skyStatus = SkyStatus.CLOUDY,
-            ),
-        ).toSiteStatusUiModel()
+        val siteStatus =
+            HomeUiState
+                .Success(
+                    overview(
+                        headquartersPhoneNumber = "02-000-0000",
+                        skyStatus = SkyStatus.CLOUDY,
+                    ),
+                ).toSiteStatusUiModel()
 
         assertEquals("02-000-0000", siteStatus.headquartersPhoneNumber)
         assertEquals(SkyStatus.CLOUDY, siteStatus.skyStatus)

@@ -15,32 +15,37 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TeamLoginViewModelTest {
-
     @Test
-    fun loginForwardsNonEmailIdentifierToRepository() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+    fun loginForwardsNonEmailIdentifierToRepository() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
 
-        try {
-            var requestedEmail: String? = null
-            val repository = object : TeamAuthRepository {
-                override suspend fun login(email: String, password: String): TeamLoginResult {
-                    requestedEmail = email
-                    return TeamLoginResult.Failure
-                }
+            try {
+                var requestedEmail: String? = null
+                val repository =
+                    object : TeamAuthRepository {
+                        override suspend fun login(
+                            email: String,
+                            password: String,
+                        ): TeamLoginResult {
+                            requestedEmail = email
+                            return TeamLoginResult.Failure
+                        }
 
-                override suspend fun logout() = Unit
+                        override suspend fun logout() = Unit
+                    }
+                val viewModel =
+                    TeamLoginViewModel(
+                        teamLoginUseCase = TeamLoginUseCase(repository),
+                    )
+
+                viewModel.login(email = "test1234", password = "sample-password")
+                advanceUntilIdle()
+
+                assertEquals("test1234", requestedEmail)
+                assertEquals(TeamLoginFailure.GENERIC, viewModel.uiState.value.failure)
+            } finally {
+                Dispatchers.resetMain()
             }
-            val viewModel = TeamLoginViewModel(
-                teamLoginUseCase = TeamLoginUseCase(repository),
-            )
-
-            viewModel.login(email = "test1234", password = "sample-password")
-            advanceUntilIdle()
-
-            assertEquals("test1234", requestedEmail)
-            assertEquals(TeamLoginFailure.GENERIC, viewModel.uiState.value.failure)
-        } finally {
-            Dispatchers.resetMain()
         }
-    }
 }

@@ -15,11 +15,17 @@ sealed interface RecordHistoryScreenEvent {
 
     data object DateRangeDismissed : RecordHistoryScreenEvent
 
-    data class FilterSelected(val filter: RecordHistoryFilter) : RecordHistoryScreenEvent
+    data class FilterSelected(
+        val filter: RecordHistoryFilter,
+    ) : RecordHistoryScreenEvent
 
-    data class RecordClicked(val recordId: String) : RecordHistoryScreenEvent
+    data class RecordClicked(
+        val recordId: String,
+    ) : RecordHistoryScreenEvent
 
     data object TemporaryDraftClicked : RecordHistoryScreenEvent
+
+    data object PendingSubmissionsRetryClicked : RecordHistoryScreenEvent
 
     data object RetryClicked : RecordHistoryScreenEvent
 

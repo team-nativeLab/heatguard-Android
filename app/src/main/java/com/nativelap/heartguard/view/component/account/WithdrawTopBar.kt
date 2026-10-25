@@ -32,10 +32,11 @@ fun WithdrawTopBar(
     onBackClick: (() -> Unit)? = null,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.TouchTarget)
-            .padding(horizontal = HeartGuardSpacing.Compact),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                .padding(horizontal = HeartGuardSpacing.Compact),
         contentAlignment = Alignment.Center,
     ) {
         if (onBackClick != null) {
@@ -55,10 +56,11 @@ fun WithdrawTopBar(
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontSize = HeartGuardFontSize.PageTitle,
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontSize = HeartGuardFontSize.PageTitle,
+                    fontWeight = FontWeight.Bold,
+                ),
         )
     }
 }

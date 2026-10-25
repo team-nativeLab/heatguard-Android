@@ -36,23 +36,26 @@ fun AuthTitleBlock(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start,
             color = MaterialTheme.extraColors.authOnSurface,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = titleFontSize,
-                lineHeight = titleLineHeight,
-                letterSpacing = HeartGuardFontSize.AuthTitleLetterSpacing,
-            ),
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = titleFontSize,
+                    lineHeight = titleLineHeight,
+                    letterSpacing = HeartGuardFontSize.AuthTitleLetterSpacing,
+                ),
         )
         Text(
             text = description,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = descriptionTopPadding),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = descriptionTopPadding),
             textAlign = TextAlign.Start,
             color = MaterialTheme.extraColors.authOnSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = HeartGuardFontSize.AuthDescription,
-            ),
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = HeartGuardFontSize.AuthDescription,
+                ),
         )
     }
 }

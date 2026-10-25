@@ -14,9 +14,10 @@ data class WithdrawUiState(
 ) {
     // 비밀번호를 입력하고 유의사항에 동의했으며, 이미 요청 중이 아닐 때만 탈퇴하기 버튼을 누를 수 있다.
     val canSubmit: Boolean
-        get() = isPasswordEntered &&
-            isAgreed &&
-            submissionState != WithdrawSubmissionState.Submitting
+        get() =
+            isPasswordEntered &&
+                isAgreed &&
+                submissionState != WithdrawSubmissionState.Submitting
 }
 
 /** 탈퇴 요청의 진행 상태다. 성공 여부를 일회성 이벤트가 아닌 상태로 두어, 공유 ViewModel을 보는 여러 Route 중

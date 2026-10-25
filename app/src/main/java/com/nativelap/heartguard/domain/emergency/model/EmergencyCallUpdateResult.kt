@@ -2,7 +2,9 @@ package com.nativelap.heartguard.domain.emergency.model
 
 /** 긴급호출 취소·종료 요청의 결과다. 화면은 서버 오류 코드 대신 이 결과로만 분기한다. */
 sealed interface EmergencyCallUpdateResult {
-    data class Updated(val callStatus: EmergencyCallStatus) : EmergencyCallUpdateResult
+    data class Updated(
+        val callStatus: EmergencyCallStatus,
+    ) : EmergencyCallUpdateResult
 
     // 관리자 쪽에서 이미 끝난 호출이다(409 EMERGENCY_CALL_CLOSED).
     data object AlreadyClosed : EmergencyCallUpdateResult

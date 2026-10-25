@@ -9,45 +9,38 @@ import com.nativelap.heartguard.R
 
 @Composable
 @ReadOnlyComposable
-fun emptyValueText(): String {
-    return stringResource(R.string.common_empty_value)
-}
+fun emptyValueText(): String = stringResource(R.string.common_empty_value)
 
 @Composable
 @ReadOnlyComposable
-fun valueOrEmptyText(value: String?): String {
-    return value ?: emptyValueText()
-}
+fun valueOrEmptyText(value: String?): String = value ?: emptyValueText()
 
 @Composable
 @ReadOnlyComposable
-fun temperatureValueText(temperature: String?): String {
-    return if (temperature == null) {
+fun temperatureValueText(temperature: String?): String =
+    if (temperature == null) {
         emptyValueText()
     } else {
         stringResource(R.string.common_temperature_value_format, temperature)
     }
-}
 
 @Composable
 @ReadOnlyComposable
-fun humidityValueText(humidity: String?): String {
-    return if (humidity == null) {
+fun humidityValueText(humidity: String?): String =
+    if (humidity == null) {
         emptyValueText()
     } else {
         stringResource(R.string.home_humidity_value_format, humidity)
     }
-}
 
 /** 폭염 단계(0 주의보 없음·1 주의·2 경고·3 위험) 라벨이다. 값이 없거나 범위를 벗어나면 "관측값 없음"이다. */
 @Composable
 @ReadOnlyComposable
-fun heatLevelLabelText(heatLevel: Int?): String {
-    return when (heatLevel) {
+fun heatLevelLabelText(heatLevel: Int?): String =
+    when (heatLevel) {
         0 -> stringResource(R.string.home_heat_level_interest)
         1 -> stringResource(R.string.home_heat_caution)
         2 -> stringResource(R.string.home_heat_level_warning)
         3 -> stringResource(R.string.home_heat_level_danger)
         else -> stringResource(R.string.home_heat_level_unknown)
     }
-}

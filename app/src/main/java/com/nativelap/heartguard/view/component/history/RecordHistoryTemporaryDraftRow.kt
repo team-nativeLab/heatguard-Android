@@ -44,12 +44,13 @@ fun RecordHistoryTemporaryDraftRow(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
-            modifier = Modifier
-                .heightIn(min = HeartGuardComponentSize.TouchTarget)
-                .padding(
-                    horizontal = HeartGuardSpacing.Card,
-                    vertical = HeartGuardSpacing.Item,
-                ),
+            modifier =
+                Modifier
+                    .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                    .padding(
+                        horizontal = HeartGuardSpacing.Card,
+                        vertical = HeartGuardSpacing.Item,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
@@ -75,10 +76,11 @@ fun RecordHistoryTemporaryDraftRow(
                     ) {
                         Text(
                             text = stringResource(R.string.history_temporary_draft_badge),
-                            modifier = Modifier.padding(
-                                horizontal = HeartGuardSpacing.Compact,
-                                vertical = HeartGuardSpacing.Tight,
-                            ),
+                            modifier =
+                                Modifier.padding(
+                                    horizontal = HeartGuardSpacing.Compact,
+                                    vertical = HeartGuardSpacing.Tight,
+                                ),
                             color = MaterialTheme.extraColors.onWarningContainer,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
@@ -107,11 +109,12 @@ fun RecordHistoryTemporaryDraftRow(
     }
 }
 
-private fun RecordType.toFieldRecordType(): FieldRecordType = when (this) {
-    RecordType.TEMPERATURE -> FieldRecordType.THERMOMETER
-    RecordType.WORK -> FieldRecordType.WORK
-    RecordType.REST -> FieldRecordType.REST
-}
+private fun RecordType.toFieldRecordType(): FieldRecordType =
+    when (this) {
+        RecordType.TEMPERATURE -> FieldRecordType.THERMOMETER
+        RecordType.WORK -> FieldRecordType.WORK
+        RecordType.REST -> FieldRecordType.REST
+    }
 
 private val savedAtFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 

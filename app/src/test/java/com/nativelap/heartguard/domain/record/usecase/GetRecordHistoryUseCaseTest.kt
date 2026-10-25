@@ -6,62 +6,68 @@ import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.domain.record.model.RecordHistoryPage
 import com.nativelap.heartguard.domain.record.repository.RecordHistoryRepository
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class GetRecordHistoryUseCaseTest {
+    @Test
+    fun `기간의 날짜마다 조회해 측정 시각 최신순으로 합친다`() =
+        runTest {
+            val repository =
+                FakeRecordHistoryRepository(
+                    failingDate = null,
+                )
+
+            val historyResult =
+                GetRecordHistoryUseCase(repository)(
+                    startDate = LocalDate.of(2026, 9, 26),
+                    endDate = LocalDate.of(2026, 9, 28),
+                )
+
+            assertEquals(
+                setOf(
+                    LocalDate.of(2026, 9, 26),
+                    LocalDate.of(2026, 9, 27),
+                    LocalDate.of(2026, 9, 28),
+                ),
+                repository.requestedDates.toSet(),
+            )
+            assertEquals(
+                listOf("rec_2026-09-28", "rec_2026-09-27", "rec_2026-09-26"),
+                (historyResult as ApiResult.Success).value.map { recordEntry -> recordEntry.recordId },
+            )
+        }
 
     @Test
-    fun `기간의 날짜마다 조회해 측정 시각 최신순으로 합친다`() = runTest {
-        val repository = FakeRecordHistoryRepository(
-            failingDate = null,
-        )
+    fun `한 날짜라도 실패하면 실패를 돌려준다`() =
+        runTest {
+            val repository =
+                FakeRecordHistoryRepository(
+                    failingDate = LocalDate.of(2026, 9, 27),
+                )
 
-        val historyResult = GetRecordHistoryUseCase(repository)(
-            startDate = LocalDate.of(2026, 9, 26),
-            endDate = LocalDate.of(2026, 9, 28),
-        )
+            val historyResult =
+                GetRecordHistoryUseCase(repository)(
+                    startDate = LocalDate.of(2026, 9, 26),
+                    endDate = LocalDate.of(2026, 9, 28),
+                )
 
-        assertEquals(
-            setOf(
-                LocalDate.of(2026, 9, 26),
-                LocalDate.of(2026, 9, 27),
-                LocalDate.of(2026, 9, 28),
-            ),
-            repository.requestedDates.toSet(),
-        )
-        assertEquals(
-            listOf("rec_2026-09-28", "rec_2026-09-27", "rec_2026-09-26"),
-            (historyResult as ApiResult.Success).value.map { recordEntry -> recordEntry.recordId },
-        )
-    }
-
-    @Test
-    fun `한 날짜라도 실패하면 실패를 돌려준다`() = runTest {
-        val repository = FakeRecordHistoryRepository(
-            failingDate = LocalDate.of(2026, 9, 27),
-        )
-
-        val historyResult = GetRecordHistoryUseCase(repository)(
-            startDate = LocalDate.of(2026, 9, 26),
-            endDate = LocalDate.of(2026, 9, 28),
-        )
-
-        assertTrue(historyResult is ApiResult.Failure)
-    }
+            assertTrue(historyResult is ApiResult.Failure)
+        }
 
     @Test(expected = IllegalArgumentException::class)
-    fun `최대 기간을 넘으면 요청하지 않는다`() = runTest {
-        GetRecordHistoryUseCase(FakeRecordHistoryRepository(failingDate = null))(
-            startDate = LocalDate.of(2026, 8, 1),
-            endDate = LocalDate.of(2026, 9, 28),
-        )
-    }
+    fun `최대 기간을 넘으면 요청하지 않는다`() =
+        runTest {
+            GetRecordHistoryUseCase(FakeRecordHistoryRepository(failingDate = null))(
+                startDate = LocalDate.of(2026, 8, 1),
+                endDate = LocalDate.of(2026, 9, 28),
+            )
+        }
 
     private class FakeRecordHistoryRepository(
         private val failingDate: LocalDate?,

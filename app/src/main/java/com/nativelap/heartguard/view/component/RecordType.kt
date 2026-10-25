@@ -23,8 +23,8 @@ enum class RecordType {
  * 이전에는 동일한 옵션 리스트가 화면·Route 두 곳에 복붙되어 있었는데, 여기로 통합해 중복을 제거한다.
  */
 @Composable
-fun recordTypeOptions(): List<RecordTypeOptionUiModel> {
-    return listOf(
+fun recordTypeOptions(): List<RecordTypeOptionUiModel> =
+    listOf(
         RecordTypeOptionUiModel(
             key = RecordType.TEMPERATURE,
             title = stringResource(R.string.record_temperature_title),
@@ -44,4 +44,3 @@ fun recordTypeOptions(): List<RecordTypeOptionUiModel> {
             iconPainter = painterResource(R.drawable.record_rest_photo),
         ),
     )
-}

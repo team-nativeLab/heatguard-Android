@@ -53,9 +53,10 @@ fun PasswordChangeScreen(
         },
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.password_change_title),
@@ -65,12 +66,13 @@ fun PasswordChangeScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-                    .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
+                        .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
                 Text(
@@ -112,19 +114,34 @@ fun PasswordChangeScreen(
                         isError = uiState.submitError == PasswordChangeError.INVALID_NEW_PASSWORD,
                     )
                     PasswordGuideText(
-                        guideText = when {
-                            uiState.submitError == PasswordChangeError.INVALID_NEW_PASSWORD -> {
-                                stringResource(R.string.password_change_invalid_new)
-                            }
+                        guideText =
+                            when {
+                                uiState.submitError == PasswordChangeError.INVALID_NEW_PASSWORD -> {
+                                    stringResource(R.string.password_change_invalid_new)
+                                }
 
-                            uiState.isNewPasswordValid -> stringResource(R.string.password_change_rule_satisfied)
-                            else -> stringResource(R.string.password_change_rule)
-                        },
-                        guideState = when {
-                            uiState.submitError == PasswordChangeError.INVALID_NEW_PASSWORD -> PasswordGuideState.ERROR
-                            uiState.isNewPasswordValid -> PasswordGuideState.SATISFIED
-                            else -> PasswordGuideState.NEUTRAL
-                        },
+                                uiState.isNewPasswordValid -> {
+                                    stringResource(R.string.password_change_rule_satisfied)
+                                }
+
+                                else -> {
+                                    stringResource(R.string.password_change_rule)
+                                }
+                            },
+                        guideState =
+                            when {
+                                uiState.submitError == PasswordChangeError.INVALID_NEW_PASSWORD -> {
+                                    PasswordGuideState.ERROR
+                                }
+
+                                uiState.isNewPasswordValid -> {
+                                    PasswordGuideState.SATISFIED
+                                }
+
+                                else -> {
+                                    PasswordGuideState.NEUTRAL
+                                }
+                            },
                     )
                 }
 
@@ -170,11 +187,12 @@ fun PasswordChangeScreen(
 private fun PasswordChangeScreenMismatchPreview() {
     HeartGuardTheme {
         PasswordChangeScreen(
-            uiState = PasswordChangeUiState(
-                currentPassword = "current1",
-                newPassword = "abcd1234",
-                confirmPassword = "abcd1235",
-            ),
+            uiState =
+                PasswordChangeUiState(
+                    currentPassword = "current1",
+                    newPassword = "abcd1234",
+                    confirmPassword = "abcd1235",
+                ),
             onEvent = {},
         )
     }

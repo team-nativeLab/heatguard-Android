@@ -42,26 +42,28 @@ fun RestTimeCard(
         )
 
         Surface(
-            modifier = Modifier
-                .padding(top = HeartGuardSpacing.Compact)
-                .padding(horizontal = contentHorizontalPadding)
-                .fillMaxWidth()
-                .heightIn(min = HeartGuardComponentSize.TouchTarget)
-                .clickable(
-                    enabled = onClick != null,
-                    role = Role.Button,
-                    onClick = {
-                        onClick?.invoke()
-                    },
-                ),
+            modifier =
+                Modifier
+                    .padding(top = HeartGuardSpacing.Compact)
+                    .padding(horizontal = contentHorizontalPadding)
+                    .fillMaxWidth()
+                    .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                    .clickable(
+                        enabled = onClick != null,
+                        role = Role.Button,
+                        onClick = {
+                            onClick?.invoke()
+                        },
+                    ),
             shape = RoundedCornerShape(HeartGuardRadius.Card),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(HeartGuardSpacing.Hairline, MaterialTheme.colorScheme.outlineVariant),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(HeartGuardSpacing.Item),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(HeartGuardSpacing.Item),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

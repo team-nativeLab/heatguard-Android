@@ -21,6 +21,7 @@ import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawDoneMessage
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.heartGuardResponsivePage
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 
 /** Figma 19_회원탈퇴_완료 화면이다. 이미 탈퇴가 끝났으므로 뒤로 가기 버튼 없이 확인 버튼만 둔다. */
@@ -30,7 +31,7 @@ fun WithdrawDoneScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.heartGuardResponsivePage(MaterialTheme.extraColors.pageBackground),
         containerColor = MaterialTheme.extraColors.pageBackground,
         bottomBar = {
             BottomActionBar {
@@ -42,10 +43,11 @@ fun WithdrawDoneScreen(
         },
     ) { innerPadding ->
         ResponsivePageContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
@@ -53,14 +55,15 @@ fun WithdrawDoneScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        horizontal = HeartGuardSpacing.ResultHorizontal,
-                        vertical = HeartGuardSpacing.Section,
-                    ),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            horizontal = HeartGuardSpacing.ResultHorizontal,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
             ) {
                 WithdrawDoneMessage(
                     title = stringResource(R.string.withdraw_done_title),

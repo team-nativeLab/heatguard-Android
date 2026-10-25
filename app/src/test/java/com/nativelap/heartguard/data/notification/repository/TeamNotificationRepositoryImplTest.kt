@@ -14,43 +14,50 @@ import org.junit.Test
 
 class TeamNotificationRepositoryImplTest {
     @Test
-    fun pageWithMoreItemsButNoCursorIsFailure() = runTest {
-        listOf(null, "", " ").forEach { missingCursor ->
-            val repository = TeamNotificationRepositoryImpl(
-                FakeNotificationSource(
-                    TeamNotificationPageDto(page = TeamNotificationCursorDto(nextCursor = missingCursor, hasMore = true)),
-                ),
-            )
+    fun pageWithMoreItemsButNoCursorIsFailure() =
+        runTest {
+            listOf(null, "", " ").forEach { missingCursor ->
+                val repository =
+                    TeamNotificationRepositoryImpl(
+                        FakeNotificationSource(
+                            TeamNotificationPageDto(
+                                page = TeamNotificationCursorDto(nextCursor = missingCursor, hasMore = true),
+                            ),
+                        ),
+                    )
+
+                assertEquals(
+                    ApiResult.Failure(ApiError.Unknown),
+                    repository.getNotifications(NotificationCategory.ALL, cursor = null, limit = 20),
+                )
+            }
+        }
+
+    @Test
+    fun pageWithoutPaginationInfoIsFailure() =
+        runTest {
+            val repository = TeamNotificationRepositoryImpl(FakeNotificationSource(TeamNotificationPageDto()))
 
             assertEquals(
                 ApiResult.Failure(ApiError.Unknown),
                 repository.getNotifications(NotificationCategory.ALL, cursor = null, limit = 20),
             )
         }
-    }
 
     @Test
-    fun pageWithoutPaginationInfoIsFailure() = runTest {
-        val repository = TeamNotificationRepositoryImpl(FakeNotificationSource(TeamNotificationPageDto()))
+    fun lastPageIsReturnedAsSuccess() =
+        runTest {
+            val repository =
+                TeamNotificationRepositoryImpl(
+                    FakeNotificationSource(
+                        TeamNotificationPageDto(page = TeamNotificationCursorDto(nextCursor = null, hasMore = false)),
+                    ),
+                )
 
-        assertEquals(
-            ApiResult.Failure(ApiError.Unknown),
-            repository.getNotifications(NotificationCategory.ALL, cursor = null, limit = 20),
-        )
-    }
+            val pageResult = repository.getNotifications(NotificationCategory.ALL, cursor = null, limit = 20)
 
-    @Test
-    fun lastPageIsReturnedAsSuccess() = runTest {
-        val repository = TeamNotificationRepositoryImpl(
-            FakeNotificationSource(
-                TeamNotificationPageDto(page = TeamNotificationCursorDto(nextCursor = null, hasMore = false)),
-            ),
-        )
-
-        val pageResult = repository.getNotifications(NotificationCategory.ALL, cursor = null, limit = 20)
-
-        assertEquals(false, (pageResult as ApiResult.Success).value.hasMore)
-    }
+            assertEquals(false, (pageResult as ApiResult.Success).value.hasMore)
+        }
 
     private class FakeNotificationSource(
         private val notificationPage: TeamNotificationPageDto,

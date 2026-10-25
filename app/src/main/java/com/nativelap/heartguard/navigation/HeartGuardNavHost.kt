@@ -21,13 +21,20 @@ import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.view.component.RecordType
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardAppAccountLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistDemoOverviewRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistDemoPeriodRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
 import com.nativelap.heartguard.view.route.feedback.HeartGuardSaveFailureRoute
@@ -46,11 +53,20 @@ import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionRoute
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
+import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
+import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
+import com.nativelap.heartguard.view.route.site.TeamSiteSelectionRoute
+import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
+import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistDemoViewModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
+import com.nativelap.heartguard.viewmodel.notification.NotificationOpenTarget
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
+import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
@@ -58,23 +74,121 @@ import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 @Composable
 internal fun HeartGuardNavHost(
     sessionViewModel: HeartGuardSessionViewModel = hiltViewModel(),
+    appLinkTokenViewModel: AppLinkTokenViewModel = hiltViewModel(),
 ) {
     val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
+    val sessionRole by sessionViewModel.sessionRole.collectAsStateWithLifecycle()
     val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
+    val pendingAppLink by appLinkTokenViewModel.pendingLink.collectAsStateWithLifecycle()
 
     when (sessionState) {
-        // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 어느 화면도 그리지 않는다.
-        // TODO: 스플래시 화면이 추가되면 빈 화면 대신 그 화면을 보여준다.
-        SessionState.Initializing -> Unit
-        SessionState.Authenticated -> HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
-        SessionState.Unauthenticated -> HeartGuardAuthNavDisplay()
+        // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 인트로 로고를 보여 준다.
+        SessionState.Initializing -> {
+            IntroScreen()
+        }
+
+        SessionState.Authenticated -> {
+            when (sessionRole) {
+                SessionRole.APP_ACCOUNT -> {
+                    if (pendingAppLink == null) {
+                        AppAccountSitesRoute(
+                            onOpenLink = appLinkTokenViewModel::accept,
+                            viewModel = hiltViewModel(key = "app-sites-$sessionGeneration"),
+                        )
+                    } else {
+                        HeartGuardPhoneNumberRoute(
+                            pendingAppLink = requireNotNull(pendingAppLink),
+                            onClaimSuccess = { completedLink ->
+                                appLinkTokenViewModel.consume(completedLink)
+                            },
+                            onCancelClaim = { canceledLink ->
+                                appLinkTokenViewModel.consume(canceledLink)
+                            },
+                            onSessionRequired = sessionViewModel::expireTeamMemberSession,
+                            isAppAccountSession = true,
+                        )
+                    }
+                }
+
+                SessionRole.TEAM_MEMBER,
+                -> {
+                    if (pendingAppLink == null) {
+                        HeartGuardMainNavDisplay(sessionGeneration = sessionGeneration)
+                    } else {
+                        HeartGuardPhoneNumberRoute(
+                            pendingAppLink = requireNotNull(pendingAppLink),
+                            onClaimSuccess = { completedLink ->
+                                appLinkTokenViewModel.consume(completedLink)
+                            },
+                            onCancelClaim = { canceledLink ->
+                                appLinkTokenViewModel.consume(canceledLink)
+                            },
+                            onSessionRequired = sessionViewModel::expireTeamMemberSession,
+                            isAppAccountSession = false,
+                        )
+                    }
+                }
+
+                null -> {
+                    IntroScreen()
+                }
+            }
+        }
+
+        SessionState.Unauthenticated -> {
+            HeartGuardAuthNavDisplay(startWithAppLogin = pendingAppLink != null)
+        }
     }
 }
 
+private fun shouldConfirmRecordExit(backStack: List<NavKey>): Boolean {
+    val currentDestination = backStack.lastOrNull() as? HeartGuardDestination
+    val previousDestination = backStack.getOrNull(backStack.lastIndex - 1) as? HeartGuardDestination
+
+    return currentDestination.isRecordEditingDestination() &&
+        !previousDestination.isRecordFlowDestination()
+}
+
+private fun HeartGuardDestination?.isRecordEditingDestination(): Boolean =
+    when (this) {
+        HeartGuardDestination.TemperatureRecord,
+        HeartGuardDestination.FieldPhoto,
+        HeartGuardDestination.WorkPhoto,
+        HeartGuardDestination.RestPhoto,
+        -> true
+
+        else -> false
+    }
+
+private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
+    when (this) {
+        HeartGuardDestination.TemperatureRecord,
+        HeartGuardDestination.FieldPhoto,
+        HeartGuardDestination.WorkPhoto,
+        HeartGuardDestination.RestPhoto,
+        is HeartGuardDestination.PhotoCamera,
+        -> true
+
+        else -> false
+    }
+
 /** 사전 발급 계정 로그인과 인증 전 Navigation 3 back stack을 담당한다. */
 @Composable
-private fun HeartGuardAuthNavDisplay() {
-    val backStack = rememberNavBackStack(HeartGuardDestination.Login)
+private fun HeartGuardAuthNavDisplay(startWithAppLogin: Boolean) {
+    val initialDestination =
+        if (startWithAppLogin) {
+            HeartGuardDestination.AppAccountLogin
+        } else {
+            HeartGuardDestination.Login
+        }
+    val backStack = rememberNavBackStack(initialDestination)
+
+    LaunchedEffect(startWithAppLogin) {
+        if (startWithAppLogin && backStack.lastOrNull() != HeartGuardDestination.AppAccountLogin) {
+            backStack.clear()
+            backStack.add(HeartGuardDestination.AppAccountLogin)
+        }
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -104,15 +218,36 @@ private fun HeartGuardAuthNavDisplay() {
                 sizeTransform = null,
             )
         },
-        entryProvider = entryProvider {
-            entry<HeartGuardDestination.Login> {
-                HeartGuardLoginRoute()
-            }
-            entry<HeartGuardDestination.SignUp> {
-                // 이전 버전에서 저장된 가입 NavKey가 복원돼도 가입 화면은 다시 노출하지 않는다.
-                HeartGuardLoginRoute()
-            }
-        },
+        entryProvider =
+            entryProvider {
+                entry<HeartGuardDestination.Login> {
+                    HeartGuardLoginRoute(
+                        onNavigateToSignUp = {
+                            backStack.add(HeartGuardDestination.SignUpForm)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.AppAccountLogin> {
+                    HeartGuardAppAccountLoginRoute(
+                        onNavigateToSignUp = {
+                            backStack.add(HeartGuardDestination.SignUpForm)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.SignUp> {
+                    // 이전 버전에서 저장된 가입 NavKey가 복원돼도 가입 화면은 다시 노출하지 않는다.
+                    HeartGuardLoginRoute()
+                }
+                entry<HeartGuardDestination.SignUpForm> {
+                    HeartGuardSignUpRoute(
+                        onNavigateToLogin = {
+                            if (backStack.size > 1) {
+                                backStack.removeLastOrNull()
+                            }
+                        },
+                    )
+                }
+            },
     )
 }
 
@@ -139,6 +274,7 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // 공유 ViewModel은 Activity 수명이라 회전·다크모드 전환으로 이 Composable이 다시 만들어져도 살아 있다.
     // 그때 reset()하면 진행 중인 긴급호출·탈퇴 요청과 홈 값이 사라지므로, 설정 변경이 아닐 때(로그아웃·세션 만료·앱 종료)만 정리한다.
     val hostActivity = LocalActivity.current
+
     fun isLeavingMainFlow(): Boolean = hostActivity?.isChangingConfigurations != true
 
     DisposableEffect(homeViewModel) {
@@ -163,6 +299,9 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // 흐름별 초기화는 ViewModelStore를 새로 만드는 대신 Route가 명시적으로 호출하는
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
+    val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
+    val checklistViewModel: ChecklistViewModel = hiltViewModel()
+    val checklistDemoViewModel: ChecklistDemoViewModel = hiltViewModel()
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
@@ -181,10 +320,21 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     // 앱을 다시 열었을 때 서버에 진행 중인 긴급호출이 있으면 이어받아, 홈의 "긴급 전화"가 새 호출 대신 그 호출로 이어지게 한다.
     // 홈 조회가 끝날 때마다 다시 확인해, 이어받기가 한 번 실패해도 응답 내용과 상관없이 다음 새로고침에서 복구한다.
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
+    val checklistSiteLabel =
+        (homeUiState as? HomeUiState.Success)
+            ?.overview
+            ?.let { overview ->
+                listOfNotNull(overview.workplace, overview.teamName)
+                    .filter(String::isNotBlank)
+                    .joinToString(separator = " · ")
+                    .takeIf(String::isNotBlank)
+            }
     val homeRefreshCompletionCount by homeViewModel.refreshCompletionCount.collectAsStateWithLifecycle()
-    val hasServerActiveEmergencyCall = (homeUiState as? HomeUiState.Success)
-        ?.overview
-        ?.hasActiveEmergencyCall == true
+    val hasServerActiveEmergencyCall =
+        (homeUiState as? HomeUiState.Success)
+            ?.overview
+            ?.hasActiveEmergencyCall == true
     LaunchedEffect(homeRefreshCompletionCount, hasServerActiveEmergencyCall) {
         if (hasServerActiveEmergencyCall) {
             emergencyViewModel.resumeActiveCall()
@@ -204,14 +354,30 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
     }
 
     fun goToSaveSuccess() {
+        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
+            backStack.removeLastOrNull()
+        }
         backStack.add(HeartGuardDestination.SaveSuccess)
     }
 
     fun goToSaveFailure() {
+        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
+            backStack.removeLastOrNull()
+        }
         backStack.add(HeartGuardDestination.SaveFailure)
     }
 
     fun goBack() {
+        if (backStack.lastOrNull() == HeartGuardDestination.RecordCancelConfirm) {
+            backStack.removeLastOrNull()
+            return
+        }
+
+        if (shouldConfirmRecordExit(backStack)) {
+            backStack.add(HeartGuardDestination.RecordCancelConfirm)
+            return
+        }
+
         if (backStack.size > 1) {
             val poppedDestination = backStack.removeLastOrNull()
             // 호출 중 화면에서 뒤로 가도 서버의 긴급호출은 계속 진행 중이므로 상태·폴링을 지우지 않는다.
@@ -241,11 +407,51 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
         }
     }
 
-    val sceneStrategies: List<SceneStrategy<NavKey>> = listOf(
-        DialogSceneStrategy(),
-        HeartGuardBottomSheetSceneStrategy(),
-        SinglePaneSceneStrategy(),
-    )
+    fun leaveRecordFlow() {
+        val submissionState = recordDraftViewModel.submissionState.value
+        if (
+            submissionState !is RecordSubmissionState.Idle &&
+            submissionState !is RecordSubmissionState.Failure
+        ) {
+            return
+        }
+        recordDraftViewModel.reset()
+        goHome()
+    }
+
+    // 알림에서 연 화면이 연타로 중복해 쌓이지 않도록 맨 위와 같은 목적지는 다시 추가하지 않는다.
+    fun openFromNotification(target: NotificationOpenTarget) {
+        val destination =
+            when (target) {
+                is NotificationOpenTarget.RecordDetail -> {
+                    HeartGuardDestination.RecordHistoryDetail(target.recordId)
+                }
+
+                NotificationOpenTarget.Inquiry -> {
+                    HeartGuardDestination.Inquiry
+                }
+
+                // 진행 중인 호출이 없으면 새 호출을 시작하는 화면으로 보내지 않고 알림 목록에 머문다.
+                NotificationOpenTarget.ActiveEmergencyCall -> {
+                    val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
+                    if (hasActiveEmergencyCall) {
+                        HeartGuardDestination.Calling
+                    } else {
+                        null
+                    }
+                }
+            }
+        if (destination != null && backStack.lastOrNull() != destination) {
+            backStack.add(destination)
+        }
+    }
+
+    val sceneStrategies: List<SceneStrategy<NavKey>> =
+        listOf(
+            DialogSceneStrategy(),
+            HeartGuardBottomSheetSceneStrategy(),
+            SinglePaneSceneStrategy(),
+        )
 
     NavDisplay(
         backStack = backStack,
@@ -272,276 +478,391 @@ private fun HeartGuardMainNavDisplay(sessionGeneration: Long) {
                 sizeTransform = null,
             )
         },
-        entryProvider = entryProvider {
-            entry<HeartGuardDestination.Home> {
-                HeartGuardHomeRoute(
-                    homeViewModel = homeViewModel,
-                    // 관리자 전화는 현장관리자 긴급호출 흐름으로 이동한다(본사 긴급 전화는 Route가 바로 다이얼한다).
-                    // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
-                    onManagerCallClick = {
-                        val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
-                        if (hasActiveEmergencyCall) {
-                            backStack.add(HeartGuardDestination.Calling)
-                        } else {
-                            backStack.add(HeartGuardDestination.Emergency)
-                        }
-                    },
-                    // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
-                    // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
-                    onFieldPhotoClick = {
-                        recordDraftViewModel.startRecord(RecordType.TEMPERATURE)
-                        backStack.add(HeartGuardDestination.FieldPhoto)
-                    },
-                    onRecordClick = {
-                        backStack.add(HeartGuardDestination.RecordTypeSelection)
-                    },
-                    onProfileEditClick = {
-                        backStack.add(HeartGuardDestination.ProfileEdit)
-                    },
-                    onInquiryClick = {
-                        backStack.add(HeartGuardDestination.Inquiry)
-                    },
-                    onRecordHistoryClick = {
-                        backStack.add(HeartGuardDestination.RecordHistory)
-                    },
-                    onNotificationsClick = {
-                        backStack.add(HeartGuardDestination.TeamNotifications)
-                    },
-                    onWithdrawClick = {
-                        backStack.add(HeartGuardDestination.WithdrawNotice)
-                    },
-                )
-            }
-            entry<HeartGuardDestination.ProfileEdit> {
-                HeartGuardProfileEditRoute(
-                    onBackClick = ::goBack,
-                    onPasswordChangeClick = {
-                        backStack.add(HeartGuardDestination.PasswordChange)
-                    },
-                )
-            }
-            entry<HeartGuardDestination.PasswordChange> {
-                HeartGuardPasswordChangeRoute(onBackClick = ::goBack)
-            }
-            entry<HeartGuardDestination.Inquiry> {
-                HeartGuardInquiryRoute(onBackClick = ::goBack)
-            }
-            entry<HeartGuardDestination.TeamNotifications> {
-                HeartGuardTeamNotificationsRoute(onBackClick = ::goBack)
-            }
-            entry<HeartGuardDestination.RecordHistory> {
-                HeartGuardRecordHistoryRoute(
-                    onBackClick = ::goBack,
-                    recordDraftViewModel = recordDraftViewModel,
-                    onRecordClick = { recordId ->
-                        backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
-                    },
-                    // Figma 23 빈 상태의 "기록하기"는 07 기록유형선택 시트를 연다.
-                    onCreateRecordClick = {
-                        backStack.add(HeartGuardDestination.RecordTypeSelection)
-                    },
-                    onResumeDraftClick = { recordType ->
-                        val destination = when (recordType) {
-                            RecordType.TEMPERATURE -> HeartGuardDestination.TemperatureRecord
-                            RecordType.WORK -> HeartGuardDestination.WorkPhoto
-                            RecordType.REST -> HeartGuardDestination.RestPhoto
-                        }
-                        backStack.removeLastOrNull()
-                        backStack.add(destination)
-                    },
-                )
-            }
-            entry<HeartGuardDestination.RecordHistoryDetail> { destination ->
-                HeartGuardRecordDetailRoute(
-                    recordId = destination.recordId,
-                    onBackClick = ::goBack,
-                )
-            }
-            // 등록 중인 03은 닫기 제스처를 막고, 취소 버튼으로만 홈에 돌아간다.
-            entry<HeartGuardDestination.Emergency>(
-                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
-            ) {
-                HeartGuardEmergencyRoute(
-                    emergencyViewModel = emergencyViewModel,
-                    homeViewModel = homeViewModel,
-                    // 호출이 등록되면 03을 04로 바꿔, 04에서 뒤로 가도 호출 전 화면(03)이 다시 보이지 않게 한다.
-                    onCallStarted = {
-                        backStack.removeLastOrNull()
-                        backStack.add(HeartGuardDestination.Calling)
-                    },
-                    onCancelClick = ::goHome,
-                )
-            }
-            entry<HeartGuardDestination.Calling>(
-                // 04의 Back·스와이프 닫기 시도는 서버 종료 요청을 보내되 승인될 때까지 시트를 유지한다.
-                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(
-                    isDismissible = false,
-                    onDismissAttempt = {
-                        emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
-                    },
-                ),
-            ) {
-                HeartGuardCallingRoute(
-                    emergencyViewModel = emergencyViewModel,
-                    homeViewModel = homeViewModel,
-                    onCallClosed = ::goHome,
-                )
-            }
-            entry<HeartGuardDestination.RecordTypeSelection>(
-                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
-            ) {
-                HeartGuardRecordTypeSelectionRoute(
-                    recordDraftViewModel = recordDraftViewModel,
-                    onConfirm = { recordType ->
-                        // RecordType이 enum이라 when이 모든 분기를 강제하므로 else/null 분기가 필요 없다.
-                        val nextDestination = when (recordType) {
-                            RecordType.TEMPERATURE -> HeartGuardDestination.TemperatureRecord
-                            RecordType.WORK -> HeartGuardDestination.WorkPhoto
-                            RecordType.REST -> HeartGuardDestination.RestPhoto
-                        }
-
-                        backStack.removeLastOrNull()
-                        backStack.add(nextDestination)
-                    },
-                )
-            }
-            entry<HeartGuardDestination.TemperatureRecord> {
-                MenuDrawerHost(
-                    onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                    onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                    onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                    onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                ) { onMenuClick, onNotificationClick ->
-                    HeartGuardTemperatureRecordRoute(
-                        onMenuClick = onMenuClick,
-                        onNotificationClick = onNotificationClick,
-                        recordDraftViewModel = recordDraftViewModel,
+        entryProvider =
+            entryProvider {
+                entry<HeartGuardDestination.Home> {
+                    HeartGuardHomeRoute(
                         homeViewModel = homeViewModel,
+                        // 관리자 전화는 현장관리자 긴급호출 흐름으로 이동한다(본사 긴급 전화는 Route가 바로 다이얼한다).
+                        // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
+                        onManagerCallClick = {
+                            val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
+                            if (hasActiveEmergencyCall) {
+                                backStack.add(HeartGuardDestination.Calling)
+                            } else {
+                                backStack.add(HeartGuardDestination.Emergency)
+                            }
+                        },
+                        // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
+                        // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
                         onFieldPhotoClick = {
+                            recordDraftViewModel.startRecord(RecordType.TEMPERATURE)
                             backStack.add(HeartGuardDestination.FieldPhoto)
                         },
-                        onSaveSuccess = ::goToSaveSuccess,
-                        onSaveFailure = ::goToSaveFailure,
-                    )
-                }
-            }
-            entry<HeartGuardDestination.FieldPhoto> {
-                MenuDrawerHost(
-                    onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                    onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                    onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                    onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                ) { onMenuClick, onNotificationClick ->
-                    HeartGuardFieldPhotoRoute(
-                        onMenuClick = onMenuClick,
-                        onNotificationClick = onNotificationClick,
-                        recordDraftViewModel = recordDraftViewModel,
-                        onCameraClick = { recordType ->
-                            backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                        onRecordClick = {
+                            backStack.add(HeartGuardDestination.RecordTypeSelection)
                         },
-                        onSaveSuccess = ::goToSaveSuccess,
-                        onSaveFailure = ::goToSaveFailure,
-                    )
-                }
-            }
-            entry<HeartGuardDestination.WorkPhoto> {
-                MenuDrawerHost(
-                    onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                    onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                    onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                    onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                ) { onMenuClick, onNotificationClick ->
-                    HeartGuardWorkPhotoRoute(
-                        onMenuClick = onMenuClick,
-                        onNotificationClick = onNotificationClick,
-                        recordDraftViewModel = recordDraftViewModel,
-                        onCameraClick = { recordType ->
-                            backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                        onProfileEditClick = {
+                            backStack.add(HeartGuardDestination.ProfileEdit)
                         },
-                        onSaveSuccess = ::goToSaveSuccess,
-                        onSaveFailure = ::goToSaveFailure,
-                    )
-                }
-            }
-            entry<HeartGuardDestination.RestPhoto> {
-                MenuDrawerHost(
-                    onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                    onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                    onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                    onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                ) { onMenuClick, onNotificationClick ->
-                    HeartGuardRestPhotoRoute(
-                        onMenuClick = onMenuClick,
-                        onNotificationClick = onNotificationClick,
-                        recordDraftViewModel = recordDraftViewModel,
-                        onCameraClick = { recordType ->
-                            backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                        onInquiryClick = {
+                            backStack.add(HeartGuardDestination.Inquiry)
                         },
-                        onSaveSuccess = ::goToSaveSuccess,
-                        onSaveFailure = ::goToSaveFailure,
+                        onRecordHistoryClick = {
+                            backStack.add(HeartGuardDestination.RecordHistory)
+                        },
+                        onChecklistClick = {
+                            backStack.add(HeartGuardDestination.ChecklistOverview)
+                        },
+                        onNotificationsClick = {
+                            backStack.add(HeartGuardDestination.TeamNotifications)
+                        },
+                        onWithdrawClick = {
+                            backStack.add(HeartGuardDestination.WithdrawNotice)
+                        },
+                        onHomeClick = ::leaveRecordFlow,
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
                     )
                 }
-            }
-            entry<HeartGuardDestination.PhotoCamera> { key ->
-                HeartGuardPhotoCameraRoute(
-                    recordDraftViewModel = recordDraftViewModel,
-                    recordType = key.recordType,
-                    onBackClick = ::goBack,
-                )
-            }
-            // 저장 성공 시트는 스와이프로 닫혀 입력 화면으로 돌아가 같은 기록을 다시 저장하지 않도록 버튼으로만 닫는다.
-            entry<HeartGuardDestination.SaveSuccess>(
-                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
-            ) {
-                HeartGuardSaveSuccessRoute(
-                    recordDraftViewModel = recordDraftViewModel,
-                    onCompleteClick = ::goHome,
-                    onRecordDetailClick = { recordId ->
-                        goHome()
-                        backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
-                    },
-                )
-            }
-            entry<HeartGuardDestination.WithdrawNotice> {
-                HeartGuardWithdrawNoticeRoute(
-                    withdrawViewModel = withdrawViewModel,
-                    onBackClick = ::goBack,
-                    onWithdrawClick = {
-                        backStack.add(HeartGuardDestination.WithdrawConfirm)
-                    },
-                    onWithdrawSucceeded = ::goToWithdrawDone,
-                )
-            }
-            entry<HeartGuardDestination.WithdrawConfirm>(
-                metadata = DialogSceneStrategy.dialog(
-                    DialogProperties(usePlatformDefaultWidth = false),
-                ),
-            ) {
-                HeartGuardWithdrawConfirmRoute(
-                    withdrawViewModel = withdrawViewModel,
-                    onDismiss = ::goBack,
-                )
-            }
-            entry<HeartGuardDestination.WithdrawDone> {
-                HeartGuardWithdrawDoneRoute(
-                    withdrawViewModel = withdrawViewModel,
-                )
-            }
-            // 실패 시트를 내리면 "다시 시도하기"와 같이 입력 화면으로 돌아간다.
-            entry<HeartGuardDestination.SaveFailure>(
-                metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
-            ) {
-                HeartGuardSaveFailureRoute(
-                    recordDraftViewModel = recordDraftViewModel,
-                    onRetryClick = ::goBack,
-                    // "임시저장 후 나가기"는 draft를 보존한 채 홈으로 돌아가는 동작을 의도하므로,
-                    // SaveSuccess와 달리 여기서는 recordDraftViewModel.reset()을 호출하지 않는다.
-                    onSaveDraftAndExitClick = {
-                        recordDraftViewModel.markDraftTemporarilySaved()
-                        goHome()
-                    },
-                )
-            }
-        },
+                entry<HeartGuardDestination.TeamSiteSelection> {
+                    TeamSiteSelectionRoute(
+                        uiState = homeUiState,
+                        onBackClick = ::goBack,
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistOverview> {
+                    ChecklistOverviewScreen(
+                        schedule = checkSchedule.takeIf { homeUiState is HomeUiState.Success },
+                        siteLabel = checklistSiteLabel,
+                        isLoading = homeUiState is HomeUiState.Loading,
+                        hasLoadError = homeUiState is HomeUiState.Error,
+                        onBackClick = ::goBack,
+                        onRetryClick = homeViewModel::loadTeamSiteOverview,
+                        onNewDay = homeViewModel::refreshForNewDay,
+                        onPeriodClick = { time ->
+                            backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
+                        },
+                        onDemoClick = {
+                            checklistDemoViewModel.startDemo()
+                            backStack.add(HeartGuardDestination.ChecklistDemoOverview)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistDemoOverview> {
+                    ChecklistDemoOverviewRoute(
+                        checklistDemoViewModel = checklistDemoViewModel,
+                        onBackClick = ::goBack,
+                        onPeriodClick = { time ->
+                            backStack.add(HeartGuardDestination.ChecklistDemoPeriod(time = time.toString()))
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistDemoPeriod> { destination ->
+                    ChecklistDemoPeriodRoute(
+                        checklistDemoViewModel = checklistDemoViewModel,
+                        time = destination.time,
+                        onBackClick = ::goBack,
+                        onCompleteClick = ::goBack,
+                    )
+                }
+                entry<HeartGuardDestination.Checklist> {
+                    ChecklistRoute(
+                        checklistViewModel = checklistViewModel,
+                        checkSchedule = checkSchedule,
+                        siteLabel = checklistSiteLabel,
+                        onBackClick = ::goBack,
+                        onCompleteClick = ::goHome,
+                    )
+                }
+                entry<HeartGuardDestination.ChecklistPeriod> { destination ->
+                    ChecklistRoute(
+                        checklistViewModel = checklistViewModel,
+                        checkSchedule = checkSchedule,
+                        selectedTime = runCatching { java.time.LocalTime.parse(destination.time) }.getOrNull(),
+                        siteLabel = checklistSiteLabel,
+                        onBackClick = ::goBack,
+                        onCompleteClick = ::goHome,
+                    )
+                }
+                entry<HeartGuardDestination.ProfileEdit> {
+                    HeartGuardProfileEditRoute(
+                        onBackClick = ::goBack,
+                        onPasswordChangeClick = {
+                            backStack.add(HeartGuardDestination.PasswordChange)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.PasswordChange> {
+                    HeartGuardPasswordChangeRoute(onBackClick = ::goBack)
+                }
+                entry<HeartGuardDestination.Inquiry> {
+                    HeartGuardInquiryRoute(onBackClick = ::goBack)
+                }
+                entry<HeartGuardDestination.TeamNotifications> {
+                    HeartGuardTeamNotificationsRoute(
+                        onBackClick = ::goBack,
+                        onOpenTarget = ::openFromNotification,
+                    )
+                }
+                entry<HeartGuardDestination.RecordHistory> {
+                    HeartGuardRecordHistoryRoute(
+                        onBackClick = ::goBack,
+                        recordDraftViewModel = recordDraftViewModel,
+                        onRecordClick = { recordId ->
+                            backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
+                        },
+                        // Figma 23 빈 상태의 "기록하기"는 07 기록유형선택 시트를 연다.
+                        onCreateRecordClick = {
+                            backStack.add(HeartGuardDestination.RecordTypeSelection)
+                        },
+                        onResumeDraftClick = { recordType ->
+                            val destination =
+                                when (recordType) {
+                                    RecordType.TEMPERATURE -> HeartGuardDestination.TemperatureRecord
+                                    RecordType.WORK -> HeartGuardDestination.WorkPhoto
+                                    RecordType.REST -> HeartGuardDestination.RestPhoto
+                                }
+                            backStack.removeLastOrNull()
+                            backStack.add(destination)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.RecordHistoryDetail> { destination ->
+                    HeartGuardRecordDetailRoute(
+                        recordId = destination.recordId,
+                        onBackClick = ::goBack,
+                    )
+                }
+                // 등록 중인 03은 닫기 제스처를 막고, 취소 버튼으로만 홈에 돌아간다.
+                entry<HeartGuardDestination.Emergency>(
+                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
+                ) {
+                    HeartGuardEmergencyRoute(
+                        emergencyViewModel = emergencyViewModel,
+                        homeViewModel = homeViewModel,
+                        // 호출이 등록되면 03을 04로 바꿔, 04에서 뒤로 가도 호출 전 화면(03)이 다시 보이지 않게 한다.
+                        onCallStarted = {
+                            backStack.removeLastOrNull()
+                            backStack.add(HeartGuardDestination.Calling)
+                        },
+                        onCancelClick = ::goHome,
+                    )
+                }
+                entry<HeartGuardDestination.Calling>(
+                    // 04의 Back·스와이프 닫기 시도는 서버 종료 요청을 보내되 승인될 때까지 시트를 유지한다.
+                    metadata =
+                        HeartGuardBottomSheetSceneStrategy.bottomSheet(
+                            isDismissible = false,
+                            onDismissAttempt = {
+                                emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+                            },
+                        ),
+                ) {
+                    HeartGuardCallingRoute(
+                        emergencyViewModel = emergencyViewModel,
+                        homeViewModel = homeViewModel,
+                        onCallClosed = ::goHome,
+                    )
+                }
+                entry<HeartGuardDestination.RecordTypeSelection>(
+                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
+                ) {
+                    HeartGuardRecordTypeSelectionRoute(
+                        recordDraftViewModel = recordDraftViewModel,
+                        onConfirm = { recordType ->
+                            // RecordType이 enum이라 when이 모든 분기를 강제하므로 else/null 분기가 필요 없다.
+                            val nextDestination =
+                                when (recordType) {
+                                    RecordType.TEMPERATURE -> HeartGuardDestination.TemperatureRecord
+                                    RecordType.WORK -> HeartGuardDestination.WorkPhoto
+                                    RecordType.REST -> HeartGuardDestination.RestPhoto
+                                }
+
+                            backStack.removeLastOrNull()
+                            backStack.add(nextDestination)
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.TemperatureRecord> {
+                    MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
+                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
+                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
+                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
+                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                    ) { onMenuClick, onNotificationClick ->
+                        HeartGuardTemperatureRecordRoute(
+                            onMenuClick = onMenuClick,
+                            onNotificationClick = onNotificationClick,
+                            recordDraftViewModel = recordDraftViewModel,
+                            homeViewModel = homeViewModel,
+                            onFieldPhotoClick = {
+                                backStack.add(HeartGuardDestination.FieldPhoto)
+                            },
+                            onSaveSuccess = ::goToSaveSuccess,
+                            onSaveFailure = ::goToSaveFailure,
+                        )
+                    }
+                }
+                entry<HeartGuardDestination.FieldPhoto> {
+                    MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
+                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
+                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
+                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
+                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                    ) { onMenuClick, onNotificationClick ->
+                        HeartGuardFieldPhotoRoute(
+                            onMenuClick = onMenuClick,
+                            onNotificationClick = onNotificationClick,
+                            recordDraftViewModel = recordDraftViewModel,
+                            onCameraClick = { recordType ->
+                                backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                            },
+                            onSaveSuccess = ::goToSaveSuccess,
+                            onSaveFailure = ::goToSaveFailure,
+                        )
+                    }
+                }
+                entry<HeartGuardDestination.WorkPhoto> {
+                    MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
+                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
+                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
+                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
+                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                    ) { onMenuClick, onNotificationClick ->
+                        HeartGuardWorkPhotoRoute(
+                            onMenuClick = onMenuClick,
+                            onNotificationClick = onNotificationClick,
+                            recordDraftViewModel = recordDraftViewModel,
+                            onCameraClick = { recordType ->
+                                backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                            },
+                            onSaveSuccess = ::goToSaveSuccess,
+                            onSaveFailure = ::goToSaveFailure,
+                        )
+                    }
+                }
+                entry<HeartGuardDestination.RestPhoto> {
+                    MenuDrawerHost(
+                        onHomeClick = ::leaveRecordFlow,
+                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
+                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
+                        onSiteSelectionClick = {
+                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                        },
+                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
+                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                    ) { onMenuClick, onNotificationClick ->
+                        HeartGuardRestPhotoRoute(
+                            onMenuClick = onMenuClick,
+                            onNotificationClick = onNotificationClick,
+                            recordDraftViewModel = recordDraftViewModel,
+                            onCameraClick = { recordType ->
+                                backStack.add(HeartGuardDestination.PhotoCamera(recordType))
+                            },
+                            onSaveSuccess = ::goToSaveSuccess,
+                            onSaveFailure = ::goToSaveFailure,
+                        )
+                    }
+                }
+                entry<HeartGuardDestination.PhotoCamera> { key ->
+                    HeartGuardPhotoCameraRoute(
+                        recordDraftViewModel = recordDraftViewModel,
+                        recordType = key.recordType,
+                        onBackClick = ::goBack,
+                    )
+                }
+                // 저장 성공 시트는 스와이프로 닫혀 입력 화면으로 돌아가 같은 기록을 다시 저장하지 않도록 버튼으로만 닫는다.
+                entry<HeartGuardDestination.SaveSuccess>(
+                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
+                ) {
+                    HeartGuardSaveSuccessRoute(
+                        recordDraftViewModel = recordDraftViewModel,
+                        onCompleteClick = ::goHome,
+                        onRecordDetailClick = { recordId ->
+                            goHome()
+                            backStack.add(HeartGuardDestination.RecordHistoryDetail(recordId))
+                        },
+                    )
+                }
+                entry<HeartGuardDestination.WithdrawNotice> {
+                    HeartGuardWithdrawNoticeRoute(
+                        withdrawViewModel = withdrawViewModel,
+                        onBackClick = ::goBack,
+                        onWithdrawClick = {
+                            backStack.add(HeartGuardDestination.WithdrawConfirm)
+                        },
+                        onWithdrawSucceeded = ::goToWithdrawDone,
+                    )
+                }
+                entry<HeartGuardDestination.WithdrawConfirm>(
+                    metadata =
+                        DialogSceneStrategy.dialog(
+                            DialogProperties(usePlatformDefaultWidth = false),
+                        ),
+                ) {
+                    HeartGuardWithdrawConfirmRoute(
+                        withdrawViewModel = withdrawViewModel,
+                        onDismiss = ::goBack,
+                    )
+                }
+                entry<HeartGuardDestination.RecordCancelConfirm>(
+                    metadata =
+                        DialogSceneStrategy.dialog(
+                            DialogProperties(usePlatformDefaultWidth = false),
+                        ),
+                ) {
+                    RecordCancelConfirmRoute(
+                        recordDraftViewModel = recordDraftViewModel,
+                        onContinueClick = ::goBack,
+                        onGoHomeClick = ::leaveRecordFlow,
+                    )
+                }
+                entry<HeartGuardDestination.WithdrawDone> {
+                    HeartGuardWithdrawDoneRoute(
+                        withdrawViewModel = withdrawViewModel,
+                    )
+                }
+                // 실패 시트를 내리면 "다시 시도하기"와 같이 입력 화면으로 돌아간다.
+                entry<HeartGuardDestination.SaveFailure>(
+                    metadata =
+                        HeartGuardBottomSheetSceneStrategy.bottomSheet(
+                            isDismissible = recordSubmissionState !is RecordSubmissionState.Unknown,
+                        ),
+                ) {
+                    HeartGuardSaveFailureRoute(
+                        recordDraftViewModel = recordDraftViewModel,
+                        onRetryClick = ::goBack,
+                        onCheckHistoryClick = {
+                            recordDraftViewModel.reset()
+                            goHome()
+                            backStack.add(HeartGuardDestination.RecordHistory)
+                        },
+                        onUnknownExitClick = {
+                            recordDraftViewModel.reset()
+                            goHome()
+                        },
+                        // "임시저장 후 나가기"는 draft를 보존한 채 홈으로 돌아가는 동작을 의도하므로,
+                        // SaveSuccess와 달리 여기서는 recordDraftViewModel.reset()을 호출하지 않는다.
+                        onSaveDraftAndExitClick = {
+                            recordDraftViewModel.markDraftTemporarilySaved()
+                            goHome()
+                        },
+                    )
+                }
+            },
     )
 }

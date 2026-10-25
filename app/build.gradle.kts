@@ -9,54 +9,62 @@ plugins {
 }
 
 val releaseBaseUrl = providers.gradleProperty("HEARTGUARD_RELEASE_BASE_URL").orElse("").get()
-val debugBaseUrl = providers.gradleProperty("HEARTGUARD_DEBUG_BASE_URL")
-    .orElse("https://heatguard-temp.https.gsmsv.site/")
-    .get()
+val debugBaseUrl =
+    providers
+        .gradleProperty("HEARTGUARD_DEBUG_BASE_URL")
+        .orElse("https://heatguard-temp.https.gsmsv.site/")
+        .get()
 
-fun String.asBuildConfigString(): String = "\"${
-    replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-}\""
+fun String.asBuildConfigString(): String =
+    "\"${
+        replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+    }\""
 
-val validateReleaseServerConfiguration = tasks.register("validateReleaseServerConfiguration") {
-    group = "verification"
-    description = "Checks that release builds target a configured HTTPS HeartGuard server."
-    doLast {
-        val parsedBaseUrl = runCatching { URI(releaseBaseUrl) }.getOrNull()
-        val host = parsedBaseUrl?.host.orEmpty()
-        val normalizedHost = host.trimEnd('.').lowercase()
-        val isPlaceholderHost = normalizedHost in setOf(
-            "example.com",
-            "example.net",
-            "example.org",
-            "localhost",
-        ) || listOf(
-            ".example.com",
-            ".example.net",
-            ".example.org",
-            ".example",
-            ".invalid",
-            ".test",
-            ".localhost",
-        ).any { suffix -> normalizedHost.endsWith(suffix) }
-        val isValidReleaseBaseUrl = parsedBaseUrl != null &&
-            parsedBaseUrl.scheme == "https" &&
-            normalizedHost.isNotBlank() &&
-            !isPlaceholderHost &&
-            parsedBaseUrl.rawUserInfo == null &&
-            parsedBaseUrl.rawQuery == null &&
-            parsedBaseUrl.rawFragment == null &&
-            releaseBaseUrl.endsWith("/")
-        require(
-            isValidReleaseBaseUrl,
-        ) {
-            "Release build requires a real HTTPS server URL ending in /; set " +
-                "HEARTGUARD_RELEASE_BASE_URL in your Gradle user properties."
+val validateReleaseServerConfiguration =
+    tasks.register("validateReleaseServerConfiguration") {
+        group = "verification"
+        description = "Checks that release builds target a configured HTTPS HeartGuard server."
+        doLast {
+            val parsedBaseUrl = runCatching { URI(releaseBaseUrl) }.getOrNull()
+            val host = parsedBaseUrl?.host.orEmpty()
+            val normalizedHost = host.trimEnd('.').lowercase()
+            val isPlaceholderHost =
+                normalizedHost in
+                    setOf(
+                        "example.com",
+                        "example.net",
+                        "example.org",
+                        "localhost",
+                    ) ||
+                    listOf(
+                        ".example.com",
+                        ".example.net",
+                        ".example.org",
+                        ".example",
+                        ".invalid",
+                        ".test",
+                        ".localhost",
+                    ).any { suffix -> normalizedHost.endsWith(suffix) }
+            val isValidReleaseBaseUrl =
+                parsedBaseUrl != null &&
+                    parsedBaseUrl.scheme == "https" &&
+                    normalizedHost.isNotBlank() &&
+                    !isPlaceholderHost &&
+                    parsedBaseUrl.rawUserInfo == null &&
+                    parsedBaseUrl.rawQuery == null &&
+                    parsedBaseUrl.rawFragment == null &&
+                    releaseBaseUrl.endsWith("/")
+            require(
+                isValidReleaseBaseUrl,
+            ) {
+                "Release build requires a real HTTPS server URL ending in /; set " +
+                    "HEARTGUARD_RELEASE_BASE_URL in your Gradle user properties."
+            }
         }
     }
-}
 
 android {
     namespace = "com.nativelap.heartguard"
@@ -84,7 +92,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             buildConfigField("String", "BASE_URL", releaseBaseUrl.asBuildConfigString())
         }
@@ -99,13 +107,14 @@ android {
     }
 }
 
-tasks.matching { task ->
-    task.name == "preReleaseBuild" ||
-        task.name == "assembleRelease" ||
-        task.name == "bundleRelease"
-}.configureEach {
-    dependsOn(validateReleaseServerConfiguration)
-}
+tasks
+    .matching { task ->
+        task.name == "preReleaseBuild" ||
+            task.name == "assembleRelease" ||
+            task.name == "bundleRelease"
+    }.configureEach {
+        dependsOn(validateReleaseServerConfiguration)
+    }
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))

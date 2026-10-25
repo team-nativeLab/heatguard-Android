@@ -37,27 +37,28 @@ internal fun PhotoSelectionFlow(
         mutableStateOf(false)
     }
 
-    val pickPhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { selectedUri ->
-        if (selectedUri != null &&
-            selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT &&
-            selectedUri !in selectedPhotoUris
-        ) {
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    selectedUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            } catch (_: SecurityException) {
-                // 일부 Photo Picker 제공자는 앱 프로세스 수명 동안만 읽기 권한을 제공한다.
-            }
+    val pickPhotoLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { selectedUri ->
+            if (selectedUri != null &&
+                selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT &&
+                selectedUri !in selectedPhotoUris
+            ) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        selectedUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (_: SecurityException) {
+                    // 일부 Photo Picker 제공자는 앱 프로세스 수명 동안만 읽기 권한을 제공한다.
+                }
 
-            if (!onPhotoAdded(selectedUri)) {
-                releasePhoto(context, selectedUri)
+                if (!onPhotoAdded(selectedUri)) {
+                    releasePhoto(context, selectedUri)
+                }
             }
         }
-    }
 
     content(
         selectedPhotoUris,

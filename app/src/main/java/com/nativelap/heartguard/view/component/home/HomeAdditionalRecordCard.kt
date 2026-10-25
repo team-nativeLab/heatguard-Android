@@ -41,18 +41,20 @@ fun HomeAdditionalRecordCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.HomeAdditionalRecordHeight)
-            .clickable(role = Role.Button, onClick = onClick),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.HomeAdditionalRecordHeight)
+                .clickable(role = Role.Button, onClick = onClick),
         shape = RoundedCornerShape(HeartGuardRadius.HomeAction),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = HeartGuardElevation.HomeRecordCard,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = HeartGuardSpacing.Section),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HeartGuardSpacing.Section),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {

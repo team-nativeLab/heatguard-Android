@@ -12,40 +12,43 @@ import org.junit.Test
 
 class AccountRepositoryImplTest {
     @Test
-    fun workerWithdrawalReturnsSuccessFromWorkerEndpoint() = runTest {
-        val remoteDataSource = FakeAccountRemoteDataSource()
-        val repository = AccountRepositoryImpl(remoteDataSource)
+    fun workerWithdrawalReturnsSuccessFromWorkerEndpoint() =
+        runTest {
+            val remoteDataSource = FakeAccountRemoteDataSource()
+            val repository = AccountRepositoryImpl(remoteDataSource)
 
-        assertEquals(
-            WithdrawAccountResult.Success,
-            repository.withdraw(
-                currentPassword = "current-password",
-                reason = null,
-            ),
-        )
-        assertEquals("current-password", remoteDataSource.receivedPassword)
-        assertEquals(null, remoteDataSource.receivedReason)
-    }
+            assertEquals(
+                WithdrawAccountResult.Success,
+                repository.withdraw(
+                    currentPassword = "current-password",
+                    reason = null,
+                ),
+            )
+            assertEquals("current-password", remoteDataSource.receivedPassword)
+            assertEquals(null, remoteDataSource.receivedReason)
+        }
 
     @Test
-    fun workerWithdrawalSendsSelectedReasonAsCode() = runTest {
-        val remoteDataSource = FakeAccountRemoteDataSource()
-        val repository = AccountRepositoryImpl(remoteDataSource)
+    fun workerWithdrawalSendsSelectedReasonAsCode() =
+        runTest {
+            val remoteDataSource = FakeAccountRemoteDataSource()
+            val repository = AccountRepositoryImpl(remoteDataSource)
 
-        repository.withdraw(
-            currentPassword = "current-password",
-            reason = WithdrawReason.CHANGED_COMPANY,
-        )
+            repository.withdraw(
+                currentPassword = "current-password",
+                reason = WithdrawReason.CHANGED_COMPANY,
+            )
 
-        assertEquals("CHANGED_COMPANY", remoteDataSource.receivedReason)
-    }
+            assertEquals("CHANGED_COMPANY", remoteDataSource.receivedReason)
+        }
 
     @Test
     fun withdrawRequestToStringMasksPassword() {
-        val request = WithdrawAccountRequestDto(
-            currentPassword = "current-password",
-            reason = "OTHER",
-        )
+        val request =
+            WithdrawAccountRequestDto(
+                currentPassword = "current-password",
+                reason = "OTHER",
+            )
 
         assertEquals(false, request.toString().contains("current-password"))
     }

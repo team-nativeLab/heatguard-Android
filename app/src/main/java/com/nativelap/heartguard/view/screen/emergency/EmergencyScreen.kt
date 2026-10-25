@@ -44,8 +44,9 @@ fun EmergencyScreen(
 ) {
     // Figma 03·04는 아래에서 올라오는 시트다. 호출 등록 중 실수로 닫히지 않도록 NavHost가 닫을 수 없는 시트로 띄운다.
     HeartGuardSheetSurface(modifier = modifier) {
-            Column(
-                modifier = Modifier
+        Column(
+            modifier =
+                Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
@@ -54,20 +55,22 @@ fun EmergencyScreen(
                         top = HeartGuardSpacing.LargeSection,
                         bottom = HeartGuardSpacing.LargeSection,
                     ),
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
-            ) {
+            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
+        ) {
             Text(
                 text = stringResource(R.string.emergency_screen_title),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = HeartGuardSpacing.Tight),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = HeartGuardSpacing.Tight),
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = HeartGuardFontSize.PageTitle,
-                    lineHeight = HeartGuardFontSize.PageTitle,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = HeartGuardFontSize.PageTitle,
+                        lineHeight = HeartGuardFontSize.PageTitle,
+                    ),
             )
 
             EmergencyAlertBanner(
@@ -81,11 +84,12 @@ fun EmergencyScreen(
                 description = stringResource(R.string.emergency_indicator_description),
                 isCalling = true,
                 // 등록 요청 중에는 중복 호출을 막기 위해 버튼을 누를 수 없게 한다.
-                onClick = if (isRegistering) {
-                    null
-                } else {
-                    onCallClick
-                },
+                onClick =
+                    if (isRegistering) {
+                        null
+                    } else {
+                        onCallClick
+                    },
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -111,12 +115,13 @@ fun EmergencyScreen(
                 title = stringResource(R.string.emergency_call_cancel),
                 onClick = onCancelClick,
                 enabled = !isRegistering,
-                modifier = Modifier
-                    .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
-                    .padding(top = HeartGuardSpacing.RecordFieldInset),
+                modifier =
+                    Modifier
+                        .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
+                        .padding(top = HeartGuardSpacing.RecordFieldInset),
             )
-            }
         }
+    }
 }
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 683)

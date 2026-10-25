@@ -52,12 +52,13 @@ fun WeatherStatusCard(
         modifier = modifier.fillMaxWidth(),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = HeartGuardSpacing.HomeHeroHorizontal,
-                    end = HeartGuardSpacing.HomeHeroIllustrationEnd,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = HeartGuardSpacing.HomeHeroHorizontal,
+                        end = HeartGuardSpacing.HomeHeroIllustrationEnd,
+                    ),
         ) {
             // 실제 폰트 지표에서는 "47.5°C" + 변화량 배지 폭이 Figma 실측치보다 커질 수 있어
             // 오른쪽 날씨 일러스트와 폭이 겹칠 수 있다. Box는 겹치는 자식을 clip하지 않고
@@ -67,12 +68,13 @@ fun WeatherStatusCard(
                 painter = weatherPainter,
                 contentDescription = weatherContentDescription,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(
-                        width = HeartGuardComponentSize.HomeWeatherIllustrationWidth,
-                        height = HeartGuardComponentSize.HomeWeatherIllustrationHeight,
-                    ),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .size(
+                            width = HeartGuardComponentSize.HomeWeatherIllustrationWidth,
+                            height = HeartGuardComponentSize.HomeWeatherIllustrationHeight,
+                        ),
             )
 
             Column(
@@ -96,10 +98,11 @@ fun WeatherStatusCard(
                     Text(
                         text = currentTemperature,
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.displaySmall.copy(
-                            fontSize = HeartGuardFontSize.HeroTemperature,
-                            fontWeight = FontWeight.Bold,
-                        ),
+                        style =
+                            MaterialTheme.typography.displaySmall.copy(
+                                fontSize = HeartGuardFontSize.HeroTemperature,
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
                     TemperatureDelta(
                         deltaLabel = temperatureDeltaLabel,
@@ -109,13 +112,14 @@ fun WeatherStatusCard(
                 }
 
                 Text(
-                    text = stringResource(
-                        R.string.home_weather_summary_format,
-                        humidityLabel,
-                        humidity,
-                        feelsLikeTemperatureLabel,
-                        feelsLikeTemperature,
-                    ),
+                    text =
+                        stringResource(
+                            R.string.home_weather_summary_format,
+                            humidityLabel,
+                            humidity,
+                            feelsLikeTemperatureLabel,
+                            feelsLikeTemperature,
+                        ),
                     color = MaterialTheme.extraColors.homeMutedText,
                     style = MaterialTheme.typography.bodySmall,
                 )

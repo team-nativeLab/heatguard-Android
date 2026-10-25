@@ -6,7 +6,9 @@ import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 sealed interface RecordDetailUiState {
     data object Loading : RecordDetailUiState
 
-    data class Loaded(val entry: RecordHistoryEntry) : RecordDetailUiState
+    data class Loaded(
+        val entry: RecordHistoryEntry,
+    ) : RecordDetailUiState
 
     data object Failed : RecordDetailUiState
 }

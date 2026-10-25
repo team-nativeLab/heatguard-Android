@@ -47,19 +47,21 @@ fun RecordHistoryDateRangeSelector(
 
     Surface(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = rangeDescription },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = rangeDescription },
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Row(
-            modifier = Modifier
-                .heightIn(min = HeartGuardComponentSize.TouchTarget)
-                .padding(
-                    horizontal = HeartGuardSpacing.Card,
-                    vertical = HeartGuardSpacing.Item,
-                ),
+            modifier =
+                Modifier
+                    .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                    .padding(
+                        horizontal = HeartGuardSpacing.Card,
+                        vertical = HeartGuardSpacing.Item,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
@@ -73,15 +75,16 @@ fun RecordHistoryDateRangeSelector(
             val separatorColor = MaterialTheme.extraColors.tertiaryText
             val separator = stringResource(R.string.history_date_range_separator)
             Text(
-                text = buildAnnotatedString {
-                    append(startDate.format(dateFormatter).withoutLineBreaks())
-                    append(" ")
-                    withStyle(SpanStyle(color = separatorColor, fontWeight = FontWeight.Normal)) {
-                        append(separator)
-                    }
-                    append(" ")
-                    append(endDate.format(dateFormatter).withoutLineBreaks())
-                },
+                text =
+                    buildAnnotatedString {
+                        append(startDate.format(dateFormatter).withoutLineBreaks())
+                        append(" ")
+                        withStyle(SpanStyle(color = separatorColor, fontWeight = FontWeight.Normal)) {
+                            append(separator)
+                        }
+                        append(" ")
+                        append(endDate.format(dateFormatter).withoutLineBreaks())
+                    },
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.extraColors.strongText,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),

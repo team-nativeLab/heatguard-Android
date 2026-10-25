@@ -1,6 +1,14 @@
 package com.nativelap.heartguard.view.route.home
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,18 +28,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
+import com.nativelap.heartguard.core.util.rememberPhoneCallLauncher
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
 import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.view.component.emptyValueText
 import com.nativelap.heartguard.view.component.heatLevelLabelText
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
+import com.nativelap.heartguard.view.component.home.HomeCallPermissionDialog
+import com.nativelap.heartguard.view.component.home.HomeEmergencyPhoneCallDialog
 import com.nativelap.heartguard.view.component.humidityValueText
 import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.menu.MenuDrawerOverlay
@@ -48,7 +60,7 @@ import java.time.format.DateTimeFormatter
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
  * 체크 완료 여부는 서버 필드가 없어 오늘 기록의 측정 시각으로 판정한다.
  * "관리자 전화"([onManagerCallClick])는 현장관리자 긴급호출 흐름(Emergency 화면)으로 이동하고,
- * "긴급 전화"는 이 Route에서 본사 연락처(company.phone)로 바로 다이얼러를 연다. 본사 번호가 없으면 비활성이다.
+ * "긴급 전화"는 이 Route에서 임시 본사 번호로 확인 후 직접 통화한다.
  * 메뉴 드로어는 홈 헤더에서만 열리는 오버레이라 이 Route가 열림 상태를 직접 소유한다.
  * android-navigation SKILL은 다이얼로그·바텀시트를 NavKey로 만들도록 하지만, 드로어는 사용자 결정에 따라
  * Navigation 3 목적지가 아닌 이 화면의 로컬 상태로 관리한다(드로어에서 시작하는 회원탈퇴만 NavHost로 이동). */
@@ -61,10 +73,14 @@ internal fun HeartGuardHomeRoute(
     onProfileEditClick: () -> Unit,
     onInquiryClick: () -> Unit,
     onRecordHistoryClick: () -> Unit,
+    onChecklistClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onWithdrawClick: () -> Unit,
+    onHomeClick: () -> Unit,
+    onSiteSelectionClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
@@ -82,11 +98,12 @@ internal fun HeartGuardHomeRoute(
     // 홈 조회에 실패하면 모든 값이 "--"로 남으므로, 빈 값과 구분되도록 실패를 알리고 재시도할 수 있게 한다.
     LaunchedEffect(homeUiState) {
         if (homeUiState is HomeUiState.Error) {
-            val snackbarResult = snackbarHostState.showSnackbar(
-                message = loadFailureMessage,
-                actionLabel = retryActionLabel,
-                duration = SnackbarDuration.Indefinite,
-            )
+            val snackbarResult =
+                snackbarHostState.showSnackbar(
+                    message = loadFailureMessage,
+                    actionLabel = retryActionLabel,
+                    duration = SnackbarDuration.Indefinite,
+                )
             if (snackbarResult == SnackbarResult.ActionPerformed) {
                 homeViewModel.loadTeamSiteOverview()
             }
@@ -96,8 +113,45 @@ internal fun HeartGuardHomeRoute(
         mutableStateOf(false)
     }
 
-    val dialPhoneNumber = rememberPhoneDialLauncher()
-    val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
+    val callPhoneNumber = rememberPhoneCallLauncher()
+    val headquartersPhoneNumber = stringResource(R.string.home_emergency_phone_number)
+    val callFailedMessage = stringResource(R.string.home_call_failed)
+    var isPhoneCallDialogVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCallPermissionDialogVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCallPermissionRequestInProgress by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var isCallActionInProgress by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    val startHeadquartersCall = {
+        if (!isCallActionInProgress) {
+            isCallActionInProgress = true
+            isPhoneCallDialogVisible = false
+            if (!callPhoneNumber(headquartersPhoneNumber)) {
+                isCallActionInProgress = false
+                Toast.makeText(context, callFailedMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val callPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isPermissionGranted ->
+            isCallPermissionRequestInProgress = false
+            if (isPermissionGranted) {
+                startHeadquartersCall()
+            } else {
+                isPhoneCallDialogVisible = false
+                isCallPermissionDialogVisible = true
+            }
+        }
 
     // 드로어가 열려 있을 때만 시스템 뒤로가기를 가로채 드로어를 닫는다. 닫혀 있으면 NavHost의 onBack이 처리한다.
     BackHandler(enabled = isMenuDrawerOpen) {
@@ -116,7 +170,6 @@ internal fun HeartGuardHomeRoute(
             riskLabel = heatLevelLabelText(siteStatus.heatLevel),
             nextCheckDescription = nextCheckDescriptionText(checkSchedule),
             checkTimelineItems = checkTimelineItems(checkSchedule),
-            isEmergencyCallEnabled = headquartersPhoneNumber != null,
             onMenuClick = {
                 isMenuDrawerOpen = true
                 menuDrawerViewModel.loadProfile()
@@ -124,12 +177,57 @@ internal fun HeartGuardHomeRoute(
             onNotificationClick = onNotificationsClick,
             onManagerCallClick = onManagerCallClick,
             onEmergencyClick = {
-                headquartersPhoneNumber?.let(dialPhoneNumber)
+                isCallActionInProgress = false
+                isPhoneCallDialogVisible = true
             },
             onFieldPhotoClick = onFieldPhotoClick,
             onRecordHistoryClick = onRecordHistoryClick,
+            onChecklistClick = onChecklistClick,
             onRecordClick = onRecordClick,
         )
+
+        if (isPhoneCallDialogVisible) {
+            HomeEmergencyPhoneCallDialog(
+                phoneNumber = headquartersPhoneNumber,
+                onDismissRequest = {
+                    isPhoneCallDialogVisible = false
+                },
+                onCallClick = {
+                    val hasCallPermission =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CALL_PHONE,
+                        ) == PackageManager.PERMISSION_GRANTED
+                    if (hasCallPermission) {
+                        startHeadquartersCall()
+                    } else {
+                        if (!isCallPermissionRequestInProgress) {
+                            isCallPermissionRequestInProgress = true
+                            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                        }
+                    }
+                },
+            )
+        }
+
+        if (isCallPermissionDialogVisible) {
+            HomeCallPermissionDialog(
+                onDismissRequest = {
+                    isCallPermissionDialogVisible = false
+                    isPhoneCallDialogVisible = true
+                },
+                onOpenSettingsClick = {
+                    isCallPermissionDialogVisible = false
+                    isPhoneCallDialogVisible = true
+                    val settingsIntent =
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", context.packageName, null),
+                        )
+                    context.startActivity(settingsIntent)
+                },
+            )
+        }
 
         MenuDrawerOverlay(
             isVisible = isMenuDrawerOpen,
@@ -141,6 +239,11 @@ internal fun HeartGuardHomeRoute(
                 profile = menuDrawerProfile,
                 onEvent = { event ->
                     when (event) {
+                        MenuDrawerEvent.HomeClicked -> {
+                            isMenuDrawerOpen = false
+                            onHomeClick()
+                        }
+
                         MenuDrawerEvent.EditProfileClicked -> {
                             isMenuDrawerOpen = false
                             onProfileEditClick()
@@ -149,6 +252,11 @@ internal fun HeartGuardHomeRoute(
                         MenuDrawerEvent.InquiryClicked -> {
                             isMenuDrawerOpen = false
                             onInquiryClick()
+                        }
+
+                        MenuDrawerEvent.SiteSelectionClicked -> {
+                            isMenuDrawerOpen = false
+                            onSiteSelectionClick()
                         }
 
                         MenuDrawerEvent.LogoutClicked -> {
@@ -167,10 +275,11 @@ internal fun HeartGuardHomeRoute(
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
         )
     }
 }
@@ -178,43 +287,48 @@ internal fun HeartGuardHomeRoute(
 // 온도를 받지 못했으면 Figma 홈의 관측값 없음 표기("--.- °C")를 쓴다.
 @Composable
 @ReadOnlyComposable
-private fun homeTemperatureText(temperature: String?): String {
-    return if (temperature == null) {
+private fun homeTemperatureText(temperature: String?): String =
+    if (temperature == null) {
         stringResource(R.string.home_temperature_empty)
     } else {
         temperatureValueText(temperature)
     }
-}
 
 @Composable
 @ReadOnlyComposable
-private fun skyStatusText(skyStatus: SkyStatus?): String {
-    return when (skyStatus) {
+private fun skyStatusText(skyStatus: SkyStatus?): String =
+    when (skyStatus) {
         SkyStatus.CLEAR -> stringResource(R.string.home_sky_clear)
+
         SkyStatus.PARTLY_CLOUDY -> stringResource(R.string.home_sky_partly_cloudy)
+
         SkyStatus.CLOUDY -> stringResource(R.string.home_sky_cloudy)
+
         SkyStatus.RAIN -> stringResource(R.string.home_sky_rain)
+
         SkyStatus.SNOW -> stringResource(R.string.home_sky_snow)
+
         SkyStatus.UNKNOWN,
         null,
         -> emptyValueText()
     }
-}
 
 // 눈 전용 이미지가 없어 눈·미입력은 기본 홈 날씨 이미지를 쓴다.
 @DrawableRes
-private fun skyStatusImageRes(skyStatus: SkyStatus?): Int {
-    return when (skyStatus) {
+private fun skyStatusImageRes(skyStatus: SkyStatus?): Int =
+    when (skyStatus) {
         SkyStatus.CLEAR -> R.drawable.weather_sunny
+
         SkyStatus.CLOUDY -> R.drawable.weather_cloud
+
         SkyStatus.RAIN -> R.drawable.weather_rain
+
         SkyStatus.PARTLY_CLOUDY,
         SkyStatus.SNOW,
         SkyStatus.UNKNOWN,
         null,
         -> R.drawable.heartguard_home_weather
     }
-}
 
 private val nextCheckTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -272,12 +386,11 @@ private fun checkTimelineItems(checkSchedule: CheckSchedule?): List<CheckTimelin
 // 정시는 "09시", 그 외에는 "09:30"처럼 보여준다.
 @Composable
 @ReadOnlyComposable
-private fun checkTimeLabelText(checkTime: LocalTime): String {
-    return if (checkTime.minute == 0) {
+private fun checkTimeLabelText(checkTime: LocalTime): String =
+    if (checkTime.minute == 0) {
         stringResource(R.string.home_check_time_hour_format, checkTime.hour)
     } else {
         checkTime.format(nextCheckTimeFormatter)
     }
-}
 
 private const val MINUTES_PER_HOUR = 60L

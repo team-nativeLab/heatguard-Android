@@ -27,8 +27,7 @@ fun LoadMoreWhenNearEnd(
             val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             layoutInfo.totalItemsCount > 0 &&
                 lastVisibleIndex >= layoutInfo.totalItemsCount - prefetchItemCount
-        }
-            .distinctUntilChanged()
+        }.distinctUntilChanged()
             .collect { isNearEnd ->
                 if (isNearEnd) {
                     latestOnLoadMore()

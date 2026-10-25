@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
@@ -20,10 +19,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
@@ -55,26 +55,29 @@ fun TemperatureRecordCard(
     isCardEnabled: Boolean = true,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .alpha(
-                if (isCardEnabled) {
-                    ENABLED_ALPHA
-                } else {
-                    DISABLED_ALPHA
-                },
-            ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .alpha(
+                    if (isCardEnabled) {
+                        ENABLED_ALPHA
+                    } else {
+                        DISABLED_ALPHA
+                    },
+                ),
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(
-            width = HeartGuardBorderWidth.Divider,
-            color = MaterialTheme.extraColors.cardBorder,
-        ),
+        border =
+            BorderStroke(
+                width = HeartGuardBorderWidth.Divider,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(HeartGuardSpacing.Section),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(HeartGuardSpacing.Section),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
             Row(
@@ -86,25 +89,28 @@ fun TemperatureRecordCard(
                     text = title,
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontSize = HeartGuardFontSize.CardTitle,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontSize = HeartGuardFontSize.CardTitle,
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
                 Switch(
-                    modifier = Modifier.semantics {
-                        contentDescription = checkboxContentDescription
-                    },
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = checkboxContentDescription
+                        },
                     checked = isManualInputEnabled,
                     onCheckedChange = onManualInputChange,
                     enabled = isCardEnabled,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        uncheckedThumbColor = MaterialTheme.colorScheme.surface,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.outline,
-                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
+                    colors =
+                        SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.surface,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.outline,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                        ),
                 )
             }
 

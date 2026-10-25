@@ -37,9 +37,10 @@ fun TemperatureSummaryCard(
     thermometerPainter: Painter? = null,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = HeartGuardSpacing.Item),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = HeartGuardSpacing.Item),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {
@@ -56,32 +57,36 @@ fun TemperatureSummaryCard(
             Text(
                 text = currentTemperatureLabel,
                 color = MaterialTheme.extraColors.homeMutedText,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = HeartGuardFontSize.SmallLabel,
-                    fontWeight = FontWeight.SemiBold,
-                ),
+                style =
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontSize = HeartGuardFontSize.SmallLabel,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
             )
             Text(
                 text = currentTemperature,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontSize = HeartGuardFontSize.TemperatureSummary,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontSize = HeartGuardFontSize.TemperatureSummary,
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
             Text(
-                text = stringResource(
-                    R.string.home_weather_summary_format,
-                    humidityLabel,
-                    humidity,
-                    feelsLikeLabel,
-                    feelsLikeTemperature,
-                ),
+                text =
+                    stringResource(
+                        R.string.home_weather_summary_format,
+                        humidityLabel,
+                        humidity,
+                        feelsLikeLabel,
+                        feelsLikeTemperature,
+                    ),
                 color = MaterialTheme.extraColors.homeMutedText,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = HeartGuardFontSize.SmallLabel,
-                    fontWeight = FontWeight.SemiBold,
-                ),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontSize = HeartGuardFontSize.SmallLabel,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
             )
         }
     }
@@ -99,7 +104,9 @@ private fun TemperatureSummaryCardPreview() {
             humidityLabel = "습도",
             feelsLikeLabel = "체감온도",
             title = stringResource(R.string.temperature_current_measurement),
-            thermometerPainter = androidx.compose.ui.res.painterResource(R.drawable.record_thermometer_illustration),
+            thermometerPainter =
+                androidx.compose.ui.res
+                    .painterResource(R.drawable.record_thermometer_illustration),
         )
     }
 }

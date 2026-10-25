@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,16 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardExtraColors
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
@@ -50,41 +50,47 @@ fun RecordTypeOptionCard(
     val extraColors: HeartGuardExtraColors = MaterialTheme.extraColors
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.RecordTypeOptionHeight)
-            .clip(RoundedCornerShape(HeartGuardRadius.LargeCard))
-            .selectable(
-                selected = isSelected,
-                role = Role.RadioButton,
-                onClick = onClick,
-            ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.RecordTypeOptionHeight)
+                .clip(RoundedCornerShape(HeartGuardRadius.LargeCard))
+                .selectable(
+                    selected = isSelected,
+                    role = Role.RadioButton,
+                    onClick = onClick,
+                ),
         shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
-        color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        border = BorderStroke(
-            width = if (isSelected) {
-                HeartGuardBorderWidth.RecordTypeSelection
+        color =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
             } else {
-                HeartGuardSpacing.Hairline
+                MaterialTheme.colorScheme.surface
             },
-            color = if (isSelected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                extraColors.cardBorder
-            },
-        ),
+        border =
+            BorderStroke(
+                width =
+                    if (isSelected) {
+                        HeartGuardBorderWidth.RecordTypeSelection
+                    } else {
+                        HeartGuardSpacing.Hairline
+                    },
+                color =
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        extraColors.cardBorder
+                    },
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = HeartGuardSpacing.Section,
-                    vertical = HeartGuardSpacing.Section,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = HeartGuardSpacing.Section,
+                        vertical = HeartGuardSpacing.Section,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
@@ -99,21 +105,23 @@ fun RecordTypeOptionCard(
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = HeartGuardFontSize.RecordOptionTitle,
-                        lineHeight = HeartGuardFontSize.RecordOptionTitle,
-                    ),
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = HeartGuardFontSize.RecordOptionTitle,
+                            lineHeight = HeartGuardFontSize.RecordOptionTitle,
+                        ),
                 )
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
                 Text(
                     text = description,
                     color = extraColors.mutedText,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = HeartGuardFontSize.RecordOptionDescription,
-                        lineHeight = HeartGuardFontSize.RecordOptionDescription,
-                    ),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = HeartGuardFontSize.RecordOptionDescription,
+                            lineHeight = HeartGuardFontSize.RecordOptionDescription,
+                        ),
                 )
             }
         }

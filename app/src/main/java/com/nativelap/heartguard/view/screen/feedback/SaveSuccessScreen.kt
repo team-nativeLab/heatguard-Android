@@ -17,6 +17,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardSheetSurface
 import com.nativelap.heartguard.view.component.feedback.SaveCompleteButton
+import com.nativelap.heartguard.view.component.feedback.SaveErrorDetailCard
 import com.nativelap.heartguard.view.component.feedback.SaveResultMessage
 import com.nativelap.heartguard.view.component.feedback.SaveResultTitle
 import com.nativelap.heartguard.view.component.feedback.SavedRecordSummaryCard
@@ -30,14 +31,16 @@ fun SaveSuccessScreen(
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
     onDetailsClick: (() -> Unit)? = null,
+    hasPendingCleanup: Boolean = false,
 ) {
     HeartGuardSheetSurface(modifier = modifier) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = HeartGuardSpacing.ResultHorizontal),
         ) {
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultTitleTop))
             SaveResultTitle(
@@ -51,6 +54,15 @@ fun SaveSuccessScreen(
                 isSuccess = true,
             )
             Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
+
+            if (hasPendingCleanup) {
+                SaveErrorDetailCard(
+                    title = stringResource(R.string.save_cleanup_title),
+                    details = listOf(stringResource(R.string.save_cleanup_description)),
+                )
+
+                Spacer(modifier = Modifier.height(HeartGuardSpacing.ResultCardGap))
+            }
 
             SavedRecordSummaryCard(
                 title = stringResource(R.string.save_record_summary),
@@ -73,20 +85,21 @@ fun SaveSuccessScreen(
 private fun SaveSuccessScreenPreview() {
     HeartGuardTheme {
         SaveSuccessScreen(
-            records = listOf(
-                SavedRecordSummaryItem(
-                    label = "현재 온도",
-                    value = "37℃",
+            records =
+                listOf(
+                    SavedRecordSummaryItem(
+                        label = "현재 온도",
+                        value = "37℃",
+                    ),
+                    SavedRecordSummaryItem(
+                        label = "체감온도",
+                        value = "40℃",
+                    ),
+                    SavedRecordSummaryItem(
+                        label = "습도",
+                        value = "65%",
+                    ),
                 ),
-                SavedRecordSummaryItem(
-                    label = "체감온도",
-                    value = "40℃",
-                ),
-                SavedRecordSummaryItem(
-                    label = "습도",
-                    value = "65%",
-                ),
-            ),
             onCompleteClick = {},
         )
     }

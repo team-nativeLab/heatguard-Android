@@ -12,8 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -67,94 +67,98 @@ fun FieldPhotoScreen(
         // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
         // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             contentAlignment = Alignment.TopCenter,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
-            HeartGuardHeader(
-                title = stringResource(R.string.brand_name),
-                menuPainter = painterResource(R.drawable.menu_hamburger),
-                notificationPainter = painterResource(R.drawable.notification_bell),
-                onMenuClick = onMenuClick,
-                onNotificationClick = onNotificationClick,
-            )
-
-            PhotoScreenIntro(
-                title = stringResource(R.string.photo_field_screen_title),
-                description = stringResource(R.string.photo_field_screen_description),
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
-            )
-
-            if (selectedPhotoUris.isNotEmpty()) {
-                SelectedPhotoGrid(
-                    photoUris = selectedPhotoUris,
-                    onRemovePhoto = onRemovePhoto,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                HeartGuardHeader(
+                    title = stringResource(R.string.brand_name),
+                    menuPainter = painterResource(R.drawable.menu_hamburger),
+                    notificationPainter = painterResource(R.drawable.notification_bell),
+                    onMenuClick = onMenuClick,
+                    onNotificationClick = onNotificationClick,
                 )
-            } else {
-                PhotoPreviewPlaceholder(
-                    message = if (showSaveError) {
-                        stringResource(R.string.photo_temperature_not_saved)
-                    } else {
-                        null
-                    },
+
+                PhotoScreenIntro(
+                    title = stringResource(R.string.photo_field_screen_title),
+                    description = stringResource(R.string.photo_field_screen_description),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
+                )
+
+                if (selectedPhotoUris.isNotEmpty()) {
+                    SelectedPhotoGrid(
+                        photoUris = selectedPhotoUris,
+                        onRemovePhoto = onRemovePhoto,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    )
+                } else {
+                    PhotoPreviewPlaceholder(
+                        message =
+                            if (showSaveError) {
+                                stringResource(R.string.photo_temperature_not_saved)
+                            } else {
+                                null
+                            },
+                        onClick = onCaptureClick,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    )
+                }
+
+                if (showSaveError) {
+                    TemperatureRecordCard(
+                        temperatureLabel = stringResource(R.string.home_temperature_field),
+                        temperatureText = "",
+                        temperatureUnit = "",
+                        onTemperatureChange = {},
+                        humidityLabel = stringResource(R.string.home_humidity_field),
+                        humidityText = "",
+                        humidityUnit = "",
+                        onHumidityChange = {},
+                        feelsLikeLabel = stringResource(R.string.home_feels_like_field),
+                        feelsLikeText = "",
+                        installationLabel = stringResource(R.string.temperature_save_locked_note),
+                        isManualInputEnabled = false,
+                        onManualInputChange = {},
+                        checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
+                        title = stringResource(R.string.temperature_manual_input_title),
+                        isCardEnabled = false,
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    )
+                } else {
+                    TemperatureInputSummaryCard(
+                        title = stringResource(R.string.temperature_installation_status),
+                        currentTemperatureLabel = stringResource(R.string.home_temperature_field),
+                        currentTemperature = manualTemperature,
+                        humidityLabel = stringResource(R.string.home_humidity_field),
+                        humidity = manualHumidity,
+                        feelsLikeLabel = stringResource(R.string.home_feels_like_field),
+                        // 체감온도는 저장할 때 서버가 계산한다.
+                        feelsLikeTemperature = stringResource(R.string.temperature_auto_calculated),
+                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    )
+                }
+
+                PhotoCaptureRow(
+                    label = stringResource(R.string.photo_field_retry),
+                    instructionText = stringResource(R.string.photo_field_instruction_two_line),
+                    cameraPainter = painterResource(R.drawable.record_camera),
+                    cameraContentDescription = stringResource(R.string.photo_capture),
                     onClick = onCaptureClick,
+                    isEnabled = selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    labelHorizontalOffset =
+                        HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.RecordCardHorizontal,
                 )
-            }
-
-            if (showSaveError) {
-                TemperatureRecordCard(
-                    temperatureLabel = stringResource(R.string.home_temperature_field),
-                    temperatureText = "",
-                    temperatureUnit = "",
-                    onTemperatureChange = {},
-                    humidityLabel = stringResource(R.string.home_humidity_field),
-                    humidityText = "",
-                    humidityUnit = "",
-                    onHumidityChange = {},
-                    feelsLikeLabel = stringResource(R.string.home_feels_like_field),
-                    feelsLikeText = "",
-                    installationLabel = stringResource(R.string.temperature_save_locked_note),
-                    isManualInputEnabled = false,
-                    onManualInputChange = {},
-                    checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
-                    title = stringResource(R.string.temperature_manual_input_title),
-                    isCardEnabled = false,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
-                )
-            } else {
-                TemperatureInputSummaryCard(
-                    title = stringResource(R.string.temperature_installation_status),
-                    currentTemperatureLabel = stringResource(R.string.home_temperature_field),
-                    currentTemperature = manualTemperature,
-                    humidityLabel = stringResource(R.string.home_humidity_field),
-                    humidity = manualHumidity,
-                    feelsLikeLabel = stringResource(R.string.home_feels_like_field),
-                    // 체감온도는 저장할 때 서버가 계산한다.
-                    feelsLikeTemperature = stringResource(R.string.temperature_auto_calculated),
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
-                )
-            }
-
-            PhotoCaptureRow(
-                label = stringResource(R.string.photo_field_retry),
-                instructionText = stringResource(R.string.photo_field_instruction_two_line),
-                cameraPainter = painterResource(R.drawable.record_camera),
-                cameraContentDescription = stringResource(R.string.photo_capture),
-                onClick = onCaptureClick,
-                isEnabled = selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT,
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
-                labelHorizontalOffset = HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.RecordCardHorizontal,
-            )
             }
         }
     }

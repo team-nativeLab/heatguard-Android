@@ -5,7 +5,10 @@ import com.nativelap.heartguard.data.inquiry.dto.InquiryListPageDto
 import com.nativelap.heartguard.data.inquiry.dto.InquirySubmissionResponseDto
 
 interface InquiryRemoteDataSource {
-    suspend fun submitInquiry(title: String, content: String): ApiResult<InquirySubmissionResponseDto>
+    suspend fun submitInquiry(
+        title: String,
+        content: String,
+    ): ApiResult<InquirySubmissionResponseDto>
 
     suspend fun getInquiryPage(
         cursor: String?,

@@ -45,9 +45,10 @@ fun HomeWeatherMetricsCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.HomeWeatherMetricHeight),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.HomeWeatherMetricHeight),
         shape = RoundedCornerShape(HeartGuardRadius.HomeMetric),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = HeartGuardElevation.HomeMetricCard,
@@ -58,12 +59,13 @@ fun HomeWeatherMetricsCard(
             val isStacked = maxWidth.value / fontScale < HeartGuardComponentSize.HomeMetricRowMinWidth.value
             if (isStacked) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                            vertical = HeartGuardSpacing.Section,
-                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                                vertical = HeartGuardSpacing.Section,
+                            ),
                     verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
                 ) {
                     HomeWeatherMetric(
@@ -84,12 +86,13 @@ fun HomeWeatherMetricsCard(
                 }
             } else {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                            vertical = HeartGuardSpacing.Section,
-                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = HeartGuardSpacing.HomeMetricHorizontal,
+                                vertical = HeartGuardSpacing.Section,
+                            ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
                 ) {
@@ -156,9 +159,10 @@ private fun HomeWeatherMetric(
             Text(
                 text = metricValue,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
         }
     }
@@ -167,9 +171,10 @@ private fun HomeWeatherMetric(
 @Composable
 private fun HomeWeatherMetricDivider() {
     Surface(
-        modifier = Modifier
-            .width(HeartGuardBorderWidth.Divider)
-            .height(HeartGuardComponentSize.HomeMetricDividerHeight),
+        modifier =
+            Modifier
+                .width(HeartGuardBorderWidth.Divider)
+                .height(HeartGuardComponentSize.HomeMetricDividerHeight),
         color = MaterialTheme.colorScheme.outlineVariant,
     ) {}
 }

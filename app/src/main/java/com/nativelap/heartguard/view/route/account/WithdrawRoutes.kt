@@ -44,7 +44,10 @@ internal fun HeartGuardWithdrawNoticeRoute(
         password = password,
         onEvent = { event ->
             when (event) {
-                WithdrawNoticeScreenEvent.BackClicked -> onBackClick()
+                WithdrawNoticeScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
                 is WithdrawNoticeScreenEvent.ReasonSelected -> {
                     withdrawViewModel.selectReason(event.reason)
                 }
@@ -77,8 +80,9 @@ internal fun HeartGuardWithdrawConfirmRoute(
     val latestOnDismiss by rememberUpdatedState(onDismiss)
 
     LaunchedEffect(uiState.submissionState) {
-        val isFailed = uiState.submissionState == WithdrawSubmissionState.Failed ||
-            uiState.submissionState == WithdrawSubmissionState.InvalidPassword
+        val isFailed =
+            uiState.submissionState == WithdrawSubmissionState.Failed ||
+                uiState.submissionState == WithdrawSubmissionState.InvalidPassword
 
         if (isFailed) {
             latestOnDismiss()
@@ -100,9 +104,7 @@ internal fun HeartGuardWithdrawConfirmRoute(
 /** 회원탈퇴 완료 화면 Route이다. 탈퇴가 이미 끝났으므로 확인과 시스템 뒤로가기 모두 세션을 종료해
  * 로그인 화면으로 보낸다(탈퇴 전 화면으로 돌아가지 않게 한다). */
 @Composable
-internal fun HeartGuardWithdrawDoneRoute(
-    withdrawViewModel: WithdrawViewModel,
-) {
+internal fun HeartGuardWithdrawDoneRoute(withdrawViewModel: WithdrawViewModel) {
     BackHandler {
         withdrawViewModel.finishWithdrawal()
     }

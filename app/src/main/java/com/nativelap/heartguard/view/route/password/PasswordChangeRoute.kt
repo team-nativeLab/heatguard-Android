@@ -54,14 +54,39 @@ internal fun HeartGuardPasswordChangeRoute(
         uiState = uiState,
         onEvent = { event ->
             when (event) {
-                PasswordChangeScreenEvent.BackClicked -> onBackClick()
-                is PasswordChangeScreenEvent.CurrentPasswordChanged -> viewModel.updateCurrentPassword(event.password)
-                is PasswordChangeScreenEvent.NewPasswordChanged -> viewModel.updateNewPassword(event.password)
-                is PasswordChangeScreenEvent.ConfirmPasswordChanged -> viewModel.updateConfirmPassword(event.password)
-                PasswordChangeScreenEvent.CurrentPasswordVisibilityClicked -> viewModel.toggleCurrentPasswordVisibility()
-                PasswordChangeScreenEvent.NewPasswordVisibilityClicked -> viewModel.toggleNewPasswordVisibility()
-                PasswordChangeScreenEvent.ConfirmPasswordVisibilityClicked -> viewModel.toggleConfirmPasswordVisibility()
-                PasswordChangeScreenEvent.SubmitClicked -> viewModel.submit()
+                PasswordChangeScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
+                is PasswordChangeScreenEvent.CurrentPasswordChanged -> {
+                    viewModel.updateCurrentPassword(event.password)
+                }
+
+                is PasswordChangeScreenEvent.NewPasswordChanged -> {
+                    viewModel.updateNewPassword(event.password)
+                }
+
+                is PasswordChangeScreenEvent.ConfirmPasswordChanged -> {
+                    viewModel.updateConfirmPassword(event.password)
+                }
+
+                PasswordChangeScreenEvent.CurrentPasswordVisibilityClicked -> {
+                    viewModel
+                        .toggleCurrentPasswordVisibility()
+                }
+
+                PasswordChangeScreenEvent.NewPasswordVisibilityClicked -> {
+                    viewModel.toggleNewPasswordVisibility()
+                }
+
+                PasswordChangeScreenEvent.ConfirmPasswordVisibilityClicked -> {
+                    viewModel
+                        .toggleConfirmPasswordVisibility()
+                }
+
+                PasswordChangeScreenEvent.SubmitClicked -> {
+                    viewModel.submit()
+                }
             }
         },
     )

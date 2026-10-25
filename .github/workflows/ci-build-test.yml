@@ -1,5 +1,5 @@
 # 붙여넣을 위치: <레포>/.github/workflows/ci-build-test.yml
-# 목적: PR마다 컴파일 → 단위 테스트 → lint 를 실행한다. (ktlint/detekt 는 4개 레포 모두 미도입이라 넣지 않음)
+# 목적: PR마다 컴파일 → 단위 테스트 → lint 를 실행한다. (ktlint 포맷 검사는 format-check.yml 에서 별도로 실행한다)
 # 주의: 워크플로 이름("CI Build & Test")은 ci-autofix-*.yml 의 workflow_run 트리거와 연결되어 있으므로 바꾸지 않는다.
 name: CI Build & Test
 

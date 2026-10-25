@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.HeartGuard" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Android 12+ 시스템 스플래시는 인트로·로그인과 같은 흰 배경과 80dp 로고(240dp 캔버스)를 쓴다. -->
+    <style name="Theme.HeartGuard" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+    </style>
 </resources>

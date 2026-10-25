@@ -1,7 +1,7 @@
 package com.nativelap.heartguard.data.record.dto
 
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /** POST /api/v1/team/records 요청 본문이다.
  * 예: {"type":"WORK","photoKeys":["teams/team_01/uploads/up_01.jpg"],"memo":"오전 작업",

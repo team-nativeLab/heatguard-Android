@@ -1,13 +1,13 @@
 package com.nativelap.heartguard.viewmodel.record
 
-import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 class RecordDraftUiStateTest {
     @Test
@@ -38,7 +38,10 @@ class RecordDraftUiStateTest {
         assertFalse(draft.copy(restEndTime = null).hasValidRestTimeRange)
     }
 
-    private fun restDraft(start: String, end: String) = RecordDraftUiState(
+    private fun restDraft(
+        start: String,
+        end: String,
+    ) = RecordDraftUiState(
         restDate = LocalDate.of(2026, 10, 1),
         restStartTime = LocalTime.parse(start),
         restEndTime = LocalTime.parse(end),

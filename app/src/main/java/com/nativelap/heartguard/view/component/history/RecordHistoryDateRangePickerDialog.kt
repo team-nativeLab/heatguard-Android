@@ -34,18 +34,20 @@ fun RecordHistoryDateRangePickerDialog(
     onDismiss: () -> Unit,
 ) {
     val todayMillis = today.toUtcMillis()
-    val selectableDates = remember(todayMillis) {
-        object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
+    val selectableDates =
+        remember(todayMillis) {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
 
-            override fun isSelectableYear(year: Int): Boolean = year <= today.year
+                override fun isSelectableYear(year: Int): Boolean = year <= today.year
+            }
         }
-    }
-    val dateRangePickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialStartDate.toUtcMillis(),
-        initialSelectedEndDateMillis = initialEndDate.toUtcMillis(),
-        selectableDates = selectableDates,
-    )
+    val dateRangePickerState =
+        rememberDateRangePickerState(
+            initialSelectedStartDateMillis = initialStartDate.toUtcMillis(),
+            initialSelectedEndDateMillis = initialEndDate.toUtcMillis(),
+            selectableDates = selectableDates,
+        )
     val selectedStartMillis = dateRangePickerState.selectedStartDateMillis
     val selectedEndMillis = dateRangePickerState.selectedEndDateMillis
 
@@ -76,11 +78,12 @@ fun RecordHistoryDateRangePickerDialog(
             state = dateRangePickerState,
             title = {
                 Column(
-                    modifier = Modifier.padding(
-                        start = HeartGuardSpacing.LargeSection,
-                        end = HeartGuardSpacing.LargeSection,
-                        top = HeartGuardSpacing.Card,
-                    ),
+                    modifier =
+                        Modifier.padding(
+                            start = HeartGuardSpacing.LargeSection,
+                            end = HeartGuardSpacing.LargeSection,
+                            top = HeartGuardSpacing.Card,
+                        ),
                     verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
                 ) {
                     Text(text = stringResource(R.string.history_date_picker_title))

@@ -5,29 +5,31 @@ import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 
 // 서버가 빈 문자열로 준 값(예: 관리자 연락처 미등록)은 "값 없음"과 같게 취급해 화면이 "--"로 표시하게 한다.
-internal fun TeamSiteResponseDto.toDomain(): TeamSiteOverview = TeamSiteOverview(
-    teamName = team.name.nullIfBlank(),
-    workplace = team.workplace.nullIfBlank(),
-    siteName = site.name.nullIfBlank(),
-    managerPhoneNumber = site.managerPhone.nullIfBlank(),
-    currentTemperature = weather?.temperature,
-    humidity = weather?.humidity,
-    apparentTemperature = weather?.apparentTemperature,
-    heatLevel = heatLevel,
-    checkTimes = checkTimes,
-    hasActiveEmergencyCall = activeEmergencyCall?.callId != null,
-    headquartersPhoneNumber = company?.phone.nullIfBlank(),
-    skyStatus = weather?.skyStatus.nullIfBlank()?.toSkyStatus(),
-    temperatureDelta = weather?.temperatureDelta,
-)
+internal fun TeamSiteResponseDto.toDomain(): TeamSiteOverview =
+    TeamSiteOverview(
+        teamName = team.name.nullIfBlank(),
+        workplace = team.workplace.nullIfBlank(),
+        siteName = site.name.nullIfBlank(),
+        managerPhoneNumber = site.managerPhone.nullIfBlank(),
+        currentTemperature = weather?.temperature,
+        humidity = weather?.humidity,
+        apparentTemperature = weather?.apparentTemperature,
+        heatLevel = heatLevel,
+        checkTimes = checkTimes,
+        hasActiveEmergencyCall = activeEmergencyCall?.callId != null,
+        headquartersPhoneNumber = company?.phone.nullIfBlank(),
+        skyStatus = weather?.skyStatus.nullIfBlank()?.toSkyStatus(),
+        temperatureDelta = weather?.temperatureDelta,
+    )
 
-private fun String.toSkyStatus(): SkyStatus = when (this) {
-    "CLEAR" -> SkyStatus.CLEAR
-    "PARTLY_CLOUDY" -> SkyStatus.PARTLY_CLOUDY
-    "CLOUDY" -> SkyStatus.CLOUDY
-    "RAIN" -> SkyStatus.RAIN
-    "SNOW" -> SkyStatus.SNOW
-    else -> SkyStatus.UNKNOWN
-}
+private fun String.toSkyStatus(): SkyStatus =
+    when (this) {
+        "CLEAR" -> SkyStatus.CLEAR
+        "PARTLY_CLOUDY" -> SkyStatus.PARTLY_CLOUDY
+        "CLOUDY" -> SkyStatus.CLOUDY
+        "RAIN" -> SkyStatus.RAIN
+        "SNOW" -> SkyStatus.SNOW
+        else -> SkyStatus.UNKNOWN
+    }
 
 private fun String?.nullIfBlank(): String? = this?.takeIf { text -> text.isNotBlank() }

@@ -10,14 +10,13 @@ import com.nativelap.heartguard.viewmodel.history.RecordHistoryFilter
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryLoadState
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryScreenEvent
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryUiState
-import java.time.LocalDate
-import java.time.OffsetDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
+import java.time.OffsetDateTime
 
 class RecordHistoryTemporaryDraftTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -63,13 +62,12 @@ class RecordHistoryTemporaryDraftTest {
         composeTestRule.onNodeWithText("해당 기간에 휴식 사진 기록이 없어요").fetchSemanticsNode()
     }
 
-    private fun historyUiState(
-        selectedFilter: RecordHistoryFilter = RecordHistoryFilter.ALL,
-    ) = RecordHistoryUiState(
-        today = LocalDate.of(2026, 9, 27),
-        startDate = LocalDate.of(2026, 9, 21),
-        endDate = LocalDate.of(2026, 9, 27),
-        selectedFilter = selectedFilter,
-        loadState = RecordHistoryLoadState.Loaded(emptyList()),
-    )
+    private fun historyUiState(selectedFilter: RecordHistoryFilter = RecordHistoryFilter.ALL) =
+        RecordHistoryUiState(
+            today = LocalDate.of(2026, 9, 27),
+            startDate = LocalDate.of(2026, 9, 21),
+            endDate = LocalDate.of(2026, 9, 27),
+            selectedFilter = selectedFilter,
+            loadState = RecordHistoryLoadState.Loaded(emptyList()),
+        )
 }

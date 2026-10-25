@@ -24,10 +24,11 @@ fun WeatherMetric(
         Text(
             text = metricValue,
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = HeartGuardFontSize.RecordOptionTitle,
-            ),
+            style =
+                MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = HeartGuardFontSize.RecordOptionTitle,
+                ),
         )
     }
 }

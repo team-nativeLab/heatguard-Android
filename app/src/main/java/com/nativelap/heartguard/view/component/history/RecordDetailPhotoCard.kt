@@ -93,11 +93,12 @@ fun RecordDetailPhotoCard(
 @Composable
 private fun PhotoFrame(content: @Composable () -> Unit) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(PHOTO_ASPECT_RATIO)
-            .clip(RoundedCornerShape(HeartGuardRadius.InputBox))
-            .background(MaterialTheme.extraColors.photoContainer),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(PHOTO_ASPECT_RATIO)
+                .clip(RoundedCornerShape(HeartGuardRadius.InputBox))
+                .background(MaterialTheme.extraColors.photoContainer),
         contentAlignment = Alignment.Center,
     ) {
         content()

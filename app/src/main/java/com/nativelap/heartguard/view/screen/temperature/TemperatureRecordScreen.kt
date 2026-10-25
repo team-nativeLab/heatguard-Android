@@ -12,8 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -69,81 +69,86 @@ fun TemperatureRecordScreen(
         // 헤더는 자체 여백(HeartGuardHeader의 HeaderHorizontal)으로 좌우 아이콘 위치를 관리하므로,
         // 화면 전체에 가로 패딩을 주지 않고 헤더 아래 콘텐츠에만 별도로 적용한다.
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             contentAlignment = Alignment.TopCenter,
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
-            HeartGuardHeader(
-                title = stringResource(R.string.brand_name),
-                menuPainter = painterResource(R.drawable.menu_hamburger),
-                notificationPainter = painterResource(R.drawable.notification_bell),
-                onMenuClick = onMenuClick,
-                onNotificationClick = onNotificationClick,
-            )
+                HeartGuardHeader(
+                    title = stringResource(R.string.brand_name),
+                    menuPainter = painterResource(R.drawable.menu_hamburger),
+                    notificationPainter = painterResource(R.drawable.notification_bell),
+                    onMenuClick = onMenuClick,
+                    onNotificationClick = onNotificationClick,
+                )
 
-            TemperatureScreenIntro(
-                title = stringResource(R.string.temperature_screen_title),
-                description = stringResource(R.string.temperature_screen_description),
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
-            )
+                TemperatureScreenIntro(
+                    title = stringResource(R.string.temperature_screen_title),
+                    description = stringResource(R.string.temperature_screen_description),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordTitleHorizontal),
+                )
 
-            TemperatureSummaryCard(
-                currentTemperature = currentTemperature,
-                humidity = humidity,
-                feelsLikeTemperature = feelsLikeTemperature,
-                currentTemperatureLabel = stringResource(R.string.home_current_temperature),
-                humidityLabel = stringResource(R.string.home_humidity),
-                feelsLikeLabel = stringResource(R.string.temperature_feels_like_short),
-                title = stringResource(R.string.temperature_current_measurement),
-                thermometerPainter = painterResource(R.drawable.record_thermometer_illustration),
-            )
+                TemperatureSummaryCard(
+                    currentTemperature = currentTemperature,
+                    humidity = humidity,
+                    feelsLikeTemperature = feelsLikeTemperature,
+                    currentTemperatureLabel = stringResource(R.string.home_current_temperature),
+                    humidityLabel = stringResource(R.string.home_humidity),
+                    feelsLikeLabel = stringResource(R.string.temperature_feels_like_short),
+                    title = stringResource(R.string.temperature_current_measurement),
+                    thermometerPainter = painterResource(R.drawable.record_thermometer_illustration),
+                )
 
-            TemperatureRecordCard(
-                temperatureLabel = stringResource(R.string.home_temperature_field),
-                temperatureText = if (isManualInputEnabled) {
-                    temperatureText
-                } else {
-                    ""
-                },
-                temperatureUnit = "",
-                onTemperatureChange = onTemperatureChange,
-                humidityLabel = stringResource(R.string.home_humidity_field),
-                humidityText = if (isManualInputEnabled) {
-                    humidityText
-                } else {
-                    ""
-                },
-                humidityUnit = "",
-                onHumidityChange = onHumidityChange,
-                feelsLikeLabel = stringResource(R.string.home_feels_like_field),
-                // 체감온도는 저장할 때 서버가 계산하므로 입력 칸에는 값 대신 "자동 계산" 안내만 보여준다.
-                feelsLikeText = "",
-                installationLabel = stringResource(R.string.temperature_not_installed_note),
-                isManualInputEnabled = isManualInputEnabled,
-                onManualInputChange = onManualInputChange,
-                checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
-                title = stringResource(R.string.temperature_manual_input_title),
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
-            )
+                TemperatureRecordCard(
+                    temperatureLabel = stringResource(R.string.home_temperature_field),
+                    temperatureText =
+                        if (isManualInputEnabled) {
+                            temperatureText
+                        } else {
+                            ""
+                        },
+                    temperatureUnit = "",
+                    onTemperatureChange = onTemperatureChange,
+                    humidityLabel = stringResource(R.string.home_humidity_field),
+                    humidityText =
+                        if (isManualInputEnabled) {
+                            humidityText
+                        } else {
+                            ""
+                        },
+                    humidityUnit = "",
+                    onHumidityChange = onHumidityChange,
+                    feelsLikeLabel = stringResource(R.string.home_feels_like_field),
+                    // 체감온도는 저장할 때 서버가 계산하므로 입력 칸에는 값 대신 "자동 계산" 안내만 보여준다.
+                    feelsLikeText = "",
+                    installationLabel = stringResource(R.string.temperature_not_installed_note),
+                    isManualInputEnabled = isManualInputEnabled,
+                    onManualInputChange = onManualInputChange,
+                    checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
+                    title = stringResource(R.string.temperature_manual_input_title),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                )
 
-            PhotoCaptureRow(
-                label = stringResource(R.string.home_field_photo),
-                instructionText = stringResource(R.string.photo_field_instruction_two_line),
-                cameraPainter = painterResource(R.drawable.record_camera),
-                cameraContentDescription = stringResource(R.string.photo_capture),
-                onClick = onFieldPhotoClick,
-                isEnabled = selectedFieldPhotoCount < MAX_RECORD_PHOTO_COUNT,
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
-                labelHorizontalOffset = HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.RecordCardHorizontal,
-            )
+                PhotoCaptureRow(
+                    label = stringResource(R.string.home_field_photo),
+                    instructionText = stringResource(R.string.photo_field_instruction_two_line),
+                    cameraPainter = painterResource(R.drawable.record_camera),
+                    cameraContentDescription = stringResource(R.string.photo_capture),
+                    onClick = onFieldPhotoClick,
+                    isEnabled = selectedFieldPhotoCount < MAX_RECORD_PHOTO_COUNT,
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    labelHorizontalOffset =
+                        HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.RecordCardHorizontal,
+                )
             }
         }
     }

@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -43,7 +42,6 @@ fun HomeContactCard(
     onManagerClick: () -> Unit,
     onEmergencyClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isEmergencyCallEnabled: Boolean = true,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -68,7 +66,6 @@ fun HomeContactCard(
                 iconPainter = painterResource(R.drawable.home_emergency_phone),
                 iconContainerColor = MaterialTheme.extraColors.homeContactAlertContainer,
                 onClick = onEmergencyClick,
-                isEnabled = isEmergencyCallEnabled,
             )
         }
     }
@@ -82,25 +79,16 @@ private fun HomeContactRow(
     iconPainter: Painter,
     iconContainerColor: Color,
     onClick: () -> Unit,
-    isEnabled: Boolean = true,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = HeartGuardComponentSize.HomeContactHeight / 2)
-            .clickable(
-                enabled = isEnabled,
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .alpha(
-                if (isEnabled) {
-                    ENABLED_ALPHA
-                } else {
-                    DISABLED_ALPHA
-                },
-            )
-            .padding(horizontal = HeartGuardSpacing.Section),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = HeartGuardComponentSize.HomeContactHeight / 2)
+                .clickable(
+                    role = Role.Button,
+                    onClick = onClick,
+                ).padding(horizontal = HeartGuardSpacing.Section),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
     ) {
@@ -134,9 +122,6 @@ private fun HomeContactRow(
         )
     }
 }
-
-private const val ENABLED_ALPHA = 1f
-private const val DISABLED_ALPHA = 0.5f
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable

@@ -50,11 +50,12 @@ fun PhotoCaptureRow(
     isEnabled: Boolean = true,
     labelHorizontalOffset: Dp = 0.dp,
 ) {
-    val contentColor = if (isEnabled) {
-        MaterialTheme.extraColors.homeMutedText
-    } else {
-        MaterialTheme.extraColors.disabledContent
-    }
+    val contentColor =
+        if (isEnabled) {
+            MaterialTheme.extraColors.homeMutedText
+        } else {
+            MaterialTheme.extraColors.disabledContent
+        }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -65,56 +66,61 @@ fun PhotoCaptureRow(
                 text = labelText,
                 modifier = Modifier.padding(start = labelHorizontalOffset),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = HeartGuardFontSize.PageTitle,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontSize = HeartGuardFontSize.PageTitle,
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
         }
 
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = HeartGuardComponentSize.FieldPhotoCaptureRowHeight)
-                .clickable(
-                    enabled = isEnabled,
-                    role = Role.Button,
-                    onClick = onClick,
-                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = HeartGuardComponentSize.FieldPhotoCaptureRowHeight)
+                    .clickable(
+                        enabled = isEnabled,
+                        role = Role.Button,
+                        onClick = onClick,
+                    ),
             shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(HeartGuardBorderWidth.Divider, MaterialTheme.extraColors.cardBorder),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = HeartGuardSpacing.Section,
-                        vertical = HeartGuardSpacing.Item,
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = HeartGuardSpacing.Section,
+                            vertical = HeartGuardSpacing.Item,
+                        ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
                     painter = cameraPainter,
                     contentDescription = cameraContentDescription,
                     modifier = Modifier.size(HeartGuardIconSize.CameraAction),
-                    colorFilter = ColorFilter.tint(
-                        if (isEnabled) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.extraColors.disabledContent
-                        },
-                    ),
+                    colorFilter =
+                        ColorFilter.tint(
+                            if (isEnabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.extraColors.disabledContent
+                            },
+                        ),
                 )
                 Text(
                     text = instructionText,
                     modifier = Modifier.weight(1f),
                     color = contentColor,
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = HeartGuardFontSize.SmallLabel,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = HeartGuardFontSize.SmallLabel,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                 )
             }
         }

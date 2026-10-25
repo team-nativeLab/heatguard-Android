@@ -45,14 +45,14 @@ fun WithdrawReasonCard(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier
-                .padding(
-                    start = HeartGuardSpacing.Section,
-                    top = HeartGuardSpacing.Section,
-                    end = HeartGuardSpacing.Section,
-                    bottom = HeartGuardSpacing.Compact,
-                )
-                .selectableGroup(),
+            modifier =
+                Modifier
+                    .padding(
+                        start = HeartGuardSpacing.Section,
+                        top = HeartGuardSpacing.Section,
+                        end = HeartGuardSpacing.Section,
+                        bottom = HeartGuardSpacing.Compact,
+                    ).selectableGroup(),
         ) {
             Row(
                 verticalAlignment = Alignment.Bottom,
@@ -61,17 +61,19 @@ fun WithdrawReasonCard(
                 Text(
                     text = stringResource(R.string.withdraw_reason_title),
                     color = MaterialTheme.extraColors.strongText,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontSize = HeartGuardFontSize.CardTitle,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontSize = HeartGuardFontSize.CardTitle,
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
                 Text(
                     text = stringResource(R.string.withdraw_reason_optional),
                     color = MaterialTheme.extraColors.secondaryText,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = HeartGuardFontSize.SmallLabel,
-                    ),
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontSize = HeartGuardFontSize.SmallLabel,
+                        ),
                 )
             }
 
@@ -79,38 +81,41 @@ fun WithdrawReasonCard(
                 val isSelected = withdrawReason == selectedReason
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectable(
-                            selected = isSelected,
-                            role = Role.RadioButton,
-                            onClick = {
-                                val nextReason = if (isSelected) {
-                                    null
-                                } else {
-                                    withdrawReason
-                                }
-                                onReasonSelect(nextReason)
-                            },
-                        )
-                        .heightIn(min = HeartGuardComponentSize.TouchTarget),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = isSelected,
+                                role = Role.RadioButton,
+                                onClick = {
+                                    val nextReason =
+                                        if (isSelected) {
+                                            null
+                                        } else {
+                                            withdrawReason
+                                        }
+                                    onReasonSelect(nextReason)
+                                },
+                            ).heightIn(min = HeartGuardComponentSize.TouchTarget),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(
                         selected = isSelected,
                         onClick = null,
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = MaterialTheme.colorScheme.primary,
-                            unselectedColor = MaterialTheme.extraColors.disabledContent,
-                        ),
+                        colors =
+                            RadioButtonDefaults.colors(
+                                selectedColor = MaterialTheme.colorScheme.primary,
+                                unselectedColor = MaterialTheme.extraColors.disabledContent,
+                            ),
                     )
                     Text(
                         text = stringResource(withdrawReason.labelResId()),
                         modifier = Modifier.padding(start = HeartGuardSpacing.Compact),
                         color = MaterialTheme.extraColors.strongText,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                            ),
                     )
                 }
             }

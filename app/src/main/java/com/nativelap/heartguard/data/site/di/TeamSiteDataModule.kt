@@ -18,29 +18,23 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class TeamSiteDataModule {
+    @Binds
+    @Singleton
+    abstract fun bindTeamSiteRemoteDataSource(impl: TeamSiteRemoteDataSourceImpl): TeamSiteRemoteDataSource
 
     @Binds
     @Singleton
-    abstract fun bindTeamSiteRemoteDataSource(
-        impl: TeamSiteRemoteDataSourceImpl,
-    ): TeamSiteRemoteDataSource
-
-    @Binds
-    @Singleton
-    abstract fun bindTeamSiteRepository(
-        impl: TeamSiteRepositoryImpl,
-    ): TeamSiteRepository
+    abstract fun bindTeamSiteRepository(impl: TeamSiteRepositoryImpl): TeamSiteRepository
 
     companion object {
         // GET /api/v1/team은 작업자 Bearer 세션을 사용한다.
         @Provides
         @Singleton
-        fun provideTeamSiteApiService(
-            apiRetrofitFactory: ApiRetrofitFactory,
-        ): TeamSiteApiService = apiRetrofitFactory.createService(
-            baseUrl = BuildConfig.BASE_URL,
-            serviceClass = TeamSiteApiService::class.java,
-            authentication = ApiAuthentication.BEARER,
-        )
+        fun provideTeamSiteApiService(apiRetrofitFactory: ApiRetrofitFactory): TeamSiteApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = TeamSiteApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+            )
     }
 }

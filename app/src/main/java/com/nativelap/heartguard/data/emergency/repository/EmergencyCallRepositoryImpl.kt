@@ -12,52 +12,53 @@ import com.nativelap.heartguard.domain.emergency.repository.EmergencyCallReposit
 import java.time.Instant
 import javax.inject.Inject
 
-class EmergencyCallRepositoryImpl @Inject constructor(
-    private val emergencyCallRemoteDataSource: EmergencyCallRemoteDataSource,
-) : EmergencyCallRepository {
+class EmergencyCallRepositoryImpl
+    @Inject
+    constructor(
+        private val emergencyCallRemoteDataSource: EmergencyCallRemoteDataSource,
+    ) : EmergencyCallRepository {
+        override suspend fun registerEmergencyCall(
+            idempotencyKey: String,
+            clientOccurredAt: Instant,
+            message: String?,
+        ): ApiResult<EmergencyCallStatus> =
+            emergencyCallRemoteDataSource
+                .registerEmergencyCall(
+                    idempotencyKey = idempotencyKey,
+                    clientOccurredAt = clientOccurredAt,
+                    message = message,
+                ).map { callResponse -> callResponse.toDomain() }
 
-    override suspend fun registerEmergencyCall(
-        idempotencyKey: String,
-        clientOccurredAt: Instant,
-        message: String?,
-    ): ApiResult<EmergencyCallStatus> = emergencyCallRemoteDataSource
-        .registerEmergencyCall(
-            idempotencyKey = idempotencyKey,
-            clientOccurredAt = clientOccurredAt,
-            message = message,
-        )
-        .map { callResponse -> callResponse.toDomain() }
+        override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
+            emergencyCallRemoteDataSource.getCurrentEmergencyCall().map { it.toDomain() }
 
-    override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
-        emergencyCallRemoteDataSource.getCurrentEmergencyCall().map { it.toDomain() }
-
-    /** 취소·종료 요청의 409 오류 코드를 이미 종료됨·전이 불가 결과로 바꾼다. */
-    override suspend fun updateEmergencyCallStatus(
-        callId: String,
-        status: EmergencyCallUpdateStatus,
-    ): EmergencyCallUpdateResult {
-        val updateResult = emergencyCallRemoteDataSource.updateEmergencyCallStatus(callId, status)
-        return when (updateResult) {
-            is ApiResult.Success -> EmergencyCallUpdateResult.Updated(updateResult.value.toDomain())
-            is ApiResult.Failure -> updateResult.error.toUpdateFailure()
-        }
-    }
-
-    private fun ApiError.toUpdateFailure(): EmergencyCallUpdateResult {
-        if (this !is ApiError.Http || statusCode != HTTP_CONFLICT) {
-            return EmergencyCallUpdateResult.Failure
+        /** 취소·종료 요청의 409 오류 코드를 이미 종료됨·전이 불가 결과로 바꾼다. */
+        override suspend fun updateEmergencyCallStatus(
+            callId: String,
+            status: EmergencyCallUpdateStatus,
+        ): EmergencyCallUpdateResult {
+            val updateResult = emergencyCallRemoteDataSource.updateEmergencyCallStatus(callId, status)
+            return when (updateResult) {
+                is ApiResult.Success -> EmergencyCallUpdateResult.Updated(updateResult.value.toDomain())
+                is ApiResult.Failure -> updateResult.error.toUpdateFailure()
+            }
         }
 
-        return when (errorCode) {
-            EMERGENCY_CALL_CLOSED_CODE -> EmergencyCallUpdateResult.AlreadyClosed
-            INVALID_STATUS_TRANSITION_CODE -> EmergencyCallUpdateResult.InvalidTransition
-            else -> EmergencyCallUpdateResult.Failure
+        private fun ApiError.toUpdateFailure(): EmergencyCallUpdateResult {
+            if (this !is ApiError.Http || statusCode != HTTP_CONFLICT) {
+                return EmergencyCallUpdateResult.Failure
+            }
+
+            return when (errorCode) {
+                EMERGENCY_CALL_CLOSED_CODE -> EmergencyCallUpdateResult.AlreadyClosed
+                INVALID_STATUS_TRANSITION_CODE -> EmergencyCallUpdateResult.InvalidTransition
+                else -> EmergencyCallUpdateResult.Failure
+            }
+        }
+
+        private companion object {
+            const val HTTP_CONFLICT = 409
+            const val EMERGENCY_CALL_CLOSED_CODE = "EMERGENCY_CALL_CLOSED"
+            const val INVALID_STATUS_TRANSITION_CODE = "INVALID_STATUS_TRANSITION"
         }
     }
-
-    private companion object {
-        const val HTTP_CONFLICT = 409
-        const val EMERGENCY_CALL_CLOSED_CODE = "EMERGENCY_CALL_CLOSED"
-        const val INVALID_STATUS_TRANSITION_CODE = "INVALID_STATUS_TRANSITION"
-    }
-}

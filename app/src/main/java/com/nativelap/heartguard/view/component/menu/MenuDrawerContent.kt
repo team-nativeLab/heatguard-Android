@@ -1,8 +1,8 @@
 package com.nativelap.heartguard.view.component.menu
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,10 +38,11 @@ fun MenuDrawerContent(
     ) {
         val availableHeight = maxHeight
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .heightIn(min = availableHeight),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = availableHeight),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column {
@@ -58,12 +59,20 @@ fun MenuDrawerContent(
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
 
                 MenuDrawerItem(
+                    title = stringResource(R.string.menu_home),
+                    onClick = { onEvent(MenuDrawerEvent.HomeClicked) },
+                )
+                MenuDrawerItem(
                     title = stringResource(R.string.menu_edit_profile),
                     onClick = { onEvent(MenuDrawerEvent.EditProfileClicked) },
                 )
                 MenuDrawerItem(
                     title = stringResource(R.string.menu_inquiry),
                     onClick = { onEvent(MenuDrawerEvent.InquiryClicked) },
+                )
+                MenuDrawerItem(
+                    title = stringResource(R.string.menu_site_selection),
+                    onClick = { onEvent(MenuDrawerEvent.SiteSelectionClicked) },
                 )
             }
 
@@ -92,11 +101,12 @@ fun MenuDrawerContent(
 private fun MenuDrawerContentPreview() {
     HeartGuardTheme {
         MenuDrawerContent(
-            profile = MenuDrawerProfileUiModel(
-                userName = "김현장",
-                companyName = "이음산업건설",
-                email = "worker@ieum.co.kr",
-            ),
+            profile =
+                MenuDrawerProfileUiModel(
+                    userName = "김현장",
+                    companyName = "이음산업건설",
+                    email = "worker@ieum.co.kr",
+                ),
             onEvent = {},
         )
     }
