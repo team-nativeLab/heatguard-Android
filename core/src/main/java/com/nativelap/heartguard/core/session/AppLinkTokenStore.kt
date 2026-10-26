@@ -8,19 +8,34 @@ import java.net.URISyntaxException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** App Link에서 받은 일회용 현장 토큰을 연결 화면이 소비할 때까지 메모리에만 보관한다. */
+/** App Link에서 받은 일회용 토큰을 암호화 저장소와 메모리에 보관한다. */
 @Singleton
 class AppLinkTokenStore
     @Inject
-    constructor() {
-        private val mutablePendingLink = MutableStateFlow<PendingAppLink?>(null)
+    constructor(
+        private val tokenStorage: AndroidKeystoreTokenStorage,
+    ) {
         private var nextLinkId = 0L
+        private val mutablePendingLink =
+            MutableStateFlow(
+                tokenStorage.readPendingAppLinkToken()?.let { token ->
+                    PendingAppLink(token, ++nextLinkId)
+                },
+            )
 
         val pendingLink: StateFlow<PendingAppLink?> = mutablePendingLink.asStateFlow()
 
+        @Synchronized
         fun accept(link: String?): Boolean {
             val token = link?.let(::extractToken)
             if (token != null) {
+                try {
+                    tokenStorage.savePendingAppLinkToken(token)
+                } catch (_: Exception) {
+                    runCatching(tokenStorage::clearPendingAppLinkToken)
+                    mutablePendingLink.value = null
+                    return false
+                }
                 nextLinkId += 1L
                 mutablePendingLink.value = PendingAppLink(token, nextLinkId)
                 return true
@@ -28,8 +43,14 @@ class AppLinkTokenStore
             return false
         }
 
+        @Synchronized
         fun consume(link: PendingAppLink) {
             if (mutablePendingLink.value == link) {
+                try {
+                    tokenStorage.clearPendingAppLinkToken()
+                } catch (_: Exception) {
+                    // Persisted cleanup is best effort; completing the link flow must continue.
+                }
                 mutablePendingLink.value = null
             }
         }
@@ -54,10 +75,14 @@ class AppLinkTokenStore
 
             val rawPath = uri.rawPath ?: return null
             val decodedPath = uri.path ?: return null
-            val token = decodedPath.removePrefix(LINK_PATH_PREFIX)
-            if (!rawPath.startsWith(LINK_PATH_PREFIX) ||
+            val linkPathPrefix =
+                LINK_PATH_PREFIXES.firstOrNull { prefix -> rawPath.startsWith(prefix) }
+                    ?: return null
+            val token = decodedPath.removePrefix(linkPathPrefix)
+            if (
                 token.isBlank() ||
-                PATH_SEPARATOR in token
+                PATH_SEPARATOR in token ||
+                token.length > MAX_TOKEN_LENGTH
             ) {
                 return null
             }
@@ -72,8 +97,13 @@ class AppLinkTokenStore
             const val SUPPORTED_SCHEME = "https"
             const val SUPPORTED_HOST = "heatguard-temp.https.gsmsv.site"
             const val PATH_SEPARATOR = '/'
-            const val LINK_PATH_PREFIX = "/api/v1/app/links/"
+            val LINK_PATH_PREFIXES =
+                listOf(
+                    "/api/v1/app/links/",
+                    "/api/v1/team/invitations/",
+                )
             const val NO_EXPLICIT_PORT = -1
+            const val MAX_TOKEN_LENGTH = 256
         }
     }
 

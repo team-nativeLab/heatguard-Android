@@ -43,6 +43,10 @@
                     android:host="heatguard-temp.https.gsmsv.site"
                     android:pathPrefix="/api/v1/app/links/"
                     android:scheme="https" />
+                <data
+                    android:host="heatguard-temp.https.gsmsv.site"
+                    android:pathPrefix="/api/v1/team/invitations/"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
 
