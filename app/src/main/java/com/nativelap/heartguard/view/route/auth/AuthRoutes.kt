@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.route.auth
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -102,9 +103,15 @@ internal fun HeartGuardPhoneNumberRoute(
     isAppAccountSession: Boolean,
     viewModel: ClaimAppSiteLinkViewModel = hiltViewModel(),
 ) {
-    val linkToken = pendingAppLink.token
     var phoneNumber by remember(pendingAppLink.linkId) { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    BackHandler(
+        enabled = uiState.linkId == pendingAppLink.linkId,
+    ) {
+        if (!uiState.isSubmitting) {
+            onCancelClaim(pendingAppLink)
+        }
+    }
     val statusMessage =
         when (uiState.failure.takeIf { uiState.linkId == pendingAppLink.linkId }) {
             null -> null
@@ -152,7 +159,6 @@ internal fun HeartGuardPhoneNumberRoute(
         },
         isSubmitting = uiState.linkId != pendingAppLink.linkId || uiState.isSubmitting,
         statusMessage = statusMessage,
-        onCancelClick = { onCancelClaim(pendingAppLink) },
     )
 }
 
