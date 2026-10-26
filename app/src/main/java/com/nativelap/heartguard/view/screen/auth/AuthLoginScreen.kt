@@ -1,5 +1,8 @@
 package com.nativelap.heartguard.view.screen.auth
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -23,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -68,7 +72,13 @@ fun AuthLoginScreen(
     // 이전 앱에서 열려 있던 키보드 inset이 진입 직후 잠깐 남아도 키보드 레이아웃으로 바뀌지 않도록
     // 로그인 입력칸에 포커스가 있을 때만 키보드가 열린 것으로 본다.
     var hasFormFocus by remember { mutableStateOf(false) }
+    var hasKeyboardTransitionStarted by remember { mutableStateOf(false) }
     val isKeyboardVisible = hasFormFocus && WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    LaunchedEffect(isKeyboardVisible) {
+        if (isKeyboardVisible) {
+            hasKeyboardTransitionStarted = true
+        }
+    }
     val pageScrollState = rememberScrollState()
     val formScrollState = rememberScrollState()
     Scaffold(
@@ -125,6 +135,16 @@ fun AuthLoginScreen(
                             (maxHeight - formContentHeight.toDp()).coerceIn(0.dp, maximumTopSpacing)
                         }
                     }
+                val animatedTopSpacing by animateDpAsState(
+                    targetValue = topSpacing,
+                    animationSpec =
+                        if (hasKeyboardTransitionStarted || isKeyboardVisible) {
+                            tween()
+                        } else {
+                            snap()
+                        },
+                    label = "loginFormTopSpacing",
+                )
                 Column(
                     modifier =
                         Modifier
@@ -138,12 +158,12 @@ fun AuthLoginScreen(
                             ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Spacer(modifier = Modifier.height(topSpacing))
+                    Spacer(modifier = Modifier.height(animatedTopSpacing))
 
                     Column(
                         modifier =
                             Modifier
-                                .widthIn(max = HeartGuardComponentSize.AuthContentMaxWidth)
+                                .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
                                 .fillMaxWidth()
                                 .onSizeChanged { contentSize ->
                                     if (formContentHeight != contentSize.height) {
