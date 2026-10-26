@@ -3,6 +3,7 @@ package com.nativelap.heartguard.view.route.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nativelap.heartguard.view.component.emergency.formatKoreanPhoneNumberForDisplay
 import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.view.screen.home.HomeHeadquartersContactScreen
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
@@ -16,7 +17,7 @@ internal fun HomeHeadquartersContactRoute(
     val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
 
     HomeHeadquartersContactScreen(
-        phoneNumber = valueOrEmptyText(headquartersPhoneNumber),
+        phoneNumber = valueOrEmptyText(headquartersPhoneNumber?.let(::formatKoreanPhoneNumberForDisplay)),
         isCallEnabled = headquartersPhoneNumber != null,
         onCallClick = onCallClick,
     )
