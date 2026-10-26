@@ -26,15 +26,15 @@ fun AuthTitleBlock(
     titleFontSize: TextUnit = HeartGuardFontSize.AuthTitle,
     titleLineHeight: TextUnit = HeartGuardFontSize.AuthTitleLineHeight,
     descriptionTopPadding: Dp = HeartGuardSpacing.AuthTitleDescription,
+    textAlign: TextAlign = TextAlign.Start,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
-        // Figma 로그인 화면 규칙에 따라 제목과 설명을 왼쪽 정렬로 배치한다.
         Text(
             text = title,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Start,
+            textAlign = textAlign,
             color = MaterialTheme.extraColors.authOnSurface,
             style =
                 MaterialTheme.typography.headlineSmall.copy(
@@ -50,7 +50,7 @@ fun AuthTitleBlock(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = descriptionTopPadding),
-            textAlign = TextAlign.Start,
+            textAlign = textAlign,
             color = MaterialTheme.extraColors.authOnSurfaceVariant,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
