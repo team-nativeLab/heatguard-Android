@@ -15,7 +15,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Android Keystore의 AES-GCM 키로 SharedPreferences의 세션 토큰을 암호화한다. */
+/** Android Keystore의 분리된 AES-GCM 키로 세션·초대 토큰을 암호화한다. */
 @Singleton
 class AndroidKeystoreTokenStorage
     @Inject
@@ -33,7 +33,7 @@ class AndroidKeystoreTokenStorage
         override fun readAccessToken(): String? {
             val storedValue = preferences.getString(KEY_ACCESS_TOKEN, null) ?: return null
             return try {
-                decrypt(storedValue)
+                decrypt(storedValue, SESSION_KEY_ALIAS)
             } catch (_: GeneralSecurityException) {
                 discardUnreadableToken()
                 null
@@ -50,7 +50,7 @@ class AndroidKeystoreTokenStorage
             val saved =
                 preferences
                     .edit()
-                    .putString(KEY_ACCESS_TOKEN, encrypt(accessToken))
+                    .putString(KEY_ACCESS_TOKEN, encrypt(accessToken, SESSION_KEY_ALIAS))
                     .putString(KEY_SESSION_ROLE, SessionRole.TEAM_MEMBER.name)
                     .commit()
 
@@ -75,7 +75,7 @@ class AndroidKeystoreTokenStorage
             val saved =
                 preferences
                     .edit()
-                    .putString(KEY_ACCESS_TOKEN, encrypt(accessToken))
+                    .putString(KEY_ACCESS_TOKEN, encrypt(accessToken, SESSION_KEY_ALIAS))
                     .putString(KEY_SESSION_ROLE, role.name)
                     .remove(KEY_SELECTED_SITE_ID)
                     .commit()
@@ -122,7 +122,55 @@ class AndroidKeystoreTokenStorage
                     .commit()
 
             if (!cleared) {
-                deleteSecretKey()
+                deleteSecretKey(SESSION_KEY_ALIAS)
+            }
+        }
+
+        @Synchronized
+        internal fun readPendingAppLinkToken(): String? {
+            val storedValue =
+                try {
+                    preferences.getString(KEY_PENDING_APP_LINK_TOKEN, null)
+                } catch (_: Exception) {
+                    discardUnreadablePendingAppLinkToken()
+                    return null
+                } ?: return null
+
+            return try {
+                decrypt(storedValue, APP_LINK_KEY_ALIAS)
+            } catch (_: Exception) {
+                discardUnreadablePendingAppLinkToken()
+                null
+            }
+        }
+
+        @Synchronized
+        internal fun savePendingAppLinkToken(token: String) {
+            require(token.isNotBlank())
+
+            val saved =
+                preferences
+                    .edit()
+                    .putString(KEY_PENDING_APP_LINK_TOKEN, encrypt(token, APP_LINK_KEY_ALIAS))
+                    .commit()
+
+            check(saved) { "Unable to persist the pending app link token" }
+        }
+
+        @Synchronized
+        internal fun clearPendingAppLinkToken() {
+            val cleared =
+                try {
+                    preferences
+                        .edit()
+                        .remove(KEY_PENDING_APP_LINK_TOKEN)
+                        .commit()
+                } catch (_: Exception) {
+                    false
+                }
+
+            if (!cleared) {
+                deleteSecretKeySafely(APP_LINK_KEY_ALIAS)
             }
         }
 
@@ -133,24 +181,54 @@ class AndroidKeystoreTokenStorage
             }
         }
 
-        private fun deleteSecretKey() {
+        private fun discardUnreadablePendingAppLinkToken() {
+            val discarded =
+                try {
+                    preferences
+                        .edit()
+                        .remove(KEY_PENDING_APP_LINK_TOKEN)
+                        .commit()
+                } catch (_: Exception) {
+                    false
+                }
+
+            if (!discarded) {
+                deleteSecretKeySafely(APP_LINK_KEY_ALIAS)
+            }
+        }
+
+        private fun deleteSecretKeySafely(keyAlias: String) {
+            try {
+                deleteSecretKey(keyAlias)
+            } catch (_: Exception) {
+                // Store cleanup is best effort when platform storage is unavailable.
+            }
+        }
+
+        private fun deleteSecretKey(keyAlias: String) {
             val keyStore =
                 KeyStore.getInstance(ANDROID_KEY_STORE).apply {
                     load(null)
                 }
-            keyStore.deleteEntry(KEY_ALIAS)
+            keyStore.deleteEntry(keyAlias)
         }
 
-        private fun encrypt(value: String): String {
+        private fun encrypt(
+            value: String,
+            keyAlias: String,
+        ): String {
             val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey())
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey(keyAlias))
             val encryptedBytes = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
             val encodedIv = Base64.encodeToString(cipher.iv, Base64.NO_WRAP)
             val encodedCipherText = Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
             return "$encodedIv.$encodedCipherText"
         }
 
-        private fun decrypt(value: String): String {
+        private fun decrypt(
+            value: String,
+            keyAlias: String,
+        ): String {
             val parts = value.split('.', limit = 2)
             require(parts.size == 2) { "Stored session token is malformed" }
 
@@ -159,18 +237,18 @@ class AndroidKeystoreTokenStorage
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(
                 Cipher.DECRYPT_MODE,
-                getOrCreateSecretKey(),
+                getOrCreateSecretKey(keyAlias),
                 GCMParameterSpec(GCM_TAG_SIZE_BITS, iv),
             )
             return String(cipher.doFinal(encryptedBytes), Charsets.UTF_8)
         }
 
-        private fun getOrCreateSecretKey(): SecretKey {
+        private fun getOrCreateSecretKey(keyAlias: String): SecretKey {
             val keyStore =
                 KeyStore.getInstance(ANDROID_KEY_STORE).apply {
                     load(null)
                 }
-            val existingKey = keyStore.getKey(KEY_ALIAS, null) as? SecretKey
+            val existingKey = keyStore.getKey(keyAlias, null) as? SecretKey
             if (existingKey != null) {
                 return existingKey
             }
@@ -183,7 +261,7 @@ class AndroidKeystoreTokenStorage
             keyGenerator.init(
                 KeyGenParameterSpec
                     .Builder(
-                        KEY_ALIAS,
+                        keyAlias,
                         KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
                     ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
@@ -196,8 +274,10 @@ class AndroidKeystoreTokenStorage
         private companion object {
             const val ANDROID_KEY_STORE = "AndroidKeyStore"
             const val GCM_TAG_SIZE_BITS = 128
-            const val KEY_ALIAS = "heartguard.session.aes"
+            const val SESSION_KEY_ALIAS = "heartguard.session.aes"
+            const val APP_LINK_KEY_ALIAS = "heartguard.app_link.aes"
             const val KEY_ACCESS_TOKEN = "access_token"
+            const val KEY_PENDING_APP_LINK_TOKEN = "pending_app_link_token"
             const val KEY_SESSION_ROLE = "session_role"
             const val KEY_SELECTED_SITE_ID = "selected_site_id"
             const val PREFERENCES_NAME = "heartguard_session"
