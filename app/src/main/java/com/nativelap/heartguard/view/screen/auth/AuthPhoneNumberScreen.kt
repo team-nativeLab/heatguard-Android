@@ -32,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +67,6 @@ internal fun AuthPhoneNumberScreen(
     onLinkClick: () -> Unit,
     isSubmitting: Boolean = false,
     statusMessage: String? = null,
-    onCancelClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -86,21 +84,10 @@ internal fun AuthPhoneNumberScreen(
                         .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                         .padding(horizontal = PHONE_SCREEN_HORIZONTAL_PADDING, vertical = PHONE_SCREEN_BOTTOM_PADDING),
             ) {
-                Column {
-                    PhoneLinkButton(
-                        onClick = onLinkClick,
-                        enabled = !isSubmitting && phoneNumber.any(Char::isDigit),
-                    )
-                    if (onCancelClick != null) {
-                        TextButton(
-                            onClick = onCancelClick,
-                            enabled = !isSubmitting,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(text = stringResource(R.string.auth_phone_cancel_link))
-                        }
-                    }
-                }
+                PhoneLinkButton(
+                    onClick = onLinkClick,
+                    enabled = !isSubmitting && phoneNumber.any(Char::isDigit),
+                )
             }
         },
     ) { innerPadding ->
@@ -144,12 +131,12 @@ internal fun AuthPhoneNumberScreen(
                     imageVector = Icons.Outlined.Lock,
                     contentDescription = null,
                     modifier = Modifier.width(PHONE_SECURITY_ICON_SIZE),
-                    tint = MaterialTheme.extraColors.secondaryText,
+                    tint = MaterialTheme.extraColors.phoneSecurityText,
                 )
                 Text(
                     text = stringResource(R.string.auth_phone_security_note),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.extraColors.strongText,
+                    color = MaterialTheme.extraColors.phoneSecurityText,
                 )
             }
             if (statusMessage != null) {
@@ -196,7 +183,7 @@ private fun PhoneNumberInput(
                     fontSize = PHONE_COUNTRY_TEXT_SIZE,
                     fontWeight = FontWeight.Medium,
                 ),
-            color = MaterialTheme.extraColors.strongText,
+            color = MaterialTheme.extraColors.secondaryText,
         )
         Spacer(modifier = Modifier.width(PHONE_INPUT_COUNTRY_GAP))
         Box(
@@ -273,7 +260,7 @@ private fun PhoneNumberInput(
                                 fontSize = PHONE_CLEAR_TEXT_SIZE,
                                 fontWeight = FontWeight.Bold,
                             ),
-                        color = MaterialTheme.extraColors.strongText,
+                        color = Color.White,
                     )
                 }
             }

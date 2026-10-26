@@ -43,11 +43,11 @@
     <string name="auth_login_description">이메일과 비밀번호로 로그인할 수 있어요</string>
     <string name="auth_login_password_hint">비밀번호를 입력해주세요</string>
     <string name="auth_phone_title">휴대폰 번호를\n입력해주세요</string>
-    <string name="auth_phone_description">현장 관리자에게 전달받은 담당자 전화번호를 입력해주세요.</string>
+    <string name="auth_phone_description">관리자와 합의한 전화번호를 입력해주세요.</string>
     <string name="auth_phone_label">휴대폰 번호</string>
     <string name="auth_phone_country_code">+82</string>
     <string name="auth_phone_hint">010-1234-5678</string>
-    <string name="auth_phone_security_note">전화번호는 현장 연동 확인에 사용됩니다.</string>
+    <string name="auth_phone_security_note">번호는 관리자 번호 대조에 사용되며 SMS 인증은 없어요</string>
     <string name="auth_phone_mismatch_error">담당자 전화번호가 일치하지 않습니다. 확인 후 다시 입력해주세요.</string>
     <string name="auth_phone_link_unavailable_error">연동 링크가 만료되었거나 이미 사용되었습니다.</string>
     <string name="auth_phone_rate_limited_error">시도 횟수를 초과했습니다. 새 연동 링크를 요청해주세요.</string>
@@ -55,7 +55,6 @@
     <string name="auth_phone_session_required_error">Team 계정으로 로그인한 뒤 현장을 연동해주세요.</string>
     <string name="auth_phone_generic_error">현장 연동에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
     <string name="auth_phone_link">연동하기</string>
-    <string name="auth_phone_cancel_link">현장 연결 나중에 하기</string>
     <string name="auth_phone_clear_symbol">×</string>
     <string name="common_clear">지우기</string>
     <string name="auth_login_invalid_credentials">이메일 또는 비밀번호를 확인해주세요</string>
@@ -74,7 +73,7 @@
     <string name="app_account_site_select">이 현장 선택</string>
     <string name="app_account_site_selected">선택됨</string>
     <string name="app_account_site_selecting">선택 중…</string>
-    <string name="app_account_site_selection_error">현장을 선택하지 못했습니다. 다시 시도해주세요.</string>
+    <string name="app_account_site_selection_error">현장을 선택하지 못했습니다.</string>
     <string name="app_account_site_open_dashboard">현장 정보 보기</string>
     <string name="app_account_site_unlink">연동 해제</string>
     <string name="app_account_sites_switch">내 현장 목록 · 현장 전환</string>
@@ -266,6 +265,7 @@
     <string name="team_site_selection_unselected_badge">선택 안됨</string>
     <string name="team_site_selection_loading">현장 정보를 불러오는 중입니다.</string>
     <string name="team_site_selection_unavailable">현장 정보를 확인할 수 없습니다.</string>
+    <string name="team_site_selection_empty">연동한 현장이 없어요</string>
     <string name="team_site_selection_add_link">새로운 현장 연동하기</string>
     <string name="menu_close_description">메뉴 닫기</string>
     <string name="menu_profile_affiliation_format">%1$s · %2$s</string>

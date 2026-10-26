@@ -487,7 +487,7 @@ private fun HeartGuardMainNavDisplay(
                             }
                         },
                         onEmergencyClick = {
-                            backStack.add(HeartGuardDestination.HeadquartersContact)
+                            backStack.add(HeartGuardDestination.HeadquartersCallConfirmation)
                         },
                         // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
                         // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
@@ -524,7 +524,7 @@ private fun HeartGuardMainNavDisplay(
                 }
                 entry<HeartGuardDestination.TeamSiteSelection> {
                     AppAccountSitesRoute(
-                        onOpenLink = appLinkTokenViewModel::accept,
+                        onBackClick = ::goBack,
                         viewModel = hiltViewModel(key = "team-sites-$sessionGeneration"),
                     )
                 }

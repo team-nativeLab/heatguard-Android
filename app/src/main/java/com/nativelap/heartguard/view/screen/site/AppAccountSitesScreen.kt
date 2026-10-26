@@ -1,6 +1,8 @@
 package com.nativelap.heartguard.view.screen.site
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,259 +10,146 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.site.model.AppLinkedSite
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.viewmodel.site.AppAccountSitesUiState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AppAccountSitesScreen(
     uiState: AppAccountSitesUiState,
-    onRefresh: () -> Unit,
+    onBackClick: () -> Unit,
     onSelectSite: (String) -> Unit,
-    onOpenDashboard: (String) -> Unit,
-    isLinkDialogVisible: Boolean,
-    linkInput: String,
-    hasLinkFailure: Boolean,
-    onRequestLink: () -> Unit,
-    onLinkInputChange: (String) -> Unit,
-    onCancelLink: () -> Unit,
-    onOpenLink: () -> Unit,
-    unlinkTarget: AppLinkedSite?,
-    onRequestUnlink: (AppLinkedSite) -> Unit,
-    onCancelUnlink: () -> Unit,
-    onConfirmUnlink: () -> Unit,
-    onCloseDashboard: () -> Unit,
-    onLogout: () -> Unit,
 ) {
-    if (isLinkDialogVisible) {
-        AlertDialog(
-            onDismissRequest = onCancelLink,
-            title = { Text(stringResource(R.string.app_account_add_site)) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.app_account_link_input_hint))
-                    OutlinedTextField(
-                        value = linkInput,
-                        onValueChange = onLinkInputChange,
-                        label = { Text(stringResource(R.string.app_account_link_input_label)) },
-                        singleLine = true,
-                        isError = hasLinkFailure,
+    Scaffold(
+        containerColor = MaterialTheme.extraColors.pageBackground,
+        topBar = {
+            CenterAlignedTopAppBar(
+                modifier = Modifier.padding(top = SITE_SELECTION_HEADER_TOP_OFFSET),
+                expandedHeight = SITE_SELECTION_HEADER_HEIGHT,
+                title = {
+                    Text(
+                        text = stringResource(R.string.team_site_selection_title),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 18.sp,
+                                lineHeight = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
-                    if (hasLinkFailure) {
-                        Text(stringResource(R.string.app_account_link_invalid), color = MaterialTheme.colorScheme.error)
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.padding(start = SITE_SELECTION_BACK_BUTTON_START),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = stringResource(R.string.common_back_description),
+                            tint = MaterialTheme.extraColors.strongText,
+                        )
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onOpenLink, enabled = linkInput.isNotBlank()) {
-                    Text(stringResource(R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onCancelLink) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
-    unlinkTarget?.let { site ->
-        AlertDialog(
-            onDismissRequest = onCancelUnlink,
-            title = { Text(stringResource(R.string.app_account_site_unlink)) },
-            text = { Text(stringResource(R.string.app_account_site_unlink_confirmation, site.siteName)) },
-            confirmButton = {
-                TextButton(
-                    onClick = onConfirmUnlink,
-                    enabled = !uiState.isLoading && !uiState.isSelectingSite && !uiState.isUnlinkingSite,
-                ) {
-                    Text(stringResource(R.string.app_account_site_unlink))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onCancelUnlink) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
-
-    Scaffold { innerPadding ->
-        Column(
+                },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.extraColors.pageBackground,
+                    ),
+            )
+        },
+    ) { innerPadding ->
+        Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                    .padding(horizontal = SITE_SELECTION_HORIZONTAL_PADDING),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = stringResource(R.string.app_account_sites_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                TextButton(onClick = onLogout) {
-                    Text(text = stringResource(R.string.auth_logout))
+            when {
+                uiState.isLoading && uiState.linkedSites.isEmpty() -> {
+                    CenteredStatusMessage(
+                        message = stringResource(R.string.team_site_selection_loading),
+                    )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (uiState.openedSiteId != null) {
-                TextButton(onClick = onCloseDashboard, enabled = !uiState.isLoadingDashboard) {
-                    Text(stringResource(R.string.app_account_sites_switch))
+                uiState.hasFailure && uiState.linkedSites.isEmpty() -> {
+                    CenteredStatusMessage(
+                        message = stringResource(R.string.app_account_sites_error),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
-                Text(
-                    text =
-                        uiState.linkedSites
-                            .firstOrNull { it.siteId == uiState.openedSiteId }
-                            ?.siteName
-                            .orEmpty(),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-                when {
-                    uiState.isLoading || uiState.isLoadingDashboard -> {
-                        Text(stringResource(R.string.app_account_dashboard_loading))
-                    }
 
-                    uiState.hasDashboardFailure || uiState.hasFailure -> {
-                        Text(
-                            stringResource(R.string.app_account_dashboard_error),
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        TextButton(onClick = onRefresh) {
-                            Text(stringResource(R.string.common_retry))
-                        }
-                    }
+                uiState.linkedSites.isEmpty() -> {
+                    CenteredStatusMessage(
+                        message = stringResource(R.string.team_site_selection_empty),
+                    )
+                }
 
-                    else -> {
-                        uiState.dashboard?.let { dashboard ->
-                            Text(stringResource(R.string.app_account_dashboard_records, dashboard.todayRecordCount))
+                else -> {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(top = SITE_SELECTION_CONTENT_TOP_PADDING),
+                        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                    ) {
+                        if (uiState.hasFailure) {
                             Text(
-                                stringResource(
-                                    R.string.app_account_dashboard_emergencies,
-                                    dashboard.activeEmergencyCount,
-                                ),
+                                text = stringResource(R.string.app_account_sites_error),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
                             )
                         }
-                    }
-                }
-                return@Column
-            }
-
-            if (uiState.hasUnlinkFailure) {
-                Text(
-                    text = stringResource(R.string.app_account_site_unlink_error),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-
-            Button(onClick = onRequestLink) {
-                Text(stringResource(R.string.app_account_add_site))
-            }
-
-            if (uiState.hasFailure && uiState.linkedSites.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.app_account_sites_error),
-                    color = MaterialTheme.colorScheme.error,
-                )
-                TextButton(onClick = onRefresh) {
-                    Text(text = stringResource(R.string.common_retry))
-                }
-            } else if (uiState.isLoading && uiState.linkedSites.isEmpty()) {
-                Text(text = stringResource(R.string.app_account_sites_loading))
-            } else if (uiState.linkedSites.isEmpty()) {
-                Text(text = stringResource(R.string.app_account_sites_empty))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = stringResource(R.string.app_account_sites_link_hint))
-            } else {
-                Text(text = stringResource(R.string.app_account_sites_description))
-                if (uiState.isLoading) {
-                    Text(text = stringResource(R.string.app_account_sites_loading))
-                }
-                if (uiState.hasFailure) {
-                    Text(
-                        text = stringResource(R.string.app_account_sites_error),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    TextButton(onClick = onRefresh) {
-                        Text(text = stringResource(R.string.common_retry))
-                    }
-                }
-                if (uiState.hasSelectionFailure) {
-                    Text(
-                        text = stringResource(R.string.app_account_site_selection_error),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(
-                        items = uiState.linkedSites,
-                        key = AppLinkedSite::siteId,
-                    ) { site ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = site.siteName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                site.managerName?.takeIf(String::isNotBlank)?.let { managerName ->
-                                    Text(text = managerName)
-                                }
-                                Button(
+                        if (uiState.hasSelectionFailure) {
+                            Text(
+                                text = stringResource(R.string.app_account_site_selection_error),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(SITE_SELECTION_CARD_GAP),
+                        ) {
+                            items(
+                                items = uiState.linkedSites,
+                                key = AppLinkedSite::siteId,
+                            ) { site ->
+                                SiteSelectionCard(
+                                    site = site,
+                                    isSelected = uiState.selectedSiteId == site.siteId,
+                                    isSelecting = uiState.selectingSiteId == site.siteId,
+                                    isEnabled = !uiState.isSelectingSite && !uiState.isLoading,
                                     onClick = { onSelectSite(site.siteId) },
-                                    enabled =
-                                        !uiState.isSelectingSite && !uiState.isUnlinkingSite &&
-                                            !uiState.isLoading && uiState.selectedSiteId != site.siteId,
-                                    modifier = Modifier.padding(top = 8.dp),
-                                ) {
-                                    Text(
-                                        text =
-                                            stringResource(
-                                                if (uiState.selectingSiteId == site.siteId) {
-                                                    R.string.app_account_site_selecting
-                                                } else if (uiState.selectedSiteId == site.siteId) {
-                                                    R.string.app_account_site_selected
-                                                } else {
-                                                    R.string.app_account_site_select
-                                                },
-                                            ),
-                                    )
-                                }
-                                if (uiState.selectedSiteId == site.siteId) {
-                                    TextButton(
-                                        onClick = { onOpenDashboard(site.siteId) },
-                                        enabled =
-                                            !uiState.isLoading && !uiState.isLoadingDashboard &&
-                                                !uiState.isUnlinkingSite,
-                                    ) {
-                                        Text(stringResource(R.string.app_account_site_open_dashboard))
-                                    }
-                                }
-                                TextButton(
-                                    onClick = { onRequestUnlink(site) },
-                                    enabled =
-                                        !uiState.isLoading && !uiState.isSelectingSite &&
-                                            !uiState.isUnlinkingSite,
-                                ) {
-                                    Text(stringResource(R.string.app_account_site_unlink))
-                                }
+                                )
                             }
                         }
                     }
@@ -269,3 +158,138 @@ internal fun AppAccountSitesScreen(
         }
     }
 }
+
+@Composable
+private fun CenteredStatusMessage(
+    message: String,
+    color: Color = MaterialTheme.extraColors.secondaryText,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = message,
+            color = color,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+@Composable
+private fun SiteSelectionCard(
+    site: AppLinkedSite,
+    isSelected: Boolean,
+    isSelecting: Boolean,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val cardColor =
+        if (isSelected) {
+            MaterialTheme.extraColors.siteSelectedContainer
+        } else {
+            MaterialTheme.extraColors.siteUnselectedContainer
+        }
+    val borderColor =
+        if (isSelected) {
+            MaterialTheme.extraColors.siteSelectedBorder
+        } else {
+            MaterialTheme.extraColors.siteUnselectedBorder
+        }
+    val labelColor =
+        if (isSelected) {
+            MaterialTheme.extraColors.siteSelectedLabel
+        } else {
+            MaterialTheme.extraColors.siteUnselectedText
+        }
+    val siteNameColor =
+        if (isSelected) {
+            MaterialTheme.extraColors.strongText
+        } else {
+            MaterialTheme.extraColors.siteUnselectedText
+        }
+    val statusLabel =
+        stringResource(
+            if (isSelecting) {
+                R.string.app_account_site_selecting
+            } else if (isSelected) {
+                R.string.team_site_selection_badge
+            } else {
+                R.string.team_site_selection_unselected_badge
+            },
+        )
+
+    Surface(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(SITE_SELECTION_CARD_HEIGHT)
+                .selectable(
+                    selected = isSelected,
+                    enabled = isEnabled && !isSelected,
+                    role = Role.RadioButton,
+                    onClick = onClick,
+                ),
+        shape = RoundedCornerShape(SITE_SELECTION_CARD_RADIUS),
+        color = cardColor,
+        border =
+            BorderStroke(
+                if (isSelected) SITE_SELECTION_SELECTED_BORDER_WIDTH else SITE_SELECTION_BORDER_WIDTH,
+                borderColor,
+            ),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = SITE_SELECTION_CARD_HORIZONTAL_PADDING),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.extraColors.siteSelectedBorder,
+                    modifier = Modifier.size(SITE_SELECTION_SELECTED_ICON_SIZE),
+                )
+            } else {
+                Spacer(modifier = Modifier.size(SITE_SELECTION_SELECTED_ICON_SIZE))
+            }
+            Text(
+                text = site.siteName,
+                modifier = Modifier.weight(1f).padding(start = SITE_SELECTION_CARD_CONTENT_GAP),
+                color = siteNameColor,
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontSize = 16.sp,
+                        lineHeight = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = statusLabel,
+                color = labelColor,
+                style =
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+private val SITE_SELECTION_HEADER_TOP_OFFSET = 40.dp
+private val SITE_SELECTION_HEADER_HEIGHT = 64.dp
+private val SITE_SELECTION_BACK_BUTTON_START = 8.dp
+private val SITE_SELECTION_HORIZONTAL_PADDING = 24.dp
+private val SITE_SELECTION_CONTENT_TOP_PADDING = 26.dp
+private val SITE_SELECTION_CARD_HEIGHT = 92.dp
+private val SITE_SELECTION_CARD_RADIUS = 14.dp
+private val SITE_SELECTION_CARD_GAP = 10.dp
+private val SITE_SELECTION_CARD_HORIZONTAL_PADDING = 16.dp
+private val SITE_SELECTION_CARD_CONTENT_GAP = 12.dp
+private val SITE_SELECTION_SELECTED_ICON_SIZE = 32.dp
+private val SITE_SELECTION_SELECTED_BORDER_WIDTH = 1.5.dp
+private val SITE_SELECTION_BORDER_WIDTH = 1.dp

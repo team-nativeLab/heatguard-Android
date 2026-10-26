@@ -44,6 +44,13 @@ data class HeartGuardExtraColors(
     val checklistCompletedText: Color,
     val checklistDivider: Color,
     val pageBackground: Color,
+    val siteSelectedContainer: Color,
+    val siteSelectedBorder: Color,
+    val siteSelectedLabel: Color,
+    val siteUnselectedContainer: Color,
+    val siteUnselectedBorder: Color,
+    val siteUnselectedText: Color,
+    val phoneSecurityText: Color,
     val temperatureRiseContainer: Color,
     val onTemperatureRiseContainer: Color,
     val strongText: Color,
@@ -142,6 +149,13 @@ private val checklistDividerColor = Color(0xFFE8EBF5)
 
 // 흰 카드가 배경과 구분되도록 Figma 홈 리디자인·회원탈퇴 화면에서 쓰는 옅은 회청색 페이지 배경이다.
 private val pageBackgroundColor = Color(0xFFF6F9FC)
+private val siteSelectedContainerColor = Color(0xFFEAF2FF)
+private val siteSelectedBorderColor = Color(0xFF2E80ED)
+private val siteSelectedLabelColor = Color(0xFF1454A6)
+private val siteUnselectedContainerColor = Color(0xFFE1E6EC)
+private val siteUnselectedBorderColor = Color(0xFF909BAA)
+private val siteUnselectedTextColor = Color(0xFF556171)
+private val phoneSecurityTextColor = Color(0xFF9CA3AF)
 private val temperatureRiseContainerColor = Color(0xFFFFDDE2)
 private val onTemperatureRiseContainerColor = Color(0xFFFF6172)
 
@@ -239,6 +253,13 @@ private val heartGuardExtraColors =
         checklistCompletedText = checklistCompletedTextColor,
         checklistDivider = checklistDividerColor,
         pageBackground = pageBackgroundColor,
+        siteSelectedContainer = siteSelectedContainerColor,
+        siteSelectedBorder = siteSelectedBorderColor,
+        siteSelectedLabel = siteSelectedLabelColor,
+        siteUnselectedContainer = siteUnselectedContainerColor,
+        siteUnselectedBorder = siteUnselectedBorderColor,
+        siteUnselectedText = siteUnselectedTextColor,
+        phoneSecurityText = phoneSecurityTextColor,
         temperatureRiseContainer = temperatureRiseContainerColor,
         onTemperatureRiseContainer = onTemperatureRiseContainerColor,
         strongText = strongTextColor,
