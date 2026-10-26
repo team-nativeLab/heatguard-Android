@@ -1,5 +1,14 @@
 # 작업 인계: Figma 미구현 화면
 
+## 2026-10-27: 체크리스트 서버 연동 및 화면 정리 (#173, #174)
+
+- 체크리스트 작업은 `feature/#173-checklist-progress-and-round-status`, 화면 정리는 `fix/#174-profile-inquiry-site-photo-ui`에서 최신 `dev` (`d007c916`) 기준으로 분리했다. 기존 CI workflow 변경이 있는 기본 체크아웃에는 손대지 않았다.
+- Draft PR #175는 체크리스트 서버 항목 완료 수/전체 수로 진행률을 계산하고, 일정 기준 회차 완료 수와 분리한다. 현재 회차만 상세로 진입할 수 있고 홈 일정 흐름은 유지한다. 체크리스트 API는 날짜 단위라 당일 회차끼리 항목 상태를 공유한다.
+- Draft PR #176은 연락처 시트의 navigation bar inset/스크롤, 전화 취소 버튼·표시 포맷, 사진 문구, 현장 제목을 정리했다. 010으로 시작하는 11자리 번호만 표시 포맷하며 발신에는 서버 원본 번호를 사용한다. 프로필·문의 입력 배경은 기존 공용 토큰 적용을 유지했다.
+- 로컬 검증: 두 작업 모두 `:app:compileDebugKotlin`, `:app:assembleDebug`, `:app:lintDebug`, `spotlessCheck`, `git diff --check` 통과. 테스트 소스가 없어 `:app:testDebugUnitTest`는 `NO-SOURCE`다. 연결된 Android 기기/에뮬레이터가 없어 작은 화면·큰 글꼴에서 시트와 UI를 실기기 검수하지 못했다.
+- GitHub CI: PR #175의 Format Check, PR Rules, Secret Scan, CI Build & Lint 성공. PR #176의 같은 네 체크도 성공했다. 두 PR은 `dev` 대상 Draft이며 미병합이고, 연결 이슈 #173·#174는 PR 병합 전 상태로 열려 있다.
+- 다음 작업은 PR diff와 사용자 리뷰 확인이다. 사용자가 병합을 요청하기 전에는 두 PR을 병합하지 않는다. UI 런타임 검수는 기기나 에뮬레이터를 사용할 수 있을 때 수행한다.
+
 ## 2026-10-26: 멀티모듈화 및 템플릿 테스트 정리 (#152)
 
 - 작업 브랜치: `refactor/#152-modularize-and-prune-tests`, 기준 dev `13cc8074c33de5b3bdf8314b051584e5de17448f`.
