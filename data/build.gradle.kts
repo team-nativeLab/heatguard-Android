@@ -72,7 +72,6 @@ android {
     }
     defaultConfig {
         minSdk = 34
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -104,7 +103,6 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(project(":core"))
-    testImplementation(testFixtures(project(":core")))
     implementation(project(":domain"))
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.serialization.json)
@@ -112,10 +110,4 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
-    testImplementation(libs.mockwebserver3)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

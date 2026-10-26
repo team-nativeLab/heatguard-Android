@@ -64,3 +64,19 @@ Figma 파일 `이음산업건설`의 체크리스트 화면과 기록 취소 확
 - PR API는 `DIRTY` / `CONFLICTING`을 반환했지만 `git merge-tree`에는 파일 충돌이 없었다. 두 상태가 일치하지 않아 추가 확인이 필요하다. 새 head에는 GitHub 체크가 아직 보고되지 않았고, `sync-check.sh`의 저장소 조회는 `UNKNOWN`이었다. dev 동기화·충돌 해결·병합은 보류했다.
 - 코드 사후 리뷰와 Figma 대조를 마쳤다. 코드 리뷰상 Critical/Blocker는 없다.
 - 다음 제품 단계는 서버 연동이다. 체크리스트 항목, 초기 완료 수, 서버 저장 정책은 API/제품 결정에 맞춰 로컬 데모 모델을 교체한다.
+# 작업 인계: 테스트 전면 제거 및 멀티모듈 확인
+
+## 2026-10-26: 네 모듈 테스트 소스 전면 제거 (#158)
+
+- 작업 브랜치: `refactor/#158-remove-all-tests`, 기준 dev `3149907dd018f98ded429f7c3e050b5a3ef719f7`.
+- `:app`, `:core`, `:domain`, `:data` 모듈과 `src/main` 운영 코드는 유지했다. 저장소에는 66개 `src/test`, `src/androidTest`, `src/testFixtures` 소스를 더 이상 두지 않는다.
+- 네 모듈의 test runner, test/testFixtures 의존성 및 설정과 테스트 전용 version catalog 항목을 제거했다. 디버그 Compose tooling과 운영 의존성은 유지했다.
+- CI에서 테스트 태스크·보고서·테스트 성공 문구를 없애고 `CI Build & Lint`로 이름을 바꿨다. Claude/Codex `workflow_run` 트리거도 새 이름에 맞췄다. Issue #157의 auto-fix 쓰기 토큰·runner 격리는 별도 이슈로 남아 있다.
+- README는 현재 테스트가 없고 과거 테스트 결과는 재실행할 수 없는 이력임을 명시한다. 당시 테스트가 보호하던 인증·세션·권한 분리·기록 제출 안전성을 현재 CI가 자동 확인하지 못한다.
+- 보안 diff 검토: Critical 없음. 테스트 삭제로 관련 보안 회귀 탐지가 사라지는 Warning과, CI 상태 이름 변경 후 필수 상태 검사를 확인해야 한다는 제안이 있다. 이는 테스트 제거 요청에 따른 검증 범위 축소이며 현재 운영 코드 변경으로 인한 취약점은 확인되지 않았다.
+- Gradle 프로젝트 목록에서 네 모듈을 확인했다. `:app:compileDebugKotlin`, `:app:assembleDebug`, `lintDebug`, `spotlessCheck`가 통과했고 debug/release runtime 의존성에 JUnit·Espresso·MockWebServer·Compose UI Test가 남지 않았다. 단위·계측 테스트는 제거 요청 때문에 실행하지 않았다.
+- 사후 코드 리뷰 판정은 CONCERNS이며 Critical/Blocker는 없다. 테스트 제거에 따른 인증·세션·기록 회귀 검증 공백, CI 체크 이름 변경 확인, 별도 이슈 #157의 기존 autofix 토큰 격리 위험을 보고했다.
+- `dev`와 `main`에는 branch protection/ruleset과 필수 상태 체크가 없다(읽기 전용 GitHub API 조회). 따라서 현재 설정에서는 이전 또는 새 CI 체크 이름이 필수로 요구되지 않는다.
+- 변경은 아직 commit/PR/push 되지 않았다. 게시 단계 승인을 받은 뒤 `dev` PR부터 진행하고, 체크·보안 경고를 검토한 다음 사용자가 요청한 `main` 통합을 이어간다. #157 보안 격리는 별도 브랜치에서 이어서 구현하던 중 자동 검토가 보안 민감 workflow 수정을 차단해 멈췄다. #157 브랜치에는 CI workflow 이름을 갱신한 두 줄만 있으며, 나머지 격리 구현은 자동 검토 승인 후 계속한다.
+
+# 이전 작업 인계: Figma 미구현 화면
