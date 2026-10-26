@@ -21,7 +21,7 @@
 
 ## 개요
 폭염 환경에서 작업하는 현장 인력의 체온·작업/휴식 상태를 기록하고, 위험 상황 발생 시 관리자에게 긴급 호출을 보낼 수 있도록 돕는 것을 목표로 하는 Android 앱입니다.
-현재 구현된 작업자 앱 화면(Team 로그인, 이메일 인증 기반 가입, 현장 연결·선택, 홈, 체크리스트, 긴급 호출, 기록, 프로필, 문의, 알림, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 로그인·가입 이후 모든 기능은 Team 세션과 `/api/v1/auth/team/*`, `/api/v1/team/*` API를 사용하도록 Android 계약을 통일하는 중입니다. 기존 `APP_ACCOUNT`로 저장된 세션은 권한을 바꾸지 않고 만료시켜 다시 Team으로 로그인하도록 합니다. Team 가입·이메일 인증·현장 연결 API 경로는 서버 반영을 요청할 클라이언트 계약이며, 서버 구현 및 실환경 검증은 아직 확인되지 않았습니다. 현장 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}`은 Android App Link로 수신하고, 토큰은 메모리에서만 유지해 앱이 종료되면 링크를 다시 열어야 합니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
+현재 구현된 작업자 앱 화면(Team 로그인, 이메일 인증 기반 가입, 현장 연결·선택, 홈, 체크리스트, 긴급 호출, 기록, 프로필, 문의, 알림, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 로그인·가입 이후 모든 기능은 Team 세션과 `/api/v1/auth/team/*`, `/api/v1/team/*` API를 사용하도록 Android 계약을 통일하는 중입니다. 기존 `APP_ACCOUNT`로 저장된 세션은 권한을 바꾸지 않고 만료시켜 다시 Team으로 로그인하도록 합니다. Team 가입·이메일 인증·현장 연결 API 경로는 서버 반영을 요청할 클라이언트 계약이며, 서버 구현 및 실환경 검증은 아직 확인되지 않았습니다. 현장 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}`과 초대 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/team/invitations/{token}`는 Android App Link로 수신합니다. pending 링크 토큰은 Android Keystore로 암호화해 저장하며, 새 링크를 열면 최신 토큰으로 교체되고 연결 완료 또는 취소 시 삭제됩니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
 
 PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 README·사용자 제공 요구사항·Figma·API 명세 v0.1을 작업 범위 자료로 사용하며, 별도 PRD는 생성하지 않습니다.
 
@@ -76,7 +76,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 실계정으로 실행하지 않았으며, 과거 단위 테스트로만 확인했습니다. 현재 테스트 소스는 없습니다. |
 | `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
 | `POST /auth/team/email-codes`, `POST /auth/team/register`, `POST /auth/team/login`, `POST /auth/team/logout` | Android Team 계약 반영, 서버 검증 대기 | 이메일 인증·Team 가입·로그인·로그아웃. 가입 요청 후 Team 로그인 API로 Team 세션을 발급받는다. 서버는 가입 사용자의 Team 연결·역할 및 기존 Team 로그인 응답과의 호환을 구현해야 한다. |
-| `POST /team/links/claim`, `GET /team/sites`, `POST /team/sites/{siteId}/select`, `DELETE /team/sites/{siteId}/link` | Android Team 계약 반영, 서버 검증 대기 | App Link 토큰과 담당자 전화번호로 현장을 연동하고 목록·선택·연결 해제를 제공한다. 전화번호 대조는 SMS 인증이 아니다. 토큰은 성공·취소까지 메모리에만 보관한다. |
+| `POST /team/links/claim`, `GET /team/sites`, `POST /team/sites/{siteId}/select`, `DELETE /team/sites/{siteId}/link` | Android Team 계약 반영, 서버 검증 대기 | 현장·초대 App Link 토큰과 담당자 전화번호로 현장을 연동하고 목록·선택·연결 해제를 제공한다. 전화번호 대조는 SMS 인증이 아니다. pending 토큰은 Keystore 암호화 저장소에 연결 성공·취소까지 보관한다. |
 | `GET /team/dashboard` | Android Team 계약 반영, 서버 검증 대기 | Team 세션으로 선택 현장 대시보드를 조회하고 전송 직전 저장된 `X-Site-Id`를 읽는다. 서버는 요청 현장이 해당 Team 계정에 연결됐는지 검증해야 한다. 작업·자료·팀원 관리 전체 화면은 아직 구현하지 않았다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
 
