@@ -25,6 +25,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 @Composable
 fun HomeEmergencyPhoneCallDialog(
     phoneNumber: String,
+    isCallEnabled: Boolean,
     onDismissRequest: () -> Unit,
     onCallClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -75,7 +76,10 @@ fun HomeEmergencyPhoneCallDialog(
                 TextButton(onClick = onDismissRequest) {
                     Text(text = stringResource(R.string.home_emergency_call_dismiss))
                 }
-                TextButton(onClick = onCallClick) {
+                TextButton(
+                    enabled = isCallEnabled,
+                    onClick = onCallClick,
+                ) {
                     Text(text = stringResource(R.string.home_emergency_call_confirm))
                 }
             }

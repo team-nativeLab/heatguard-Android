@@ -9,19 +9,24 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.component.overlay.ApplyDialogWindowBackgroundBlur
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.ui.theme.HeartGuardOverlayBlur
+import com.nativelap.heartguard.view.component.valueOrEmptyText
 import com.nativelap.heartguard.view.component.home.HomeEmergencyPhoneCallDialog
+import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 
 @Composable
 internal fun HomeHeadquartersCallConfirmationRoute(
+    homeViewModel: HomeViewModel,
     onDismissRequest: () -> Unit,
     onDialerOpened: () -> Unit,
 ) {
     val context = LocalContext.current
-    val headquartersPhoneNumber = stringResource(R.string.home_emergency_phone_number)
+    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
+    val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
     val callFailedMessage = stringResource(R.string.home_call_failed)
     val dialPhoneNumber = rememberPhoneDialLauncher()
     var isCallActionInProgress by rememberSaveable {
@@ -30,7 +35,7 @@ internal fun HomeHeadquartersCallConfirmationRoute(
     val currentOnDialerOpened by rememberUpdatedState(onDialerOpened)
 
     val openHeadquartersDialer = {
-        if (!isCallActionInProgress) {
+        if (!isCallActionInProgress && headquartersPhoneNumber != null) {
             isCallActionInProgress = true
             if (dialPhoneNumber(headquartersPhoneNumber)) {
                 currentOnDialerOpened()
@@ -46,7 +51,8 @@ internal fun HomeHeadquartersCallConfirmationRoute(
     )
 
     HomeEmergencyPhoneCallDialog(
-        phoneNumber = headquartersPhoneNumber,
+        phoneNumber = valueOrEmptyText(headquartersPhoneNumber),
+        isCallEnabled = headquartersPhoneNumber != null,
         onDismissRequest = onDismissRequest,
         onCallClick = openHeadquartersDialer,
     )

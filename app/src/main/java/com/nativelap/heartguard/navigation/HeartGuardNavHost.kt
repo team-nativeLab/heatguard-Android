@@ -476,18 +476,18 @@ private fun HeartGuardMainNavDisplay(
                 entry<HeartGuardDestination.Home> {
                     HeartGuardHomeRoute(
                         homeViewModel = homeViewModel,
-                        // 관리자 전화는 현장관리자 긴급호출 흐름, 긴급 전화는 본사 연락처 시트로 이동한다.
-                        // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
+                        // 관리자 전화는 본사 연락처 시트로, 긴급 전화는 본사 대상의 긴급호출 흐름으로 이동한다.
                         onManagerCallClick = {
+                            backStack.add(HeartGuardDestination.HeadquartersContact)
+                        },
+                        // 이미 진행 중인 긴급호출이 있으면 새로 호출하지 않도록 바로 호출 중 화면으로 보낸다.
+                        onEmergencyClick = {
                             val hasActiveEmergencyCall = emergencyViewModel.uiState.value.callId != null
                             if (hasActiveEmergencyCall) {
                                 backStack.add(HeartGuardDestination.Calling)
                             } else {
                                 backStack.add(HeartGuardDestination.Emergency)
                             }
-                        },
-                        onEmergencyClick = {
-                            backStack.add(HeartGuardDestination.HeadquartersCallConfirmation)
                         },
                         // 홈의 현장 사진은 온도계 기록(THERMOMETER)의 사진이다. 기록유형 선택을 거치지 않으므로
                         // 여기서 새 온도계 기록을 시작해, 저장 시 기록 종류가 비어 실패하지 않게 한다.
@@ -718,6 +718,7 @@ private fun HeartGuardMainNavDisplay(
                     metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(),
                 ) {
                     HomeHeadquartersContactRoute(
+                        homeViewModel = homeViewModel,
                         onCallClick = {
                             backStack.add(HeartGuardDestination.HeadquartersCallConfirmation)
                         },
@@ -730,6 +731,7 @@ private fun HeartGuardMainNavDisplay(
                         ),
                 ) {
                     HomeHeadquartersCallConfirmationRoute(
+                        homeViewModel = homeViewModel,
                         onDismissRequest = ::goBack,
                         onDialerOpened = {
                             while (

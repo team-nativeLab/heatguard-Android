@@ -40,8 +40,8 @@ import java.time.format.DateTimeFormatter
 /** 홈에 팀 현장페이지 API 결과와 사용자 이벤트를 HomeScreen에 전달하는 Route이다.
  * 서버 응답을 아직 받지 못했거나 실패했으면 모든 서버 값을 "--"로 보여준다(고정 표시값을 쓰지 않는다).
  * 체크 완료 여부는 서버 필드가 없어 오늘 기록의 측정 시각으로 판정한다.
- * "관리자 전화"([onManagerCallClick])는 현장관리자 긴급호출 흐름(Emergency 화면)으로 이동하고,
- * "긴급 전화"는 Navigation 3의 본사 연락처 시트로 이동한다.
+ * "관리자 전화"([onManagerCallClick])는 Navigation 3의 본사 연락처 시트로 이동하고,
+ * "긴급 전화"([onEmergencyClick])는 현장관리자 긴급호출 흐름(Emergency 화면)으로 이동한다.
  * 메뉴 드로어는 홈 헤더에서만 열리는 오버레이라 이 Route가 열림 상태를 직접 소유한다.
  * 메뉴 드로어만 이 화면의 로컬 상태로 관리하고 전화·기록 오버레이는 Navigation 3 목적지로 처리한다. */
 @Composable

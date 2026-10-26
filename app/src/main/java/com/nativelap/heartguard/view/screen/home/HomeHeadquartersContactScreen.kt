@@ -18,6 +18,7 @@ import com.nativelap.heartguard.view.component.emergency.EmergencyContactCard
 @Composable
 internal fun HomeHeadquartersContactScreen(
     phoneNumber: String,
+    isCallEnabled: Boolean,
     onCallClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -33,7 +34,7 @@ internal fun HomeHeadquartersContactScreen(
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             Text(
-                text = stringResource(R.string.home_emergency_call),
+                text = stringResource(R.string.home_headquarters_contact_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             )
@@ -43,6 +44,7 @@ internal fun HomeHeadquartersContactScreen(
                 contactName = stringResource(R.string.home_headquarters_contact_name),
                 phoneNumber = phoneNumber,
                 onCallClick = onCallClick,
+                isCallEnabled = isCallEnabled,
             )
         }
     }
