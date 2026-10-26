@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -128,7 +127,6 @@ internal fun AuthSignUpScreen(
                     Column(
                         modifier =
                             Modifier
-                                .widthIn(max = HeartGuardComponentSize.AuthSignUpContentMaxWidth)
                                 .fillMaxWidth()
                                 .padding(top = HeartGuardSpacing.AuthSignUpTop),
                         horizontalAlignment = Alignment.Start,
@@ -254,8 +252,7 @@ internal fun AuthSignUpScreen(
                                 } else {
                                     0.dp
                                 },
-                        ).widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
-                        .fillMaxWidth(),
+                        ).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpActionsTop))

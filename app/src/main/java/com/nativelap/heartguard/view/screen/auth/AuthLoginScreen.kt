@@ -1,11 +1,9 @@
 package com.nativelap.heartguard.view.screen.auth
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -13,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imeAnimationTarget
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -26,7 +25,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
@@ -53,6 +52,7 @@ import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.brand.BrandMark
 
 /** 이메일 로그인 화면을 기존 인증 Component 조합으로 구성한다. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AuthLoginScreen(
     email: String,
@@ -72,13 +72,8 @@ fun AuthLoginScreen(
     // 이전 앱에서 열려 있던 키보드 inset이 진입 직후 잠깐 남아도 키보드 레이아웃으로 바뀌지 않도록
     // 로그인 입력칸에 포커스가 있을 때만 키보드가 열린 것으로 본다.
     var hasFormFocus by remember { mutableStateOf(false) }
-    var hasKeyboardTransitionStarted by remember { mutableStateOf(false) }
-    val isKeyboardVisible = hasFormFocus && WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    LaunchedEffect(isKeyboardVisible) {
-        if (isKeyboardVisible) {
-            hasKeyboardTransitionStarted = true
-        }
-    }
+    val isKeyboardVisible =
+        hasFormFocus && WindowInsets.imeAnimationTarget.getBottom(LocalDensity.current) > 0
     val pageScrollState = rememberScrollState()
     val formScrollState = rememberScrollState()
     Scaffold(
@@ -135,16 +130,6 @@ fun AuthLoginScreen(
                             (maxHeight - formContentHeight.toDp()).coerceIn(0.dp, maximumTopSpacing)
                         }
                     }
-                val animatedTopSpacing by animateDpAsState(
-                    targetValue = topSpacing,
-                    animationSpec =
-                        if (hasKeyboardTransitionStarted || isKeyboardVisible) {
-                            tween()
-                        } else {
-                            snap()
-                        },
-                    label = "loginFormTopSpacing",
-                )
                 Column(
                     modifier =
                         Modifier
@@ -158,7 +143,7 @@ fun AuthLoginScreen(
                             ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Spacer(modifier = Modifier.height(animatedTopSpacing))
+                    Spacer(modifier = Modifier.height(topSpacing))
 
                     Column(
                         modifier =
@@ -182,6 +167,7 @@ fun AuthLoginScreen(
                         AuthTitleBlock(
                             title = stringResource(titleResource),
                             description = stringResource(descriptionResource),
+                            textAlign = TextAlign.Center,
                         )
 
                         Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthTitleForm))

@@ -14,7 +14,7 @@ object HeartGuardSpacing {
     val RecordFieldInset = 6.dp
     val EmergencyAlertHorizontal = 19.dp
     val EmergencyContactIndent = 7.dp
-    val AuthHorizontal = 12.dp
+    val AuthHorizontal = 24.dp
     val AuthTop = 142.dp
     val AuthLogoTitle = 20.dp
     val AuthTitleForm = 31.dp
@@ -146,7 +146,6 @@ object HeartGuardComponentSize {
     val PageContentMaxWidth = 600.dp
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
-    val AuthSignUpContentMaxWidth = 306.dp
     val AuthActionMaxWidth = 318.dp
     val AuthTextFieldHeight = 45.dp
     val TextFieldHeight = 48.dp
