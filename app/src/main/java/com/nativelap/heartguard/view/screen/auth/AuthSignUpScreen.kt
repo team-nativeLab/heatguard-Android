@@ -196,7 +196,7 @@ internal fun AuthSignUpScreen(
                             },
                         )
 
-                        Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpEmailCodeGap))
+                        Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
 
                         AuthTextField(
                             label = stringResource(R.string.auth_signup_verification_code_label),
