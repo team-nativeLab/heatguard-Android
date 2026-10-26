@@ -450,6 +450,10 @@
     <string name="checklist_period_accessibility_format">%1$02d시 %2$02d분, %3$s</string>
     <string name="checklist_overview_completed_of_format"> / %1$d 회차 완료</string>
     <string name="checklist_overview_percent_format">%1$d%%</string>
+    <string name="checklist_overview_percent_unavailable">--%</string>
+    <string name="checklist_overview_items_completed_format">%1$d / %2$d 항목 완료</string>
+    <string name="checklist_overview_items_loading">체크리스트를 불러오는 중이에요.</string>
+    <string name="checklist_overview_items_load_failure">체크리스트를 불러오지 못했어요.</string>
     <string name="checklist_overview_completed_label">완료</string>
     <string name="checklist_overview_missed_label">미완료</string>
     <string name="checklist_overview_remaining_label">남은 회차</string>

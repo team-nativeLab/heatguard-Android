@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,6 +94,12 @@ internal fun ChecklistOverviewScreen(
     onRetryClick: () -> Unit,
     onPeriodClick: (LocalTime) -> Unit,
     onNewDay: () -> Unit = {},
+    completedChecklistItemCount: Int = 0,
+    totalChecklistItemCount: Int = 0,
+    isChecklistLoading: Boolean = false,
+    hasChecklistLoaded: Boolean = true,
+    hasChecklistLoadError: Boolean = false,
+    onChecklistRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var overviewDate by remember { mutableStateOf(LocalDate.now(KOREA_ZONE)) }
@@ -152,8 +160,14 @@ internal fun ChecklistOverviewScreen(
                         completedCount = completedCount,
                         warningCount = periods.count { period -> period.status == PeriodStatus.WARNING },
                         totalCount = periods.size,
+                        completedChecklistItemCount = completedChecklistItemCount,
+                        totalChecklistItemCount = totalChecklistItemCount,
+                        isChecklistLoading = isChecklistLoading,
+                        hasChecklistLoaded = hasChecklistLoaded,
+                        hasChecklistLoadError = hasChecklistLoadError,
                         siteLabel = siteLabel,
                         date = overviewDate,
+                        onChecklistRetryClick = onChecklistRetryClick,
                     )
                 }
             }
@@ -362,6 +376,7 @@ private fun OverviewPeriodCard(
                             },
                         shape = RoundedCornerShape(CHECKLIST_ROUND_CARD_RADIUS),
                     ).clickable(
+                        enabled = period.status == PeriodStatus.CURRENT,
                         onClickLabel = stringResource(R.string.checklist_overview_open_detail),
                         role = Role.Button,
                         onClick = onClick,
@@ -426,11 +441,13 @@ private fun OverviewPeriodCard(
                         color = labelColor,
                     )
                 }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.extraColors.secondaryText,
-                )
+                if (period.status == PeriodStatus.CURRENT) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.extraColors.secondaryText,
+                    )
+                }
             }
         }
     }
@@ -450,11 +467,22 @@ private fun ChecklistOverviewSummary(
     completedCount: Int,
     warningCount: Int,
     totalCount: Int,
+    completedChecklistItemCount: Int,
+    totalChecklistItemCount: Int,
+    isChecklistLoading: Boolean,
+    hasChecklistLoaded: Boolean,
+    hasChecklistLoadError: Boolean,
     siteLabel: String?,
     date: LocalDate,
+    onChecklistRetryClick: () -> Unit,
 ) {
     val remainingCount = (totalCount - completedCount - warningCount).coerceAtLeast(0)
-    val progress = if (totalCount == 0) 0f else completedCount.toFloat() / totalCount
+    val progress =
+        if (totalChecklistItemCount == 0) {
+            0f
+        } else {
+            completedChecklistItemCount.toFloat() / totalChecklistItemCount
+        }
     val progressPercent = (progress * PERCENT_SCALE).toInt()
     val largeText = LocalDensity.current.fontScale > CHECKLIST_OVERVIEW_LARGE_FONT_SCALE
 
@@ -535,10 +563,19 @@ private fun ChecklistOverviewSummary(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
+                            ChecklistItemProgressLabel(
+                                completedCount = completedChecklistItemCount,
+                                totalCount = totalChecklistItemCount,
+                                isLoading = isChecklistLoading,
+                                hasLoaded = hasChecklistLoaded,
+                                hasLoadError = hasChecklistLoadError,
+                                onRetryClick = onChecklistRetryClick,
+                            )
                         }
                         OverviewProgressIndicator(
                             progress = progress,
                             progressPercent = progressPercent,
+                            hasChecklistLoaded = hasChecklistLoaded,
                         )
                     }
                 }
@@ -582,10 +619,19 @@ private fun ChecklistOverviewSummary(
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
+                        ChecklistItemProgressLabel(
+                            completedCount = completedChecklistItemCount,
+                            totalCount = totalChecklistItemCount,
+                            isLoading = isChecklistLoading,
+                            hasLoaded = hasChecklistLoaded,
+                            hasLoadError = hasChecklistLoadError,
+                            onRetryClick = onChecklistRetryClick,
+                        )
                     }
                     OverviewProgressIndicator(
                         progress = progress,
                         progressPercent = progressPercent,
+                        hasChecklistLoaded = hasChecklistLoaded,
                     )
                 }
             }
@@ -633,6 +679,7 @@ private fun ChecklistOverviewSummary(
 private fun OverviewProgressIndicator(
     progress: Float,
     progressPercent: Int,
+    hasChecklistLoaded: Boolean,
 ) {
     Box(
         modifier = Modifier.size(CHECKLIST_OVERVIEW_RING_SIZE),
@@ -646,10 +693,66 @@ private fun OverviewProgressIndicator(
             strokeWidth = CHECKLIST_OVERVIEW_RING_STROKE,
         )
         Text(
-            text = stringResource(R.string.checklist_overview_percent_format, progressPercent),
+            text =
+                if (hasChecklistLoaded) {
+                    stringResource(R.string.checklist_overview_percent_format, progressPercent)
+                } else {
+                    stringResource(R.string.checklist_overview_percent_unavailable)
+                },
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
         )
+    }
+}
+
+@Composable
+private fun ChecklistItemProgressLabel(
+    completedCount: Int,
+    totalCount: Int,
+    isLoading: Boolean,
+    hasLoaded: Boolean,
+    hasLoadError: Boolean,
+    onRetryClick: () -> Unit,
+) {
+    when {
+        hasLoadError && !hasLoaded -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.checklist_overview_items_load_failure),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(
+                    onClick = onRetryClick,
+                    contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary),
+                ) {
+                    Text(text = stringResource(R.string.common_retry))
+                }
+            }
+        }
+
+        isLoading && !hasLoaded -> {
+            Text(
+                text = stringResource(R.string.checklist_overview_items_loading),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        hasLoaded -> {
+            Text(
+                text =
+                    stringResource(
+                        R.string.checklist_overview_items_completed_format,
+                        completedCount,
+                        totalCount,
+                    ),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
