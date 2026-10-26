@@ -108,11 +108,11 @@
     <string name="home_open_checklist">체크리스트 열기</string>
     <string name="home_checklist_card_accessibility_format">%1$s, %2$s</string>
     <string name="home_manager_call">관리자 전화</string>
-    <string name="home_manager_call_description">현장 관리자에게 연락</string>
+    <string name="home_manager_call_description">본사 연락처 확인</string>
     <string name="home_emergency_call">긴급 전화</string>
-    <string name="home_emergency_call_description">본사에 전화하기</string>
-    <string name="home_emergency_phone_number" translatable="false">010-5080-4623</string>
+    <string name="home_emergency_call_description">본사 긴급호출</string>
     <string name="home_headquarters_contact_name">본사</string>
+    <string name="home_headquarters_contact_title">본사 연락처</string>
     <string name="home_headquarters_contact_confirmation">본사 연락하기</string>
     <string name="home_call_failed">전화 앱을 열지 못했습니다. 기기에서 전화 기능을 사용할 수 있는지 확인해 주세요.</string>
     <string name="home_emergency_call_confirm">전화 앱 열기</string>
