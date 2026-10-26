@@ -2,8 +2,13 @@ package com.nativelap.heartguard.view.screen.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +32,8 @@ internal fun HomeHeadquartersContactScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .verticalScroll(rememberScrollState())
                     .padding(
                         horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal,
                         vertical = HeartGuardSpacing.LargeSection,

@@ -35,7 +35,7 @@ import com.nativelap.heartguard.view.component.temperature.TemperatureRecordCard
 
 /** Figma 14_현장사진_촬영전 / 15_저장전_확인알림 화면이다.
  * 14: 촬영 전에는 빈 사진 미리보기, 고른 뒤에는 사진 목록과 직접 입력한 온도계 값 요약을 보여준다.
- * 15: 사진 없이 저장을 누르면([showSaveError]) 같은 화면에서 미리보기 자리에 "온도계가 아직 저장이 안되었어요"를 띄우고,
+ * 15: 사진 추가가 안 된 경우([showSaveError]) 같은 화면에서 미리보기 자리에 안내 문구를 표시하고,
  * 직접 입력 카드를 비활성 상태로 보여준다. 저장 버튼은 하단에 고정한다. */
 @Composable
 fun FieldPhotoScreen(

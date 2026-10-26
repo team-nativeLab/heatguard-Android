@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -63,14 +64,13 @@ internal fun TeamSiteSelectionScreen(
         containerColor = MaterialTheme.extraColors.pageBackground,
         topBar = {
             CenterAlignedTopAppBar(
-                modifier = Modifier.padding(top = TEAM_SITE_SELECTION_HEADER_TOP_OFFSET),
                 expandedHeight = TEAM_SITE_SELECTION_HEADER_HEIGHT,
                 title = {
                     Text(
                         text = stringResource(R.string.team_site_selection_title),
                         style =
                             MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 18.sp,
+                                fontSize = HeartGuardFontSize.PageTitle,
                                 lineHeight = 28.sp,
                                 fontWeight = FontWeight.Bold,
                             ),
@@ -236,7 +236,6 @@ private fun SelectedTeamSiteCard(siteName: String) {
     }
 }
 
-private val TEAM_SITE_SELECTION_HEADER_TOP_OFFSET = 40.dp
 private val TEAM_SITE_SELECTION_HEADER_HEIGHT = 64.dp
 private val TEAM_SITE_SELECTION_BACK_BUTTON_START = 8.dp
 private val TEAM_SITE_SELECTION_CONTENT_TOP_PADDING = 26.dp

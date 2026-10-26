@@ -21,6 +21,7 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.extraColors
 
 @Composable
 fun HomeEmergencyPhoneCallDialog(
@@ -74,7 +75,10 @@ fun HomeEmergencyPhoneCallDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(R.string.home_emergency_call_dismiss))
+                    Text(
+                        text = stringResource(R.string.home_emergency_call_dismiss),
+                        color = MaterialTheme.extraColors.secondaryText,
+                    )
                 }
                 TextButton(
                     enabled = isCallEnabled,
