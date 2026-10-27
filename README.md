@@ -21,7 +21,7 @@
 
 ## 개요
 폭염 환경에서 작업하는 현장 인력의 체온·작업/휴식 상태를 기록하고, 위험 상황 발생 시 관리자에게 긴급 호출을 보낼 수 있도록 돕는 것을 목표로 하는 Android 앱입니다.
-현재 구현된 작업자 앱 화면(Team 로그인, 이메일 인증 기반 가입, 현장 연결·선택, 홈, 체크리스트, 긴급 호출, 기록, 프로필, 문의, 알림, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 로그인·가입 이후 모든 기능은 Team 세션과 `/api/v1/auth/team/*`, `/api/v1/team/*` API를 사용하도록 Android 계약을 통일하는 중입니다. 기존 `APP_ACCOUNT`로 저장된 세션은 권한을 바꾸지 않고 만료시켜 다시 Team으로 로그인하도록 합니다. Team 가입·이메일 인증·현장 연결 API 경로는 서버 반영을 요청할 클라이언트 계약이며, 서버 구현 및 실환경 검증은 아직 확인되지 않았습니다. 현장 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}`과 초대 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/team/invitations/{token}`는 검증 없이 HTTPS 인텐트로 앱에 등록됩니다(`android:autoVerify="false"`). 링크를 누르면 Android의 앱 선택·기본 앱 설정에 따라 브라우저 또는 HeartGuard가 열릴 수 있습니다. Android 12 이상에서는 기본적으로 브라우저가 열릴 수 있으므로, 앱에서 열려면 기기 설정에서 HeartGuard의 링크 열기를 허용해야 할 수 있습니다. pending 링크 토큰은 Android Keystore로 암호화해 저장하며, 새 링크를 열면 최신 토큰으로 교체되고 연결 완료 또는 취소 시 삭제됩니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
+현재 구현된 작업자 앱 화면(Team 로그인, 이메일 인증 기반 가입, 현장 연결·선택, 홈, 체크리스트, 긴급 호출, 기록, 프로필, 문의, 알림, 회원탈퇴)은 Jetpack Compose Navigation 3(`NavDisplay`)를 사용합니다. 로그인·가입 이후 기능은 Team 세션과 `/api/v1/auth/team/*`, `/api/v1/team/*` API를 사용합니다. 기존 `APP_ACCOUNT`로 저장된 세션은 권한을 바꾸지 않고 만료시켜 다시 Team으로 로그인하도록 합니다. Team 가입·이메일 인증·현장 연결 API의 서버 반영 상태와 실환경 검증 범위는 아래 계약 현황에 기록합니다. 현장 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/app/links/{token}`과 초대 링크 `https://heatguard-temp.https.gsmsv.site/api/v1/team/invitations/{token}`는 검증 없이 HTTPS 인텐트로 앱에 등록됩니다(`android:autoVerify="false"`). 링크를 누르면 Android의 앱 선택·기본 앱 설정에 따라 브라우저 또는 HeartGuard가 열릴 수 있습니다. Android 12 이상에서는 기본적으로 브라우저가 열릴 수 있으므로, 앱에서 열려면 기기 설정에서 HeartGuard의 링크 열기를 허용해야 할 수 있습니다. pending 링크 토큰은 Android Keystore로 암호화해 저장하며, 새 링크를 열면 최신 토큰으로 교체되고 연결 완료 또는 취소 시 삭제됩니다. 서버가 제공하지 않는 값은 고정값 대신 `--`로 표시합니다.
 
 PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 README·사용자 제공 요구사항·Figma·API 명세 v0.1을 작업 범위 자료로 사용하며, 별도 PRD는 생성하지 않습니다.
 
@@ -32,7 +32,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 |---|---|
 | Login / SignUpForm / PhoneNumberLink | Team 로그인, 이메일 인증코드 기반 Team 가입·로그인, Android App Link에서 전달된 현장 토큰과 담당자 전화번호로 현장 연동 |
 | Home | 현재 온도·습도·체감온도·폭염 단계·날씨 상태(`weather.skyStatus`)·온도 변화량(`weather.temperatureDelta`), 체크 타임라인(서버 `checkTimes` + 오늘 기록으로 완료 표시). "관리자 전화"는 기존 현장관리자 긴급호출 화면으로 이동한다. "긴급 전화"는 임시 본사 번호(010-5080-4623)를 확인창과 전화 앱에 표시하며, 전화 앱에서 사용자가 발신을 확인한다. 화면 재개 시 새로고침, 조회 실패 시 재시도 안내 |
-| ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
+| ProfileEdit / PasswordChange | 내 정보 조회·이름 수정(`/auth/team/me`, `version`으로 동시 수정 충돌 감지), 프로필 사진 조회·업로드·삭제, 회사명(`companyName`) 표시, 비밀번호 변경(`/auth/team/password`) |
 | Inquiry | 문의 등록과 내 문의 목록(상태 배지·등록일). 문의 상세 화면은 범위 밖 |
 | Notifications | 홈·기록 화면의 벨에서 진입. 전체/기록/긴급/공지 분류 필터와 20개 단위 cursor 페이지를 제공합니다. 응답의 `type`과 `resourceId`는 데이터 계층에서 알림 대상(기록 `recordId`·긴급호출 `callId`·문의 답변 `inquiryId`)으로 구분해 매핑하며, 명세에 없는 `type`은 대상이 없습니다. 행 탭은 안 읽은 알림을 읽음 처리하고 관련 화면을 엽니다(기록 → 기록 상세, 문의 답변 → 문의하기, 긴급호출 확인 → 진행 중인 호출이 있을 때만 호출 중 화면). 이미 읽은 알림도 탭할 수 있으며, ‘모두 읽음’ 버튼은 서버의 일괄 API를 한 번 호출한 뒤 목록을 다시 조회합니다. 서버에 알림 본문 필드가 없어 제목·시각·읽음 상태를 표시합니다. 초기 로딩·오류/재시도·전체/분류별 빈 상태·추가 페이지 로딩/재시도 상태를 제공합니다 ([Figma 목록 프레임](https://www.figma.com/design/d9MzGARXpSX1Y53E64hdog/%EC%9D%B4%EC%9D%8C%EC%82%B0%EC%97%85%EA%B1%B4%EC%84%A4?node-id=914-1016), [빈 상태 프레임](https://www.figma.com/design/d9MzGARXpSX1Y53E64hdog/%EC%9D%B4%EC%9D%8C%EC%82%B0%EC%97%85%EA%B1%B4%EC%84%A4?node-id=914-1236)) |
 | RecordHistory / RecordHistoryDetail | 기간(기본 최근 7일, 최대 31일)·유형 필터·유형별 건수·날짜별 기록 목록과 온도계/사진 기록 상세. 위치·팀명은 기록 당시 값, 휴식 기록은 `restMinutes` 표시 |
@@ -54,11 +54,13 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 로그인 브랜드 이미지는 사용자 제공 투명 PNG를 `app/src/main/res/drawable-nodpi/heart_guard_logo.png`로 사용합니다. `BrandMark`는 80dp 영역에서 `ContentScale.Fit`으로 원본 비율을 유지합니다. 설치한 앱의 로그인 화면에서 PNG 표시를 시각 확인했으며 [검증 보고서](docs/verification/2026-10-04-functional-regression.md)에 캡처를 보관했습니다. 호출 취소 버튼에는 1dp 테두리와 surface 배경을 적용했습니다.
 
 ## 서버 API 계약 현황
-2026-09-28 테스트 서버(`https://heatguard-temp.https.gsmsv.site/`)와 테스트 계정으로 확인한 결과에, API 명세 v0.1(2026-09-29)에서 추가된 필드를 반영했습니다. 신규 필드(`company`, `weather.skyStatus`·`temperatureDelta`, `companyName`·`version`, 기록의 `restMinutes`·`teamName`·`workplace`·`siteName`)는 2026-09-29 실서버 응답에 있는 것을 확인했습니다. 기록 응답에는 명세에 없는 `restStartedAt`·`restEndedAt`도 있어 휴식 시간 표시에 사용합니다.
+2026-10-27 기준 서버 API 명세 v0.1의 추가 요구사항 PR #32는 머지되어 테스트 서버에 배포됐습니다. 배포 후 서버 상태 확인은 200 UP이었지만, 이는 모든 API의 Android 연동이나 실환경 검증 완료를 뜻하지 않습니다. 특히 프로필 사진 API는 배포됐으나 S3 업로드가 `403 InvalidAccessKeyId`로 실패해 실제 업로드·확정·조회 검증이 남아 있습니다. 이메일 발송의 실환경 전달 여부도 별도 검증이 필요합니다.
+
+기존 필드 기준은 2026-09-28 테스트 서버와 2026-09-29 API 명세 v0.1에서 확인한 내용입니다. 신규 필드(`company`, `weather.skyStatus`·`temperatureDelta`, `companyName`·`version`, 기록의 `restMinutes`·`teamName`·`workplace`·`siteName`)는 당시 실서버 응답에 있었습니다. 기록 응답에는 명세에 없는 `restStartedAt`·`restEndedAt`도 있어 휴식 시간 표시에 사용합니다.
 
 알림과 휴식 기록 계약은 사용자 제공 Downloads의 `개인 페이지 & 공유된 페이지 11` 명세를 기준으로 합니다. 알림 분류 매핑은 `RECORD`→`RECORD_CREATED`, `EMERGENCY`→`EMERGENCY_ACKNOWLEDGED`, `NOTICE`→`INQUIRY_ANSWERED`입니다.
 
-기존 서버 명세는 앱 계정과 Team 계정의 인증·현장 API를 분리합니다. 사용자가 요청한 Android 통일을 위해 아래 표의 가입·이메일 인증·현장 관리 경로는 Team API로 전환했으며, 해당 경로는 서버가 구현해야 할 기대 계약입니다. 서버 배포와 SMTP 실검증은 아직 확인되지 않았으므로 동작 중인 서버 계약으로 간주하지 않습니다. HTTPS App Link는 기존 지정 host/path로 수신하고 토큰은 성공·취소까지 메모리에만 보관합니다. 기존 `APP_ACCOUNT` 토큰을 `TEAM_MEMBER`로 재분류하지 않으며, 앱은 이전 세션을 로컬에서 만료시킵니다. 서버는 마이그레이션 전에 발급된 앱 토큰을 폐기하거나 만료시키는 정책을 적용해야 합니다.
+앱은 작업자 인증·기능에 Team API를 사용합니다. #32는 단계별 Team 이메일 인증과 가입 계약을 명시하며, 가입은 세션을 만들지 않고 로그인 토큰이나 쿠키를 발급하지 않습니다. 가입 완료 후 로그인 API를 별도로 호출해야 합니다. 프로필 사진 API는 `TEAM_MEMBER` 권한으로 사용할 수 있으며 팀 소속은 요구하지 않습니다. 체크리스트·기록 조회에는 활성 팀 소속이 필요합니다. HTTPS App Link는 기존 지정 host/path로 수신하고 토큰은 성공·취소까지 메모리에만 보관합니다. 기존 `APP_ACCOUNT` 토큰을 `TEAM_MEMBER`로 재분류하지 않으며, 앱은 이전 세션을 로컬에서 만료시킵니다. 서버는 마이그레이션 전에 발급된 앱 토큰을 폐기하거나 만료시키는 정책을 적용해야 합니다.
 
 | API | 앱 연동 | 비고 |
 |---|---|---|
@@ -67,15 +69,16 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
 | `GET /team` | 연결 | 기상 미입력 시 기상·비교 필드는 null, 관리자 연락처는 빈 문자열일 수 있음. 응답 DTO가 `company.phone`, `weather.observedAt`·`skyStatus`·`temperatureDelta`·비교값, `unreadNotificationCount`를 파싱한다. 화면에서 사용하는 값만 Domain에 매핑한다. |
 | `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | `files[i] ↔ uploads[i]` 순서 보장, `slot`은 기록 내 사진 위치, `requiredHeaders`를 그대로 붙여 PUT. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처리. `restMinutes`는 서버가 계산 |
-| `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 `date` 하루 단위 필터만 지원(기간·유형 쿼리는 무시됨). 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
+| `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 선택적 `date=YYYY-MM-DD` 하루 단위 필터를 지원하고 `measuredAt`을 서울 날짜로 변환해 페이지네이션 전에 적용합니다. 기간·유형 쿼리는 지원하지 않음. 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
 | `POST·GET /team/inquiries` | 연결 | 목록 항목 `{inquiryId, title, content, status, deliveryStatus, replies[], createdAt}`, 알 수 없는 cursor는 400 |
 | `POST /team/emergency-calls`, `GET …/current`, `PATCH …/{callId}` | 연결 | `current`는 종료된 이전 호출(CANCELLED 등)도 반환하므로 앱은 자신이 시작·이어받은 `callId`만 반영. 취소·종료의 409 `INVALID_STATUS_TRANSITION`은 현재 상태를 다시 조회해 화면을 맞춤 |
 | `GET /api/v1/team/notifications` | 연결 | `category`는 선택값(`ALL`·`RECORD`·`EMERGENCY`·`NOTICE`, 생략/빈 값은 `ALL`), `limit`은 1..100(기본 20), `cursor`는 선택값이며 앱은 선택한 분류를 전송합니다. 응답 `items`는 `{notificationId, type, category, title, resourceId, read, createdAt, updatedAt}`, `page`는 `{nextCursor, hasMore}`, 카운트는 전체 `unreadCount`와 분류별 `filteredUnreadCount`. 알림 유형은 `RECORD_CREATED`, `EMERGENCY_ACKNOWLEDGED`, `INQUIRY_ANSWERED`. |
 | `PATCH /api/v1/team/notifications/{notificationId}/read` | 연결 | 본인에게 공개된 알림 한 건을 사용자별로 읽음 처리합니다. body 없이 요청하며 응답은 `{notificationId, read, readAt}`입니다. |
 | `PATCH /api/v1/team/notifications/read-all` | 연결 | Query·Body 없이 본인의 모든 분류·페이지 알림을 읽음 처리합니다. 응답 `{updatedCount, unreadCount}`를 반영하고 목록을 유지한 채 현재 분류 첫 페이지를 재조회합니다. 재조회 실패는 기존 데이터와 읽음 결과를 보존하며 GET만 재시도합니다. 개별 읽음과 겹친 목록 조회는 처리 완료까지 대기하고, 앱 복귀 조회는 최소 5초 간격으로 실행합니다. 처리 중 재진입·연타를 차단하고 세션 종료 시 요청을 취소·무효화합니다. |
 | `DELETE /team/profile` | 연결 | 선택한 탈퇴 사유를 `reason`(고정 코드 `FIELD_WORK_ENDED` 등)으로 함께 보냄. 팀 전체 비활성화라 실계정으로 실행하지 않았으며, 과거 단위 테스트로만 확인했습니다. 현재 테스트 소스는 없습니다. |
-| `GET /team/checklist?date=YYYY-MM-DD`, `PUT /team/checklist/items/{itemId}` | 연결됨 | 작업자 체크리스트 항목을 조회하고 checked 상태를 저장한다. |
-| `POST /auth/team/email-codes`, `POST /auth/team/register`, `POST /auth/team/login`, `POST /auth/team/logout` | Android Team 계약 반영, 서버 검증 대기 | 이메일 인증·Team 가입·로그인·로그아웃. 가입 요청 후 Team 로그인 API로 Team 세션을 발급받는다. 서버는 가입 사용자의 Team 연결·역할 및 기존 Team 로그인 응답과의 호환을 구현해야 한다. |
+| `GET /team/checklist`, `PUT /team/checklist/items/{itemId}` | 연결 | GET은 날짜 쿼리 없이 서버의 서울 날짜와 활성 항목을 반환합니다. PUT 응답의 체크 상태를 반영하고 재진입 시 다시 조회합니다. 체크 상태는 같은 팀에서 공유됩니다. |
+| `POST /auth/team/email-codes`, `POST /auth/team/email-codes/verify`, `POST /auth/team/register`, `POST /auth/team/login`, `POST /auth/team/logout` | 연결 | 인증코드 검증이 일회성 `verificationToken`을 반환하고 가입 요청에 사용합니다. 인증·가입 API는 PUBLIC입니다. 가입은 무소속 `TEAM_MEMBER` 계정을 만들며 세션을 발급하지 않으므로, 가입 성공 후 로그인 화면으로 이동해 사용자가 명시적으로 로그인합니다. 서버 #32 테스트 서버 배포 완료; SMTP 실환경 전달은 확인 필요. |
+| `POST /auth/team/profile-photo/uploads`, `PUT /auth/team/profile-photo`, `GET /auth/team/profile-photo`, `DELETE /auth/team/profile-photo` | UI까지 연결 | 조회, presigned URL 발급, 파일 PUT, 업로드 확정, 사진 연결 해제를 프로필 화면에서 제공합니다. 허용 MIME은 JPEG·PNG·WebP, 파일 크기는 1~5 MiB. 서명 URL은 메모리에서만 사용하며 서버가 반환한 만료 시각을 확인합니다. 서버 API 배포 완료, S3 PUT은 `403 InvalidAccessKeyId`로 실환경 성공 검증 미완료. |
 | `POST /team/links/claim`, `GET /team/sites`, `POST /team/sites/{siteId}/select`, `DELETE /team/sites/{siteId}/link` | Android Team 계약 반영, 서버 검증 대기 | 현장·초대 App Link 토큰과 담당자 전화번호로 현장을 연동하고 목록·선택·연결 해제를 제공한다. 전화번호 대조는 SMS 인증이 아니다. pending 토큰은 Keystore 암호화 저장소에 연결 성공·취소까지 보관한다. |
 | `GET /team/dashboard` | Android Team 계약 반영, 서버 검증 대기 | Team 세션으로 선택 현장 대시보드를 조회하고 전송 직전 저장된 `X-Site-Id`를 읽는다. 서버는 요청 현장이 해당 Team 계정에 연결됐는지 검증해야 한다. 작업·자료·팀원 관리 전체 화면은 아직 구현하지 않았다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |

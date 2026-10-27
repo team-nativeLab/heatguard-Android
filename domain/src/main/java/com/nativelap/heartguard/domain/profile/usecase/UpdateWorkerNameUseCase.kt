@@ -14,9 +14,11 @@ class UpdateWorkerNameUseCase
         suspend operator fun invoke(
             name: String,
             version: Long?,
+            expectedSessionGeneration: Long? = null,
         ): ProfileUpdateResult =
             workerProfileRepository.updateWorkerName(
                 name = name.trim(),
                 version = version,
+                expectedSessionGeneration = expectedSessionGeneration,
             )
     }

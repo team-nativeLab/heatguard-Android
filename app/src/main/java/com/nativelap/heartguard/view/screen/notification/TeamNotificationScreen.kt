@@ -398,10 +398,10 @@ private fun NotificationRow(
         ) {
             when (notification.type) {
                 NotificationType.EMERGENCY_ACKNOWLEDGED -> {
-                    Image(
-                        painter = painterResource(R.drawable.save_warning),
-                        contentDescription = null,
-                        modifier = Modifier.size(HeartGuardIconSize.Navigation),
+                    Text(
+                        text = stringResource(R.string.notification_emergency_mark),
+                        color = MaterialTheme.extraColors.emergencyCall,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     )
                 }
 

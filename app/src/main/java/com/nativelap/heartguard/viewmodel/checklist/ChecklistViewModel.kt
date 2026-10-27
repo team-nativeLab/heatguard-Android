@@ -63,39 +63,31 @@ internal class ChecklistViewModel
                 )
             loadJob =
                 viewModelScope.launch {
-                    when (val result = getTeamChecklistUseCase(requestedDate)) {
+                    when (val result = getTeamChecklistUseCase()) {
                         is ApiResult.Success -> {
                             if (isCurrentRequest(request, requestedDate, sessionGeneration)) {
-                                if (result.value.date != requestedDate) {
-                                    mutableUiState.value =
-                                        mutableUiState.value.copy(
-                                            isLoading = false,
-                                            hasLoadError = true,
-                                        )
-                                } else {
-                                    mutableUiState.value =
-                                        mutableUiState.value.copy(
-                                            date = requestedDate,
-                                            items =
-                                                result.value.items.map { checklistItem ->
-                                                    val serverItem = checklistItem.toUiModel()
-                                                    val pendingItem =
-                                                        mutableUiState.value.items.firstOrNull { currentItem ->
-                                                            currentItem.itemId == checklistItem.itemId
-                                                        }
-                                                    if (checklistItem.itemId in mutableUiState.value.savingItemIds &&
-                                                        pendingItem != null
-                                                    ) {
-                                                        serverItem.copy(isChecked = pendingItem.isChecked)
-                                                    } else {
-                                                        serverItem
+                                mutableUiState.value =
+                                    mutableUiState.value.copy(
+                                        date = result.value.date,
+                                        items =
+                                            result.value.items.map { checklistItem ->
+                                                val serverItem = checklistItem.toUiModel()
+                                                val pendingItem =
+                                                    mutableUiState.value.items.firstOrNull { currentItem ->
+                                                        currentItem.itemId == checklistItem.itemId
                                                     }
-                                                },
-                                            isLoading = false,
-                                            hasLoaded = true,
-                                            hasLoadError = false,
-                                        )
-                                }
+                                                if (checklistItem.itemId in mutableUiState.value.savingItemIds &&
+                                                    pendingItem != null
+                                                ) {
+                                                    serverItem.copy(isChecked = pendingItem.isChecked)
+                                                } else {
+                                                    serverItem
+                                                }
+                                            },
+                                        isLoading = false,
+                                        hasLoaded = true,
+                                        hasLoadError = false,
+                                    )
                             }
                         }
 
@@ -178,20 +170,33 @@ internal class ChecklistViewModel
                 )
             saveJobs[itemId] =
                 viewModelScope.launch {
+                    var shouldReloadChecklist = false
                     when (val result = setChecklistItemCheckedUseCase(itemId, isChecked)) {
                         is ApiResult.Success -> {
                             if (isCurrentSession(sessionGeneration) && mutableUiState.value.date == requestDate) {
-                                mutableUiState.value =
-                                    mutableUiState.value.copy(
-                                        items =
-                                            mutableUiState.value.items.map { item ->
-                                                if (item.itemId == itemId) {
-                                                    item.copy(isChecked = result.value.checked)
-                                                } else {
-                                                    item
-                                                }
-                                            },
-                                    )
+                                if (result.value.itemId != itemId) {
+                                    shouldReloadChecklist = true
+                                    mutableUiState.value =
+                                        mutableUiState.value.copy(
+                                            items =
+                                                mutableUiState.value.items.map { item ->
+                                                    if (item.itemId == itemId) originalItem else item
+                                                },
+                                            hasSaveError = true,
+                                        )
+                                } else {
+                                    mutableUiState.value =
+                                        mutableUiState.value.copy(
+                                            items =
+                                                mutableUiState.value.items.map { item ->
+                                                    if (item.itemId == result.value.itemId) {
+                                                        item.copy(isChecked = result.value.checked)
+                                                    } else {
+                                                        item
+                                                    }
+                                                },
+                                        )
+                                }
                             }
                         }
 
@@ -217,6 +222,12 @@ internal class ChecklistViewModel
                     saveJobs.remove(itemId)
                     mutableUiState.value =
                         mutableUiState.value.copy(savingItemIds = mutableUiState.value.savingItemIds - itemId)
+                    if (shouldReloadChecklist &&
+                        isCurrentSession(sessionGeneration) &&
+                        mutableUiState.value.date == requestDate
+                    ) {
+                        loadChecklist()
+                    }
                 }
         }
 

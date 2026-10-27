@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
-import com.nativelap.heartguard.domain.auth.usecase.LoginAppAccountUseCase
 import com.nativelap.heartguard.domain.auth.usecase.RegisterAppAccountUseCase
 import com.nativelap.heartguard.domain.auth.usecase.RequestAppEmailCodeUseCase
 import com.nativelap.heartguard.domain.auth.usecase.VerifyAppEmailCodeUseCase
@@ -28,7 +27,6 @@ internal class AppAccountSignUpViewModel
         private val requestAppEmailCodeUseCase: RequestAppEmailCodeUseCase,
         private val verifyAppEmailCodeUseCase: VerifyAppEmailCodeUseCase,
         private val registerAppAccountUseCase: RegisterAppAccountUseCase,
-        private val loginAppAccountUseCase: LoginAppAccountUseCase,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(AppAccountSignUpUiState())
         private var verifiedEmail: String? = null
@@ -315,28 +313,13 @@ internal class AppAccountSignUpViewModel
                         verificationToken = null
                         emailCodeExpirationJobs.values.forEach(Job::cancel)
                         emailCodeExpirationJobs.clear()
-                        when (val loginResult = loginAppAccountUseCase(normalizedEmail, password)) {
-                            is ApiResult.Success -> {
-                                mutableUiState.update {
-                                    it.copy(
-                                        isSubmitting = false,
-                                        verifiedEmail = null,
-                                        isComplete = true,
-                                        emailCodeRemainingSecondsByEmail = emptyMap(),
-                                    )
-                                }
-                            }
-
-                            is ApiResult.Failure -> {
-                                mutableUiState.update {
-                                    it.copy(
-                                        isSubmitting = false,
-                                        verifiedEmail = null,
-                                        failure = AppAccountSignUpFailure.LOGIN_AFTER_REGISTRATION,
-                                        failureMessage = loginResult.error.serverMessage(),
-                                    )
-                                }
-                            }
+                        mutableUiState.update {
+                            it.copy(
+                                isSubmitting = false,
+                                verifiedEmail = null,
+                                isComplete = true,
+                                emailCodeRemainingSecondsByEmail = emptyMap(),
+                            )
                         }
                     }
                 }
@@ -508,5 +491,4 @@ internal enum class AppAccountSignUpFailure {
     INVALID_VERIFICATION_CODE,
     ACCOUNT_NOT_READY,
     REGISTRATION,
-    LOGIN_AFTER_REGISTRATION,
 }

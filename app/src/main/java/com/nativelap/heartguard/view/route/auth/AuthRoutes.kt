@@ -217,6 +217,11 @@ internal fun HeartGuardSignUpRoute(
             step = 0
         }
     }
+    LaunchedEffect(uiState.isComplete) {
+        if (uiState.isComplete) {
+            onNavigateToLogin()
+        }
+    }
     val fallbackStatusMessage =
         when (uiState.failure) {
             null -> {
@@ -267,10 +272,6 @@ internal fun HeartGuardSignUpRoute(
 
             AppAccountSignUpFailure.REGISTRATION -> {
                 stringResource(R.string.auth_signup_registration_error)
-            }
-
-            AppAccountSignUpFailure.LOGIN_AFTER_REGISTRATION -> {
-                stringResource(R.string.auth_signup_login_after_register_error)
             }
         }
     val statusMessage =
