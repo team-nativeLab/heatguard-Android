@@ -94,9 +94,6 @@ internal fun ChecklistOverviewScreen(
     onRetryClick: () -> Unit,
     onPeriodClick: (LocalTime) -> Unit,
     onNewDay: () -> Unit = {},
-    completedChecklistItemCount: Int = 0,
-    totalChecklistItemCount: Int = 0,
-    isChecklistLoading: Boolean = false,
     hasChecklistLoaded: Boolean = true,
     hasChecklistLoadError: Boolean = false,
     onChecklistRetryClick: () -> Unit = {},
@@ -160,9 +157,6 @@ internal fun ChecklistOverviewScreen(
                         completedCount = completedCount,
                         warningCount = periods.count { period -> period.status == PeriodStatus.WARNING },
                         totalCount = periods.size,
-                        completedChecklistItemCount = completedChecklistItemCount,
-                        totalChecklistItemCount = totalChecklistItemCount,
-                        isChecklistLoading = isChecklistLoading,
                         hasChecklistLoaded = hasChecklistLoaded,
                         hasChecklistLoadError = hasChecklistLoadError,
                         siteLabel = siteLabel,
@@ -467,9 +461,6 @@ private fun ChecklistOverviewSummary(
     completedCount: Int,
     warningCount: Int,
     totalCount: Int,
-    completedChecklistItemCount: Int,
-    totalChecklistItemCount: Int,
-    isChecklistLoading: Boolean,
     hasChecklistLoaded: Boolean,
     hasChecklistLoadError: Boolean,
     siteLabel: String?,
@@ -478,13 +469,14 @@ private fun ChecklistOverviewSummary(
 ) {
     val remainingCount = (totalCount - completedCount - warningCount).coerceAtLeast(0)
     val progress =
-        if (totalChecklistItemCount == 0) {
+        if (totalCount == 0) {
             0f
         } else {
-            completedChecklistItemCount.toFloat() / totalChecklistItemCount
+            (completedCount.toFloat() / totalCount).coerceIn(0f, 1f)
         }
     val progressPercent = (progress * PERCENT_SCALE).toInt()
-    val largeText = LocalDensity.current.fontScale > CHECKLIST_OVERVIEW_LARGE_FONT_SCALE
+    val fontScale = LocalDensity.current.fontScale
+    val largeText = fontScale > CHECKLIST_OVERVIEW_LARGE_FONT_SCALE
 
     Box(
         modifier =
@@ -521,13 +513,17 @@ private fun ChecklistOverviewSummary(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(
+                    .heightIn(
+                        min =
+                            CHECKLIST_OVERVIEW_CARD_HEIGHT - CHECKLIST_OVERVIEW_CONTENT_TOP_INSET -
+                                CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET,
+                    ).padding(
                         start = CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING,
                         top = CHECKLIST_OVERVIEW_CONTENT_TOP_INSET,
                         end = CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING,
-                        bottom = HeartGuardSpacing.Section,
+                        bottom = CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET,
                     ),
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             if (largeText) {
                 Column(verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight)) {
@@ -563,19 +559,15 @@ private fun ChecklistOverviewSummary(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
-                            ChecklistItemProgressLabel(
-                                completedCount = completedChecklistItemCount,
-                                totalCount = totalChecklistItemCount,
-                                isLoading = isChecklistLoading,
-                                hasLoaded = hasChecklistLoaded,
-                                hasLoadError = hasChecklistLoadError,
+                            ChecklistLoadErrorRetry(
+                                hasChecklistLoaded = hasChecklistLoaded,
+                                hasChecklistLoadError = hasChecklistLoadError,
                                 onRetryClick = onChecklistRetryClick,
                             )
                         }
                         OverviewProgressIndicator(
                             progress = progress,
                             progressPercent = progressPercent,
-                            hasChecklistLoaded = hasChecklistLoaded,
                         )
                     }
                 }
@@ -619,28 +611,20 @@ private fun ChecklistOverviewSummary(
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
-                        ChecklistItemProgressLabel(
-                            completedCount = completedChecklistItemCount,
-                            totalCount = totalChecklistItemCount,
-                            isLoading = isChecklistLoading,
-                            hasLoaded = hasChecklistLoaded,
-                            hasLoadError = hasChecklistLoadError,
+                        ChecklistLoadErrorRetry(
+                            hasChecklistLoaded = hasChecklistLoaded,
+                            hasChecklistLoadError = hasChecklistLoadError,
                             onRetryClick = onChecklistRetryClick,
                         )
                     }
                     OverviewProgressIndicator(
                         progress = progress,
                         progressPercent = progressPercent,
-                        hasChecklistLoaded = hasChecklistLoaded,
                     )
                 }
             }
             Surface(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = CHECKLIST_OVERVIEW_STATS_HEIGHT)
-                        .offset(y = if (largeText) 0.dp else CHECKLIST_OVERVIEW_STATS_OFFSET),
+                modifier = Modifier.fillMaxWidth().heightIn(min = CHECKLIST_OVERVIEW_STATS_HEIGHT),
                 shape = RoundedCornerShape(CHECKLIST_OVERVIEW_STATS_RADIUS),
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = SUMMARY_STATS_ALPHA),
             ) {
@@ -676,10 +660,34 @@ private fun ChecklistOverviewSummary(
 }
 
 @Composable
+private fun ChecklistLoadErrorRetry(
+    hasChecklistLoaded: Boolean,
+    hasChecklistLoadError: Boolean,
+    onRetryClick: () -> Unit,
+) {
+    if (hasChecklistLoadError && !hasChecklistLoaded) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.checklist_overview_items_load_failure),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton(
+                onClick = onRetryClick,
+                contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary),
+            ) {
+                Text(text = stringResource(R.string.common_retry))
+            }
+        }
+    }
+}
+
+@Composable
 private fun OverviewProgressIndicator(
     progress: Float,
     progressPercent: Int,
-    hasChecklistLoaded: Boolean,
 ) {
     Box(
         modifier = Modifier.size(CHECKLIST_OVERVIEW_RING_SIZE),
@@ -693,66 +701,10 @@ private fun OverviewProgressIndicator(
             strokeWidth = CHECKLIST_OVERVIEW_RING_STROKE,
         )
         Text(
-            text =
-                if (hasChecklistLoaded) {
-                    stringResource(R.string.checklist_overview_percent_format, progressPercent)
-                } else {
-                    stringResource(R.string.checklist_overview_percent_unavailable)
-                },
+            text = stringResource(R.string.checklist_overview_percent_format, progressPercent),
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
         )
-    }
-}
-
-@Composable
-private fun ChecklistItemProgressLabel(
-    completedCount: Int,
-    totalCount: Int,
-    isLoading: Boolean,
-    hasLoaded: Boolean,
-    hasLoadError: Boolean,
-    onRetryClick: () -> Unit,
-) {
-    when {
-        hasLoadError && !hasLoaded -> {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = stringResource(R.string.checklist_overview_items_load_failure),
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                TextButton(
-                    onClick = onRetryClick,
-                    contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary),
-                ) {
-                    Text(text = stringResource(R.string.common_retry))
-                }
-            }
-        }
-
-        isLoading && !hasLoaded -> {
-            Text(
-                text = stringResource(R.string.checklist_overview_items_loading),
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
-        hasLoaded -> {
-            Text(
-                text =
-                    stringResource(
-                        R.string.checklist_overview_items_completed_format,
-                        completedCount,
-                        totalCount,
-                    ),
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
     }
 }
 
@@ -864,7 +816,7 @@ private val CHECKLIST_OVERVIEW_RADIUS = 22.dp
 private val CHECKLIST_OVERVIEW_CARD_HEIGHT = 168.dp
 private val CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING = 22.dp
 private val CHECKLIST_OVERVIEW_CONTENT_TOP_INSET = 12.dp
-private val CHECKLIST_OVERVIEW_STATS_OFFSET = 18.dp
+private val CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET = 8.dp
 private val CHECKLIST_OVERVIEW_STATS_HEIGHT = 54.dp
 private const val CHECKLIST_OVERVIEW_LARGE_FONT_SCALE = 1.3f
 private val CHECKLIST_OVERVIEW_STATS_RADIUS = 14.dp

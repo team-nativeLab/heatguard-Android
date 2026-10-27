@@ -24,6 +24,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 fun BottomActionBar(
     modifier: Modifier = Modifier,
     applyWindowInsets: Boolean = true,
+    applyImeInsets: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
@@ -37,7 +38,13 @@ fun BottomActionBar(
                     .fillMaxWidth()
                     .then(
                         if (applyWindowInsets) {
-                            Modifier.windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                            val bottomInsets =
+                                if (applyImeInsets) {
+                                    WindowInsets.navigationBars.union(WindowInsets.ime)
+                                } else {
+                                    WindowInsets.navigationBars
+                                }
+                            Modifier.windowInsetsPadding(bottomInsets)
                         } else {
                             Modifier
                         },
