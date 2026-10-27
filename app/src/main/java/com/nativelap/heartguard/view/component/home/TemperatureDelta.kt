@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.component.home
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -40,8 +42,10 @@ fun TemperatureDelta(
     Surface(
         modifier =
             modifier
-                .widthIn(min = HeartGuardComponentSize.TemperatureDeltaMinWidth)
-                .semantics {
+                .widthIn(
+                    min = HeartGuardComponentSize.TemperatureDeltaMinWidth,
+                    max = HeartGuardComponentSize.TemperatureDeltaMaxWidth,
+                ).semantics {
                     contentDescription = "$deltaLabel $deltaValue"
                 },
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
@@ -58,27 +62,26 @@ fun TemperatureDelta(
                 null -> MaterialTheme.extraColors.homeMutedText
             },
     ) {
-        Text(
-            text = directionalDeltaText,
-            modifier =
-                Modifier
-                    .padding(
+        Box(
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = directionalDeltaText,
+                modifier =
+                    Modifier.padding(
                         horizontal = HeartGuardSpacing.Compact,
                         vertical = HeartGuardSpacing.Tight,
-                    ).widthIn(
-                        min =
-                            HeartGuardComponentSize.TemperatureDeltaMinWidth -
-                                (HeartGuardSpacing.Compact * 2),
                     ),
-            textAlign = TextAlign.Center,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontSize = HeartGuardFontSize.TemperatureDelta,
-                    fontWeight = FontWeight.Bold,
-                ),
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Clip,
-        )
+                textAlign = TextAlign.Center,
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontSize = HeartGuardFontSize.TemperatureDelta,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+            )
+        }
     }
 }

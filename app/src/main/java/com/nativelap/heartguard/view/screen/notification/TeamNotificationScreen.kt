@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -398,11 +400,26 @@ private fun NotificationRow(
         ) {
             when (notification.type) {
                 NotificationType.EMERGENCY_ACKNOWLEDGED -> {
-                    Text(
-                        text = stringResource(R.string.notification_emergency_mark),
-                        color = MaterialTheme.extraColors.emergencyCall,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(NOTIFICATION_ALERT_MARK_GAP),
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .width(NOTIFICATION_ALERT_MARK_WIDTH)
+                                    .height(NOTIFICATION_ALERT_MARK_HEIGHT)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.extraColors.emergencyCall),
+                        )
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(NOTIFICATION_ALERT_MARK_WIDTH)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.extraColors.emergencyCall),
+                        )
+                    }
                 }
 
                 NotificationType.RECORD_CREATED -> {
@@ -594,4 +611,7 @@ private val NOTIFICATION_CATEGORIES =
     )
 
 private val NOTIFICATION_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
+private val NOTIFICATION_ALERT_MARK_WIDTH = 4.dp
+private val NOTIFICATION_ALERT_MARK_HEIGHT = 14.dp
+private val NOTIFICATION_ALERT_MARK_GAP = 3.dp
 private val KOREA_ZONE: ZoneId = ZoneId.of("Asia/Seoul")

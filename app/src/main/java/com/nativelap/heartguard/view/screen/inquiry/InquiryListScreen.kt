@@ -74,7 +74,7 @@ fun InquiryListScreen(
                     Text(
                         text = stringResource(R.string.inquiry_register),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     )
                 }
             }

@@ -364,7 +364,6 @@
     <string name="inquiry_reply_note">답변은 등록한 이메일과 문의 목록에서 확인할 수 있어요</string>
     <string name="inquiry_submit">문의 등록</string>
     <string name="inquiry_register">문의 등록하기</string>
-    <string name="notification_emergency_mark">!</string>
     <string name="inquiry_content_limit">%1$d / 500</string>
     <string name="inquiry_register_title">문의 등록</string>
     <string name="inquiry_done">완료</string>
