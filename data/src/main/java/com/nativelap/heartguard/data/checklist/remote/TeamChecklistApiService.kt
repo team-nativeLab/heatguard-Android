@@ -8,13 +8,10 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PUT
 import retrofit2.http.Path
-import retrofit2.http.Query
 
 interface TeamChecklistApiService {
     @GET("api/v1/team/checklist")
-    suspend fun getChecklist(
-        @Query("date") date: String,
-    ): ApiEnvelope<TeamChecklistResponseDto>
+    suspend fun getChecklist(): ApiEnvelope<TeamChecklistResponseDto>
 
     @PUT("api/v1/team/checklist/items/{itemId}")
     suspend fun setItemChecked(

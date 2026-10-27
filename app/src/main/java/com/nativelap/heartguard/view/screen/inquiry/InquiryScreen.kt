@@ -59,9 +59,7 @@ fun InquiryScreen(
                 RecordSaveButton(
                     title =
                         stringResource(
-                            if (uiState.submission ==
-                                null
-                            ) {
+                            if (uiState.submission == null) {
                                 R.string.inquiry_submit
                             } else {
                                 R.string.inquiry_done

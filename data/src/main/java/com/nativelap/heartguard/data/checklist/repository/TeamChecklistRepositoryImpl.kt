@@ -8,7 +8,6 @@ import com.nativelap.heartguard.data.checklist.remote.TeamChecklistRemoteDataSou
 import com.nativelap.heartguard.domain.checklist.model.ChecklistItemCheckUpdate
 import com.nativelap.heartguard.domain.checklist.model.TeamChecklist
 import com.nativelap.heartguard.domain.checklist.repository.TeamChecklistRepository
-import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import javax.inject.Inject
 
@@ -17,8 +16,8 @@ class TeamChecklistRepositoryImpl
     constructor(
         private val teamChecklistRemoteDataSource: TeamChecklistRemoteDataSource,
     ) : TeamChecklistRepository {
-        override suspend fun getChecklist(date: LocalDate): ApiResult<TeamChecklist> {
-            val response = teamChecklistRemoteDataSource.getChecklist(date.toString())
+        override suspend fun getChecklist(): ApiResult<TeamChecklist> {
+            val response = teamChecklistRemoteDataSource.getChecklist()
             return when (response) {
                 is ApiResult.Success -> {
                     try {

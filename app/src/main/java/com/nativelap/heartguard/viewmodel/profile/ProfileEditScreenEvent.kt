@@ -15,4 +15,14 @@ sealed interface ProfileEditScreenEvent {
     data object PasswordChangeClicked : ProfileEditScreenEvent
 
     data object ProfilePhotoClicked : ProfileEditScreenEvent
+
+    data object ProfilePhotoMenuDismissed : ProfileEditScreenEvent
+
+    data object ProfilePhotoChangeSelected : ProfileEditScreenEvent
+
+    data object ProfilePhotoDeleteSelected : ProfileEditScreenEvent
+
+    data object ProfilePhotoDeleteConfirmed : ProfileEditScreenEvent
+
+    data object ProfilePhotoDeleteCancelled : ProfileEditScreenEvent
 }

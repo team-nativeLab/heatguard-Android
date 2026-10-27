@@ -175,6 +175,8 @@ object HeartGuardComponentSize {
     val EmergencyDescriptionMaxWidth = 180.dp
     val HomeActionCardHeight = 148.dp
     val ProfileAvatar = 72.dp
+    val ProfilePhotoBadge = 26.dp
+    val ProfilePhotoCameraIcon = 14.dp
     val InquiryBodyFieldHeight = 225.dp
     val HomeWeatherMetricHeight = 78.dp
     val HomeWeatherIllustrationWidth = 159.dp

@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
@@ -60,10 +61,15 @@ fun TemperatureDelta(
         Text(
             text = directionalDeltaText,
             modifier =
-                Modifier.padding(
-                    horizontal = HeartGuardSpacing.Compact,
-                    vertical = HeartGuardSpacing.Tight,
-                ),
+                Modifier
+                    .padding(
+                        horizontal = HeartGuardSpacing.Compact,
+                        vertical = HeartGuardSpacing.Tight,
+                    ).widthIn(
+                        min = HeartGuardComponentSize.TemperatureDeltaMinWidth -
+                            (HeartGuardSpacing.Compact * 2),
+                    ),
+            textAlign = TextAlign.Center,
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontSize = HeartGuardFontSize.TemperatureDelta,

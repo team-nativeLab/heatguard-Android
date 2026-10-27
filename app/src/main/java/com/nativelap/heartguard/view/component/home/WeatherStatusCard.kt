@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -90,9 +91,10 @@ fun WeatherStatusCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
-                Box(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterStart,
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = currentTemperature,
@@ -103,12 +105,6 @@ fun WeatherStatusCard(
                                 fontWeight = FontWeight.Bold,
                             ),
                     )
-                }
-
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
                     TemperatureDelta(
                         deltaLabel = temperatureDeltaLabel,
                         deltaValue = temperatureDelta,

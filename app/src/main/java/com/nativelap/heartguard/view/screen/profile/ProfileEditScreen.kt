@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -36,15 +38,16 @@ import com.nativelap.heartguard.viewmodel.profile.ProfileEditScreenEvent
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditUiState
 import com.nativelap.heartguard.viewmodel.profile.ProfileLoadState
 import com.nativelap.heartguard.viewmodel.profile.ProfileSaveError
+import com.nativelap.heartguard.viewmodel.profile.ProfilePhotoSaveError
 
 /** Figma 24_내정보수정 화면이다. 이름·이메일은 작업자 정보 조회(GET /auth/team/me) 값이고 이름만 수정할 수 있다.
  * 회사명은 서버가 제공하지 않아 "--"로 표시한다. "비밀번호 변경" 행은 비밀번호 변경 화면(Figma 26)으로 이동한다. */
 @Composable
 fun ProfileEditScreen(
     uiState: ProfileEditUiState,
-    profilePhotoUri: Uri? = null,
     onEvent: (ProfileEditScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
+    profilePhotoUri: Uri? = null,
 ) {
     val loadState = uiState.loadState
     Scaffold(
@@ -97,9 +100,70 @@ fun ProfileEditScreen(
                     ProfileAvatarHeader(
                         userName = loadedProfile?.userName,
                         photoUri = profilePhotoUri,
-                        onPhotoClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
+                        photoUrl = uiState.profilePhotoUrl,
+                        onPhotoClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoChangeSelected) },
+                        onAvatarClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
+                        photoActionsMenuContent = {
+                            DropdownMenu(
+                                expanded = uiState.isPhotoActionsMenuExpanded,
+                                onDismissRequest = {
+                                    onEvent(ProfileEditScreenEvent.ProfilePhotoMenuDismissed)
+                                },
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        androidx.compose.material3.Text(
+                                            stringResource(R.string.profile_photo_change),
+                                        )
+                                    },
+                                    onClick = {
+                                        onEvent(ProfileEditScreenEvent.ProfilePhotoChangeSelected)
+                                    },
+                                )
+                                if (!uiState.profilePhotoUrl.isNullOrBlank()) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            androidx.compose.material3.Text(
+                                                stringResource(R.string.profile_photo_delete),
+                                            )
+                                        },
+                                        onClick = {
+                                            onEvent(ProfileEditScreenEvent.ProfilePhotoDeleteSelected)
+                                        },
+                                    )
+                                }
+                            }
+                        },
                         modifier = Modifier.padding(bottom = HeartGuardSpacing.Tight),
                     )
+
+                    when (uiState.profilePhotoSaveError) {
+                        ProfilePhotoSaveError.LOAD_FAILED -> {
+                            androidx.compose.material3.Text(
+                                text = stringResource(R.string.profile_photo_load_failure),
+                                color = MaterialTheme.extraColors.secondaryText,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+
+                        ProfilePhotoSaveError.UPLOAD_FAILED -> {
+                            androidx.compose.material3.Text(
+                                text = stringResource(R.string.profile_photo_upload_failure),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+
+                        ProfilePhotoSaveError.DELETE_FAILED -> {
+                            androidx.compose.material3.Text(
+                                text = stringResource(R.string.profile_photo_delete_failure),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+
+                        null -> Unit
+                    }
 
                     if (loadState == ProfileLoadState.Failed) {
                         LoadErrorCard(

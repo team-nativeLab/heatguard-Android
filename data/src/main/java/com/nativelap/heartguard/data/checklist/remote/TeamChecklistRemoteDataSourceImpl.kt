@@ -14,9 +14,9 @@ class TeamChecklistRemoteDataSourceImpl
         private val teamChecklistApiService: TeamChecklistApiService,
         private val apiExecutor: ApiExecutor,
     ) : TeamChecklistRemoteDataSource {
-        override suspend fun getChecklist(date: String): ApiResult<TeamChecklistResponseDto> =
+        override suspend fun getChecklist(): ApiResult<TeamChecklistResponseDto> =
             apiExecutor
-                .execute { teamChecklistApiService.getChecklist(date) }
+                .execute { teamChecklistApiService.getChecklist() }
                 .requireSuccessData()
 
         override suspend fun setItemChecked(

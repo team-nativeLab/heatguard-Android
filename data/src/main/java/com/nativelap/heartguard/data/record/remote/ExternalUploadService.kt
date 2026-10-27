@@ -27,6 +27,7 @@ class ExternalUploadService
             uploadUrl: String,
             requiredHeaders: Map<String, String>,
             photoContent: RequestBody,
+            allowRedirects: Boolean = true,
         ): Int {
             val requestBuilder =
                 Request
@@ -36,7 +37,17 @@ class ExternalUploadService
             requiredHeaders.forEach { (headerName, headerValue) ->
                 requestBuilder.header(headerName, headerValue)
             }
-            val uploadCall = externalUploadClient.newCall(requestBuilder.build())
+            val uploadClient =
+                if (allowRedirects) {
+                    externalUploadClient
+                } else {
+                    externalUploadClient
+                        .newBuilder()
+                        .followRedirects(false)
+                        .followSslRedirects(false)
+                        .build()
+                }
+            val uploadCall = uploadClient.newCall(requestBuilder.build())
 
             return suspendCancellableCoroutine { continuation ->
                 continuation.invokeOnCancellation {

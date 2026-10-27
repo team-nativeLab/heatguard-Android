@@ -9,6 +9,10 @@ data class ProfileEditUiState(
     val loadState: ProfileLoadState = ProfileLoadState.Loading,
     val nameInput: String = "",
     val profilePhotoUri: Uri? = null,
+    val profilePhotoUrl: String? = null,
+    val isPhotoActionsMenuExpanded: Boolean = false,
+    val shouldDeleteProfilePhoto: Boolean = false,
+    val profilePhotoSaveError: ProfilePhotoSaveError? = null,
     val isSaving: Boolean = false,
     val saveError: ProfileSaveError? = null,
 ) {
@@ -18,9 +22,10 @@ data class ProfileEditUiState(
             val loadedProfile = (loadState as? ProfileLoadState.Loaded) ?: return false
             val trimmedName = nameInput.trim()
 
-            return !isSaving &&
-                trimmedName.isNotEmpty() &&
-                trimmedName != loadedProfile.userName.orEmpty()
+            val nameChanged = trimmedName.isNotEmpty() && trimmedName != loadedProfile.userName.orEmpty()
+            val photoChanged = profilePhotoUri != null || shouldDeleteProfilePhoto
+
+            return !isSaving && (nameChanged || photoChanged)
         }
 }
 
@@ -45,4 +50,10 @@ enum class ProfileSaveError {
 
     // 다른 곳에서 먼저 정보가 바뀌어 저장하지 못했다. 최신 정보를 다시 불러온 상태다.
     CONFLICT,
+}
+
+enum class ProfilePhotoSaveError {
+    LOAD_FAILED,
+    UPLOAD_FAILED,
+    DELETE_FAILED,
 }

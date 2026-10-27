@@ -7,11 +7,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -40,7 +46,12 @@ internal fun HeartGuardProfileEditRoute(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val savedMessage = stringResource(R.string.profile_saved)
+    val photoDeleteTitle = stringResource(R.string.profile_photo_delete_title)
+    val photoDeleteMessage = stringResource(R.string.profile_photo_delete_message)
+    val photoDeleteConfirm = stringResource(R.string.profile_photo_delete_confirm)
+    val photoDeleteCancel = stringResource(R.string.profile_photo_delete_cancel)
     val currentOnBackClick by rememberUpdatedState(onBackClick)
+    var isPhotoDeleteConfirmationVisible by remember { mutableStateOf(false) }
 
     BackHandler {
         viewModel.clearProfilePhoto()
@@ -96,9 +107,57 @@ internal fun HeartGuardProfileEditRoute(
                 }
 
                 ProfileEditScreenEvent.ProfilePhotoClicked -> {
+                    viewModel.setPhotoActionsMenuExpanded(true)
+                }
+
+                ProfileEditScreenEvent.ProfilePhotoMenuDismissed -> {
+                    viewModel.setPhotoActionsMenuExpanded(false)
+                }
+
+                ProfileEditScreenEvent.ProfilePhotoChangeSelected -> {
+                    viewModel.setPhotoActionsMenuExpanded(false)
                     photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+
+                ProfileEditScreenEvent.ProfilePhotoDeleteSelected -> {
+                    viewModel.setPhotoActionsMenuExpanded(false)
+                    isPhotoDeleteConfirmationVisible = true
+                }
+
+                ProfileEditScreenEvent.ProfilePhotoDeleteConfirmed -> {
+                    isPhotoDeleteConfirmationVisible = false
+                    viewModel.requestProfilePhotoDeletion()
+                    viewModel.saveProfile()
+                }
+
+                ProfileEditScreenEvent.ProfilePhotoDeleteCancelled -> {
+                    isPhotoDeleteConfirmationVisible = false
                 }
             }
         },
     )
+
+    if (isPhotoDeleteConfirmationVisible) {
+        AlertDialog(
+            onDismissRequest = { isPhotoDeleteConfirmationVisible = false },
+            title = { Text(photoDeleteTitle) },
+            text = { Text(photoDeleteMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        isPhotoDeleteConfirmationVisible = false
+                        viewModel.requestProfilePhotoDeletion()
+                        viewModel.saveProfile()
+                    },
+                ) {
+                    Text(photoDeleteConfirm)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isPhotoDeleteConfirmationVisible = false }) {
+                    Text(photoDeleteCancel)
+                }
+            },
+        )
+    }
 }

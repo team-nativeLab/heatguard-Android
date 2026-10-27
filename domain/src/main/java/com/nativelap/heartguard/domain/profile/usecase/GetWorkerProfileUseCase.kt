@@ -11,5 +11,6 @@ class GetWorkerProfileUseCase
     constructor(
         private val workerProfileRepository: WorkerProfileRepository,
     ) {
-        suspend operator fun invoke(): ApiResult<WorkerProfile> = workerProfileRepository.getWorkerProfile()
+        suspend operator fun invoke(expectedSessionGeneration: Long? = null): ApiResult<WorkerProfile> =
+            workerProfileRepository.getWorkerProfile(expectedSessionGeneration)
     }
