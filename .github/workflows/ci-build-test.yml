@@ -1,5 +1,5 @@
-# 목적: PR마다 컴파일 → lint 를 실행한다. (ktlint 포맷 검사는 format-check.yml 에서 별도로 실행한다)
-name: CI Build & Lint
+# 목적: PR마다 컴파일 → 단위 테스트 → lint 를 실행한다. (ktlint 포맷 검사는 format-check.yml 에서 별도로 실행한다)
+name: CI Build, Test & Lint
 
 on:
   pull_request:
@@ -60,6 +60,9 @@ jobs:
 
       - name: Kotlin 컴파일 (debug)
         run: ./gradlew :app:compileDebugKotlin --stacktrace
+
+      - name: Core·Data 단위 테스트
+        run: ./gradlew :core:testDebugUnitTest :data:testDebugUnitTest --stacktrace
 
       - name: Android Lint (debug)
         run: ./gradlew lintDebug --stacktrace
