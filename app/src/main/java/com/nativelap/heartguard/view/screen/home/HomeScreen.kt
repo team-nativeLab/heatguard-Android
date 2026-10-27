@@ -72,7 +72,6 @@ fun HomeScreen(
                         .fillMaxSize(),
                 contentPadding =
                     PaddingValues(
-                        top = HeartGuardSpacing.PageContentTop,
                         bottom = HeartGuardSpacing.LargeSection,
                     ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),

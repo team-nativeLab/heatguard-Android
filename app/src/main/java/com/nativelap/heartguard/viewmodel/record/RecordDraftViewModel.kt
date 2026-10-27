@@ -144,8 +144,12 @@ class RecordDraftViewModel
         }
 
         /** 홈의 "현장 사진"처럼 기록유형 선택 없이 특정 기록을 새로 시작할 때 호출한다.
-         * 이전 시도의 입력값·임시 사진을 정리한 뒤 [recordType]으로 기록 종류를 정한다. */
+         * 같은 유형의 임시 저장이 있으면 이어서 열고, 그 외에는 이전 시도를 정리한다. */
         fun startRecord(recordType: RecordType) {
+            if (resumeTemporarilySavedDraft(recordType)) {
+                return
+            }
+
             reset()
             selectRecordType(recordType)
         }
@@ -246,13 +250,19 @@ class RecordDraftViewModel
             }
         }
 
-        fun resumeTemporarilySavedDraft() {
+        fun resumeTemporarilySavedDraft(recordType: RecordType): Boolean {
+            val currentDraft = mutableUiState.value
+            if (!currentDraft.isTemporarilySaved || currentDraft.selectedRecordType != recordType) {
+                return false
+            }
+
             updateDraft { state ->
                 state.copy(
                     isTemporarilySaved = false,
                     temporarilySavedAt = null,
                 )
             }
+            return true
         }
 
         /** 온도계 기록·현장 사진·작업 사진·휴식 사진 화면의 저장 버튼을 누르면 호출한다. 선택된 기록 유형의 사진을 먼저

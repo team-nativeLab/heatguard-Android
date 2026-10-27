@@ -21,8 +21,7 @@ import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 
 /** 기록 유형 선택 overlay의 선택 상태를 관리하고 선택 결과를 상위 Navigation에 전달한다.
- * 새 기록을 시작하는 진입점이므로, 진입 시 [recordDraftViewModel]을 초기화해 이전 시도의
- * 입력값·임시 사진 파일이 남아있지 않게 한다. */
+ * 임시 저장 초안이 있으면 같은 유형을 선택했을 때 이어가고, 다른 유형을 선택하면 정리한다. */
 @Composable
 internal fun HeartGuardRecordTypeSelectionRoute(
     recordDraftViewModel: RecordDraftViewModel,
@@ -33,7 +32,9 @@ internal fun HeartGuardRecordTypeSelectionRoute(
     }
 
     LaunchedEffect(Unit) {
-        recordDraftViewModel.reset()
+        if (!recordDraftViewModel.uiState.value.isTemporarilySaved) {
+            recordDraftViewModel.reset()
+        }
     }
 
     RecordTypeSelectionSheet(
@@ -44,7 +45,7 @@ internal fun HeartGuardRecordTypeSelectionRoute(
         confirmTitle = stringResource(R.string.common_confirm),
         onConfirm = {
             selectedRecordType?.let { recordType ->
-                recordDraftViewModel.selectRecordType(recordType)
+                recordDraftViewModel.startRecord(recordType)
                 onConfirm(recordType)
             }
         },

@@ -74,8 +74,9 @@ internal fun HeartGuardRecordHistoryRoute(
 
                 RecordHistoryScreenEvent.TemporaryDraftClicked -> {
                     draftState.selectedRecordType?.let { recordType ->
-                        recordDraftViewModel.resumeTemporarilySavedDraft()
-                        onResumeDraftClick(recordType)
+                        if (recordDraftViewModel.resumeTemporarilySavedDraft(recordType)) {
+                            onResumeDraftClick(recordType)
+                        }
                     }
                 }
 
