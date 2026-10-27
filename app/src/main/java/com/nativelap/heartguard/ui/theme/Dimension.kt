@@ -192,6 +192,7 @@ object HeartGuardComponentSize {
     val EmergencyContactHeight = 143.dp
     val HomeAdditionalRecordHeight = 69.dp
     val TemperatureDeltaMinWidth = 72.dp
+    val TemperatureDeltaMaxWidth = 96.dp
     val ResultMessageHeight = 218.dp
     val ResultErrorDetailHeight = 123.dp
 

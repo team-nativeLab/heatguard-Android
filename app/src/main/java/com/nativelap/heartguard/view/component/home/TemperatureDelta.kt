@@ -41,9 +41,13 @@ fun TemperatureDelta(
 
     Surface(
         modifier =
-            modifier.semantics {
-                contentDescription = "$deltaLabel $deltaValue"
-            },
+            modifier
+                .widthIn(
+                    min = HeartGuardComponentSize.TemperatureDeltaMinWidth,
+                    max = HeartGuardComponentSize.TemperatureDeltaMaxWidth,
+                ).semantics {
+                    contentDescription = "$deltaLabel $deltaValue"
+                },
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
         color =
             when (isIncreasing) {
@@ -59,7 +63,6 @@ fun TemperatureDelta(
             },
     ) {
         Box(
-            modifier = Modifier.widthIn(min = HeartGuardComponentSize.TemperatureDeltaMinWidth),
             contentAlignment = Alignment.Center,
         ) {
             Text(
