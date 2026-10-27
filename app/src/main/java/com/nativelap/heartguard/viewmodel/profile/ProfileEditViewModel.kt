@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.viewmodel.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
@@ -49,7 +50,7 @@ class ProfileEditViewModel
         fun loadProfile() {
             loadProfileJob?.cancel()
             saveProfileJob?.cancel()
-            _uiState.value = ProfileEditUiState()
+            _uiState.value = ProfileEditUiState(profilePhotoUri = _uiState.value.profilePhotoUri)
             loadProfileJob =
                 viewModelScope.launch {
                     when (val profileResult = getWorkerProfileUseCase()) {
@@ -74,6 +75,14 @@ class ProfileEditViewModel
                     nameInput = name,
                     saveError = null,
                 )
+        }
+
+        fun updateProfilePhoto(uri: Uri) {
+            _uiState.value = _uiState.value.copy(profilePhotoUri = uri)
+        }
+
+        fun clearProfilePhoto() {
+            _uiState.value = _uiState.value.copy(profilePhotoUri = null)
         }
 
         /** 입력한 이름을 저장한다. 성공하면 서버가 돌려준 값으로 화면을 갱신하고 [ProfileEditEffect.Saved]를 한 번 보낸다. */
@@ -138,6 +147,7 @@ class ProfileEditViewModel
                 ProfileEditUiState(
                     loadState = workerProfile.toLoadedState(),
                     nameInput = workerProfile.name.orEmpty(),
+                    profilePhotoUri = _uiState.value.profilePhotoUri,
                 )
         }
 

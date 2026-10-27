@@ -7,6 +7,7 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.auth.usecase.LoginAppAccountUseCase
 import com.nativelap.heartguard.domain.auth.usecase.RegisterAppAccountUseCase
 import com.nativelap.heartguard.domain.auth.usecase.RequestAppEmailCodeUseCase
+import com.nativelap.heartguard.domain.auth.usecase.VerifyAppEmailCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,26 +22,33 @@ internal class AppAccountSignUpViewModel
     @Inject
     constructor(
         private val requestAppEmailCodeUseCase: RequestAppEmailCodeUseCase,
+        private val verifyAppEmailCodeUseCase: VerifyAppEmailCodeUseCase,
         private val registerAppAccountUseCase: RegisterAppAccountUseCase,
         private val loginAppAccountUseCase: LoginAppAccountUseCase,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(AppAccountSignUpUiState())
+        private var verifiedEmail: String? = null
+        private var verificationToken: String? = null
 
         val uiState: StateFlow<AppAccountSignUpUiState> = mutableUiState.asStateFlow()
 
         fun requestEmailCode(email: String) {
             val normalizedEmail = email.trim()
             if (normalizedEmail.isBlank() || mutableUiState.value.isRequestingEmailCode ||
-                mutableUiState.value.isSubmitting || mutableUiState.value.resendCooldownSeconds > 0
+                mutableUiState.value.isVerifyingEmailCode || mutableUiState.value.isSubmitting ||
+                mutableUiState.value.resendCooldownSeconds > 0
             ) {
                 return
             }
             mutableUiState.update {
                 it.copy(
                     isRequestingEmailCode = true,
+                    verifiedEmail = null,
                     failure = null,
                 )
             }
+            verifiedEmail = null
+            verificationToken = null
             viewModelScope.launch {
                 val result = requestAppEmailCodeUseCase(normalizedEmail)
                 when (result) {
@@ -79,15 +87,13 @@ internal class AppAccountSignUpViewModel
             }
         }
 
-        fun signUp(
+        fun verifyEmailCode(
             email: String,
-            password: String,
-            confirmPassword: String,
             verificationCode: String,
         ) {
             val normalizedEmail = email.trim()
-            val normalizedCode = verificationCode.filter(Char::isDigit)
-            if (mutableUiState.value.isSubmitting || mutableUiState.value.isRequestingEmailCode) {
+            val normalizedCode = verificationCode.filter { digit -> digit in '0'..'9' }
+            if (mutableUiState.value.isVerifyingEmailCode || mutableUiState.value.isSubmitting) {
                 return
             }
             if (!mutableUiState.value.isEmailCodeSent ||
@@ -96,9 +102,75 @@ internal class AppAccountSignUpViewModel
                 mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
                 return
             }
+            if (normalizedCode.length != VERIFICATION_CODE_LENGTH) {
+                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.INVALID_FORM) }
+                return
+            }
+
+            mutableUiState.update {
+                it.copy(
+                    isVerifyingEmailCode = true,
+                    verifiedEmail = null,
+                    failure = null,
+                )
+            }
+            verifiedEmail = null
+            verificationToken = null
+            viewModelScope.launch {
+                when (val result = verifyAppEmailCodeUseCase(normalizedEmail, normalizedCode)) {
+                    is ApiResult.Success -> {
+                        verifiedEmail = normalizedEmail
+                        verificationToken = result.value.verificationToken
+                        mutableUiState.update {
+                            it.copy(
+                                isVerifyingEmailCode = false,
+                                verifiedEmail = normalizedEmail,
+                            )
+                        }
+                    }
+
+                    is ApiResult.Failure -> {
+                        mutableUiState.update {
+                            it.copy(
+                                isVerifyingEmailCode = false,
+                                failure = result.error.toVerificationFailure(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        fun clearEmailCodeVerification() {
+            verifiedEmail = null
+            verificationToken = null
+            mutableUiState.update { it.copy(verifiedEmail = null) }
+        }
+
+        fun signUp(
+            email: String,
+            password: String,
+            confirmPassword: String,
+        ) {
+            val normalizedEmail = email.trim()
+            if (mutableUiState.value.isSubmitting || mutableUiState.value.isRequestingEmailCode ||
+                mutableUiState.value.isVerifyingEmailCode
+            ) {
+                return
+            }
+            if (!mutableUiState.value.isEmailCodeSent ||
+                mutableUiState.value.emailForRequestedCode != normalizedEmail
+            ) {
+                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
+                return
+            }
+            val verifiedToken = verificationToken
+            if (verifiedEmail != normalizedEmail || verifiedToken.isNullOrBlank()) {
+                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
+                return
+            }
             if (password.length < MIN_PASSWORD_LENGTH ||
-                password != confirmPassword ||
-                normalizedCode.length != VERIFICATION_CODE_LENGTH
+                password != confirmPassword
             ) {
                 mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.INVALID_FORM) }
                 return
@@ -116,24 +188,37 @@ internal class AppAccountSignUpViewModel
                         email = normalizedEmail,
                         password = password,
                         confirmPassword = confirmPassword,
-                        verificationCode = normalizedCode,
+                        verificationToken = verifiedToken,
                     )
                 when (registrationResult) {
                     is ApiResult.Failure -> {
+                        if (registrationResult.error.isInvalidVerificationCode()) {
+                            verifiedEmail = null
+                            verificationToken = null
+                        }
                         mutableUiState.update {
                             it.copy(
                                 isSubmitting = false,
+                                verifiedEmail =
+                                    if (registrationResult.error.isInvalidVerificationCode()) {
+                                        null
+                                    } else {
+                                        it.verifiedEmail
+                                    },
                                 failure = registrationResult.error.toRegistrationFailure(),
                             )
                         }
                     }
 
                     is ApiResult.Success -> {
+                        verifiedEmail = null
+                        verificationToken = null
                         when (loginAppAccountUseCase(normalizedEmail, password)) {
                             is ApiResult.Success -> {
                                 mutableUiState.update {
                                     it.copy(
                                         isSubmitting = false,
+                                        verifiedEmail = null,
                                         isComplete = true,
                                     )
                                 }
@@ -143,6 +228,7 @@ internal class AppAccountSignUpViewModel
                                 mutableUiState.update {
                                     it.copy(
                                         isSubmitting = false,
+                                        verifiedEmail = null,
                                         failure = AppAccountSignUpFailure.LOGIN_AFTER_REGISTRATION,
                                     )
                                 }
@@ -223,6 +309,42 @@ internal class AppAccountSignUpViewModel
                 }
             }
 
+        private fun ApiError.toVerificationFailure(): AppAccountSignUpFailure =
+            when (this) {
+                is ApiError.Http -> {
+                    when {
+                        errorCode == INVALID_VERIFICATION_CODE -> {
+                            AppAccountSignUpFailure.INVALID_VERIFICATION_CODE
+                        }
+
+                        statusCode == HTTP_TOO_MANY_REQUESTS -> {
+                            AppAccountSignUpFailure.RATE_LIMITED
+                        }
+
+                        else -> {
+                            AppAccountSignUpFailure.EMAIL_CODE_VERIFICATION
+                        }
+                    }
+                }
+
+                ApiError.Network -> {
+                    AppAccountSignUpFailure.NETWORK
+                }
+
+                ApiError.SessionChanged,
+                ApiError.SiteNotSelected,
+                ApiError.Serialization,
+                ApiError.Unknown,
+                ApiError.LocalStorage,
+                is ApiError.ServerRejected,
+                -> {
+                    AppAccountSignUpFailure.EMAIL_CODE_VERIFICATION
+                }
+            }
+
+        private fun ApiError.isInvalidVerificationCode(): Boolean =
+            this is ApiError.Http && errorCode == INVALID_VERIFICATION_CODE
+
         private companion object {
             const val VERIFICATION_CODE_LENGTH = 6
             const val EMAIL_CODE_RESEND_COOLDOWN_SECONDS = 60
@@ -239,8 +361,10 @@ internal class AppAccountSignUpViewModel
 internal data class AppAccountSignUpUiState(
     val isRequestingEmailCode: Boolean = false,
     val isEmailCodeSent: Boolean = false,
+    val isVerifyingEmailCode: Boolean = false,
     val resendCooldownSeconds: Int = 0,
     val emailForRequestedCode: String? = null,
+    val verifiedEmail: String? = null,
     val isSubmitting: Boolean = false,
     val isComplete: Boolean = false,
     val failure: AppAccountSignUpFailure? = null,
@@ -249,6 +373,7 @@ internal data class AppAccountSignUpUiState(
 internal enum class AppAccountSignUpFailure {
     EMAIL_CODE_REQUIRED,
     EMAIL_CODE_REQUEST,
+    EMAIL_CODE_VERIFICATION,
     EMAIL_ALREADY_EXISTS,
     RATE_LIMITED,
     NETWORK,

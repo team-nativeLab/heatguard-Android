@@ -10,6 +10,7 @@ import com.nativelap.heartguard.data.auth.mapper.toDomain
 import com.nativelap.heartguard.data.auth.remote.AppAuthRemoteDataSource
 import com.nativelap.heartguard.domain.auth.model.AppAccountRegistration
 import com.nativelap.heartguard.domain.auth.model.AppEmailCode
+import com.nativelap.heartguard.domain.auth.model.AppEmailCodeVerification
 import com.nativelap.heartguard.domain.auth.repository.AppAuthRepository
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
@@ -25,14 +26,22 @@ class AppAuthRepositoryImpl
                 .requestEmailCode(email)
                 .map { response -> response.toDomain() }
 
+        override suspend fun verifyEmailCode(
+            email: String,
+            verificationCode: String,
+        ): ApiResult<AppEmailCodeVerification> =
+            appAuthRemoteDataSource
+                .verifyEmailCode(email, verificationCode)
+                .map { response -> response.toDomain() }
+
         override suspend fun register(
             email: String,
             password: String,
             confirmPassword: String,
-            verificationCode: String,
+            verificationToken: String,
         ): ApiResult<AppAccountRegistration> =
             appAuthRemoteDataSource
-                .register(email, password, confirmPassword, verificationCode)
+                .register(email, password, confirmPassword, verificationToken)
                 .map { response -> response.toDomain() }
 
         override suspend fun login(

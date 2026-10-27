@@ -1,6 +1,8 @@
 package com.nativelap.heartguard.view.component.profile
 
+import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,9 +15,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -27,6 +33,8 @@ import com.nativelap.heartguard.ui.theme.extraColors
 @Composable
 fun ProfileAvatarHeader(
     userName: String?,
+    photoUri: Uri? = null,
+    onPhotoClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -37,35 +45,59 @@ fun ProfileAvatarHeader(
             modifier =
                 Modifier
                     .size(HeartGuardComponentSize.ProfileAvatar)
+                    .then(if (onPhotoClick != null) Modifier.clickable(onClick = onPhotoClick) else Modifier)
                     .background(
                         color = MaterialTheme.extraColors.photoContainer,
                         shape = CircleShape,
                     ),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text =
-                    userName
-                        ?.firstOrNull()
-                        ?.toString()
-                        ?: stringResource(R.string.common_empty_value),
-                color = MaterialTheme.colorScheme.primary,
-                style =
-                    MaterialTheme.typography.titleLarge.copy(
-                        fontSize = HeartGuardFontSize.ProfileAvatar,
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
+            if (photoUri != null) {
+                SubcomposeAsyncImage(
+                    model = photoUri,
+                    contentDescription = stringResource(R.string.profile_photo_preview),
+                    modifier = Modifier.size(HeartGuardComponentSize.ProfileAvatar).clip(CircleShape),
+                    contentScale = ContentScale.Crop,
+                    loading = { AvatarInitial(userName) },
+                    error = { AvatarInitial(userName) },
+                    success = { SubcomposeAsyncImageContent() },
+                )
+            } else {
+                AvatarInitial(userName)
+            }
         }
 
         Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
 
         Text(
-            text = stringResource(R.string.profile_worker_role),
+            text =
+                stringResource(
+                    if (onPhotoClick !=
+                        null
+                    ) {
+                        R.string.profile_photo_select
+                    } else {
+                        R.string.profile_worker_role
+                    },
+                ),
+            modifier = if (onPhotoClick != null) Modifier.clickable(onClick = onPhotoClick) else Modifier,
             color = MaterialTheme.extraColors.secondaryText,
             style = MaterialTheme.typography.bodySmall,
         )
     }
+}
+
+@Composable
+private fun AvatarInitial(userName: String?) {
+    Text(
+        text = userName?.firstOrNull()?.toString() ?: stringResource(R.string.common_empty_value),
+        color = MaterialTheme.colorScheme.primary,
+        style =
+            MaterialTheme.typography.titleLarge.copy(
+                fontSize = HeartGuardFontSize.ProfileAvatar,
+                fontWeight = FontWeight.Bold,
+            ),
+    )
 }
 
 @Preview(showBackground = true, widthDp = 360)

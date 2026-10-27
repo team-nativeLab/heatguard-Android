@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.view.screen.profile
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import com.nativelap.heartguard.viewmodel.profile.ProfileSaveError
 @Composable
 fun ProfileEditScreen(
     uiState: ProfileEditUiState,
+    profilePhotoUri: Uri? = null,
     onEvent: (ProfileEditScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -95,6 +97,8 @@ fun ProfileEditScreen(
                 ) {
                     ProfileAvatarHeader(
                         userName = loadedProfile?.userName,
+                        photoUri = profilePhotoUri,
+                        onPhotoClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
                         modifier = Modifier.padding(bottom = HeartGuardSpacing.Tight),
                     )
 

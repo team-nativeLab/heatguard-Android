@@ -1,6 +1,11 @@
 package com.nativelap.heartguard.view.route.profile
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,11 +30,22 @@ internal fun HeartGuardProfileEditRoute(
     onPasswordChangeClick: () -> Unit,
     viewModel: ProfileEditViewModel = hiltViewModel(),
 ) {
+    val photoPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { selectedUri ->
+            if (selectedUri != null) {
+                viewModel.updateProfilePhoto(selectedUri)
+            }
+        }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val savedMessage = stringResource(R.string.profile_saved)
     val currentOnBackClick by rememberUpdatedState(onBackClick)
+
+    BackHandler {
+        viewModel.clearProfilePhoto()
+        onBackClick()
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.loadProfile()
@@ -41,6 +57,7 @@ internal fun HeartGuardProfileEditRoute(
             viewModel.effects.collect { profileEditEffect ->
                 when (profileEditEffect) {
                     ProfileEditEffect.Saved -> {
+                        viewModel.clearProfilePhoto()
                         Toast
                             .makeText(context, savedMessage, Toast.LENGTH_SHORT)
                             .show()
@@ -53,13 +70,33 @@ internal fun HeartGuardProfileEditRoute(
 
     ProfileEditScreen(
         uiState = uiState,
+        profilePhotoUri = uiState.profilePhotoUri,
         onEvent = { event ->
             when (event) {
-                ProfileEditScreenEvent.BackClicked -> onBackClick()
-                is ProfileEditScreenEvent.NameChanged -> viewModel.updateName(event.name)
-                ProfileEditScreenEvent.SaveClicked -> viewModel.saveProfile()
-                ProfileEditScreenEvent.RetryClicked -> viewModel.loadProfile()
-                ProfileEditScreenEvent.PasswordChangeClicked -> onPasswordChangeClick()
+                ProfileEditScreenEvent.BackClicked -> {
+                    viewModel.clearProfilePhoto()
+                    onBackClick()
+                }
+
+                is ProfileEditScreenEvent.NameChanged -> {
+                    viewModel.updateName(event.name)
+                }
+
+                ProfileEditScreenEvent.SaveClicked -> {
+                    viewModel.saveProfile()
+                }
+
+                ProfileEditScreenEvent.RetryClicked -> {
+                    viewModel.loadProfile()
+                }
+
+                ProfileEditScreenEvent.PasswordChangeClicked -> {
+                    onPasswordChangeClick()
+                }
+
+                ProfileEditScreenEvent.ProfilePhotoClicked -> {
+                    photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
             }
         },
     )

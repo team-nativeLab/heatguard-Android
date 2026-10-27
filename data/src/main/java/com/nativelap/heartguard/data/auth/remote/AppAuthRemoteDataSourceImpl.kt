@@ -8,8 +8,10 @@ import com.nativelap.heartguard.data.auth.dto.AppAccountLoginRequestDto
 import com.nativelap.heartguard.data.auth.dto.AppAccountLoginResponseDto
 import com.nativelap.heartguard.data.auth.dto.AppAccountRegistrationDto
 import com.nativelap.heartguard.data.auth.dto.AppEmailCodeResponseDto
+import com.nativelap.heartguard.data.auth.dto.AppEmailCodeVerificationDto
 import com.nativelap.heartguard.data.auth.dto.RegisterAppAccountDto
 import com.nativelap.heartguard.data.auth.dto.RequestAppEmailCodeDto
+import com.nativelap.heartguard.data.auth.dto.VerifyAppEmailCodeDto
 import javax.inject.Inject
 
 class AppAuthRemoteDataSourceImpl
@@ -25,11 +27,27 @@ class AppAuthRemoteDataSourceImpl
                     appAuthApiService.requestEmailCode(RequestAppEmailCodeDto(email))
                 }.requireSuccessData { response -> response.expiresAt.isNotBlank() }
 
+        override suspend fun verifyEmailCode(
+            email: String,
+            verificationCode: String,
+        ): ApiResult<AppEmailCodeVerificationDto> =
+            apiExecutor
+                .execute {
+                    appAuthApiService.verifyEmailCode(
+                        VerifyAppEmailCodeDto(
+                            email = email,
+                            verificationCode = verificationCode,
+                        ),
+                    )
+                }.requireSuccessData { response ->
+                    response.verified && response.verificationToken.isNotBlank() && response.expiresAt.isNotBlank()
+                }
+
         override suspend fun register(
             email: String,
             password: String,
             confirmPassword: String,
-            verificationCode: String,
+            verificationToken: String,
         ): ApiResult<AppAccountRegistrationDto> =
             apiExecutor
                 .execute {
@@ -38,7 +56,7 @@ class AppAuthRemoteDataSourceImpl
                             email = email,
                             password = password,
                             confirmPassword = confirmPassword,
-                            verificationCode = verificationCode,
+                            verificationToken = verificationToken,
                         ),
                     )
                 }.requireSuccessData { response ->

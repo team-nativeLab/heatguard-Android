@@ -50,6 +50,7 @@ fun AuthTextField(
     onTextChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     minimumHeight: Dp = HeartGuardComponentSize.AuthTextFieldHeight,
     isError: Boolean = false,
     supportingText: String? = null,
@@ -113,6 +114,7 @@ fun AuthTextField(
         BasicTextField(
             value = text,
             onValueChange = onTextChange,
+            enabled = enabled,
             modifier =
                 Modifier
                     .fillMaxWidth()

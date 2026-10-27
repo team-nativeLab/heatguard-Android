@@ -168,16 +168,59 @@ internal fun HeartGuardSignUpRoute(
     onNavigateToLogin: () -> Unit,
     viewModel: AppAccountSignUpViewModel = hiltViewModel(),
 ) {
-    var email by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
     var verificationCode by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordConfirmation by remember { mutableStateOf("") }
+    var step by rememberSaveable { mutableStateOf(0) }
+    var hasRequestedCodeFromEmailStep by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isCodeSentForCurrentEmail = uiState.emailForRequestedCode == email.trim()
+
+    BackHandler(
+        enabled = uiState.isSubmitting || uiState.isRequestingEmailCode || uiState.isVerifyingEmailCode || step > 0,
+    ) {
+        if (!uiState.isSubmitting && !uiState.isRequestingEmailCode && !uiState.isVerifyingEmailCode) {
+            viewModel.clearEmailCodeVerification()
+            step = (step - 1).coerceAtLeast(0)
+            hasRequestedCodeFromEmailStep = false
+        }
+    }
+    LaunchedEffect(uiState.isRequestingEmailCode, uiState.failure, uiState.emailForRequestedCode) {
+        if (hasRequestedCodeFromEmailStep && !uiState.isRequestingEmailCode && uiState.failure == null &&
+            uiState.emailForRequestedCode?.isNotBlank() == true && isCodeSentForCurrentEmail && step == 0
+        ) {
+            step = 1
+            hasRequestedCodeFromEmailStep = false
+        } else if (uiState.failure != null) {
+            hasRequestedCodeFromEmailStep = false
+        }
+    }
+    LaunchedEffect(uiState.failure) {
+        if (uiState.failure == AppAccountSignUpFailure.INVALID_VERIFICATION_CODE) {
+            step = 1
+        }
+    }
+    LaunchedEffect(uiState.verifiedEmail, uiState.isVerifyingEmailCode) {
+        if (uiState.verifiedEmail == email.trim() && !uiState.isVerifyingEmailCode && step == 1) {
+            step = 2
+        }
+    }
+    LaunchedEffect(step, email, uiState.verifiedEmail, uiState.failure) {
+        if (step == 2 &&
+            uiState.verifiedEmail != email.trim() &&
+            uiState.failure != AppAccountSignUpFailure.INVALID_VERIFICATION_CODE
+        ) {
+            step = 0
+        }
+    }
     val statusMessage =
         when (uiState.failure) {
             null -> {
-                if (isCodeSentForCurrentEmail) {
+                if (uiState.isVerifyingEmailCode) {
+                    stringResource(R.string.auth_signup_code_verifying)
+                } else if (step <= 1 && isCodeSentForCurrentEmail) {
                     stringResource(R.string.auth_signup_code_sent)
                 } else {
                     null
@@ -190,6 +233,10 @@ internal fun HeartGuardSignUpRoute(
 
             AppAccountSignUpFailure.EMAIL_CODE_REQUEST -> {
                 stringResource(R.string.auth_signup_email_code_error)
+            }
+
+            AppAccountSignUpFailure.EMAIL_CODE_VERIFICATION -> {
+                stringResource(R.string.auth_signup_code_verification_error)
             }
 
             AppAccountSignUpFailure.EMAIL_ALREADY_EXISTS -> {
@@ -226,6 +273,7 @@ internal fun HeartGuardSignUpRoute(
         }
 
     AuthSignUpScreen(
+        name = name,
         email = email,
         verificationCode = verificationCode,
         password = password,
@@ -233,16 +281,28 @@ internal fun HeartGuardSignUpRoute(
         isSendingEmailCode = uiState.isRequestingEmailCode,
         isEmailCodeSent = isCodeSentForCurrentEmail,
         resendCooldownSeconds = uiState.resendCooldownSeconds,
-        isSubmitting = uiState.isSubmitting,
+        isSubmitting = uiState.isSubmitting || uiState.isVerifyingEmailCode,
         statusMessage = statusMessage,
+        isStatusError = uiState.failure != null,
+        step = step,
         onEvent = { event ->
             when (event) {
+                is AuthSignUpScreenEvent.NameChanged -> {
+                    name = event.name
+                }
+
                 is AuthSignUpScreenEvent.EmailChanged -> {
+                    if (email.trim() != event.email.trim()) {
+                        viewModel.clearEmailCodeVerification()
+                        verificationCode = ""
+                        step = 0
+                        hasRequestedCodeFromEmailStep = false
+                    }
                     email = event.email
                 }
 
                 is AuthSignUpScreenEvent.VerificationCodeChanged -> {
-                    verificationCode = event.verificationCode
+                    verificationCode = event.verificationCode.filter { digit -> digit in '0'..'9' }.take(6)
                 }
 
                 is AuthSignUpScreenEvent.PasswordChanged -> {
@@ -257,16 +317,33 @@ internal fun HeartGuardSignUpRoute(
                     onNavigateToLogin()
                 }
 
+                AuthSignUpScreenEvent.ContinueClicked -> {
+                    if (step == 1) {
+                        viewModel.verifyEmailCode(email, verificationCode)
+                    } else {
+                        step = if (step == 0) 1 else 2
+                    }
+                    hasRequestedCodeFromEmailStep = false
+                }
+
+                AuthSignUpScreenEvent.StepBackClicked -> {
+                    viewModel.clearEmailCodeVerification()
+                    step = (step - 1).coerceAtLeast(0)
+                    hasRequestedCodeFromEmailStep = false
+                }
+
                 AuthSignUpScreenEvent.SignUpClicked -> {
                     viewModel.signUp(
                         email = email,
                         password = password,
                         confirmPassword = passwordConfirmation,
-                        verificationCode = verificationCode,
                     )
                 }
 
                 AuthSignUpScreenEvent.RequestEmailCodeClicked -> {
+                    if (step == 0) {
+                        hasRequestedCodeFromEmailStep = true
+                    }
                     viewModel.requestEmailCode(email)
                 }
             }

@@ -43,6 +43,7 @@ import com.nativelap.heartguard.view.route.history.HeartGuardRecordHistoryRoute
 import com.nativelap.heartguard.view.route.home.HeartGuardHomeRoute
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallConfirmationRoute
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersContactRoute
+import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRegistrationRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
 import com.nativelap.heartguard.view.route.menu.MenuDrawerHost
 import com.nativelap.heartguard.view.route.notification.HeartGuardTeamNotificationsRoute
@@ -62,6 +63,7 @@ import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryViewModel
 import com.nativelap.heartguard.viewmodel.notification.NotificationOpenTarget
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
@@ -293,6 +295,7 @@ private fun HeartGuardMainNavDisplay(
     // 흐름별 초기화는 ViewModelStore를 새로 만드는 대신 Route가 명시적으로 호출하는
     // recordDraftViewModel.reset()으로 대체한다.
     val recordDraftViewModel: RecordDraftViewModel = hiltViewModel()
+    val inquiryViewModel: InquiryViewModel = hiltViewModel()
     val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val checklistViewModel: ChecklistViewModel = hiltViewModel()
 
@@ -680,7 +683,17 @@ private fun HeartGuardMainNavDisplay(
                     HeartGuardPasswordChangeRoute(onBackClick = ::goBack)
                 }
                 entry<HeartGuardDestination.Inquiry> {
-                    HeartGuardInquiryRoute(onBackClick = ::goBack)
+                    HeartGuardInquiryRoute(
+                        onBackClick = ::goBack,
+                        onRegisterClick = { backStack.add(HeartGuardDestination.InquiryRegistration) },
+                        inquiryViewModel = inquiryViewModel,
+                    )
+                }
+                entry<HeartGuardDestination.InquiryRegistration> {
+                    HeartGuardInquiryRegistrationRoute(
+                        onBackClick = ::goBack,
+                        inquiryViewModel = inquiryViewModel,
+                    )
                 }
                 entry<HeartGuardDestination.TeamNotifications> {
                     HeartGuardTeamNotificationsRoute(

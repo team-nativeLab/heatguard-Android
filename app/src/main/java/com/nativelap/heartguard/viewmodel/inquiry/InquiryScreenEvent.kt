@@ -4,6 +4,8 @@ package com.nativelap.heartguard.viewmodel.inquiry
 sealed interface InquiryScreenEvent {
     data object BackClicked : InquiryScreenEvent
 
+    data object RegisterClicked : InquiryScreenEvent
+
     data class TitleChanged(
         val title: String,
     ) : InquiryScreenEvent

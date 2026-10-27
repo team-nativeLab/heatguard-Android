@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nativelap.heartguard.view.screen.inquiry.InquiryListScreen
 import com.nativelap.heartguard.view.screen.inquiry.InquiryScreen
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryViewModel
@@ -13,6 +14,7 @@ import com.nativelap.heartguard.viewmodel.inquiry.InquiryViewModel
 @Composable
 internal fun HeartGuardInquiryRoute(
     onBackClick: () -> Unit,
+    onRegisterClick: () -> Unit,
     inquiryViewModel: InquiryViewModel = hiltViewModel(),
 ) {
     val uiState by inquiryViewModel.uiState.collectAsStateWithLifecycle()
@@ -21,16 +23,51 @@ internal fun HeartGuardInquiryRoute(
         inquiryViewModel.openInquiry()
     }
 
+    InquiryListScreen(
+        uiState = uiState,
+        onEvent = { event ->
+            when (event) {
+                InquiryScreenEvent.BackClicked -> onBackClick()
+
+                InquiryScreenEvent.RegisterClicked -> onRegisterClick()
+
+                is InquiryScreenEvent.TitleChanged -> inquiryViewModel.updateTitle(event.title)
+
+                is InquiryScreenEvent.ContentChanged -> inquiryViewModel.updateContent(event.content)
+
+                InquiryScreenEvent.SubmitClicked,
+                -> Unit
+
+                InquiryScreenEvent.RetryListClicked -> inquiryViewModel.loadInquiries()
+
+                InquiryScreenEvent.LoadMore -> inquiryViewModel.loadMoreInquiries()
+            }
+        },
+    )
+}
+
+@Composable
+internal fun HeartGuardInquiryRegistrationRoute(
+    onBackClick: () -> Unit,
+    inquiryViewModel: InquiryViewModel,
+) {
+    val uiState by inquiryViewModel.uiState.collectAsStateWithLifecycle()
     InquiryScreen(
         uiState = uiState,
         onEvent = { event ->
             when (event) {
                 InquiryScreenEvent.BackClicked -> onBackClick()
+
                 is InquiryScreenEvent.TitleChanged -> inquiryViewModel.updateTitle(event.title)
+
                 is InquiryScreenEvent.ContentChanged -> inquiryViewModel.updateContent(event.content)
+
                 InquiryScreenEvent.SubmitClicked -> inquiryViewModel.submitInquiry()
-                InquiryScreenEvent.RetryListClicked -> inquiryViewModel.loadInquiries()
-                InquiryScreenEvent.LoadMore -> inquiryViewModel.loadMoreInquiries()
+
+                InquiryScreenEvent.RegisterClicked,
+                InquiryScreenEvent.RetryListClicked,
+                InquiryScreenEvent.LoadMore,
+                -> Unit
             }
         },
     )

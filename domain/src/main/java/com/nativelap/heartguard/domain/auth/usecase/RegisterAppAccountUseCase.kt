@@ -14,12 +14,12 @@ class RegisterAppAccountUseCase
             email: String,
             password: String,
             confirmPassword: String,
-            verificationCode: String,
+            verificationToken: String,
         ): ApiResult<AppAccountRegistration> =
             appAuthRepository.register(
                 email = email,
                 password = password,
                 confirmPassword = confirmPassword,
-                verificationCode = verificationCode,
+                verificationToken = verificationToken,
             )
     }
