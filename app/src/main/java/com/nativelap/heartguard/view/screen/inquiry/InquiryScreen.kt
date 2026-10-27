@@ -107,6 +107,7 @@ fun InquiryScreen(
                     placeholder = stringResource(R.string.inquiry_subject_placeholder),
                     value = uiState.title,
                     onValueChange = { onEvent(InquiryScreenEvent.TitleChanged(it)) },
+                    enabled = !uiState.isSubmitting,
                 )
                 InquiryInputField(
                     label = stringResource(R.string.inquiry_content),
@@ -116,6 +117,7 @@ fun InquiryScreen(
                     minHeight = HeartGuardComponentSize.InquiryBodyFieldHeight,
                     minLines = 6,
                     characterCount = uiState.content.codePointCount(0, uiState.content.length),
+                    enabled = !uiState.isSubmitting,
                 )
                 if (uiState.isSubmitting) {
                     Text(stringResource(R.string.inquiry_submitting), color = MaterialTheme.extraColors.secondaryText)
@@ -144,6 +146,7 @@ private fun InquiryInputField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     minHeight: androidx.compose.ui.unit.Dp = HeartGuardComponentSize.TextFieldHeight,
     minLines: Int = 1,
     characterCount: Int? = null,
@@ -176,6 +179,7 @@ private fun InquiryInputField(
             TextField(
                 value = value,
                 onValueChange = onValueChange,
+                enabled = enabled,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -205,6 +209,7 @@ private fun InquiryInputField(
                     TextField(
                         value = value,
                         onValueChange = onValueChange,
+                        enabled = enabled,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

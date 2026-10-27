@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.OffsetDateTime
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,15 +33,16 @@ internal class AppAccountSignUpViewModel
         private val mutableUiState = MutableStateFlow(AppAccountSignUpUiState())
         private var verifiedEmail: String? = null
         private var verificationToken: String? = null
-        private var emailCodeExpirationJob: Job? = null
+        private val emailCodeExpirationJobs = mutableMapOf<String, Job>()
+        private val emailCodeCooldownJobs = mutableMapOf<String, Job>()
 
         val uiState: StateFlow<AppAccountSignUpUiState> = mutableUiState.asStateFlow()
 
         fun requestEmailCode(email: String) {
-            val normalizedEmail = email.trim()
+            val normalizedEmail = email.trim().lowercase(Locale.ROOT)
             if (normalizedEmail.isBlank() || mutableUiState.value.isRequestingEmailCode ||
                 mutableUiState.value.isVerifyingEmailCode || mutableUiState.value.isSubmitting ||
-                mutableUiState.value.resendCooldownSeconds > 0
+                (mutableUiState.value.emailCodeCooldownSecondsByEmail[normalizedEmail] ?: 0) > 0
             ) {
                 return
             }
@@ -62,12 +64,16 @@ internal class AppAccountSignUpViewModel
                                 isRequestingEmailCode = false,
                                 isEmailCodeSent = true,
                                 emailForRequestedCode = normalizedEmail,
-                                resendCooldownSeconds = EMAIL_CODE_RESEND_COOLDOWN_SECONDS,
-                                emailCodeRemainingSeconds = remainingSeconds(result.value.expiresAt),
+                                emailCodeCooldownSecondsByEmail =
+                                    it.emailCodeCooldownSecondsByEmail +
+                                        (normalizedEmail to EMAIL_CODE_RESEND_COOLDOWN_SECONDS),
+                                emailCodeRemainingSecondsByEmail =
+                                    it.emailCodeRemainingSecondsByEmail +
+                                        (normalizedEmail to remainingSeconds(result.value.expiresAt)),
                             )
                         }
-                        startEmailCodeExpirationCountdown(result.value.expiresAt)
-                        startEmailCodeCooldown()
+                        startEmailCodeExpirationCountdown(normalizedEmail, result.value.expiresAt)
+                        startEmailCodeCooldown(normalizedEmail)
                     }
 
                     is ApiResult.Failure -> {
@@ -82,20 +88,33 @@ internal class AppAccountSignUpViewModel
             }
         }
 
-        private fun startEmailCodeCooldown() {
-            viewModelScope.launch {
-                for (remainingSeconds in EMAIL_CODE_RESEND_COOLDOWN_SECONDS downTo 1) {
-                    delay(ONE_SECOND_MILLIS)
-                    mutableUiState.update {
-                        it.copy(resendCooldownSeconds = remainingSeconds - 1)
+        private fun startEmailCodeCooldown(email: String) {
+            emailCodeCooldownJobs[email]?.cancel()
+            emailCodeCooldownJobs[email] =
+                viewModelScope.launch {
+                    for (remainingSeconds in EMAIL_CODE_RESEND_COOLDOWN_SECONDS downTo 1) {
+                        delay(ONE_SECOND_MILLIS)
+                        mutableUiState.update {
+                            it.copy(
+                                emailCodeCooldownSecondsByEmail =
+                                    it.emailCodeCooldownSecondsByEmail +
+                                        (email to (remainingSeconds - 1)),
+                            )
+                        }
                     }
+                    mutableUiState.update {
+                        it.copy(emailCodeCooldownSecondsByEmail = it.emailCodeCooldownSecondsByEmail - email)
+                    }
+                    emailCodeCooldownJobs.remove(email)
                 }
-            }
         }
 
-        private fun startEmailCodeExpirationCountdown(expiresAt: String) {
-            emailCodeExpirationJob?.cancel()
-            emailCodeExpirationJob =
+        private fun startEmailCodeExpirationCountdown(
+            email: String,
+            expiresAt: String,
+        ) {
+            emailCodeExpirationJobs[email]?.cancel()
+            emailCodeExpirationJobs[email] =
                 viewModelScope.launch {
                     val expirationEpochSeconds = parseExpirationEpochSeconds(expiresAt)
                     while (true) {
@@ -103,12 +122,22 @@ internal class AppAccountSignUpViewModel
                             (expirationEpochSeconds - Instant.now().epochSecond)
                                 .coerceAtLeast(0)
                                 .toInt()
-                        mutableUiState.update { it.copy(emailCodeRemainingSeconds = remainingSeconds) }
+                        mutableUiState.update {
+                            it.copy(
+                                emailCodeRemainingSecondsByEmail =
+                                    if (remainingSeconds == 0) {
+                                        it.emailCodeRemainingSecondsByEmail - email
+                                    } else {
+                                        it.emailCodeRemainingSecondsByEmail + (email to remainingSeconds)
+                                    },
+                            )
+                        }
                         if (remainingSeconds == 0) {
                             break
                         }
                         delay(ONE_SECOND_MILLIS)
                     }
+                    emailCodeExpirationJobs.remove(email)
                 }
         }
 
@@ -125,7 +154,7 @@ internal class AppAccountSignUpViewModel
             email: String,
             verificationCode: String,
         ) {
-            val normalizedEmail = email.trim()
+            val normalizedEmail = email.trim().lowercase(Locale.ROOT)
             val normalizedCode = verificationCode.filter { digit -> digit in '0'..'9' }
             if (mutableUiState.value.isVerifyingEmailCode || mutableUiState.value.isSubmitting) {
                 return
@@ -186,7 +215,7 @@ internal class AppAccountSignUpViewModel
             password: String,
             confirmPassword: String,
         ) {
-            val normalizedEmail = email.trim()
+            val normalizedEmail = email.trim().lowercase(Locale.ROOT)
             if (mutableUiState.value.isSubmitting || mutableUiState.value.isRequestingEmailCode ||
                 mutableUiState.value.isVerifyingEmailCode
             ) {
@@ -247,7 +276,8 @@ internal class AppAccountSignUpViewModel
                     is ApiResult.Success -> {
                         verifiedEmail = null
                         verificationToken = null
-                        emailCodeExpirationJob?.cancel()
+                        emailCodeExpirationJobs.values.forEach(Job::cancel)
+                        emailCodeExpirationJobs.clear()
                         when (loginAppAccountUseCase(normalizedEmail, password)) {
                             is ApiResult.Success -> {
                                 mutableUiState.update {
@@ -255,7 +285,7 @@ internal class AppAccountSignUpViewModel
                                         isSubmitting = false,
                                         verifiedEmail = null,
                                         isComplete = true,
-                                        emailCodeRemainingSeconds = 0,
+                                        emailCodeRemainingSecondsByEmail = emptyMap(),
                                     )
                                 }
                             }
@@ -404,8 +434,8 @@ internal data class AppAccountSignUpUiState(
     val isRequestingEmailCode: Boolean = false,
     val isEmailCodeSent: Boolean = false,
     val isVerifyingEmailCode: Boolean = false,
-    val resendCooldownSeconds: Int = 0,
-    val emailCodeRemainingSeconds: Int = 0,
+    val emailCodeCooldownSecondsByEmail: Map<String, Int> = emptyMap(),
+    val emailCodeRemainingSecondsByEmail: Map<String, Int> = emptyMap(),
     val emailForRequestedCode: String? = null,
     val verifiedEmail: String? = null,
     val isSubmitting: Boolean = false,

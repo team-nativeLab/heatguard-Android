@@ -91,6 +91,7 @@ internal fun HeartGuardProfileEditRoute(
                 }
 
                 ProfileEditScreenEvent.PasswordChangeClicked -> {
+                    viewModel.clearProfilePhoto()
                     onPasswordChangeClick()
                 }
 

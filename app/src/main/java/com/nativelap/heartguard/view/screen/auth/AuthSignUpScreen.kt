@@ -71,7 +71,7 @@ internal fun AuthSignUpScreen(
     passwordConfirmation: String,
     isSendingEmailCode: Boolean,
     isEmailCodeSent: Boolean,
-    resendCooldownSeconds: Int,
+    isEmailCodeResendBlocked: Boolean,
     emailCodeRemainingSeconds: Int,
     isSubmitting: Boolean,
     statusMessage: String?,
@@ -110,7 +110,7 @@ internal fun AuthSignUpScreen(
             (step != SIGN_UP_CODE_STEP || verificationCode.length == 6) &&
             (step != SIGN_UP_CODE_STEP || emailCodeRemainingSeconds > 0) &&
             (step != SIGN_UP_PASSWORD_STEP || isPasswordFormValid(password, passwordConfirmation)) &&
-            (step != SIGN_UP_EMAIL_STEP || isEmailCodeSent || resendCooldownSeconds == 0)
+            (step != SIGN_UP_EMAIL_STEP || isEmailCodeSent || !isEmailCodeResendBlocked)
 
     Scaffold(
         modifier = modifier,
@@ -274,7 +274,7 @@ internal fun AuthSignUpScreen(
                                         onClick = { onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked) },
                                         enabled =
                                             !isSendingEmailCode && !isSubmitting &&
-                                                resendCooldownSeconds == 0,
+                                                !isEmailCodeResendBlocked,
                                         modifier = Modifier.heightIn(min = HeartGuardComponentSize.TouchTarget),
                                     ) {
                                         Text(stringResource(R.string.auth_signup_resend_code_action))
@@ -532,7 +532,7 @@ private fun AuthSignUpScreenPreview() {
             passwordConfirmation = "",
             isSendingEmailCode = false,
             isEmailCodeSent = false,
-            resendCooldownSeconds = 0,
+            isEmailCodeResendBlocked = false,
             emailCodeRemainingSeconds = 600,
             isSubmitting = false,
             statusMessage = null,

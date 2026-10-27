@@ -24,6 +24,7 @@ import com.nativelap.heartguard.viewmodel.auth.TeamLoginFailure
 import com.nativelap.heartguard.viewmodel.auth.TeamLoginViewModel
 import com.nativelap.heartguard.viewmodel.site.ClaimAppSiteLinkFailure
 import com.nativelap.heartguard.viewmodel.site.ClaimAppSiteLinkViewModel
+import java.util.Locale
 
 /** 사전 발급된 작업자 계정의 로그인 요청과 화면 상태를 연결하는 Route이다. */
 @Composable
@@ -176,7 +177,8 @@ internal fun HeartGuardSignUpRoute(
     var step by rememberSaveable { mutableStateOf(0) }
     var hasRequestedCodeFromEmailStep by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isCodeSentForCurrentEmail = uiState.emailForRequestedCode == email.trim()
+    val normalizedEmail = email.trim().lowercase(Locale.ROOT)
+    val isCodeSentForCurrentEmail = uiState.emailForRequestedCode == normalizedEmail
 
     BackHandler(
         enabled = uiState.isSubmitting || uiState.isRequestingEmailCode || uiState.isVerifyingEmailCode || step > 0,
@@ -203,13 +205,13 @@ internal fun HeartGuardSignUpRoute(
         }
     }
     LaunchedEffect(uiState.verifiedEmail, uiState.isVerifyingEmailCode) {
-        if (uiState.verifiedEmail == email.trim() && !uiState.isVerifyingEmailCode && step == 1) {
+        if (uiState.verifiedEmail == normalizedEmail && !uiState.isVerifyingEmailCode && step == 1) {
             step = 2
         }
     }
     LaunchedEffect(step, email, uiState.verifiedEmail, uiState.failure) {
         if (step == 2 &&
-            uiState.verifiedEmail != email.trim() &&
+            uiState.verifiedEmail != normalizedEmail &&
             uiState.failure != AppAccountSignUpFailure.INVALID_VERIFICATION_CODE
         ) {
             step = 0
@@ -280,8 +282,9 @@ internal fun HeartGuardSignUpRoute(
         passwordConfirmation = passwordConfirmation,
         isSendingEmailCode = uiState.isRequestingEmailCode,
         isEmailCodeSent = isCodeSentForCurrentEmail,
-        resendCooldownSeconds = uiState.resendCooldownSeconds,
-        emailCodeRemainingSeconds = uiState.emailCodeRemainingSeconds,
+        isEmailCodeResendBlocked =
+            (uiState.emailCodeCooldownSecondsByEmail[normalizedEmail] ?: 0) > 0,
+        emailCodeRemainingSeconds = uiState.emailCodeRemainingSecondsByEmail[normalizedEmail] ?: 0,
         isSubmitting = uiState.isSubmitting || uiState.isVerifyingEmailCode,
         statusMessage = statusMessage,
         isStatusError = uiState.failure != null,
@@ -293,7 +296,7 @@ internal fun HeartGuardSignUpRoute(
                 }
 
                 is AuthSignUpScreenEvent.EmailChanged -> {
-                    if (email.trim() != event.email.trim()) {
+                    if (email.trim().lowercase(Locale.ROOT) != event.email.trim().lowercase(Locale.ROOT)) {
                         viewModel.clearEmailCodeVerification()
                         verificationCode = ""
                         step = 0
