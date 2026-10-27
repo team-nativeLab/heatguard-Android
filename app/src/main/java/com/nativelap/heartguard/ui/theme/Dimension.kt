@@ -21,7 +21,7 @@ object HeartGuardSpacing {
     val AuthFieldLabelInput = 6.dp
     val AuthFieldGroup = 26.dp
     val AuthTitleDescription = 4.dp
-    val AuthSignUpTop = 80.dp
+    val AuthSignUpTop = 48.dp
     val AuthSignUpTitleForm = 31.dp
     val AuthSignUpFieldGroup = 21.dp
     val AuthSignUpActionsTop = 64.dp
@@ -176,7 +176,7 @@ object HeartGuardComponentSize {
     val EmergencyDescriptionMaxWidth = 180.dp
     val HomeActionCardHeight = 148.dp
     val ProfileAvatar = 72.dp
-    val InquiryBodyFieldHeight = 140.dp
+    val InquiryBodyFieldHeight = 225.dp
     val HomeWeatherMetricHeight = 78.dp
     val HomeWeatherIllustrationWidth = 159.dp
     val HomeWeatherIllustrationHeight = 121.dp

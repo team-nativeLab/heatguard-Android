@@ -11,10 +11,10 @@ data class RegisterAppAccountDto(
     val password: String,
     @SerialName("confirmPassword")
     val confirmPassword: String,
-    @SerialName("verificationCode")
-    val verificationCode: String,
+    @SerialName("verificationToken")
+    val verificationToken: String,
 ) {
-    override fun toString(): String = "RegisterAppAccountDto(email=***, password=***, verificationCode=***)"
+    override fun toString(): String = "RegisterAppAccountDto(email=***, password=***, verificationToken=***)"
 }
 
 @Serializable

@@ -149,10 +149,22 @@ class InquiryViewModel
         fun updateContent(content: String) {
             mutableUiState.value =
                 mutableUiState.value.copy(
-                    content = content,
+                    content = content.takeCodePoints(INQUIRY_CONTENT_LIMIT),
                     submission = null,
                     hasError = false,
                 )
+        }
+
+        private companion object {
+            const val INQUIRY_CONTENT_LIMIT = 500
+        }
+
+        private fun String.takeCodePoints(maxCodePoints: Int): String {
+            val codePointCount = codePointCount(0, length)
+            if (codePointCount <= maxCodePoints) {
+                return this
+            }
+            return substring(0, offsetByCodePoints(0, maxCodePoints))
         }
 
         /** 제목과 내용을 서버에 등록하고 접수 결과 또는 재시도 가능한 오류 상태를 반영한다. */

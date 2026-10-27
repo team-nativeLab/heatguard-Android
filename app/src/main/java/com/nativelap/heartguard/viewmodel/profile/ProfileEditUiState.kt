@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.viewmodel.profile
 
+import android.net.Uri
 import androidx.compose.runtime.Immutable
 
 /** 내 정보 수정 화면 상태다. 조회 결과([loadState])와 이름 입력·저장 진행 상태를 함께 가진다. */
@@ -7,6 +8,7 @@ import androidx.compose.runtime.Immutable
 data class ProfileEditUiState(
     val loadState: ProfileLoadState = ProfileLoadState.Loading,
     val nameInput: String = "",
+    val profilePhotoUri: Uri? = null,
     val isSaving: Boolean = false,
     val saveError: ProfileSaveError? = null,
 ) {

@@ -2,6 +2,10 @@ package com.nativelap.heartguard.view.screen.auth
 
 /** 회원가입 화면에서 발생한 입력과 이동 의도를 나타낸다. */
 internal sealed interface AuthSignUpScreenEvent {
+    data class NameChanged(
+        val name: String,
+    ) : AuthSignUpScreenEvent
+
     data class EmailChanged(
         val email: String,
     ) : AuthSignUpScreenEvent
@@ -19,6 +23,10 @@ internal sealed interface AuthSignUpScreenEvent {
     ) : AuthSignUpScreenEvent
 
     data object SignUpClicked : AuthSignUpScreenEvent
+
+    data object ContinueClicked : AuthSignUpScreenEvent
+
+    data object StepBackClicked : AuthSignUpScreenEvent
 
     data object RequestEmailCodeClicked : AuthSignUpScreenEvent
 

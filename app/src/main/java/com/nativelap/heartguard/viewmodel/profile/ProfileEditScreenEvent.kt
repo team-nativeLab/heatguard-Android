@@ -13,4 +13,6 @@ sealed interface ProfileEditScreenEvent {
     data object RetryClicked : ProfileEditScreenEvent
 
     data object PasswordChangeClicked : ProfileEditScreenEvent
+
+    data object ProfilePhotoClicked : ProfileEditScreenEvent
 }
