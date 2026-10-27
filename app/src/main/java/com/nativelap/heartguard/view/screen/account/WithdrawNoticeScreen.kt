@@ -89,7 +89,6 @@ fun WithdrawNoticeScreen(
                 title = stringResource(R.string.withdraw_title),
                 backContentDescription = stringResource(R.string.withdraw_back_description),
                 onBackClick = { onEvent(WithdrawNoticeScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Item),
             )
 
             Column(

@@ -41,8 +41,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 라벨·입력값·오류 안내를 함께 표시하는 입력 Component다.
- * [errorContainerColor]는 오류 시 입력칸 배경이다. 기본값은 로그인 Figma의 분홍 채움이다. */
+/** 라벨·입력값·오류 안내를 함께 표시하는 입력 Component다. */
 @Composable
 fun AuthTextField(
     label: String,
@@ -88,14 +87,15 @@ fun AuthTextField(
             }
         val textFieldColors =
             OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.extraColors.authInputBackground,
-                unfocusedContainerColor = MaterialTheme.extraColors.authInputBackground,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface,
                 errorContainerColor = errorContainerColor,
                 focusedBorderColor =
                     if (isError) {
                         MaterialTheme.colorScheme.error
                     } else {
-                        Color.Transparent
+                        MaterialTheme.extraColors.authPrimary
                     },
                 unfocusedBorderColor =
                     if (isError) {
@@ -103,6 +103,7 @@ fun AuthTextField(
                     } else {
                         Color.Transparent
                     },
+                disabledBorderColor = Color.Transparent,
                 errorBorderColor = MaterialTheme.colorScheme.error,
                 focusedTextColor = MaterialTheme.extraColors.authOnSurface,
                 unfocusedTextColor = MaterialTheme.extraColors.authOnSurface,
@@ -145,7 +146,7 @@ fun AuthTextField(
                 OutlinedTextFieldDefaults.DecorationBox(
                     value = text,
                     innerTextField = innerTextField,
-                    enabled = true,
+                    enabled = enabled,
                     singleLine = true,
                     visualTransformation = visualTransformation,
                     interactionSource = textFieldInteractionSource,
@@ -167,12 +168,12 @@ fun AuthTextField(
                         ),
                     container = {
                         OutlinedTextFieldDefaults.Container(
-                            enabled = true,
+                            enabled = enabled,
                             isError = isError,
                             interactionSource = textFieldInteractionSource,
                             colors = textFieldColors,
                             shape = RoundedCornerShape(HeartGuardRadius.Button),
-                            focusedBorderThickness = if (isError) 2.dp else 0.dp,
+                            focusedBorderThickness = 2.dp,
                             unfocusedBorderThickness = if (isError) 1.dp else 0.dp,
                         )
                     },

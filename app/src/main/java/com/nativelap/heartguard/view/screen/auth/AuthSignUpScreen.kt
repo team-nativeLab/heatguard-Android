@@ -131,7 +131,6 @@ internal fun AuthSignUpScreen(
                         .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
                         .fillMaxWidth()
                         .fillMaxHeight()
-                        .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
                         .windowInsetsPadding(
                             if (hasFormFocus) {
                                 WindowInsets.navigationBars.union(WindowInsets.ime)
@@ -149,10 +148,25 @@ internal fun AuthSignUpScreen(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (!isSubmitting && !isSendingEmailCode) {
+                    WithdrawTopBar(
+                        title = stringResource(R.string.auth_signup_title),
+                        backContentDescription = stringResource(R.string.common_back_description),
+                        onBackClick = {
+                            if (step == SIGN_UP_EMAIL_STEP) {
+                                onEvent(AuthSignUpScreenEvent.LoginClicked)
+                            } else {
+                                onEvent(AuthSignUpScreenEvent.StepBackClicked)
+                            }
+                        },
+                    )
+                }
+
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .padding(horizontal = HeartGuardSpacing.AuthHorizontal)
                             .then(
                                 if (isKeyboardVisible) {
                                     Modifier
@@ -177,24 +191,9 @@ internal fun AuthSignUpScreen(
                         Column(
                             modifier =
                                 Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = HeartGuardSpacing.AuthSignUpTop),
+                                    .fillMaxWidth(),
                             horizontalAlignment = Alignment.Start,
                         ) {
-                            if (!isSubmitting && !isSendingEmailCode) {
-                                WithdrawTopBar(
-                                    title = stringResource(R.string.auth_signup_title),
-                                    backContentDescription = stringResource(R.string.common_back_description),
-                                    onBackClick = {
-                                        if (step == SIGN_UP_EMAIL_STEP) {
-                                            onEvent(AuthSignUpScreenEvent.LoginClicked)
-                                        } else {
-                                            onEvent(AuthSignUpScreenEvent.StepBackClicked)
-                                        }
-                                    },
-                                )
-                            }
-
                             Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
                             SignUpStepProgress(step = step)
 
@@ -354,6 +353,15 @@ internal fun AuthSignUpScreen(
                                     enabled = !isSubmitting,
                                 )
                             }
+
+                            if (isStatusError && statusMessage != null) {
+                                Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
+                                Text(
+                                    text = statusMessage,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
                         }
                     }
                 }
@@ -367,41 +375,13 @@ internal fun AuthSignUpScreen(
                                     } else {
                                         0.dp
                                     },
-                            ).fillMaxWidth(),
+                            ).fillMaxWidth()
+                            .padding(horizontal = HeartGuardSpacing.AuthHorizontal),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpActionsTop))
-
-                    if (step == SIGN_UP_EMAIL_STEP) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = HeartGuardSpacing.AuthFooterGap),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.auth_signup_existing_account),
-                                color = MaterialTheme.extraColors.authOnSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            TextButton(
-                                onClick = {
-                                    onEvent(AuthSignUpScreenEvent.LoginClicked)
-                                },
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.auth_login),
-                                    color = MaterialTheme.extraColors.authPrimary,
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                        ),
-                                )
-                            }
-                        }
-                    }
+                    Spacer(
+                        modifier = Modifier.height(HeartGuardSpacing.AuthSignUpActionsTop),
+                    )
 
                     AuthPrimaryButton(
                         title =
@@ -432,8 +412,10 @@ internal fun AuthSignUpScreen(
                         isEnabled = isPrimaryButtonEnabled,
                     )
 
-                    if (statusMessage != null) {
-                        Spacer(Modifier.height(HeartGuardSpacing.Compact))
+                    if (statusMessage != null && !isStatusError) {
+                        Spacer(
+                            modifier = Modifier.height(HeartGuardSpacing.Compact),
+                        )
                         Text(
                             text = statusMessage,
                             color =
@@ -444,6 +426,37 @@ internal fun AuthSignUpScreen(
                                 },
                             style = MaterialTheme.typography.bodySmall,
                         )
+                    }
+
+                    if (step == SIGN_UP_EMAIL_STEP) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = HeartGuardSpacing.AuthFooterGap),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.auth_signup_existing_account),
+                                color = MaterialTheme.extraColors.authOnSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            TextButton(
+                                onClick = {
+                                    onEvent(AuthSignUpScreenEvent.LoginClicked)
+                                },
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.auth_login),
+                                    color = MaterialTheme.extraColors.authPrimary,
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                )
+                            }
+                        }
                     }
                 }
             }

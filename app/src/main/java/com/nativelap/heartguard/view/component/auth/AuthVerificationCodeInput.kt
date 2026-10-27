@@ -80,13 +80,13 @@ internal fun AuthVerificationCodeInput(
                                     .width(cellWidth)
                                     .height(CODE_CELL_HEIGHT)
                                     .background(
-                                        color = MaterialTheme.extraColors.authInputBackground,
+                                        color = MaterialTheme.colorScheme.surface,
                                         shape = RoundedCornerShape(CODE_CELL_CORNER_RADIUS),
                                     ).border(
-                                        width = if (isCurrentCell) 1.dp else 0.dp,
+                                        width = if (isCurrentCell) 2.dp else 0.dp,
                                         color =
                                             if (isCurrentCell) {
-                                                MaterialTheme.colorScheme.primary
+                                                MaterialTheme.extraColors.authPrimary
                                             } else {
                                                 androidx.compose.ui.graphics.Color.Transparent
                                             },

@@ -62,7 +62,6 @@ fun PasswordChangeScreen(
                 title = stringResource(R.string.password_change_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(PasswordChangeScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
             Column(

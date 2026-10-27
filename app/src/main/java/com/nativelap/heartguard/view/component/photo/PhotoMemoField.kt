@@ -88,8 +88,8 @@ fun PhotoMemoField(
                 OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedBorderColor = MaterialTheme.extraColors.cardBorder,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                    focusedBorderColor = MaterialTheme.extraColors.authPrimary,
                     unfocusedPlaceholderColor = MaterialTheme.extraColors.tertiaryText,
                     focusedPlaceholderColor = MaterialTheme.extraColors.tertiaryText,
                 ),

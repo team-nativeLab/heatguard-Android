@@ -71,12 +71,12 @@ fun TemperatureInputField(
             shape = RoundedCornerShape(HeartGuardRadius.InputBox),
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
-                    focusedContainerColor = MaterialTheme.extraColors.inputFieldBackground,
-                    disabledContainerColor = MaterialTheme.extraColors.inputFieldBackground,
-                    unfocusedBorderColor = MaterialTheme.extraColors.inputFieldBackground,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    disabledBorderColor = MaterialTheme.extraColors.inputFieldBackground,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                    focusedBorderColor = MaterialTheme.extraColors.authPrimary,
+                    disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
                 ),
         )
     }

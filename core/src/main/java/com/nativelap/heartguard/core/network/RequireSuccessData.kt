@@ -14,7 +14,12 @@ fun <Response> ApiResult<ApiEnvelope<Response>>.requireSuccessData(
             val response = envelope.data
             when {
                 !envelope.success && response == null && !envelope.error?.code.isNullOrBlank() -> {
-                    ApiResult.Failure(ApiError.ServerRejected(requireNotNull(envelope.error?.code)))
+                    ApiResult.Failure(
+                        ApiError.ServerRejected(
+                            errorCode = requireNotNull(envelope.error?.code),
+                            errorMessage = envelope.error?.message,
+                        ),
+                    )
                 }
 
                 envelope.success && envelope.error == null && response != null && isValid(response) -> {

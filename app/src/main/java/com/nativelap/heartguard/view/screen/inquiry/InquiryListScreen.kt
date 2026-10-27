@@ -73,7 +73,6 @@ fun InquiryListScreen(
                 title = stringResource(R.string.inquiry_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(InquiryScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
             Column(
                 modifier =
