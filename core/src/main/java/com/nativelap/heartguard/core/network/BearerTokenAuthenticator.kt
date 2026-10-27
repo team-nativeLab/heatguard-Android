@@ -61,7 +61,7 @@ class BearerTokenAuthenticator
                     return false
                 }
 
-            return ApiErrorCodeReader.read(errorBody) == INVALID_CREDENTIALS_CODE
+            return ApiErrorCodeReader.read(errorBody)?.code == INVALID_CREDENTIALS_CODE
         }
 
         private companion object {

@@ -217,7 +217,7 @@ internal fun HeartGuardSignUpRoute(
             step = 0
         }
     }
-    val statusMessage =
+    val fallbackStatusMessage =
         when (uiState.failure) {
             null -> {
                 if (uiState.isVerifyingEmailCode) {
@@ -273,6 +273,9 @@ internal fun HeartGuardSignUpRoute(
                 stringResource(R.string.auth_signup_login_after_register_error)
             }
         }
+    val statusMessage =
+        uiState.failureMessage?.takeIf { serverMessage -> serverMessage.isNotBlank() }
+            ?: fallbackStatusMessage
 
     AuthSignUpScreen(
         name = name,

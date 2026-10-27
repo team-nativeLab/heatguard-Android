@@ -51,7 +51,6 @@ fun WithdrawDoneScreen(
         ) {
             WithdrawTopBar(
                 title = stringResource(R.string.withdraw_title),
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
             Column(

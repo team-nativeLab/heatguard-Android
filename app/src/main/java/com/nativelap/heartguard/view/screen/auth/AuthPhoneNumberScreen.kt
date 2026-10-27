@@ -33,9 +33,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -157,7 +162,7 @@ private fun PhoneNumberInput(
     onPhoneNumberChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val borderColor = PHONE_INPUT_FOCUSED_BORDER
+    var isFocused by remember { mutableStateOf(false) }
     val phoneNumberLabel = stringResource(R.string.auth_phone_label)
     val clearLabel = stringResource(R.string.common_clear)
 
@@ -166,14 +171,13 @@ private fun PhoneNumberInput(
             modifier
                 .fillMaxWidth()
                 .heightIn(min = PHONE_INPUT_HEIGHT)
-                .shadow(
-                    elevation = PHONE_INPUT_FOCUS_ELEVATION,
+                .onFocusChanged { focusState -> isFocused = focusState.hasFocus }
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(PHONE_INPUT_RADIUS))
+                .border(
+                    width = if (isFocused) PHONE_INPUT_BORDER_WIDTH else 0.dp,
+                    color = MaterialTheme.extraColors.authPrimary,
                     shape = RoundedCornerShape(PHONE_INPUT_RADIUS),
-                    ambientColor = PHONE_INPUT_FOCUS_SHADOW,
-                    spotColor = PHONE_INPUT_FOCUS_SHADOW,
-                ).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(PHONE_INPUT_RADIUS))
-                .border(PHONE_INPUT_BORDER_WIDTH, borderColor, RoundedCornerShape(PHONE_INPUT_RADIUS))
-                .padding(horizontal = PHONE_INPUT_HORIZONTAL_PADDING),
+                ).padding(horizontal = PHONE_INPUT_HORIZONTAL_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -217,7 +221,7 @@ private fun PhoneNumberInput(
                     fontWeight = FontWeight.SemiBold,
                 ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            cursorBrush = SolidColor(PHONE_INPUT_FOCUSED_BORDER),
+            cursorBrush = SolidColor(MaterialTheme.extraColors.authPrimary),
             visualTransformation = PHONE_NUMBER_VISUAL_TRANSFORMATION,
             decorationBox = { innerTextField ->
                 Box(contentAlignment = Alignment.CenterStart) {
@@ -367,10 +371,7 @@ private val PHONE_SCREEN_HORIZONTAL_PADDING = 24.dp
 private val PHONE_SCREEN_BOTTOM_PADDING = 16.dp
 private val PHONE_INPUT_HEIGHT = 58.dp
 private val PHONE_INPUT_RADIUS = 16.dp
-private val PHONE_INPUT_BORDER_WIDTH = 1.5.dp
-private val PHONE_INPUT_FOCUSED_BORDER = Color(0xFF2E80ED)
-private val PHONE_INPUT_FOCUS_SHADOW = Color(0x1F2E80ED)
-private val PHONE_INPUT_FOCUS_ELEVATION = 4.dp
+private val PHONE_INPUT_BORDER_WIDTH = 2.dp
 private val PHONE_INPUT_HORIZONTAL_PADDING = 18.dp
 private val PHONE_INPUT_COUNTRY_GAP = 12.dp
 private val PHONE_INPUT_FIELD_GAP = 12.dp

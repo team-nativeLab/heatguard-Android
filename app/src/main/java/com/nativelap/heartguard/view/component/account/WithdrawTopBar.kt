@@ -23,7 +23,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 회원탈퇴 화면 상단의 가운데 제목과, [onBackClick]이 있으면 왼쪽 뒤로 가기 버튼을 보여준다. */
+/** 공통 화면 상단의 가운데 제목과, [onBackClick]이 있으면 왼쪽 뒤로 가기 버튼을 보여준다. */
 @Composable
 fun WithdrawTopBar(
     title: String,
@@ -42,7 +42,10 @@ fun WithdrawTopBar(
         if (onBackClick != null) {
             IconButton(
                 onClick = onBackClick,
-                modifier = Modifier.align(Alignment.CenterStart),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = HeartGuardSpacing.Tight),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,

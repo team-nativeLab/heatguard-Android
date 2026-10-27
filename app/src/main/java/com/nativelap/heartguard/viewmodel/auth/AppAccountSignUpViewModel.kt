@@ -51,6 +51,7 @@ internal class AppAccountSignUpViewModel
                     isRequestingEmailCode = true,
                     verifiedEmail = null,
                     failure = null,
+                    failureMessage = null,
                 )
             }
             verifiedEmail = null
@@ -81,6 +82,7 @@ internal class AppAccountSignUpViewModel
                             it.copy(
                                 isRequestingEmailCode = false,
                                 failure = result.error.toEmailCodeFailure(),
+                                failureMessage = result.error.serverMessage(),
                             )
                         }
                     }
@@ -162,11 +164,21 @@ internal class AppAccountSignUpViewModel
             if (!mutableUiState.value.isEmailCodeSent ||
                 mutableUiState.value.emailForRequestedCode != normalizedEmail
             ) {
-                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
+                mutableUiState.update {
+                    it.copy(
+                        failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED,
+                        failureMessage = null,
+                    )
+                }
                 return
             }
             if (normalizedCode.length != VERIFICATION_CODE_LENGTH) {
-                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.INVALID_FORM) }
+                mutableUiState.update {
+                    it.copy(
+                        failure = AppAccountSignUpFailure.INVALID_FORM,
+                        failureMessage = null,
+                    )
+                }
                 return
             }
 
@@ -175,6 +187,7 @@ internal class AppAccountSignUpViewModel
                     isVerifyingEmailCode = true,
                     verifiedEmail = null,
                     failure = null,
+                    failureMessage = null,
                 )
             }
             verifiedEmail = null
@@ -197,6 +210,7 @@ internal class AppAccountSignUpViewModel
                             it.copy(
                                 isVerifyingEmailCode = false,
                                 failure = result.error.toVerificationFailure(),
+                                failureMessage = result.error.serverMessage(),
                             )
                         }
                     }
@@ -207,7 +221,13 @@ internal class AppAccountSignUpViewModel
         fun clearEmailCodeVerification() {
             verifiedEmail = null
             verificationToken = null
-            mutableUiState.update { it.copy(verifiedEmail = null) }
+            mutableUiState.update {
+                it.copy(
+                    verifiedEmail = null,
+                    failure = null,
+                    failureMessage = null,
+                )
+            }
         }
 
         fun signUp(
@@ -224,18 +244,33 @@ internal class AppAccountSignUpViewModel
             if (!mutableUiState.value.isEmailCodeSent ||
                 mutableUiState.value.emailForRequestedCode != normalizedEmail
             ) {
-                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
+                mutableUiState.update {
+                    it.copy(
+                        failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED,
+                        failureMessage = null,
+                    )
+                }
                 return
             }
             val verifiedToken = verificationToken
             if (verifiedEmail != normalizedEmail || verifiedToken.isNullOrBlank()) {
-                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
+                mutableUiState.update {
+                    it.copy(
+                        failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED,
+                        failureMessage = null,
+                    )
+                }
                 return
             }
             if (!password.isValidSignUpPassword() ||
                 password != confirmPassword
             ) {
-                mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.INVALID_FORM) }
+                mutableUiState.update {
+                    it.copy(
+                        failure = AppAccountSignUpFailure.INVALID_FORM,
+                        failureMessage = null,
+                    )
+                }
                 return
             }
 
@@ -243,6 +278,7 @@ internal class AppAccountSignUpViewModel
                 it.copy(
                     isSubmitting = true,
                     failure = null,
+                    failureMessage = null,
                 )
             }
             viewModelScope.launch {
@@ -269,6 +305,7 @@ internal class AppAccountSignUpViewModel
                                         it.verifiedEmail
                                     },
                                 failure = registrationResult.error.toRegistrationFailure(),
+                                failureMessage = registrationResult.error.serverMessage(),
                             )
                         }
                     }
@@ -278,7 +315,7 @@ internal class AppAccountSignUpViewModel
                         verificationToken = null
                         emailCodeExpirationJobs.values.forEach(Job::cancel)
                         emailCodeExpirationJobs.clear()
-                        when (loginAppAccountUseCase(normalizedEmail, password)) {
+                        when (val loginResult = loginAppAccountUseCase(normalizedEmail, password)) {
                             is ApiResult.Success -> {
                                 mutableUiState.update {
                                     it.copy(
@@ -296,6 +333,7 @@ internal class AppAccountSignUpViewModel
                                         isSubmitting = false,
                                         verifiedEmail = null,
                                         failure = AppAccountSignUpFailure.LOGIN_AFTER_REGISTRATION,
+                                        failureMessage = loginResult.error.serverMessage(),
                                     )
                                 }
                             }
@@ -333,6 +371,21 @@ internal class AppAccountSignUpViewModel
                     AppAccountSignUpFailure.EMAIL_CODE_REQUEST
                 }
             }
+
+        private fun ApiError.serverMessage(): String? =
+            when (this) {
+                is ApiError.Http -> errorMessage
+
+                is ApiError.ServerRejected -> errorMessage
+
+                ApiError.Network,
+                ApiError.SessionChanged,
+                ApiError.SiteNotSelected,
+                ApiError.Serialization,
+                ApiError.LocalStorage,
+                ApiError.Unknown,
+                -> null
+            }?.takeIf { errorMessage -> errorMessage.isNotBlank() }
 
         private fun ApiError.toRegistrationFailure(): AppAccountSignUpFailure =
             when (this) {
@@ -441,6 +494,7 @@ internal data class AppAccountSignUpUiState(
     val isSubmitting: Boolean = false,
     val isComplete: Boolean = false,
     val failure: AppAccountSignUpFailure? = null,
+    val failureMessage: String? = null,
 )
 
 internal enum class AppAccountSignUpFailure {

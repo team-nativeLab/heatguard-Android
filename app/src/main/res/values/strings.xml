@@ -54,7 +54,7 @@
     <string name="auth_signup_registration_error">가입에 실패했습니다. 코드 만료·이메일 중복 여부를 확인해주세요.</string>
     <string name="auth_signup_invalid_code_error">인증코드가 올바르지 않거나 만료되었습니다. 코드를 다시 확인해주세요.</string>
     <string name="auth_signup_account_not_ready_error">회사 계정 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.</string>
-    <string name="auth_signup_login_after_register_error">계정은 만들어졌지만 로그인에 실패했습니다. 다시 로그인해주세요.</string>
+    <string name="auth_signup_login_after_register_error">회원가입은 완료되었지만 자동 로그인에 실패했습니다. 로그인 화면에서 다시 로그인해주세요.</string>
     <string name="auth_signup_app_login">로그인</string>
     <string name="auth_signup_password_hint">8자 이상 입력해주세요</string>
     <string name="auth_signup_password_confirmation_label">비밀번호 확인</string>

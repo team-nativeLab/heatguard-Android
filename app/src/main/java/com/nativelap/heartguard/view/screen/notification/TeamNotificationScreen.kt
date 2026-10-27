@@ -109,7 +109,6 @@ fun TeamNotificationScreen(
                 title = stringResource(R.string.notification_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(TeamNotificationScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
             NotificationCategoryFilters(

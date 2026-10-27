@@ -70,7 +70,6 @@ fun ProfileEditScreen(
                 title = stringResource(R.string.profile_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(ProfileEditScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
             val loadedProfile = loadState as? ProfileLoadState.Loaded

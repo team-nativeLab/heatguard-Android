@@ -1,6 +1,9 @@
 package com.nativelap.heartguard.view.screen.inquiry
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +20,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,7 +88,6 @@ fun InquiryScreen(
                 title = stringResource(R.string.inquiry_register_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(InquiryScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
             Column(
                 modifier =
@@ -157,21 +161,20 @@ private fun InquiryInputField(
             color = MaterialTheme.extraColors.strongText,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
         )
+        val textFieldInteractionSource = remember { MutableInteractionSource() }
+        val isFocused by textFieldInteractionSource.collectIsFocusedAsState()
         val fieldShape = RoundedCornerShape(HeartGuardRadius.Card)
+        val fieldBorderColor =
+            if (isFocused) {
+                MaterialTheme.extraColors.authPrimary
+            } else {
+                Color.Transparent
+            }
         val fieldColors =
             TextFieldDefaults.colors(
-                focusedContainerColor =
-                    if (characterCount == null) {
-                        MaterialTheme.extraColors.inputFieldBackground
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
-                unfocusedContainerColor =
-                    if (characterCount == null) {
-                        MaterialTheme.extraColors.inputFieldBackground
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             )
@@ -184,13 +187,19 @@ private fun InquiryInputField(
                     Modifier
                         .fillMaxWidth()
                         .padding(top = HeartGuardSpacing.Compact)
-                        .semantics { contentDescription = label }
+                        .background(MaterialTheme.colorScheme.surface, fieldShape)
+                        .border(
+                            width = if (isFocused) 2.dp else 0.dp,
+                            color = fieldBorderColor,
+                            shape = fieldShape,
+                        ).semantics { contentDescription = label }
                         .heightIn(min = minHeight),
                 placeholder = { Text(placeholder) },
                 minLines = minLines,
                 singleLine = minLines == 1,
                 shape = fieldShape,
                 colors = fieldColors,
+                interactionSource = textFieldInteractionSource,
             )
         } else {
             Box(
@@ -199,9 +208,10 @@ private fun InquiryInputField(
                         .fillMaxWidth()
                         .padding(top = HeartGuardSpacing.Compact)
                         .heightIn(min = minHeight, max = minHeight)
+                        .background(MaterialTheme.colorScheme.surface, fieldShape)
                         .border(
-                            width = 1.dp,
-                            color = MaterialTheme.extraColors.cardBorder,
+                            width = if (isFocused) 2.dp else 0.dp,
+                            color = fieldBorderColor,
                             shape = fieldShape,
                         ),
             ) {
@@ -220,6 +230,7 @@ private fun InquiryInputField(
                         singleLine = false,
                         shape = fieldShape,
                         colors = fieldColors,
+                        interactionSource = textFieldInteractionSource,
                     )
                     Text(
                         text = stringResource(R.string.inquiry_content_limit, characterCount),

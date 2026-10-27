@@ -105,7 +105,6 @@ fun RecordHistoryScreen(
                 title = stringResource(R.string.history_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(RecordHistoryScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
             LazyColumn(

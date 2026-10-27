@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-/** 서버 공통 오류 응답({"success":false,"error":{"code":"...","message":"..."}})에서 오류 코드만 꺼낸다.
+/** 서버 공통 오류 응답({"success":false,"error":{"code":"...","message":"..."}})을 읽는다.
  * ApiExecutor와 BearerTokenAuthenticator가 함께 쓰며, Authenticator가 SessionManager 외의 의존성을 주입받지 않도록
  * DI 대상이 아닌 순수 객체로 둔다. JSON이 아니거나 형식이 다르면 예외 없이 null을 돌려준다. */
 internal object ApiErrorCodeReader {
@@ -16,13 +16,13 @@ internal object ApiErrorCodeReader {
             ignoreUnknownKeys = true
         }
 
-    fun read(errorBody: String): String? {
+    fun read(errorBody: String): ApiEnvelopeError? {
         if (errorBody.isBlank()) {
             return null
         }
 
         return try {
-            errorJson.decodeFromString<ApiErrorBody>(errorBody).error?.code
+            errorJson.decodeFromString<ApiErrorBody>(errorBody).error
         } catch (_: SerializationException) {
             null
         } catch (_: IllegalArgumentException) {

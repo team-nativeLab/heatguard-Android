@@ -63,7 +63,6 @@ fun RecordDetailScreen(
                 title = stringResource(R.string.history_detail_title),
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(RecordDetailScreenEvent.BackClicked) },
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
             )
 
             Column(
