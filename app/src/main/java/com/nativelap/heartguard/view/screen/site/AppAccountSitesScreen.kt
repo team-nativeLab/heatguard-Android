@@ -54,7 +54,6 @@ internal fun AppAccountSitesScreen(
         containerColor = MaterialTheme.extraColors.pageBackground,
         topBar = {
             CenterAlignedTopAppBar(
-                modifier = Modifier.padding(top = SITE_SELECTION_HEADER_TOP_OFFSET),
                 expandedHeight = SITE_SELECTION_HEADER_HEIGHT,
                 title = {
                     Text(
@@ -280,7 +279,6 @@ private fun SiteSelectionCard(
     }
 }
 
-private val SITE_SELECTION_HEADER_TOP_OFFSET = 40.dp
 private val SITE_SELECTION_HEADER_HEIGHT = 64.dp
 private val SITE_SELECTION_BACK_BUTTON_START = 8.dp
 private val SITE_SELECTION_HORIZONTAL_PADDING = 24.dp

@@ -4,7 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,13 +51,7 @@ fun WeatherStatusCard(
         modifier = modifier.fillMaxWidth(),
     ) {
         Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = HeartGuardSpacing.HomeHeroHorizontal,
-                        end = HeartGuardSpacing.HomeHeroIllustrationEnd,
-                    ),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             // 실제 폰트 지표에서는 "47.5°C" + 변화량 배지 폭이 Figma 실측치보다 커질 수 있어
             // 오른쪽 날씨 일러스트와 폭이 겹칠 수 있다. Box는 겹치는 자식을 clip하지 않고
@@ -71,6 +64,7 @@ fun WeatherStatusCard(
                 modifier =
                     Modifier
                         .align(Alignment.TopEnd)
+                        .padding(end = HeartGuardSpacing.HomeHeroIllustrationEnd)
                         .size(
                             width = HeartGuardComponentSize.HomeWeatherIllustrationWidth,
                             height = HeartGuardComponentSize.HomeWeatherIllustrationHeight,
@@ -81,20 +75,29 @@ fun WeatherStatusCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
             ) {
-                HeatRiskBadge(riskLabel = riskLabel)
+                HeatRiskBadge(
+                    riskLabel = riskLabel,
+                    modifier = Modifier.padding(start = HeartGuardSpacing.HomeHeroHorizontal),
+                )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
 
                 Text(
                     text = statusTitle,
+                    modifier = Modifier.padding(start = HeartGuardSpacing.HomeHeroHorizontal),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = HeartGuardSpacing.HomeHeroHorizontal,
+                                end = HeartGuardSpacing.HomeHeroIllustrationEnd,
+                            ),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
                         text = currentTemperature,
@@ -105,6 +108,12 @@ fun WeatherStatusCard(
                                 fontWeight = FontWeight.Bold,
                             ),
                     )
+                }
+
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
                     TemperatureDelta(
                         deltaLabel = temperatureDeltaLabel,
                         deltaValue = temperatureDelta,
@@ -120,6 +129,11 @@ fun WeatherStatusCard(
                             humidity,
                             feelsLikeTemperatureLabel,
                             feelsLikeTemperature,
+                        ),
+                    modifier =
+                        Modifier.padding(
+                            start = HeartGuardSpacing.HomeHeroHorizontal,
+                            end = HeartGuardSpacing.HomeHeroIllustrationEnd,
                         ),
                     color = MaterialTheme.extraColors.homeMutedText,
                     style = MaterialTheme.typography.bodySmall,

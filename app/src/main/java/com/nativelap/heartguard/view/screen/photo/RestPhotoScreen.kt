@@ -57,7 +57,7 @@ fun RestPhotoScreen(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
         bottomBar = {
-            BottomActionBar(applyImeInsets = false) {
+            BottomActionBar {
                 RecordSaveButton(
                     title = stringResource(R.string.photo_upload),
                     onClick = onUploadClick,
