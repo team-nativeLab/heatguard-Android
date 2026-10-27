@@ -48,6 +48,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
 import com.nativelap.heartguard.view.component.auth.AuthTextField
+import com.nativelap.heartguard.view.component.auth.AuthTextFieldStyle
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.brand.BrandMark
 
@@ -177,6 +178,7 @@ fun AuthLoginScreen(
                             text = email,
                             onTextChange = onEmailChange,
                             placeholder = stringResource(R.string.auth_email_hint),
+                            style = AuthTextFieldStyle.SoftFilled,
                         )
 
                         Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthFieldGroup))
@@ -189,6 +191,7 @@ fun AuthLoginScreen(
                             isError = isPasswordError,
                             supportingText = passwordErrorMessage,
                             visualTransformation = PasswordVisualTransformation(),
+                            style = AuthTextFieldStyle.SoftFilled,
                         )
                     }
                 }

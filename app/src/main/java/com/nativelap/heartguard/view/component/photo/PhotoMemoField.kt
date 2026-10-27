@@ -12,7 +12,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,11 +39,11 @@ fun PhotoMemoField(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
-            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
         ) {
             Text(
                 text = label,
+                modifier = Modifier.alignByBaseline(),
                 color = MaterialTheme.colorScheme.onSurface,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
@@ -54,6 +53,7 @@ fun PhotoMemoField(
             if (isOptional) {
                 Text(
                     text = stringResource(R.string.common_optional_parenthesized),
+                    modifier = Modifier.alignByBaseline(),
                     color = MaterialTheme.extraColors.homeMutedText,
                     style =
                         MaterialTheme.typography.bodySmall.copy(

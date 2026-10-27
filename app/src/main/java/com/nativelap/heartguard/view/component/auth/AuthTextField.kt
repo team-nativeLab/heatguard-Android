@@ -41,6 +41,11 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
+enum class AuthTextFieldStyle {
+    FocusOutlined,
+    SoftFilled,
+}
+
 /** 라벨·입력값·오류 안내를 함께 표시하는 입력 Component다. */
 @Composable
 fun AuthTextField(
@@ -58,6 +63,7 @@ fun AuthTextField(
     // 비밀번호 보기 토글처럼 입력칸 오른쪽에 두는 아이콘이다. 없으면 표시하지 않는다.
     trailingIcon: (@Composable () -> Unit)? = null,
     errorContainerColor: Color = MaterialTheme.extraColors.alertContainer,
+    style: AuthTextFieldStyle = AuthTextFieldStyle.FocusOutlined,
 ) {
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
     val inputViewportRequester = remember { BringIntoViewRequester() }
@@ -85,15 +91,23 @@ fun AuthTextField(
             remember {
                 MutableInteractionSource()
             }
+        val inputContainerColor =
+            if (style == AuthTextFieldStyle.SoftFilled) {
+                MaterialTheme.extraColors.authInputBackground
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         val textFieldColors =
             OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                disabledContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = inputContainerColor,
+                unfocusedContainerColor = inputContainerColor,
+                disabledContainerColor = inputContainerColor,
                 errorContainerColor = errorContainerColor,
                 focusedBorderColor =
                     if (isError) {
                         MaterialTheme.colorScheme.error
+                    } else if (style == AuthTextFieldStyle.SoftFilled) {
+                        Color.Transparent
                     } else {
                         MaterialTheme.extraColors.authPrimary
                     },
@@ -172,8 +186,20 @@ fun AuthTextField(
                             isError = isError,
                             interactionSource = textFieldInteractionSource,
                             colors = textFieldColors,
-                            shape = RoundedCornerShape(HeartGuardRadius.InputBox),
-                            focusedBorderThickness = 2.dp,
+                            shape =
+                                RoundedCornerShape(
+                                    if (style == AuthTextFieldStyle.SoftFilled) {
+                                        HeartGuardRadius.Button
+                                    } else {
+                                        HeartGuardRadius.InputBox
+                                    },
+                                ),
+                            focusedBorderThickness =
+                                if (style == AuthTextFieldStyle.SoftFilled && !isError) {
+                                    0.dp
+                                } else {
+                                    2.dp
+                                },
                             unfocusedBorderThickness = if (isError) 1.dp else 0.dp,
                         )
                     },
