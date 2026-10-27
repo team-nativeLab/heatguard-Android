@@ -6,13 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,8 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.nativelap.heartguard.R
-import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
-import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
@@ -35,6 +29,7 @@ import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
 import com.nativelap.heartguard.view.component.list.LoadMoreWhenScrolledToEnd
 import com.nativelap.heartguard.view.component.list.PagedListFooter
+import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
@@ -58,25 +53,10 @@ fun InquiryListScreen(
         containerColor = MaterialTheme.extraColors.pageBackground,
         bottomBar = {
             BottomActionBar {
-                Button(
+                RecordSaveButton(
+                    title = stringResource(R.string.inquiry_register),
                     onClick = { onEvent(InquiryScreenEvent.RegisterClicked) },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = HeartGuardComponentSize.PrimaryButtonHeight),
-                    shape = RoundedCornerShape(HeartGuardRadius.PrimaryAction),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                ) {
-                    Text(
-                        text = stringResource(R.string.inquiry_register),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    )
-                }
+                )
             }
         },
     ) { innerPadding ->
