@@ -21,7 +21,7 @@ object HeartGuardSpacing {
     val AuthFieldLabelInput = 6.dp
     val AuthFieldGroup = 26.dp
     val AuthTitleDescription = 4.dp
-    val AuthSignUpTop = 80.dp
+    val AuthSignUpTop = 48.dp
     val AuthSignUpTitleForm = 31.dp
     val AuthSignUpFieldGroup = 21.dp
     val AuthSignUpActionsTop = 64.dp

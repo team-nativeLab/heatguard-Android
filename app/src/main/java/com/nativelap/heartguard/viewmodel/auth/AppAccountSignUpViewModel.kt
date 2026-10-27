@@ -9,12 +9,15 @@ import com.nativelap.heartguard.domain.auth.usecase.RegisterAppAccountUseCase
 import com.nativelap.heartguard.domain.auth.usecase.RequestAppEmailCodeUseCase
 import com.nativelap.heartguard.domain.auth.usecase.VerifyAppEmailCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.OffsetDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,6 +32,7 @@ internal class AppAccountSignUpViewModel
         private val mutableUiState = MutableStateFlow(AppAccountSignUpUiState())
         private var verifiedEmail: String? = null
         private var verificationToken: String? = null
+        private var emailCodeExpirationJob: Job? = null
 
         val uiState: StateFlow<AppAccountSignUpUiState> = mutableUiState.asStateFlow()
 
@@ -59,8 +63,10 @@ internal class AppAccountSignUpViewModel
                                 isEmailCodeSent = true,
                                 emailForRequestedCode = normalizedEmail,
                                 resendCooldownSeconds = EMAIL_CODE_RESEND_COOLDOWN_SECONDS,
+                                emailCodeRemainingSeconds = remainingSeconds(result.value.expiresAt),
                             )
                         }
+                        startEmailCodeExpirationCountdown(result.value.expiresAt)
                         startEmailCodeCooldown()
                     }
 
@@ -86,6 +92,34 @@ internal class AppAccountSignUpViewModel
                 }
             }
         }
+
+        private fun startEmailCodeExpirationCountdown(expiresAt: String) {
+            emailCodeExpirationJob?.cancel()
+            emailCodeExpirationJob =
+                viewModelScope.launch {
+                    val expirationEpochSeconds = parseExpirationEpochSeconds(expiresAt)
+                    while (true) {
+                        val remainingSeconds =
+                            (expirationEpochSeconds - Instant.now().epochSecond)
+                                .coerceAtLeast(0)
+                                .toInt()
+                        mutableUiState.update { it.copy(emailCodeRemainingSeconds = remainingSeconds) }
+                        if (remainingSeconds == 0) {
+                            break
+                        }
+                        delay(ONE_SECOND_MILLIS)
+                    }
+                }
+        }
+
+        private fun remainingSeconds(expiresAt: String): Int =
+            (parseExpirationEpochSeconds(expiresAt) - Instant.now().epochSecond)
+                .coerceAtLeast(0)
+                .toInt()
+
+        private fun parseExpirationEpochSeconds(expiresAt: String): Long =
+            runCatching { OffsetDateTime.parse(expiresAt).toEpochSecond() }
+                .getOrElse { Instant.now().plusSeconds(EMAIL_CODE_VALIDITY_SECONDS).epochSecond }
 
         fun verifyEmailCode(
             email: String,
@@ -169,7 +203,7 @@ internal class AppAccountSignUpViewModel
                 mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.EMAIL_CODE_REQUIRED) }
                 return
             }
-            if (password.length < MIN_PASSWORD_LENGTH ||
+            if (!password.isValidSignUpPassword() ||
                 password != confirmPassword
             ) {
                 mutableUiState.update { it.copy(failure = AppAccountSignUpFailure.INVALID_FORM) }
@@ -213,6 +247,7 @@ internal class AppAccountSignUpViewModel
                     is ApiResult.Success -> {
                         verifiedEmail = null
                         verificationToken = null
+                        emailCodeExpirationJob?.cancel()
                         when (loginAppAccountUseCase(normalizedEmail, password)) {
                             is ApiResult.Success -> {
                                 mutableUiState.update {
@@ -220,6 +255,7 @@ internal class AppAccountSignUpViewModel
                                         isSubmitting = false,
                                         verifiedEmail = null,
                                         isComplete = true,
+                                        emailCodeRemainingSeconds = 0,
                                     )
                                 }
                             }
@@ -345,9 +381,15 @@ internal class AppAccountSignUpViewModel
         private fun ApiError.isInvalidVerificationCode(): Boolean =
             this is ApiError.Http && errorCode == INVALID_VERIFICATION_CODE
 
+        private fun String.isValidSignUpPassword(): Boolean =
+            length >= MIN_PASSWORD_LENGTH &&
+                any { character -> character in 'A'..'Z' || character in 'a'..'z' } &&
+                any { character -> character in '0'..'9' }
+
         private companion object {
             const val VERIFICATION_CODE_LENGTH = 6
             const val EMAIL_CODE_RESEND_COOLDOWN_SECONDS = 60
+            const val EMAIL_CODE_VALIDITY_SECONDS = 600L
             const val ONE_SECOND_MILLIS = 1_000L
             const val MIN_PASSWORD_LENGTH = 8
             const val HTTP_CONFLICT = 409
@@ -363,6 +405,7 @@ internal data class AppAccountSignUpUiState(
     val isEmailCodeSent: Boolean = false,
     val isVerifyingEmailCode: Boolean = false,
     val resendCooldownSeconds: Int = 0,
+    val emailCodeRemainingSeconds: Int = 0,
     val emailForRequestedCode: String? = null,
     val verifiedEmail: String? = null,
     val isSubmitting: Boolean = false,

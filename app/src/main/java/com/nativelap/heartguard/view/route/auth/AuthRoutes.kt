@@ -281,6 +281,7 @@ internal fun HeartGuardSignUpRoute(
         isSendingEmailCode = uiState.isRequestingEmailCode,
         isEmailCodeSent = isCodeSentForCurrentEmail,
         resendCooldownSeconds = uiState.resendCooldownSeconds,
+        emailCodeRemainingSeconds = uiState.emailCodeRemainingSeconds,
         isSubmitting = uiState.isSubmitting || uiState.isVerifyingEmailCode,
         statusMessage = statusMessage,
         isStatusError = uiState.failure != null,
@@ -343,6 +344,8 @@ internal fun HeartGuardSignUpRoute(
                 AuthSignUpScreenEvent.RequestEmailCodeClicked -> {
                     if (step == 0) {
                         hasRequestedCodeFromEmailStep = true
+                    } else if (step == 1) {
+                        verificationCode = ""
                     }
                     viewModel.requestEmailCode(email)
                 }

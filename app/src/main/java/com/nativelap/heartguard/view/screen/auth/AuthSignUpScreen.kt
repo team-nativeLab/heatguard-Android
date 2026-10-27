@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,11 +46,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -54,6 +58,8 @@ import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.auth.AuthPrimaryButton
 import com.nativelap.heartguard.view.component.auth.AuthTextField
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
+import com.nativelap.heartguard.view.component.auth.AuthVerificationCodeInput
+import com.nativelap.heartguard.view.component.password.PasswordInputField
 
 /** 이메일 인증코드와 Team 계정 가입 정보를 입력받는다. */
 @Composable
@@ -66,6 +72,7 @@ internal fun AuthSignUpScreen(
     isSendingEmailCode: Boolean,
     isEmailCodeSent: Boolean,
     resendCooldownSeconds: Int,
+    emailCodeRemainingSeconds: Int,
     isSubmitting: Boolean,
     statusMessage: String?,
     isStatusError: Boolean,
@@ -74,6 +81,8 @@ internal fun AuthSignUpScreen(
     modifier: Modifier = Modifier,
 ) {
     var hasFormFocus by remember { mutableStateOf(false) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isPasswordConfirmationVisible by remember { mutableStateOf(false) }
     val isKeyboardVisible = hasFormFocus && WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val pageScrollState = rememberScrollState()
     val formScrollState = rememberScrollState()
@@ -99,6 +108,8 @@ internal fun AuthSignUpScreen(
         !isSubmitting &&
             !isSendingEmailCode &&
             (step != SIGN_UP_CODE_STEP || verificationCode.length == 6) &&
+            (step != SIGN_UP_CODE_STEP || emailCodeRemainingSeconds > 0) &&
+            (step != SIGN_UP_PASSWORD_STEP || isPasswordFormValid(password, passwordConfirmation)) &&
             (step != SIGN_UP_EMAIL_STEP || isEmailCodeSent || resendCooldownSeconds == 0)
 
     Scaffold(
@@ -184,7 +195,7 @@ internal fun AuthSignUpScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(HeartGuardSpacing.Section))
+                            Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
                             SignUpStepProgress(step = step)
 
                             Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpTitleForm))
@@ -234,52 +245,92 @@ internal fun AuthSignUpScreen(
                             }
 
                             if (step == SIGN_UP_CODE_STEP) {
-                                AuthTextField(
-                                    label = stringResource(R.string.auth_signup_verification_code_label),
-                                    text = verificationCode,
-                                    onTextChange = { value ->
-                                        onEvent(
-                                            AuthSignUpScreenEvent.VerificationCodeChanged(
-                                                value.filter { digit -> digit in '0'..'9' }.take(6),
-                                            ),
-                                        )
+                                AuthVerificationCodeInput(
+                                    code = verificationCode,
+                                    onCodeChange = { code ->
+                                        onEvent(AuthSignUpScreenEvent.VerificationCodeChanged(code))
                                     },
-                                    enabled = !isSubmitting && !isSendingEmailCode,
-                                    placeholder = stringResource(R.string.auth_signup_verification_code_hint),
-                                    minimumHeight = HeartGuardComponentSize.TouchTarget,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                                    enabled = !isSubmitting && !isSendingEmailCode && emailCodeRemainingSeconds > 0,
                                 )
                             }
 
                             if (step == SIGN_UP_CODE_STEP) {
-                                TextButton(
-                                    onClick = { onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked) },
-                                    enabled = !isSendingEmailCode && !isSubmitting && resendCooldownSeconds == 0,
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
                                         text =
-                                            if (resendCooldownSeconds > 0) {
-                                                stringResource(R.string.auth_signup_resend_wait, resendCooldownSeconds)
-                                            } else {
-                                                stringResource(R.string.auth_signup_resend_code_action)
-                                            },
+                                            stringResource(
+                                                R.string.auth_signup_code_remaining_time,
+                                                emailCodeRemainingSeconds / SECONDS_PER_MINUTE,
+                                                emailCodeRemainingSeconds % SECONDS_PER_MINUTE,
+                                            ),
+                                        color = MaterialTheme.extraColors.secondaryText,
+                                        style = MaterialTheme.typography.bodySmall,
                                     )
+                                    TextButton(
+                                        onClick = { onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked) },
+                                        enabled =
+                                            !isSendingEmailCode && !isSubmitting &&
+                                                resendCooldownSeconds == 0,
+                                        modifier = Modifier.heightIn(min = HeartGuardComponentSize.TouchTarget),
+                                    ) {
+                                        Text(stringResource(R.string.auth_signup_resend_code_action))
+                                    }
                                 }
                                 Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
                             }
 
                             if (step == SIGN_UP_PASSWORD_STEP) {
-                                AuthTextField(
+                                Row(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                MaterialTheme.extraColors.authInputBackground,
+                                                RoundedCornerShape(HeartGuardRadius.InputBox),
+                                            ).padding(HeartGuardSpacing.Item),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                    Column {
+                                        Text(
+                                            text = stringResource(R.string.auth_signup_email_verified),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            style = MaterialTheme.typography.labelLarge,
+                                        )
+                                        Text(
+                                            text = email,
+                                            color = MaterialTheme.extraColors.authOnSurface,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpFieldGroup))
+                                PasswordInputField(
                                     label = stringResource(R.string.auth_password),
-                                    text = password,
-                                    onTextChange = { value ->
+                                    password = password,
+                                    onPasswordChange = { value ->
                                         onEvent(AuthSignUpScreenEvent.PasswordChanged(value))
                                     },
-                                    enabled = !isSubmitting,
+                                    onVisibilityClick = { isPasswordVisible = !isPasswordVisible },
+                                    isPasswordVisible = isPasswordVisible,
                                     placeholder = stringResource(R.string.auth_signup_password_hint),
-                                    minimumHeight = HeartGuardComponentSize.TouchTarget,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                    visualTransformation = PasswordVisualTransformation(),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = !isSubmitting,
+                                )
+                                Text(
+                                    text = stringResource(R.string.auth_signup_password_requirement),
+                                    color = MaterialTheme.extraColors.secondaryText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
                                 )
                             }
 
@@ -288,17 +339,19 @@ internal fun AuthSignUpScreen(
                             }
 
                             if (step == SIGN_UP_PASSWORD_STEP) {
-                                AuthTextField(
+                                PasswordInputField(
                                     label = stringResource(R.string.auth_signup_password_confirmation_label),
-                                    text = passwordConfirmation,
-                                    onTextChange = { value ->
+                                    password = passwordConfirmation,
+                                    onPasswordChange = { value ->
                                         onEvent(AuthSignUpScreenEvent.PasswordConfirmationChanged(value))
                                     },
-                                    enabled = !isSubmitting,
+                                    onVisibilityClick = {
+                                        isPasswordConfirmationVisible = !isPasswordConfirmationVisible
+                                    },
+                                    isPasswordVisible = isPasswordConfirmationVisible,
                                     placeholder = stringResource(R.string.auth_signup_password_confirmation_hint),
-                                    minimumHeight = HeartGuardComponentSize.TouchTarget,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                    visualTransformation = PasswordVisualTransformation(),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = !isSubmitting,
                                 )
                             }
                         }
@@ -319,51 +372,12 @@ internal fun AuthSignUpScreen(
                 ) {
                     Spacer(modifier = Modifier.height(HeartGuardSpacing.AuthSignUpActionsTop))
 
-                    AuthPrimaryButton(
-                        title =
-                            stringResource(
-                                when (step) {
-                                    SIGN_UP_EMAIL_STEP -> {
-                                        if (isEmailCodeSent) {
-                                            R.string.auth_signup_next
-                                        } else {
-                                            R.string.auth_signup_send_code
-                                        }
-                                    }
-
-                                    SIGN_UP_CODE_STEP -> {
-                                        R.string.auth_signup_next
-                                    }
-
-                                    else -> {
-                                        R.string.auth_signup
-                                    }
-                                },
-                            ),
-                        onClick = { onEvent(primaryButtonEvent) },
-                        isEnabled = isPrimaryButtonEnabled,
-                    )
-
-                    if (statusMessage != null) {
-                        Spacer(Modifier.height(HeartGuardSpacing.Compact))
-                        Text(
-                            text = statusMessage,
-                            color =
-                                if (isStatusError) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.extraColors.secondaryText
-                                },
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-
                     if (step == SIGN_UP_EMAIL_STEP) {
                         Row(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(top = HeartGuardSpacing.AuthFooterGap),
+                                    .padding(bottom = HeartGuardSpacing.AuthFooterGap),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -387,6 +401,49 @@ internal fun AuthSignUpScreen(
                                 )
                             }
                         }
+                    }
+
+                    AuthPrimaryButton(
+                        title =
+                            stringResource(
+                                when (step) {
+                                    SIGN_UP_EMAIL_STEP -> {
+                                        if (isEmailCodeSent) {
+                                            R.string.auth_signup_next
+                                        } else {
+                                            R.string.auth_signup_send_code
+                                        }
+                                    }
+
+                                    SIGN_UP_CODE_STEP -> {
+                                        R.string.auth_signup_verify
+                                    }
+
+                                    else -> {
+                                        R.string.auth_signup_complete
+                                    }
+                                },
+                            ),
+                        onClick = { onEvent(primaryButtonEvent) },
+                        modifier =
+                            Modifier
+                                .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                                .padding(horizontal = HeartGuardSpacing.Tight),
+                        isEnabled = isPrimaryButtonEnabled,
+                    )
+
+                    if (statusMessage != null) {
+                        Spacer(Modifier.height(HeartGuardSpacing.Compact))
+                        Text(
+                            text = statusMessage,
+                            color =
+                                if (isStatusError) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.extraColors.secondaryText
+                                },
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
             }
@@ -441,7 +498,7 @@ private fun SignUpStepProgress(step: Int) {
                             .weight(1f)
                             .height(4.dp)
                             .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.extraColors.cardBorder,
                                 RoundedCornerShape(4.dp),
                             ),
                 ) {
@@ -476,6 +533,7 @@ private fun AuthSignUpScreenPreview() {
             isSendingEmailCode = false,
             isEmailCodeSent = false,
             resendCooldownSeconds = 0,
+            emailCodeRemainingSeconds = 600,
             isSubmitting = false,
             statusMessage = null,
             isStatusError = false,
@@ -490,3 +548,15 @@ private const val SIGN_UP_CODE_STEP = 1
 private const val SIGN_UP_PASSWORD_STEP = 2
 private const val SIGN_UP_STEP_COUNT = 3
 private const val SIGN_UP_PROGRESS_ANIMATION_MILLIS = 450
+private const val SECONDS_PER_MINUTE = 60
+
+private fun isPasswordFormValid(
+    password: String,
+    confirmation: String,
+): Boolean =
+    password.length >= MIN_PASSWORD_LENGTH &&
+        password.any { character -> character in 'A'..'Z' || character in 'a'..'z' } &&
+        password.any { character -> character in '0'..'9' } &&
+        password == confirmation
+
+private const val MIN_PASSWORD_LENGTH = 8
