@@ -42,7 +42,10 @@ fun WithdrawTopBar(
         if (onBackClick != null) {
             IconButton(
                 onClick = onBackClick,
-                modifier = Modifier.align(Alignment.CenterStart),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = HeartGuardSpacing.Tight),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,

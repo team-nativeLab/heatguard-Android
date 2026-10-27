@@ -172,7 +172,7 @@ fun AuthTextField(
                             isError = isError,
                             interactionSource = textFieldInteractionSource,
                             colors = textFieldColors,
-                            shape = RoundedCornerShape(HeartGuardRadius.Button),
+                            shape = RoundedCornerShape(HeartGuardRadius.InputBox),
                             focusedBorderThickness = 2.dp,
                             unfocusedBorderThickness = if (isError) 1.dp else 0.dp,
                         )
