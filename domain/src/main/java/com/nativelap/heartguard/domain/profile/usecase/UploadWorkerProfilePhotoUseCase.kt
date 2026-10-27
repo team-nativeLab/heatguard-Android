@@ -13,6 +13,5 @@ class UploadWorkerProfilePhotoUseCase
         suspend operator fun invoke(
             photoUri: String,
             expectedSessionGeneration: Long,
-        ): ApiResult<ProfilePhoto> =
-            workerProfileRepository.uploadProfilePhoto(photoUri, expectedSessionGeneration)
+        ): ApiResult<ProfilePhoto> = workerProfileRepository.uploadProfilePhoto(photoUri, expectedSessionGeneration)
     }

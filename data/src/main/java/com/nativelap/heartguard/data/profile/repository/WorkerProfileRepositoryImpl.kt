@@ -1,30 +1,30 @@
 package com.nativelap.heartguard.data.profile.repository
 
+import android.net.Uri
+import com.nativelap.heartguard.core.di.IoDispatcher
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.data.profile.ProfilePhotoFileReader
-import com.nativelap.heartguard.data.profile.mapper.toDomain as profilePhotoToDomain
+import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadRequestDto
 import com.nativelap.heartguard.data.profile.mapper.toDomain
 import com.nativelap.heartguard.data.profile.remote.WorkerProfileRemoteDataSource
-import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadRequestDto
 import com.nativelap.heartguard.data.record.remote.ExternalUploadService
 import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
 import com.nativelap.heartguard.domain.profile.model.ProfilePhoto
 import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
-import com.nativelap.heartguard.core.di.IoDispatcher
-import kotlinx.coroutines.CoroutineDispatcher
-import javax.inject.Inject
-import android.net.Uri
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.Instant
 import java.time.OffsetDateTime
-import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import com.nativelap.heartguard.data.profile.mapper.toDomain as profilePhotoToDomain
 
 class WorkerProfileRepositoryImpl
     @Inject
@@ -146,8 +146,7 @@ class WorkerProfileRepositoryImpl
                 .confirmProfilePhotoUpload(
                     uploadId = uploadLink.uploadId,
                     expectedSessionGeneration = expectedSessionGeneration,
-                )
-                .map { photoResponse -> photoResponse.profilePhotoToDomain() }
+                ).map { photoResponse -> photoResponse.profilePhotoToDomain() }
         }
 
         override suspend fun deleteProfilePhoto(expectedSessionGeneration: Long): ApiResult<Unit> {

@@ -8,11 +8,11 @@ import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
-import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
-import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
-import com.nativelap.heartguard.domain.profile.usecase.UploadWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.DeleteWorkerProfilePhotoUseCase
+import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
+import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
 import com.nativelap.heartguard.domain.profile.usecase.UpdateWorkerNameUseCase
+import com.nativelap.heartguard.domain.profile.usecase.UploadWorkerProfilePhotoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel

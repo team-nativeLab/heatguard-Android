@@ -66,8 +66,9 @@ fun TemperatureDelta(
                         horizontal = HeartGuardSpacing.Compact,
                         vertical = HeartGuardSpacing.Tight,
                     ).widthIn(
-                        min = HeartGuardComponentSize.TemperatureDeltaMinWidth -
-                            (HeartGuardSpacing.Compact * 2),
+                        min =
+                            HeartGuardComponentSize.TemperatureDeltaMinWidth -
+                                (HeartGuardSpacing.Compact * 2),
                     ),
             textAlign = TextAlign.Center,
             style =

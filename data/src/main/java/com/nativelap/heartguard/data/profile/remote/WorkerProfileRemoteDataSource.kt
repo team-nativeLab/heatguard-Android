@@ -2,10 +2,10 @@ package com.nativelap.heartguard.data.profile.remote
 
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordResponseDto
-import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoResponseDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadRequestDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadResponseDto
+import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
 
 interface WorkerProfileRemoteDataSource {
     suspend fun getWorkerProfile(expectedSessionGeneration: Long? = null): ApiResult<WorkerProfileResponseDto>

@@ -37,8 +37,8 @@ import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditScreenEvent
 import com.nativelap.heartguard.viewmodel.profile.ProfileEditUiState
 import com.nativelap.heartguard.viewmodel.profile.ProfileLoadState
-import com.nativelap.heartguard.viewmodel.profile.ProfileSaveError
 import com.nativelap.heartguard.viewmodel.profile.ProfilePhotoSaveError
+import com.nativelap.heartguard.viewmodel.profile.ProfileSaveError
 
 /** Figma 24_내정보수정 화면이다. 이름·이메일은 작업자 정보 조회(GET /auth/team/me) 값이고 이름만 수정할 수 있다.
  * 회사명은 서버가 제공하지 않아 "--"로 표시한다. "비밀번호 변경" 행은 비밀번호 변경 화면(Figma 26)으로 이동한다. */
@@ -162,7 +162,9 @@ fun ProfileEditScreen(
                             )
                         }
 
-                        null -> Unit
+                        null -> {
+                            Unit
+                        }
                     }
 
                     if (loadState == ProfileLoadState.Failed) {

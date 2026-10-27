@@ -7,12 +7,12 @@ import com.nativelap.heartguard.core.network.RequestSessionGeneration
 import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordRequestDto
 import com.nativelap.heartguard.data.profile.dto.ChangeWorkerPasswordResponseDto
-import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
-import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoConfirmRequestDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoResponseDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadRequestDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadResponseDto
+import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
+import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -23,9 +23,7 @@ class WorkerProfileRemoteDataSourceImpl
         private val apiExecutor: ApiExecutor,
     ) : WorkerProfileRemoteDataSource {
         /** 로그인한 작업자 계정 정보를 조회한다. 응답 envelope에 data가 없으면 Serialization 계열 실패로 처리된다. */
-        override suspend fun getWorkerProfile(
-            expectedSessionGeneration: Long?,
-        ): ApiResult<WorkerProfileResponseDto> =
+        override suspend fun getWorkerProfile(expectedSessionGeneration: Long?): ApiResult<WorkerProfileResponseDto> =
             apiExecutor
                 .execute {
                     workerProfileApiService.getWorkerProfile(

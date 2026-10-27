@@ -59,25 +59,29 @@ class ProfilePhotoFileReader
             val photoStream =
                 context.contentResolver.openInputStream(uri)
                     ?: throw FileNotFoundException("Profile photo could not be opened")
-            val headerBytes = photoStream.use { inputStream ->
-                val header = ByteArray(12)
-                var offset = 0
-                while (offset < header.size) {
-                    val readCount = inputStream.read(header, offset, header.size - offset)
-                    if (readCount < 0) {
-                        break
+            val headerBytes =
+                photoStream.use { inputStream ->
+                    val header = ByteArray(12)
+                    var offset = 0
+                    while (offset < header.size) {
+                        val readCount = inputStream.read(header, offset, header.size - offset)
+                        if (readCount < 0) {
+                            break
+                        }
+                        offset += readCount
                     }
-                    offset += readCount
+                    header.copyOf(offset)
                 }
-                header.copyOf(offset)
-            }
 
             return when {
                 headerBytes.startsWith(PNG_SIGNATURE) -> MIME_PNG
+
                 headerBytes.startsWith(JPEG_SIGNATURE) -> MIME_JPEG
+
                 headerBytes.size >= 12 &&
                     headerBytes.startsWith(WEBP_RIFF_SIGNATURE) &&
                     headerBytes.copyOfRange(8, 12).contentEquals(WEBP_SIGNATURE) -> MIME_WEBP
+
                 else -> ""
             }
         }

@@ -273,7 +273,6 @@ internal fun HeartGuardSignUpRoute(
             AppAccountSignUpFailure.REGISTRATION -> {
                 stringResource(R.string.auth_signup_registration_error)
             }
-
         }
     val statusMessage =
         uiState.failureMessage?.takeIf { serverMessage -> serverMessage.isNotBlank() }
