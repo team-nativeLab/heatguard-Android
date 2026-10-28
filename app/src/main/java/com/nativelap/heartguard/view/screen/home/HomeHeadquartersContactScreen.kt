@@ -41,14 +41,14 @@ internal fun HomeHeadquartersContactScreen(
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
         ) {
             Text(
-                text = stringResource(R.string.home_headquarters_contact_title),
+                text = stringResource(R.string.home_manager_contact_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             )
 
             EmergencyContactCard(
                 contactTitle = stringResource(R.string.emergency_contact_title),
-                contactName = stringResource(R.string.home_headquarters_contact_name),
+                contactName = stringResource(R.string.home_manager_contact_name),
                 phoneNumber = phoneNumber,
                 onCallClick = onCallClick,
                 isCallEnabled = isCallEnabled,

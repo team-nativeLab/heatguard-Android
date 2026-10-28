@@ -74,5 +74,6 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    testImplementation(libs.kotlin.test.junit)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

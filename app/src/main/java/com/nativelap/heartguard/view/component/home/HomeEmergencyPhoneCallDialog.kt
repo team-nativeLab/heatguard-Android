@@ -45,7 +45,7 @@ fun HomeEmergencyPhoneCallDialog(
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
         ) {
             Text(
-                text = stringResource(R.string.home_headquarters_contact_confirmation),
+                text = stringResource(R.string.home_manager_contact_confirmation),
                 modifier =
                     Modifier
                         .fillMaxWidth()
