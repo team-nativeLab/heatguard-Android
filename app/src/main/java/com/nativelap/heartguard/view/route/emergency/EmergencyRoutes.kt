@@ -84,9 +84,8 @@ internal fun HeartGuardCallingRoute(
         onCallClosed = { currentOnCallClosed() },
     )
 
-    BackHandler {
-        emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
-    }
+    // 진행 중 호출은 실수로 닫히지 않도록 시스템 뒤로가기를 소비한다.
+    BackHandler(enabled = true) {}
 
     CallingScreen(
         isConnected = uiState.isConnected,
