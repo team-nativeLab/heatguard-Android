@@ -96,6 +96,7 @@ internal fun HeartGuardHomeRoute(
             humidity = humidityValueText(siteStatus.humidity),
             temperatureDelta = temperatureValueText(siteStatus.temperatureDelta),
             isTemperatureIncreasing = siteStatus.isTemperatureIncreasing,
+            isTemperatureDeltaZero = siteStatus.isTemperatureDeltaZero,
             weatherValue = skyStatusText(siteStatus.skyStatus),
             weatherImageRes = skyStatusImageRes(siteStatus.skyStatus),
             riskLabel = heatLevelLabelText(siteStatus.heatLevel),

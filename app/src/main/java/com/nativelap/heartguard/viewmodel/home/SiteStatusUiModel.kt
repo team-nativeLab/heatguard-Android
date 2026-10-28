@@ -23,6 +23,8 @@ data class SiteStatusUiModel(
     val temperatureDelta: String? = null,
     // 변화량 방향이다. 변화량이 없거나 0이면 null이라 화살표 없이 중립 색으로 보여준다.
     val isTemperatureIncreasing: Boolean? = null,
+    // 온도 변화량이 정확히 0인지 나타낸다. 값 누락과 구분해 배지 색상을 선택한다.
+    val isTemperatureDeltaZero: Boolean = false,
 )
 
 /** 홈 화면 상태를 공용 현장 상태로 바꾼다. Success가 아니면 모든 값이 null이다. */
@@ -45,6 +47,7 @@ private fun TeamSiteOverview.toSiteStatusUiModel(): SiteStatusUiModel =
         skyStatus = skyStatus,
         temperatureDelta = temperatureDelta?.toSignedDisplayNumber(),
         isTemperatureIncreasing = temperatureDelta?.toIncreasingDirection(),
+        isTemperatureDeltaZero = temperatureDelta == 0.0,
     )
 
 private fun Double.toSignedDisplayNumber(): String =

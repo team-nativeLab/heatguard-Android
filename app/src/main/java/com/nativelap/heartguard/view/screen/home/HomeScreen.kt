@@ -39,6 +39,7 @@ fun HomeScreen(
     humidity: String,
     temperatureDelta: String,
     isTemperatureIncreasing: Boolean?,
+    isTemperatureDeltaZero: Boolean,
     weatherValue: String,
     @DrawableRes weatherImageRes: Int,
     riskLabel: String,
@@ -106,6 +107,7 @@ fun HomeScreen(
                         temperatureDelta = temperatureDelta,
                         riskLabel = riskLabel,
                         isTemperatureIncreasing = isTemperatureIncreasing,
+                        isTemperatureDeltaZero = isTemperatureDeltaZero,
                     )
                 }
 
@@ -215,6 +217,7 @@ private fun HomeScreenPreview() {
             humidity = "55%",
             temperatureDelta = "+3.2°C",
             isTemperatureIncreasing = true,
+            isTemperatureDeltaZero = false,
             weatherValue = "맑음",
             weatherImageRes = R.drawable.weather_sunny,
             riskLabel = "폭염 주의 단계",

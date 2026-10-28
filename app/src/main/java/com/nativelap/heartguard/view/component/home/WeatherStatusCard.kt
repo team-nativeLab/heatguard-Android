@@ -47,6 +47,7 @@ fun WeatherStatusCard(
     temperatureDelta: String,
     riskLabel: String,
     isTemperatureIncreasing: Boolean?,
+    isTemperatureDeltaZero: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -116,6 +117,7 @@ fun WeatherStatusCard(
                         deltaLabel = temperatureDeltaLabel,
                         deltaValue = temperatureDelta,
                         isIncreasing = isTemperatureIncreasing,
+                        isTemperatureDeltaZero = isTemperatureDeltaZero,
                         modifier = Modifier.align(Alignment.CenterVertically),
                     )
                 }
@@ -173,6 +175,7 @@ private fun WeatherStatusCardPreview() {
             temperatureDelta = "+3.2°C",
             riskLabel = "폭염 주의 단계",
             isTemperatureIncreasing = true,
+            isTemperatureDeltaZero = false,
         )
     }
 }
