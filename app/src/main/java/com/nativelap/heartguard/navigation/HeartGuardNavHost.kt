@@ -746,14 +746,8 @@ private fun HeartGuardMainNavDisplay(
                     )
                 }
                 entry<HeartGuardDestination.Calling>(
-                    // 04의 Back·스와이프 닫기 시도는 서버 종료 요청을 보내되 승인될 때까지 시트를 유지한다.
-                    metadata =
-                        HeartGuardBottomSheetSceneStrategy.bottomSheet(
-                            isDismissible = false,
-                            onDismissAttempt = {
-                                emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
-                            },
-                        ),
+                    // 호출 중에는 화면의 취소·종료 버튼으로만 호출 상태를 변경한다.
+                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
                 ) {
                     HeartGuardCallingRoute(
                         emergencyViewModel = emergencyViewModel,
