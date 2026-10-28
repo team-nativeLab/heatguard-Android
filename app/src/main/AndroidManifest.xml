@@ -34,20 +34,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter android:autoVerify="false">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="heatguard-temp.https.gsmsv.site"
-                    android:pathPrefix="/api/v1/app/links/"
-                    android:scheme="https" />
-                <data
-                    android:host="heatguard-temp.https.gsmsv.site"
-                    android:pathPrefix="/api/v1/team/invitations/"
-                    android:scheme="https" />
+                    android:host="team"
+                    android:pathPrefix="/invitations/"
+                    android:scheme="heartguard" />
             </intent-filter>
         </activity>
 
