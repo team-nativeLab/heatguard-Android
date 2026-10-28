@@ -130,12 +130,12 @@
     <string name="home_open_checklist">체크리스트 열기</string>
     <string name="home_checklist_card_accessibility_format">%1$s, %2$s</string>
     <string name="home_manager_call">관리자 전화</string>
-    <string name="home_manager_call_description">본사 연락처 확인</string>
+    <string name="home_manager_call_description">현장 관리자 연락처 확인</string>
     <string name="home_emergency_call">긴급 전화</string>
     <string name="home_emergency_call_description">본사 긴급호출</string>
-    <string name="home_headquarters_contact_name">본사</string>
-    <string name="home_headquarters_contact_title">본사 연락처</string>
-    <string name="home_headquarters_contact_confirmation">본사 연락하기</string>
+    <string name="home_manager_contact_name">현장 관리자</string>
+    <string name="home_manager_contact_title">현장 관리자 연락처</string>
+    <string name="home_manager_contact_confirmation">현장 관리자에게 전화</string>
     <string name="home_call_failed">전화 앱을 열지 못했습니다. 기기에서 전화 기능을 사용할 수 있는지 확인해 주세요.</string>
     <string name="home_emergency_call_confirm">전화 앱 열기</string>
     <string name="home_emergency_call_dismiss">취소</string>
@@ -235,7 +235,7 @@
     <string name="record_rest_photo_description">휴식 중 사진을 1~2장 업로드</string>
     <string name="emergency_alert_description">현장관리자에게 즉시 도움을 요청합니다</string>
     <string name="emergency_contact_title">연락 대상</string>
-    <string name="emergency_contact_name">현장 관리자</string>
+    <string name="emergency_contact_name">본사 연락처</string>
     <string name="auth_password_error">비밀번호가 올바르지 않아요</string>
     <string name="emergency_alert_title">긴급 상황이에요</string>
     <string name="emergency_indicator_title">긴급 호출하기</string>

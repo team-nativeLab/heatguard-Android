@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.component.overlay.ApplyDialogWindowBackgroundBlur
+import com.nativelap.heartguard.core.util.isValidPhoneNumber
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.ui.theme.HeartGuardOverlayBlur
 import com.nativelap.heartguard.view.component.emergency.formatKoreanPhoneNumberForDisplay
@@ -27,7 +28,8 @@ internal fun HomeHeadquartersCallConfirmationRoute(
 ) {
     val context = LocalContext.current
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
-    val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
+    val managerPhoneNumber = siteStatus.managerPhoneNumber
+    val validManagerPhoneNumber = managerPhoneNumber?.takeIf(String::isValidPhoneNumber)
     val callFailedMessage = stringResource(R.string.home_call_failed)
     val dialPhoneNumber = rememberPhoneDialLauncher()
     var isCallActionInProgress by rememberSaveable {
@@ -35,10 +37,10 @@ internal fun HomeHeadquartersCallConfirmationRoute(
     }
     val currentOnDialerOpened by rememberUpdatedState(onDialerOpened)
 
-    val openHeadquartersDialer = {
-        if (!isCallActionInProgress && headquartersPhoneNumber != null) {
+    val openManagerDialer = {
+        if (!isCallActionInProgress && validManagerPhoneNumber != null) {
             isCallActionInProgress = true
-            if (dialPhoneNumber(headquartersPhoneNumber)) {
+            if (dialPhoneNumber(validManagerPhoneNumber)) {
                 currentOnDialerOpened()
             } else {
                 isCallActionInProgress = false
@@ -52,9 +54,9 @@ internal fun HomeHeadquartersCallConfirmationRoute(
     )
 
     HomeEmergencyPhoneCallDialog(
-        phoneNumber = valueOrEmptyText(headquartersPhoneNumber?.let(::formatKoreanPhoneNumberForDisplay)),
-        isCallEnabled = headquartersPhoneNumber != null,
+        phoneNumber = valueOrEmptyText(validManagerPhoneNumber?.let(::formatKoreanPhoneNumberForDisplay)),
+        isCallEnabled = validManagerPhoneNumber != null,
         onDismissRequest = onDismissRequest,
-        onCallClick = openHeadquartersDialer,
+        onCallClick = openManagerDialer,
     )
 }
