@@ -431,10 +431,7 @@ internal fun AuthSignUpScreen(
                             onClick = {
                                 onEvent(AuthSignUpScreenEvent.LoginClicked)
                             },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = HeartGuardSpacing.AuthFooterGap),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(
                                 horizontalArrangement = Arrangement.Center,

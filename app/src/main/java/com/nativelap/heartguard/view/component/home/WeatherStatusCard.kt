@@ -3,14 +3,13 @@ package com.nativelap.heartguard.view.component.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +22,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -93,26 +91,17 @@ fun WeatherStatusCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
-                BoxWithConstraints(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val currentTemperatureMaxWidth =
-                        (
-                            maxWidth / 2f -
-                                HeartGuardComponentSize.TemperatureDeltaMaxWidth / 2f -
-                                HeartGuardSpacing.Tight -
-                                HeartGuardSpacing.HomeHeroHorizontal
-                        ).coerceAtLeast(0.dp)
-
                     Text(
                         text = currentTemperature,
                         modifier =
                             Modifier
-                                .align(Alignment.CenterStart)
                                 .padding(start = HeartGuardSpacing.HomeHeroHorizontal)
-                                .widthIn(max = currentTemperatureMaxWidth),
+                                .weight(1f, fill = false),
                         color = MaterialTheme.colorScheme.onSurface,
                         style =
                             MaterialTheme.typography.displaySmall.copy(
@@ -127,7 +116,7 @@ fun WeatherStatusCard(
                         deltaLabel = temperatureDeltaLabel,
                         deltaValue = temperatureDelta,
                         isIncreasing = isTemperatureIncreasing,
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier.align(Alignment.CenterVertically),
                     )
                 }
 
