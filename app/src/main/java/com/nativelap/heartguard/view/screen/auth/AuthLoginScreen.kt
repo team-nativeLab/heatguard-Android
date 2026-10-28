@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imeAnimationTarget
 import androidx.compose.foundation.layout.navigationBars
@@ -45,6 +46,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -249,9 +251,22 @@ fun AuthLoginScreen(
                         .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (statusMessage != null) {
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+
+                    Text(
+                        text = statusMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                }
+
                 AuthPrimaryButton(
                     title = stringResource(R.string.auth_login),
                     onClick = onLoginClick,
+                    modifier = Modifier.heightIn(min = HeartGuardComponentSize.TouchTarget),
                     isEnabled = !isSubmitting,
                 )
 
@@ -266,21 +281,17 @@ fun AuthLoginScreen(
                         Text(
                             text = stringResource(R.string.auth_signup_prompt),
                             color = MaterialTheme.extraColors.authOnSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
                             text = stringResource(R.string.auth_signup_link),
                             color = MaterialTheme.extraColors.authPrimary,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
                         )
                     }
-                }
-
-                if (statusMessage != null) {
-                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
-                    Text(
-                        text = statusMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
                 }
             }
         }
