@@ -1,6 +1,5 @@
 package com.nativelap.heartguard.viewmodel.emergency
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiError
@@ -44,7 +43,6 @@ class EmergencyViewModel
         private val getCurrentEmergencyCallUseCase: GetCurrentEmergencyCallUseCase,
         private val sessionManager: SessionManager,
         private val clock: Clock,
-        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(EmergencyUiState())
         val uiState: StateFlow<EmergencyUiState> = mutableUiState.asStateFlow()
@@ -80,7 +78,6 @@ class EmergencyViewModel
                 return
             }
 
-            clearAutoCallOrigin()
             val owningFlow = beginFlow()
             val idempotencyKey = pendingIdempotencyKey ?: UUID.randomUUID().toString()
             pendingIdempotencyKey = idempotencyKey
@@ -104,7 +101,6 @@ class EmergencyViewModel
                             adoptCall(
                                 callStatus = registerResult.value,
                                 shouldOpenCallScreen = true,
-                                wasRegisteredOnThisDevice = true,
                             )
                         }
 
@@ -255,7 +251,6 @@ class EmergencyViewModel
             statusUpdateJob = null
             pendingIdempotencyKey = null
             consecutivePollingFailureCount = 0
-            clearAutoCallOrigin()
             mutableUiState.value = EmergencyUiState()
             while (effectChannel.tryReceive().isSuccess) {
                 // 이전 세션의 이동 결과를 제거한다.
@@ -277,11 +272,9 @@ class EmergencyViewModel
                 val resumeDecision =
                     resolveEmergencyCallResumeDecision(
                         result = currentCallResult,
-                        savedOriginCallId = savedStateHandle[KEY_AUTO_CALL_ORIGIN_ID],
                     )
             ) {
-                is EmergencyCallResumeDecision.LookupFailed -> {
-                    savedStateHandle[KEY_AUTO_CALL_ORIGIN_ID] = resumeDecision.preservedOriginCallId
+                EmergencyCallResumeDecision.LookupFailed -> {
                     onNoActiveCall()
                 }
 
@@ -293,7 +286,6 @@ class EmergencyViewModel
                 }
 
                 EmergencyCallResumeDecision.NoActiveCall -> {
-                    clearAutoCallOrigin()
                     onNoActiveCall()
                 }
             }
@@ -302,7 +294,6 @@ class EmergencyViewModel
         private fun adoptCall(
             callStatus: EmergencyCallStatus,
             shouldOpenCallScreen: Boolean,
-            wasRegisteredOnThisDevice: Boolean = false,
         ) {
             if (callStatus.state.isClosed() && !callStatus.callId.isNullOrBlank()) {
                 pendingIdempotencyKey = null
@@ -310,22 +301,13 @@ class EmergencyViewModel
                 return
             }
             if (callStatus.callId.isNullOrBlank() || !callStatus.state.isInProgress()) {
-                clearAutoCallOrigin()
                 showRegistrationFailure()
                 return
             }
             pendingIdempotencyKey = null
-            val autoCallEligibleCallId =
-                resolveAutoCallEligibleCallId(
-                    callId = callStatus.callId,
-                    wasRegisteredOnThisDevice = wasRegisteredOnThisDevice,
-                    savedOriginCallId = savedStateHandle[KEY_AUTO_CALL_ORIGIN_ID],
-                )
-            savedStateHandle[KEY_AUTO_CALL_ORIGIN_ID] = autoCallEligibleCallId
             mutableUiState.value =
                 mutableUiState.value.copy(
                     callId = callStatus.callId,
-                    autoCallEligibleCallId = autoCallEligibleCallId,
                     callState = callStatus.state,
                     isRegistering = false,
                     hasRegistrationFailed = false,
@@ -337,7 +319,6 @@ class EmergencyViewModel
         }
 
         private fun showRegistrationFailure() {
-            clearAutoCallOrigin()
             mutableUiState.value =
                 mutableUiState.value.copy(
                     isRegistering = false,
@@ -417,10 +398,6 @@ class EmergencyViewModel
             )
         }
 
-        private fun clearAutoCallOrigin() {
-            savedStateHandle[KEY_AUTO_CALL_ORIGIN_ID] = null
-        }
-
         fun isCurrentEffect(effect: EmergencyEffect): Boolean {
             if (effect.flowGeneration != flowGeneration ||
                 effect.sessionGeneration != sessionManager.getSnapshot().generation
@@ -481,7 +458,6 @@ class EmergencyViewModel
         private companion object {
             const val HTTP_CONFLICT = 409
             const val ACTIVE_CALL_ALREADY_EXISTS_CODE = "ACTIVE_CALL_ALREADY_EXISTS"
-            const val KEY_AUTO_CALL_ORIGIN_ID = "emergency_auto_call_origin_id"
 
             // 3초 폴링이 세 번(약 9초) 연속 실패하면 연결이 불안정하다고 알린다.
             const val UNSTABLE_FAILURE_COUNT = 3

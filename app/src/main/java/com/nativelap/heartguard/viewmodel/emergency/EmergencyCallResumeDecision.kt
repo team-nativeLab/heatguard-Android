@@ -5,9 +5,7 @@ import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
 
 internal sealed interface EmergencyCallResumeDecision {
-    data class LookupFailed(
-        val preservedOriginCallId: String?,
-    ) : EmergencyCallResumeDecision
+    data object LookupFailed : EmergencyCallResumeDecision
 
     data class ActiveCall(
         val callStatus: EmergencyCallStatus,
@@ -16,13 +14,10 @@ internal sealed interface EmergencyCallResumeDecision {
     data object NoActiveCall : EmergencyCallResumeDecision
 }
 
-internal fun resolveEmergencyCallResumeDecision(
-    result: ApiResult<EmergencyCallStatus>,
-    savedOriginCallId: String?,
-): EmergencyCallResumeDecision =
+internal fun resolveEmergencyCallResumeDecision(result: ApiResult<EmergencyCallStatus>): EmergencyCallResumeDecision =
     when (result) {
         is ApiResult.Failure -> {
-            EmergencyCallResumeDecision.LookupFailed(savedOriginCallId)
+            EmergencyCallResumeDecision.LookupFailed
         }
 
         is ApiResult.Success -> {

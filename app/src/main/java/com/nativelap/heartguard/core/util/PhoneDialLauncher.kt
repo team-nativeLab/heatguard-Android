@@ -74,10 +74,6 @@ private fun Char.isAsciiPhoneDigit(): Boolean = this in '0'..'9'
 @Composable
 fun rememberPhoneDialLauncher(): (String) -> Boolean = rememberPhoneIntentLauncher(Intent.ACTION_DIAL)
 
-/** 전화번호로 바로 발신을 시도하는 콜백을 만든다. */
-@Composable
-fun rememberPhoneCallLauncher(): (String) -> Boolean = rememberPhoneIntentLauncher(Intent.ACTION_CALL)
-
 @Composable
 private fun rememberPhoneIntentLauncher(action: String): (String) -> Boolean {
     val context = LocalContext.current
