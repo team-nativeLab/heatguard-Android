@@ -53,6 +53,8 @@ data class HeartGuardExtraColors(
     val phoneSecurityText: Color,
     val temperatureRiseContainer: Color,
     val onTemperatureRiseContainer: Color,
+    val temperatureDeltaNonPositiveContainer: Color,
+    val onTemperatureDeltaNonPositiveContainer: Color,
     val strongText: Color,
     val secondaryText: Color,
     val tertiaryText: Color,
@@ -158,6 +160,8 @@ private val siteUnselectedTextColor = Color(0xFF556171)
 private val phoneSecurityTextColor = Color(0xFF9CA3AF)
 private val temperatureRiseContainerColor = Color(0xFFFFDDE2)
 private val onTemperatureRiseContainerColor = Color(0xFFFF6172)
+private val temperatureDeltaNonPositiveContainerColor = Color(0xFFD6D2FF)
+private val onTemperatureDeltaNonPositiveContainerColor = Color(0xFF7E61FF)
 
 // 메뉴 드로어·회원탈퇴 화면에서 공통으로 쓰는 본문 강조/보조/3차 텍스트 색이다.
 private val strongTextColor = Color(0xFF1F2633)
@@ -262,6 +266,8 @@ private val heartGuardExtraColors =
         phoneSecurityText = phoneSecurityTextColor,
         temperatureRiseContainer = temperatureRiseContainerColor,
         onTemperatureRiseContainer = onTemperatureRiseContainerColor,
+        temperatureDeltaNonPositiveContainer = temperatureDeltaNonPositiveContainerColor,
+        onTemperatureDeltaNonPositiveContainer = onTemperatureDeltaNonPositiveContainerColor,
         strongText = strongTextColor,
         secondaryText = secondaryTextColor,
         tertiaryText = tertiaryTextColor,
