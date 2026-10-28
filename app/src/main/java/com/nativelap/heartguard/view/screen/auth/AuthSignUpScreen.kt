@@ -375,8 +375,9 @@ internal fun AuthSignUpScreen(
                                     } else {
                                         0.dp
                                     },
-                            ).fillMaxWidth()
-                            .padding(horizontal = HeartGuardSpacing.AuthHorizontal),
+                            ).padding(horizontal = HeartGuardSpacing.AuthHorizontal)
+                            .widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
+                            .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(
@@ -405,10 +406,7 @@ internal fun AuthSignUpScreen(
                                 },
                             ),
                         onClick = { onEvent(primaryButtonEvent) },
-                        modifier =
-                            Modifier
-                                .heightIn(min = HeartGuardComponentSize.TouchTarget)
-                                .padding(horizontal = HeartGuardSpacing.Tight),
+                        modifier = Modifier.heightIn(min = HeartGuardComponentSize.TouchTarget),
                         isEnabled = isPrimaryButtonEnabled,
                     )
 
@@ -429,24 +427,24 @@ internal fun AuthSignUpScreen(
                     }
 
                     if (step == SIGN_UP_EMAIL_STEP) {
-                        Row(
+                        TextButton(
+                            onClick = {
+                                onEvent(AuthSignUpScreenEvent.LoginClicked)
+                            },
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .padding(top = HeartGuardSpacing.AuthFooterGap),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                text = stringResource(R.string.auth_signup_existing_account),
-                                color = MaterialTheme.extraColors.authOnSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            TextButton(
-                                onClick = {
-                                    onEvent(AuthSignUpScreenEvent.LoginClicked)
-                                },
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                Text(
+                                    text = stringResource(R.string.auth_signup_existing_account),
+                                    color = MaterialTheme.extraColors.authOnSurfaceVariant,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
                                 Text(
                                     text = stringResource(R.string.auth_login),
                                     color = MaterialTheme.extraColors.authPrimary,
