@@ -6,7 +6,6 @@ import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
  * [callId]는 이 기기에서 시작했거나 이어받은 진행 중 호출이며, 없으면 취소·종료 버튼을 쓸 수 없다. */
 data class EmergencyUiState(
     val callId: String? = null,
-    val autoCallEligibleCallId: String? = null,
     val callState: EmergencyCallState = EmergencyCallState.NONE,
     val isRegistering: Boolean = false,
     val hasRegistrationFailed: Boolean = false,
@@ -20,20 +19,4 @@ data class EmergencyUiState(
 
     val isConnected: Boolean
         get() = callState == EmergencyCallState.ACKNOWLEDGED
-}
-
-internal fun resolveAutoCallEligibleCallId(
-    callId: String?,
-    wasRegisteredOnThisDevice: Boolean,
-    savedOriginCallId: String?,
-): String? {
-    if (callId.isNullOrBlank()) {
-        return null
-    }
-
-    return if (wasRegisteredOnThisDevice || savedOriginCallId == callId) {
-        callId
-    } else {
-        null
-    }
 }

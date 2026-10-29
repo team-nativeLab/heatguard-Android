@@ -1,28 +1,17 @@
 package com.nativelap.heartguard.view.route.emergency
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.util.isValidPhoneNumber
-import com.nativelap.heartguard.core.util.rememberPhoneCallLauncher
 import com.nativelap.heartguard.core.util.rememberPhoneDialLauncher
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
 import com.nativelap.heartguard.view.component.valueOrEmptyText
@@ -84,105 +73,11 @@ internal fun HeartGuardCallingRoute(
     homeViewModel: HomeViewModel,
     onCallClosed: () -> Unit,
 ) {
-    val context = LocalContext.current
     val uiState by emergencyViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
-    val callPhoneNumber = rememberPhoneCallLauncher()
     val dialPhoneNumber = rememberPhoneDialLauncher()
     val headquartersPhoneNumber = siteStatus.headquartersPhoneNumber
-    val callFailedMessage = stringResource(R.string.home_call_failed)
-    var lastAutoCallAttemptedCallId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    var pendingPermissionCallId by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
-    val latestUiState by rememberUpdatedState(uiState)
-    val latestHeadquartersPhoneNumber by rememberUpdatedState(headquartersPhoneNumber)
-    val latestCallPhoneNumber by rememberUpdatedState(callPhoneNumber)
-    val latestDialPhoneNumber by rememberUpdatedState(dialPhoneNumber)
-    val latestContext by rememberUpdatedState(context)
-    val latestCallFailedMessage by rememberUpdatedState(callFailedMessage)
-    val attemptPhoneCall: (String, Boolean) -> Unit = { expectedCallId, hasCallPermission ->
-        val currentUiState = latestUiState
-        val currentPhoneNumber = latestHeadquartersPhoneNumber
-        val isSameCallStillConnected =
-            currentUiState.callId == expectedCallId &&
-                canAttemptEmergencyAutoCall(
-                    callId = currentUiState.callId,
-                    autoCallEligibleCallId = currentUiState.autoCallEligibleCallId,
-                    isConnected = currentUiState.isConnected,
-                    canControlCall = currentUiState.canControlCall,
-                )
-        val usablePhoneNumber =
-            currentPhoneNumber?.takeIf { phoneNumber ->
-                phoneNumber.isValidPhoneNumber()
-            }
-
-        if (isSameCallStillConnected && usablePhoneNumber != null) {
-            val didStartDirectCall =
-                hasCallPermission && latestCallPhoneNumber(usablePhoneNumber)
-            val didOpenPhoneApp =
-                didStartDirectCall || latestDialPhoneNumber(usablePhoneNumber)
-
-            if (!didOpenPhoneApp) {
-                Toast.makeText(latestContext, latestCallFailedMessage, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-    val latestAttemptPhoneCall by rememberUpdatedState(attemptPhoneCall)
-    val callPermissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission(),
-        ) { isPermissionGranted ->
-            val requestedCallId = pendingPermissionCallId
-            pendingPermissionCallId = null
-
-            if (requestedCallId != null) {
-                latestAttemptPhoneCall(requestedCallId, isPermissionGranted)
-            }
-        }
     val currentOnCallClosed by rememberUpdatedState(onCallClosed)
-
-    LaunchedEffect(
-        uiState.callId,
-        uiState.autoCallEligibleCallId,
-        uiState.isConnected,
-        uiState.canControlCall,
-        headquartersPhoneNumber,
-        pendingPermissionCallId,
-    ) {
-        val activeCallId = uiState.callId
-        val shouldRequestOrPlaceCall =
-            shouldStartEmergencyAutoCall(
-                callId = activeCallId,
-                autoCallEligibleCallId = uiState.autoCallEligibleCallId,
-                isConnected = uiState.isConnected,
-                canControlCall = uiState.canControlCall,
-                phoneNumber = headquartersPhoneNumber,
-                lastAttemptedCallId = lastAutoCallAttemptedCallId,
-            )
-
-        if (!shouldRequestOrPlaceCall || pendingPermissionCallId != null) {
-            return@LaunchedEffect
-        }
-
-        val callId = activeCallId ?: return@LaunchedEffect
-        lastAutoCallAttemptedCallId = callId
-
-        val hasCallPermission =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CALL_PHONE,
-            ) == PackageManager.PERMISSION_GRANTED
-
-        if (hasCallPermission) {
-            attemptPhoneCall(callId, true)
-        } else {
-            pendingPermissionCallId = callId
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
-        }
-    }
 
     CollectEmergencyEffects(
         emergencyViewModel = emergencyViewModel,
