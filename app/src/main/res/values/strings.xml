@@ -107,11 +107,13 @@
     <string name="app_account_dashboard_error">현장 정보에 접근할 수 없습니다. 연동 상태와 네트워크를 확인해주세요.</string>
     <string name="app_account_dashboard_records">오늘 기록: %1$d건</string>
     <string name="app_account_dashboard_emergencies">긴급호출: %1$d건</string>
-    <string name="app_account_site_unlink_confirmation">%1$s 연동을 해제할까요? 해제하면 이 현장에 접근할 수 없습니다. 다른 현장 연동은 유지됩니다.</string>
+    <string name="app_account_site_unlink_dialog_title">현장을 해제할까요?</string>
+    <string name="app_account_site_unlink_dialog_message">해제하면 이 현장에 접근할 수 없습니다.</string>
+    <string name="app_account_site_unlink_cancel">취소</string>
+    <string name="app_account_site_unlink_confirm">해제</string>
     <string name="app_account_site_unlink_error">연동 해제를 완료하지 못했습니다. 현장 목록을 확인하고 다시 시도해주세요.</string>
-    <string name="app_account_site_unlink_again">다시 눌러 소속 해제</string>
     <string name="app_account_site_unlinking">해제 중…</string>
-    <string name="app_account_site_selected_action_description">%1$s, %2$s, 선택됨. 한 번 더 누르면 팀 소속이 해제됩니다.</string>
+    <string name="app_account_site_selected_action_description">%1$s, %2$s, 선택됨.</string>
     <string name="app_account_site_unselected_action_description">%1$s, %2$s, 선택되지 않은 팀. 누르면 선택됩니다.</string>
     <string name="app_account_site_unlinking_action_description">%1$s, %2$s, 소속 해제 요청 중.</string>
     <string name="home_weather_status">현재 온도</string>

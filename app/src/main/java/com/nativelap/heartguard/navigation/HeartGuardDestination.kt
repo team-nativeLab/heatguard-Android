@@ -27,6 +27,12 @@ internal sealed interface HeartGuardDestination : NavKey {
     data object TeamSiteSelection : HeartGuardDestination
 
     @Serializable
+    data class SiteUnlinkConfirmation(
+        val teamId: String,
+        val siteId: String,
+    ) : HeartGuardDestination
+
+    @Serializable
     data object Checklist : HeartGuardDestination
 
     @Serializable

@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.screen.site
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -250,7 +251,7 @@ private fun SiteSelectionCard(
             when {
                 isUnlinking -> R.string.app_account_site_unlinking
                 isSelecting -> R.string.app_account_site_selecting
-                isSelected -> R.string.app_account_site_unlink_again
+                isSelected -> R.string.app_account_site_selected
                 else -> R.string.team_site_selection_unselected_badge
             },
         )

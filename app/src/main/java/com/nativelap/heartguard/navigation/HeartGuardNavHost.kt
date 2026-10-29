@@ -57,6 +57,7 @@ import com.nativelap.heartguard.view.route.record.HeartGuardRecordTypeSelectionR
 import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRoute
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
 import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
+import com.nativelap.heartguard.view.route.site.SiteUnlinkConfirmationRoute
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
@@ -67,6 +68,7 @@ import com.nativelap.heartguard.viewmodel.inquiry.InquiryViewModel
 import com.nativelap.heartguard.viewmodel.notification.NotificationOpenTarget
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
+import com.nativelap.heartguard.viewmodel.site.AppAccountSitesViewModel
 
 /** 인증 상태에 따라 인증 흐름과 메인 흐름 중 하나를 구성하는 앱 진입점이다.
  * SessionManager가 공개하는 인증 상태를 단일 진입점으로 구독해, 세션이 만료되면
@@ -266,6 +268,10 @@ private fun HeartGuardMainNavDisplay(
     // 팀 현장페이지(현재 온도·습도·체감온도·폭염 단계·관리자 번호·체크 시각)는 홈뿐 아니라 온도계 기록·
     // 긴급 호출 화면도 함께 보여준다. 아래 공유 ViewModel들과 같은 이유로 여기서 한 번 만들어 필요한 Route에 명시적으로 넘긴다.
     val homeViewModel: HomeViewModel = hiltViewModel()
+
+    // ViewModel이 세션 변경을 관찰해 요청과 화면 상태를 정리하므로 세션 세대별 인스턴스를 만들지 않는다.
+    val appAccountSitesViewModel: AppAccountSitesViewModel =
+        hiltViewModel(key = "team-sites")
 
     // 공유 ViewModel은 Activity 수명이라 회전·다크모드 전환으로 이 Composable이 다시 만들어져도 살아 있다.
     // 그때 reset()하면 진행 중인 긴급호출·탈퇴 요청과 홈 값이 사라지므로, 설정 변경이 아닐 때(로그아웃·세션 만료·앱 종료)만 정리한다.
@@ -528,7 +534,28 @@ private fun HeartGuardMainNavDisplay(
                 entry<HeartGuardDestination.TeamSiteSelection> {
                     AppAccountSitesRoute(
                         onBackClick = ::goBack,
-                        viewModel = hiltViewModel(key = "team-sites-$sessionGeneration"),
+                        onUnlinkConfirmationRequest = { teamId, siteId ->
+                            backStack.add(
+                                HeartGuardDestination.SiteUnlinkConfirmation(
+                                    teamId = teamId,
+                                    siteId = siteId,
+                                ),
+                            )
+                        },
+                        viewModel = appAccountSitesViewModel,
+                    )
+                }
+                entry<HeartGuardDestination.SiteUnlinkConfirmation>(
+                    metadata =
+                        DialogSceneStrategy.dialog(
+                            DialogProperties(usePlatformDefaultWidth = false),
+                        ),
+                ) { destination ->
+                    SiteUnlinkConfirmationRoute(
+                        teamId = destination.teamId,
+                        siteId = destination.siteId,
+                        onDismiss = ::goBack,
+                        viewModel = appAccountSitesViewModel,
                     )
                 }
                 entry<HeartGuardDestination.ChecklistOverview> {

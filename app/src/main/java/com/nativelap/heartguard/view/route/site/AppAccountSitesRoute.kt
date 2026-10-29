@@ -13,6 +13,7 @@ import com.nativelap.heartguard.viewmodel.site.AppAccountSitesViewModel
 @Composable
 internal fun AppAccountSitesRoute(
     onBackClick: () -> Unit,
+    onUnlinkConfirmationRequest: (teamId: String, siteId: String) -> Unit,
     viewModel: AppAccountSitesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -33,10 +34,7 @@ internal fun AppAccountSitesRoute(
 
                 is AppAccountSitesScreenEvent.TeamClicked -> {
                     if (uiState.selectedTeamId == event.teamId) {
-                        viewModel.unlinkTeam(
-                            event.teamId,
-                            event.siteId,
-                        )
+                        onUnlinkConfirmationRequest(event.teamId, event.siteId)
                     } else {
                         viewModel.selectTeam(event.teamId)
                     }
