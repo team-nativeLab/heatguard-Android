@@ -67,35 +67,42 @@ internal class AppAccountSitesViewModel
             }
             mutableUiState.update { it.copy(isLoading = true, hasFailure = false, dashboard = null) }
             launchSessionRequest(expectedSession) {
-                when (val result = getAppLinkedSitesUseCase(expectedSession.generation)) {
-                    is ApiResult.Success -> {
-                        if (!isCurrentSession(expectedSession)) {
-                            return@launchSessionRequest
-                        }
-                        mutableUiState.update {
-                            it.copy(
-                                isLoading = false,
-                                linkedSites = result.value.items,
-                                selectedTeamId = result.value.selectedTeamId,
-                                selectedSiteId = getSelectedAppSiteIdUseCase(),
-                                openedSiteId =
-                                    it.openedSiteId?.takeIf { openedId ->
-                                        result.value.items.any { site -> site.siteId == openedId }
-                                    },
-                            )
-                        }
-                        mutableUiState.value.openedSiteId?.let { siteId ->
-                            loadDashboard(siteId, expectedSession)
-                        }
-                    }
+                loadLinkedSites(expectedSession)
+            }
+        }
 
-                    is ApiResult.Failure -> {
-                        if (isCurrentSession(expectedSession)) {
-                            mutableUiState.update {
-                                it.copy(isLoading = false, hasFailure = true, dashboard = null)
-                            }
+        private suspend fun loadLinkedSites(expectedSession: SessionSnapshot): Boolean {
+            when (val result = getAppLinkedSitesUseCase(expectedSession.generation)) {
+                is ApiResult.Success -> {
+                    if (!isCurrentSession(expectedSession)) {
+                        return false
+                    }
+                    mutableUiState.update {
+                        it.copy(
+                            isLoading = false,
+                            hasUnlinkFailure = false,
+                            linkedSites = result.value.items,
+                            selectedTeamId = result.value.selectedTeamId,
+                            selectedSiteId = getSelectedAppSiteIdUseCase(),
+                            openedSiteId =
+                                it.openedSiteId?.takeIf { openedId ->
+                                    result.value.items.any { site -> site.siteId == openedId }
+                                },
+                        )
+                    }
+                    mutableUiState.value.openedSiteId?.let { siteId ->
+                        loadDashboard(siteId, expectedSession)
+                    }
+                    return true
+                }
+
+                is ApiResult.Failure -> {
+                    if (isCurrentSession(expectedSession)) {
+                        mutableUiState.update {
+                            it.copy(isLoading = false, hasFailure = true, dashboard = null)
                         }
                     }
+                    return false
                 }
             }
         }
@@ -244,9 +251,12 @@ internal class AppAccountSitesViewModel
                                 selectedSiteId = getSelectedAppSiteIdUseCase(),
                                 openedSiteId = it.openedSiteId?.takeUnless { openedId -> openedId == siteId },
                                 dashboard = null,
+                                isLoading = true,
+                                hasFailure = false,
+                                hasUnlinkFailure = false,
                             )
                         }
-                        refresh(expectedSession)
+                        loadLinkedSites(expectedSession)
                     }
 
                     is ApiResult.Failure -> {
@@ -255,10 +265,25 @@ internal class AppAccountSitesViewModel
                                 it.copy(
                                     isUnlinkingSite = false,
                                     unlinkingTeamId = null,
-                                    hasUnlinkFailure = true,
+                                    isLoading = true,
+                                    hasFailure = false,
+                                    hasUnlinkFailure = false,
+                                    dashboard = null,
                                 )
                             }
-                            refresh(expectedSession)
+                            val isListRefreshSuccessful = loadLinkedSites(expectedSession)
+                            if (isCurrentSession(expectedSession)) {
+                                val hasUnlinkedTeamInServerList =
+                                    mutableUiState.value.linkedSites.any { site ->
+                                        site.teamId == teamId
+                                    }
+                                mutableUiState.update {
+                                    it.copy(
+                                        hasUnlinkFailure =
+                                            !isListRefreshSuccessful || hasUnlinkedTeamInServerList,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
