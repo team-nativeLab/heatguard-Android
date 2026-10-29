@@ -730,9 +730,21 @@ private fun HeartGuardMainNavDisplay(
                         onBackClick = ::goBack,
                     )
                 }
-                // 등록 중인 03은 닫기 제스처를 막고, 취소 버튼으로만 홈에 돌아간다.
                 entry<HeartGuardDestination.Emergency>(
-                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
+                    metadata =
+                        HeartGuardBottomSheetSceneStrategy.bottomSheet(
+                            isDismissible = false,
+                            onDismissAttempt = {
+                                val emergencyState = emergencyViewModel.uiState.value
+                                if (emergencyState.callId != null) {
+                                    emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+                                } else if (emergencyState.isRegistering || emergencyState.registrationMayExist) {
+                                    emergencyViewModel.requestDismissDuringRegistration()
+                                } else {
+                                    goHome()
+                                }
+                            },
+                        ),
                 ) {
                     HeartGuardEmergencyRoute(
                         emergencyViewModel = emergencyViewModel,
@@ -746,8 +758,13 @@ private fun HeartGuardMainNavDisplay(
                     )
                 }
                 entry<HeartGuardDestination.Calling>(
-                    // 호출 중에는 화면의 취소·종료 버튼으로만 호출 상태를 변경한다.
-                    metadata = HeartGuardBottomSheetSceneStrategy.bottomSheet(isDismissible = false),
+                    metadata =
+                        HeartGuardBottomSheetSceneStrategy.bottomSheet(
+                            isDismissible = false,
+                            onDismissAttempt = {
+                                emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+                            },
+                        ),
                 ) {
                     HeartGuardCallingRoute(
                         emergencyViewModel = emergencyViewModel,

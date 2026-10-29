@@ -44,12 +44,16 @@ internal fun HeartGuardEmergencyRoute(
         onCallClosed = { currentOnCancelClick() },
     )
 
-    // 등록 요청 중에는 뒤로가기로 시트를 닫지 않는다(응답 전에 닫으면 호출 결과를 놓친다).
-    BackHandler {
-        if (!uiState.isRegistering) {
+    val requestDismiss = {
+        if (uiState.callId != null) {
+            emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        } else if (uiState.isRegistering || uiState.registrationMayExist) {
+            emergencyViewModel.requestDismissDuringRegistration()
+        } else {
             onCancelClick()
         }
     }
+    BackHandler(onBack = requestDismiss)
 
     EmergencyScreen(
         contactName = stringResource(R.string.emergency_contact_name),
@@ -58,7 +62,7 @@ internal fun HeartGuardEmergencyRoute(
         isRegistering = uiState.isRegistering,
         hasRegistrationFailed = uiState.hasRegistrationFailed,
         onCallClick = emergencyViewModel::startEmergencyCall,
-        onCancelClick = onCancelClick,
+        onCancelClick = requestDismiss,
         onContactClick = {
             headquartersPhoneNumber?.let(dialPhoneNumber)
         },
@@ -85,8 +89,9 @@ internal fun HeartGuardCallingRoute(
         onCallClosed = { currentOnCallClosed() },
     )
 
-    // 진행 중 호출은 실수로 닫히지 않도록 시스템 뒤로가기를 소비한다.
-    BackHandler(enabled = true) {}
+    BackHandler {
+        emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+    }
 
     CallingScreen(
         isConnected = uiState.isConnected,
@@ -127,7 +132,10 @@ private fun CollectEmergencyEffects(
                 }
                 when (emergencyEffect) {
                     is EmergencyEffect.CallStarted -> currentOnCallStarted()
-                    is EmergencyEffect.CallClosed -> currentOnCallClosed()
+
+                    is EmergencyEffect.CallClosed,
+                    is EmergencyEffect.RegistrationDismissed,
+                    -> currentOnCallClosed()
                 }
             }
         }

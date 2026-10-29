@@ -9,6 +9,7 @@ data class EmergencyUiState(
     val callState: EmergencyCallState = EmergencyCallState.NONE,
     val isRegistering: Boolean = false,
     val hasRegistrationFailed: Boolean = false,
+    val registrationMayExist: Boolean = false,
     val isUpdatingStatus: Boolean = false,
     val statusUpdateFailed: Boolean = false,
     // 상태 조회가 연속으로 실패해 관리자 확인 여부를 알 수 없는 상태다. 조회가 한 번 성공하면 해제된다.

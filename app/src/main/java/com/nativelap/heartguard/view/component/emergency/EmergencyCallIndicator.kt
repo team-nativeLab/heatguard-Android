@@ -1,5 +1,10 @@
 package com.nativelap.heartguard.view.component.emergency
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,9 +18,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,8 +40,17 @@ fun EmergencyCallIndicator(
     description: String,
     isCalling: Boolean,
     onClick: (() -> Unit)? = null,
+    isAnimated: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val transition = rememberInfiniteTransition(label = "emergency indicator")
+    val animatedScale by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(tween(durationMillis = 700), RepeatMode.Reverse),
+        label = "emergency bounce",
+    )
+    val circleScale = if (isAnimated) animatedScale else 1f
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -61,6 +77,7 @@ fun EmergencyCallIndicator(
                 modifier =
                     Modifier
                         .size(HeartGuardIconSize.EmergencyCall)
+                        .graphicsLayer(scaleX = circleScale, scaleY = circleScale)
                         .background(
                             color =
                                 if (isCalling) {
@@ -75,6 +92,7 @@ fun EmergencyCallIndicator(
                 modifier =
                     Modifier
                         .size(HeartGuardIconSize.EmergencyCallInner)
+                        .graphicsLayer(scaleX = circleScale, scaleY = circleScale)
                         .background(
                             color =
                                 if (isCalling) {
