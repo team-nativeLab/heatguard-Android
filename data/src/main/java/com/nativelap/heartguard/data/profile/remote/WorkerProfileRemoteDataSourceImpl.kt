@@ -13,6 +13,7 @@ import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadRequestDto
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadResponseDto
 import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
 import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
+import com.nativelap.heartguard.data.profile.dto.hasMatchingContentLength
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -84,7 +85,8 @@ class WorkerProfileRemoteDataSourceImpl
                 }.requireSuccessData { upload ->
                     upload.uploadId.isNotBlank() &&
                         upload.uploadUrl.isNotBlank() &&
-                        upload.expiresAt.isNotBlank()
+                        upload.expiresAt.isNotBlank() &&
+                        upload.hasMatchingContentLength(request.size)
                 }
 
         override suspend fun confirmProfilePhotoUpload(

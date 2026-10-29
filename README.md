@@ -68,7 +68,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, companyName, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`과 마지막으로 받은 `version`을 보냄. 409는 최신 정보 재조회 후 안내 |
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
 | `GET /team` | 연결 | 기상 미입력 시 기상·비교 필드는 null, 관리자 연락처는 빈 문자열일 수 있음. 응답 DTO가 `company.phone`, `weather.observedAt`·`skyStatus`·`temperatureDelta`·비교값, `unreadNotificationCount`를 파싱한다. 화면에서 사용하는 값만 Domain에 매핑한다. |
-| `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | `files[i] ↔ uploads[i]` 순서 보장, `slot`은 기록 내 사진 위치, `requiredHeaders`를 그대로 붙여 PUT. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처리. `restMinutes`는 서버가 계산 |
+| `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | 발급 요청은 `files[{contentType, size}]`이며, 실제 크기 1~5 MiB의 JPEG·PNG·WebP 사진을 1~2장 보냅니다. 응답 `uploads` 순서대로 `requiredHeaders`를 적용해 원본 바이너리를 PUT하고, 앱 Authorization은 보내지 않습니다. 응답의 `objectKey`를 기록 요청의 `photoKeys`에 사용하며 URL 만료 시각을 확인합니다. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처리. `restMinutes`는 서버가 계산 |
 | `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 선택적 `date=YYYY-MM-DD` 하루 단위 필터를 지원하고 `measuredAt`을 서울 날짜로 변환해 페이지네이션 전에 적용합니다. 기간·유형 쿼리는 지원하지 않음. 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
 | `POST·GET /team/inquiries` | 연결 | 목록 항목 `{inquiryId, title, content, status, deliveryStatus, replies[], createdAt}`, 알 수 없는 cursor는 400 |
 | `POST /team/emergency-calls`, `GET …/current`, `PATCH …/{callId}` | 연결 | `current`는 종료된 이전 호출(CANCELLED 등)도 반환하므로 앱은 자신이 시작·이어받은 `callId`만 반영. 취소·종료의 409 `INVALID_STATUS_TRANSITION`은 현재 상태를 다시 조회해 화면을 맞춤 |
@@ -117,7 +117,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 - **체크 완료 판정**: 홈 체크 타임라인 완료 여부 필드가 없어, 앱이 "체크 시각 ~ 다음 체크 시각 전" 사이 기록 유무로 판정합니다. 서버 기준 확인 또는 필드 추가가 필요합니다.
 - **없는 필드**: 온도계 설치 여부(현재 측정 온도 유무로 표시), 기록 목록 썸네일 URL, 기록 목록 기간·유형 쿼리
 - **현장작업자 온도 기록 검증**: 2026-10-01 실서버에서 온도계 기록(직접 입력) 촬영→업로드→저장→상세 사진→기록 알림까지 성공했습니다. 휴식·작업 기록은 서버가 `WEATHER_BASELINE_REQUIRED`(현장 기상값 미입력)로 거절해 저장 성공은 확인하지 못했고, 앱은 오류 안내를 표시합니다.
-- **계약 확인**: `sha256` 인코딩(Base64/hex), `slot` 의미, `POST /team/records`의 Idempotency-Key 지원, 허용 이미지 형식·최대 크기
+- **계약 확인**: `POST /team/records`의 Idempotency-Key 지원
 
 ## 기술 스택
 `gradle/libs.versions.toml`과 각 모듈의 `build.gradle.kts` 기준으로 확인한 값입니다.

@@ -36,3 +36,14 @@ data class ProfilePhotoResponseDto(
     @SerialName("expiresAt")
     val expiresAt: String? = null,
 )
+
+/** Profile upload URLs must carry the same byte length that the streaming request body will send. */
+internal fun ProfilePhotoUploadResponseDto.hasMatchingContentLength(sizeBytes: Long): Boolean {
+    val contentLengthHeader =
+        requiredHeaders.entries.singleOrNull { (headerName, _) ->
+            headerName.equals(CONTENT_LENGTH_HEADER, ignoreCase = true)
+        } ?: return false
+    return contentLengthHeader.value.toLongOrNull() == sizeBytes
+}
+
+private const val CONTENT_LENGTH_HEADER = "Content-Length"
