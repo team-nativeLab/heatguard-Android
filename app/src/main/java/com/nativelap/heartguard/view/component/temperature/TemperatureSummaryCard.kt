@@ -1,12 +1,17 @@
 package com.nativelap.heartguard.view.component.temperature
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,13 +22,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 온도 기록 화면 상단의 현재 온도·습도·체감온도를 Figma의 비카드형 Hero로 보여준다. */
+/** 온도 기록 화면 상단의 현재 온도·습도·체감온도를 카드형 Hero로 보여준다. */
 @Composable
 fun TemperatureSummaryCard(
     currentTemperature: String,
@@ -36,58 +43,86 @@ fun TemperatureSummaryCard(
     @Suppress("UNUSED_PARAMETER") title: String,
     thermometerPainter: Painter? = null,
 ) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = HeartGuardSpacing.Item),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(HeartGuardRadius.LargeCard),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border =
+            BorderStroke(
+                width = HeartGuardBorderWidth.Divider,
+                color = MaterialTheme.extraColors.cardBorder,
+            ),
     ) {
-        if (thermometerPainter != null) {
-            Image(
-                painter = thermometerPainter,
-                contentDescription = null,
-                modifier = Modifier.size(HeartGuardIconSize.RecordThermometerIllustration),
-            )
-        }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+        BoxWithConstraints(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = HeartGuardSpacing.Item,
+                        vertical = HeartGuardSpacing.Compact,
+                    ),
         ) {
-            Text(
-                text = currentTemperatureLabel,
-                color = MaterialTheme.extraColors.homeMutedText,
-                style =
-                    MaterialTheme.typography.labelMedium.copy(
-                        fontSize = HeartGuardFontSize.SmallLabel,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-            )
-            Text(
-                text = currentTemperature,
-                color = MaterialTheme.colorScheme.onSurface,
-                style =
-                    MaterialTheme.typography.headlineLarge.copy(
-                        fontSize = HeartGuardFontSize.TemperatureSummary,
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
-            Text(
-                text =
-                    stringResource(
-                        R.string.home_weather_summary_format,
-                        humidityLabel,
-                        humidity,
-                        feelsLikeLabel,
-                        feelsLikeTemperature,
-                    ),
-                color = MaterialTheme.extraColors.homeMutedText,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontSize = HeartGuardFontSize.SmallLabel,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-            )
+            val thermometerSize =
+                (maxWidth * THERMOMETER_WIDTH_FRACTION)
+                    .coerceAtMost(HeartGuardIconSize.RecordThermometerIllustration)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+            ) {
+                if (thermometerPainter != null) {
+                    Image(
+                        painter = thermometerPainter,
+                        contentDescription = null,
+                        modifier = Modifier.size(thermometerSize),
+                    )
+                }
+                Column(
+                    modifier =
+                        if (thermometerPainter != null) {
+                            Modifier.weight(1f)
+                        } else {
+                            Modifier
+                        },
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                ) {
+                    Text(
+                        text = currentTemperatureLabel,
+                        color = MaterialTheme.extraColors.homeMutedText,
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontSize = HeartGuardFontSize.SmallLabel,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                    )
+                    Text(
+                        text = currentTemperature,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style =
+                            MaterialTheme.typography.headlineLarge.copy(
+                                fontSize = HeartGuardFontSize.TemperatureSummary,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                    )
+                    Text(
+                        text =
+                            stringResource(
+                                R.string.home_weather_summary_format,
+                                humidityLabel,
+                                humidity,
+                                feelsLikeLabel,
+                                feelsLikeTemperature,
+                            ),
+                        color = MaterialTheme.extraColors.homeMutedText,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontSize = HeartGuardFontSize.SmallLabel,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                    )
+                }
+            }
         }
     }
 }
@@ -110,3 +145,5 @@ private fun TemperatureSummaryCardPreview() {
         )
     }
 }
+
+private const val THERMOMETER_WIDTH_FRACTION = 0.36f

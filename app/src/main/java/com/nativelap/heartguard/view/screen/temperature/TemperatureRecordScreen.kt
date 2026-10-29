@@ -106,6 +106,7 @@ fun TemperatureRecordScreen(
                     feelsLikeLabel = stringResource(R.string.temperature_feels_like_short),
                     title = stringResource(R.string.temperature_current_measurement),
                     thermometerPainter = painterResource(R.drawable.record_thermometer_illustration),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
 
                 TemperatureRecordCard(
@@ -135,7 +136,7 @@ fun TemperatureRecordScreen(
                     onManualInputChange = onManualInputChange,
                     checkboxContentDescription = stringResource(R.string.temperature_checkbox_description),
                     title = stringResource(R.string.temperature_manual_input_title),
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                 )
 
                 PhotoCaptureRow(
@@ -145,9 +146,9 @@ fun TemperatureRecordScreen(
                     cameraContentDescription = stringResource(R.string.photo_capture),
                     onClick = onFieldPhotoClick,
                     isEnabled = selectedFieldPhotoCount < MAX_RECORD_PHOTO_COUNT,
-                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordCardHorizontal),
+                    modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                     labelHorizontalOffset =
-                        HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.RecordCardHorizontal,
+                        HeartGuardSpacing.RecordTitleHorizontal - HeartGuardSpacing.HomeContentHorizontal,
                 )
             }
         }
@@ -189,6 +190,50 @@ private fun TemperatureRecordScreenCheckedPreview() {
             isManualInputEnabled = true,
             selectedFieldPhotoCount = 0,
             isSaveEnabled = true,
+            onTemperatureChange = {},
+            onHumidityChange = {},
+            onManualInputChange = {},
+            onFieldPhotoClick = {},
+            onSaveClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 320, heightDp = 760, fontScale = 1.2f)
+@Composable
+private fun TemperatureRecordScreenCompactPreview() {
+    HeartGuardTheme {
+        TemperatureRecordScreen(
+            currentTemperature = "47.5°C",
+            humidity = "55%",
+            feelsLikeTemperature = "40.5°C",
+            temperatureText = "",
+            humidityText = "",
+            isManualInputEnabled = false,
+            selectedFieldPhotoCount = 0,
+            isSaveEnabled = false,
+            onTemperatureChange = {},
+            onHumidityChange = {},
+            onManualInputChange = {},
+            onFieldPhotoClick = {},
+            onSaveClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+private fun TemperatureRecordScreenMediumPreview() {
+    HeartGuardTheme {
+        TemperatureRecordScreen(
+            currentTemperature = "47.5°C",
+            humidity = "55%",
+            feelsLikeTemperature = "40.5°C",
+            temperatureText = "",
+            humidityText = "",
+            isManualInputEnabled = false,
+            selectedFieldPhotoCount = 0,
+            isSaveEnabled = false,
             onTemperatureChange = {},
             onHumidityChange = {},
             onManualInputChange = {},
