@@ -13,8 +13,8 @@ import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
 import com.nativelap.heartguard.domain.site.usecase.GetAppLinkedSitesUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetAppSiteDashboardUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetSelectedAppSiteIdUseCase
-import com.nativelap.heartguard.domain.site.usecase.SelectAppSiteUseCase
-import com.nativelap.heartguard.domain.site.usecase.UnlinkAppSiteUseCase
+import com.nativelap.heartguard.domain.site.usecase.SelectAppTeamUseCase
+import com.nativelap.heartguard.domain.site.usecase.UnlinkAppTeamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,8 +32,8 @@ internal class AppAccountSitesViewModel
     constructor(
         private val getAppLinkedSitesUseCase: GetAppLinkedSitesUseCase,
         private val getSelectedAppSiteIdUseCase: GetSelectedAppSiteIdUseCase,
-        private val selectAppSiteUseCase: SelectAppSiteUseCase,
-        private val unlinkAppSiteUseCase: UnlinkAppSiteUseCase,
+        private val selectAppTeamUseCase: SelectAppTeamUseCase,
+        private val unlinkAppTeamUseCase: UnlinkAppTeamUseCase,
         private val getAppSiteDashboardUseCase: GetAppSiteDashboardUseCase,
         private val logoutAppAccountUseCase: LogoutAppAccountUseCase,
         private val sessionManager: SessionManager,
@@ -75,11 +75,12 @@ internal class AppAccountSitesViewModel
                         mutableUiState.update {
                             it.copy(
                                 isLoading = false,
-                                linkedSites = result.value,
+                                linkedSites = result.value.items,
+                                selectedTeamId = result.value.selectedTeamId,
                                 selectedSiteId = getSelectedAppSiteIdUseCase(),
                                 openedSiteId =
                                     it.openedSiteId?.takeIf { openedId ->
-                                        result.value.any { site -> site.siteId == openedId }
+                                        result.value.items.any { site -> site.siteId == openedId }
                                     },
                             )
                         }
@@ -99,7 +100,7 @@ internal class AppAccountSitesViewModel
             }
         }
 
-        fun selectSite(siteId: String) {
+        fun selectTeam(teamId: String) {
             val expectedSession = activeSessionSnapshot ?: return
             if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
@@ -107,13 +108,19 @@ internal class AppAccountSitesViewModel
             mutableUiState.update {
                 it.copy(
                     isSelectingSite = true,
-                    selectingSiteId = siteId,
+                    selectingTeamId = teamId,
                     hasSelectionFailure = false,
                     hasUnlinkFailure = false,
                 )
             }
             launchSessionRequest(expectedSession) {
-                when (val result = selectAppSiteUseCase(siteId, expectedSession.generation)) {
+                when (
+                    val result =
+                        selectAppTeamUseCase(
+                            teamId,
+                            expectedSession.generation,
+                        )
+                ) {
                     is ApiResult.Success -> {
                         if (!isCurrentSession(expectedSession)) {
                             return@launchSessionRequest
@@ -121,7 +128,8 @@ internal class AppAccountSitesViewModel
                         mutableUiState.update {
                             it.copy(
                                 isSelectingSite = false,
-                                selectingSiteId = null,
+                                selectingTeamId = null,
+                                selectedTeamId = result.value.teamId,
                                 selectedSiteId = result.value.siteId,
                                 openedSiteId = null,
                                 dashboard = null,
@@ -132,7 +140,7 @@ internal class AppAccountSitesViewModel
                     is ApiResult.Failure -> {
                         if (isCurrentSession(expectedSession)) {
                             mutableUiState.update {
-                                it.copy(isSelectingSite = false, selectingSiteId = null, hasSelectionFailure = true)
+                                it.copy(isSelectingSite = false, selectingTeamId = null, hasSelectionFailure = true)
                             }
                         }
                     }
@@ -199,7 +207,10 @@ internal class AppAccountSitesViewModel
             }
         }
 
-        fun unlinkSite(siteId: String) {
+        fun unlinkTeam(
+            teamId: String,
+            siteId: String,
+        ) {
             val expectedSession = activeSessionSnapshot ?: return
             if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
@@ -207,12 +218,19 @@ internal class AppAccountSitesViewModel
             mutableUiState.update {
                 it.copy(
                     isUnlinkingSite = true,
+                    unlinkingTeamId = teamId,
                     hasSelectionFailure = false,
                     hasUnlinkFailure = false,
                 )
             }
             launchSessionRequest(expectedSession) {
-                when (unlinkAppSiteUseCase(siteId, expectedSession.generation)) {
+                when (
+                    unlinkAppTeamUseCase(
+                        teamId,
+                        siteId,
+                        expectedSession.generation,
+                    )
+                ) {
                     is ApiResult.Success -> {
                         if (!isCurrentSession(expectedSession)) {
                             return@launchSessionRequest
@@ -220,7 +238,9 @@ internal class AppAccountSitesViewModel
                         mutableUiState.update {
                             it.copy(
                                 isUnlinkingSite = false,
-                                linkedSites = it.linkedSites.filterNot { site -> site.siteId == siteId },
+                                unlinkingTeamId = null,
+                                linkedSites = it.linkedSites.filterNot { site -> site.teamId == teamId },
+                                selectedTeamId = it.selectedTeamId.takeUnless { selectedId -> selectedId == teamId },
                                 selectedSiteId = getSelectedAppSiteIdUseCase(),
                                 openedSiteId = it.openedSiteId?.takeUnless { openedId -> openedId == siteId },
                                 dashboard = null,
@@ -232,7 +252,11 @@ internal class AppAccountSitesViewModel
                     is ApiResult.Failure -> {
                         if (isCurrentSession(expectedSession)) {
                             mutableUiState.update {
-                                it.copy(isUnlinkingSite = false, hasUnlinkFailure = true)
+                                it.copy(
+                                    isUnlinkingSite = false,
+                                    unlinkingTeamId = null,
+                                    hasUnlinkFailure = true,
+                                )
                             }
                             refresh(expectedSession)
                         }
@@ -320,12 +344,14 @@ private data class SessionOwner(
 
 internal data class AppAccountSitesUiState(
     val linkedSites: List<AppLinkedSite> = emptyList(),
+    val selectedTeamId: String? = null,
     val selectedSiteId: String? = null,
     val isLoading: Boolean = false,
     val isSelectingSite: Boolean = false,
-    val selectingSiteId: String? = null,
+    val selectingTeamId: String? = null,
     val hasSelectionFailure: Boolean = false,
     val isUnlinkingSite: Boolean = false,
+    val unlinkingTeamId: String? = null,
     val hasUnlinkFailure: Boolean = false,
     val openedSiteId: String? = null,
     val dashboard: AppSiteDashboard? = null,

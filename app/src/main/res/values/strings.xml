@@ -111,9 +111,9 @@
     <string name="app_account_site_unlink_error">연동 해제를 완료하지 못했습니다. 현장 목록을 확인하고 다시 시도해주세요.</string>
     <string name="app_account_site_unlink_again">다시 눌러 소속 해제</string>
     <string name="app_account_site_unlinking">해제 중…</string>
-    <string name="app_account_site_selected_action_description">%1$s, 선택됨. 한 번 더 누르면 팀 소속이 해제됩니다.</string>
-    <string name="app_account_site_unselected_action_description">%1$s, 선택되지 않은 팀. 누르면 선택됩니다.</string>
-    <string name="app_account_site_unlinking_action_description">%1$s, 소속 해제 요청 중.</string>
+    <string name="app_account_site_selected_action_description">%1$s, %2$s, 선택됨. 한 번 더 누르면 팀 소속이 해제됩니다.</string>
+    <string name="app_account_site_unselected_action_description">%1$s, %2$s, 선택되지 않은 팀. 누르면 선택됩니다.</string>
+    <string name="app_account_site_unlinking_action_description">%1$s, %2$s, 소속 해제 요청 중.</string>
     <string name="home_weather_status">현재 온도</string>
     <string name="home_weather_label">날씨</string>
     <string name="home_current_temperature">현재 온도</string>

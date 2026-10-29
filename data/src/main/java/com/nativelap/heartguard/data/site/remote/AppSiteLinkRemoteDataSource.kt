@@ -12,8 +12,8 @@ interface AppSiteLinkRemoteDataSource {
         expectedSessionGeneration: Long,
     ): ApiResult<AppSiteDashboardDto>
 
-    suspend fun unlinkSite(
-        siteId: String,
+    suspend fun unlinkTeam(
+        teamId: String,
         expectedSessionGeneration: Long,
     ): ApiResult<Unit>
 
@@ -25,8 +25,8 @@ interface AppSiteLinkRemoteDataSource {
 
     suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<AppLinkedSitesResponseDto>
 
-    suspend fun selectSite(
-        siteId: String,
+    suspend fun selectTeam(
+        teamId: String,
         expectedSessionGeneration: Long,
     ): ApiResult<AppSiteSelectionResponseDto>
 }

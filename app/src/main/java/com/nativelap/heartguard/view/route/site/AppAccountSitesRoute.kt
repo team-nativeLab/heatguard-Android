@@ -31,11 +31,14 @@ internal fun AppAccountSitesRoute(
                     viewModel.refresh()
                 }
 
-                is AppAccountSitesScreenEvent.SiteClicked -> {
-                    if (uiState.selectedSiteId == event.siteId) {
-                        viewModel.unlinkSite(event.siteId)
+                is AppAccountSitesScreenEvent.TeamClicked -> {
+                    if (uiState.selectedTeamId == event.teamId) {
+                        viewModel.unlinkTeam(
+                            event.teamId,
+                            event.siteId,
+                        )
                     } else {
-                        viewModel.selectSite(event.siteId)
+                        viewModel.selectTeam(event.teamId)
                     }
                 }
             }
