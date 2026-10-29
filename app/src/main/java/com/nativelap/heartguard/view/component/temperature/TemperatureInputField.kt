@@ -17,6 +17,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 
 /** 온도 카드 안에서 숫자와 자동 계산값을 동일한 입력 박스 스타일로 보여준다. */
 @Composable
@@ -46,7 +47,8 @@ fun TemperatureInputField(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = HeartGuardSpacing.Tight),
+                    .padding(top = HeartGuardSpacing.Tight)
+                    .keyboardInputBounds(),
             textStyle = MaterialTheme.typography.bodySmall,
             singleLine = true,
             placeholder = {

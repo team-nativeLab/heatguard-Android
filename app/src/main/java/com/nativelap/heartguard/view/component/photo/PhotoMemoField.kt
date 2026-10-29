@@ -25,6 +25,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 
 /** 작업·휴식 사진에 남길 메모를 디자인의 다줄 입력 필드로 제공한다. */
 @Composable
@@ -71,7 +72,8 @@ fun PhotoMemoField(
                     .fillMaxWidth()
                     .padding(top = HeartGuardSpacing.Compact)
                     .padding(horizontal = contentHorizontalPadding)
-                    .heightIn(min = HeartGuardComponentSize.PhotoMemoMinHeight),
+                    .heightIn(min = HeartGuardComponentSize.PhotoMemoMinHeight)
+                    .keyboardInputBounds(),
             placeholder = {
                 Text(
                     text = placeholder,

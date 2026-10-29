@@ -237,6 +237,7 @@ internal fun AuthSignUpScreen(
                                     minimumHeight = HeartGuardComponentSize.TouchTarget,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                 )
+                                SignUpErrorMessage(isStatusError, statusMessage)
                             }
 
                             if (step == SIGN_UP_EMAIL_STEP) {
@@ -251,6 +252,7 @@ internal fun AuthSignUpScreen(
                                     },
                                     enabled = !isSubmitting && !isSendingEmailCode && emailCodeRemainingSeconds > 0,
                                 )
+                                SignUpErrorMessage(isStatusError, statusMessage)
                             }
 
                             if (step == SIGN_UP_CODE_STEP) {
@@ -352,15 +354,7 @@ internal fun AuthSignUpScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = !isSubmitting,
                                 )
-                            }
-
-                            if (isStatusError && statusMessage != null) {
-                                Spacer(modifier = Modifier.height(HeartGuardSpacing.Item))
-                                Text(
-                                    text = statusMessage,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
+                                SignUpErrorMessage(isStatusError, statusMessage)
                             }
                         }
                     }
@@ -376,6 +370,7 @@ internal fun AuthSignUpScreen(
                                         0.dp
                                     },
                             ).padding(horizontal = HeartGuardSpacing.AuthHorizontal)
+                            .padding(bottom = HeartGuardSpacing.AuthActionBottom)
                             .widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
                             .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -444,6 +439,7 @@ internal fun AuthSignUpScreen(
                                 )
                                 Text(
                                     text = stringResource(R.string.auth_login),
+                                    modifier = Modifier.padding(start = HeartGuardSpacing.AuthTitleDescription),
                                     color = MaterialTheme.extraColors.authPrimary,
                                     style =
                                         MaterialTheme.typography.bodyMedium.copy(
@@ -456,6 +452,21 @@ internal fun AuthSignUpScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SignUpErrorMessage(
+    isError: Boolean,
+    message: String?,
+) {
+    if (isError && message != null) {
+        Text(
+            text = message,
+            modifier = Modifier.padding(top = HeartGuardSpacing.AuthErrorMessageGap),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 

@@ -40,6 +40,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 
 enum class AuthTextFieldStyle {
     FocusOutlined,
@@ -135,6 +136,7 @@ fun AuthTextField(
                     .fillMaxWidth()
                     .padding(top = HeartGuardSpacing.AuthFieldLabelInput)
                     .heightIn(min = minimumHeight)
+                    .keyboardInputBounds()
                     .bringIntoViewRequester(inputViewportRequester)
                     .semantics {
                         if (isError && supportingText != null) {
@@ -209,7 +211,7 @@ fun AuthTextField(
         if (supportingText != null) {
             Text(
                 text = supportingText,
-                modifier = Modifier.padding(top = HeartGuardSpacing.Compact),
+                modifier = Modifier.padding(top = HeartGuardSpacing.AuthErrorMessageGap),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
             )

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 
 @Composable
 internal fun AuthVerificationCodeInput(
@@ -56,6 +57,7 @@ internal fun AuthVerificationCodeInput(
         modifier =
             modifier
                 .fillMaxWidth()
+                .keyboardInputBounds()
                 .onFocusChanged { focusState -> isFocused = focusState.isFocused }
                 .semantics { contentDescription = accessibilityDescription },
         enabled = enabled,

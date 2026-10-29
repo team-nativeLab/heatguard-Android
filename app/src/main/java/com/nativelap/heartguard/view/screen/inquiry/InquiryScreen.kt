@@ -41,6 +41,7 @@ import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
+import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
@@ -191,7 +192,8 @@ private fun InquiryInputField(
                             color = fieldBorderColor,
                             shape = fieldShape,
                         ).semantics { contentDescription = label }
-                        .heightIn(min = minHeight),
+                        .heightIn(min = minHeight)
+                        .keyboardInputBounds(),
                 placeholder = { Text(placeholder) },
                 minLines = minLines,
                 singleLine = minLines == 1,
@@ -222,6 +224,7 @@ private fun InquiryInputField(
                             Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                                .keyboardInputBounds()
                                 .semantics { contentDescription = label },
                         placeholder = { Text(placeholder) },
                         minLines = minLines,
