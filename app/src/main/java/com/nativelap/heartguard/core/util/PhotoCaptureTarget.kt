@@ -6,9 +6,8 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
 
-/** CameraX가 기록할 캐시 파일과 기존 미리보기·업로드 흐름에서 사용할 URI를 함께 제공한다. */
+/** 시스템 카메라 앱이 기록할 캐시 파일과 기존 사진 흐름에서 사용할 URI를 제공한다. */
 internal data class PhotoCaptureTarget(
-    val file: File,
     val uri: Uri,
 )
 
@@ -37,7 +36,6 @@ internal fun createPhotoCaptureTarget(context: Context): PhotoCaptureTarget? {
                 captureFile,
             )
         PhotoCaptureTarget(
-            file = captureFile,
             uri = captureUri,
         )
     } catch (_: Exception) {

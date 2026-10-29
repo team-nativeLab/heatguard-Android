@@ -39,17 +39,17 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | Emergency / Calling | 홈 "관리자 전화"로 진입. "긴급 호출하기"를 눌러 호출 등록 → 호출 중(관리자 확인 시 연결됨) → 취소·종료. 앱 재시작 시 진행 중 호출을 이어받음 |
 | RecordTypeSelection | 온도계 기록 / 작업 사진 / 휴식 사진 중 기록 유형 선택 (바텀시트) |
 | TemperatureRecord | 온도계 측정값 입력 |
-| FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 CameraX 전체 화면 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장). 휴식 기록은 시작·종료 시각을 TimePicker로 선택하고 자정을 넘기는 구간을 지원 |
-| PhotoCamera | 선택한 기록 유형으로 CameraX 전체 화면 촬영 |
+| FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 기본 시스템 카메라 앱 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장). 휴식 기록은 시작·종료 시각을 TimePicker로 선택하고 자정을 넘기는 구간을 지원 |
+| PhotoCamera | 선택한 기록 유형으로 기본 시스템 카메라 앱을 열어 촬영 |
 | SaveSuccess / SaveFailure | 저장 성공·명확한 실패·결과 확인 필요를 구분. 결과 불명 제출은 재전송 대신 기록 내역 확인을 안내하며, 성공 후 로컬 정리 실패는 별도 경고 |
 | WithdrawNotice / WithdrawConfirm / WithdrawDone | 회원탈퇴 안내·확인·완료. 현재 비밀번호 확인 후 팀 계정과 세션을 비활성화 |
 
 세션은 `core/session/SessionManager`와 Android Keystore 기반 토큰 저장소(`AndroidKeystoreTokenStorage`)가 관리하고, `HeartGuardNavHost`가 `SessionState`를 구독해 인증 화면을 전환합니다. 화면 ViewModel이 Activity 수명으로 남기 때문에, 사용자 데이터를 가진 ViewModel은 `clearStateWhenSessionEnds`로 로그아웃·세션 만료 시 이전 작업자의 값을 지웁니다. 비밀번호 확인 요청(회원탈퇴·비밀번호 변경)은 `PasswordConfirmationRequest` 태그를 붙여, 비밀번호 불일치(401)가 세션 만료로 처리되지 않게 합니다. 알림 ViewModel도 세션 종료 시 목록과 읽지 않은 수를 초기화합니다. 읽지 않은 항목을 누르면 해당 항목만 읽음 처리하고, 실패하면 읽지 않은 상태를 유지하며 Snackbar로 안내합니다.
 
-사진 흐름은 사진 종류 선택 → CameraX 전체 화면 촬영 또는 Android Photo Picker(`PickVisualMedia`) 앨범 선택 → 공유 `RecordDraftViewModel` 목록 반영 → 업로드 및 기록 제출 순서입니다. 사진 종류별 최대 2장까지 담으며, 저장 확인 화면 없이 제출하며, 저장은 `RecordDraftViewModel`의 `viewModelScope`에서 실행하며 연타를 차단합니다. POST 이후 취소되거나 응답을 확인하지 못한 제출은 로컬 표식을 유지해 같은 제출의 재전송을 차단합니다. CameraX 화면은 Manifest의 `CAMERA` 권한을 선언하고 런타임 권한도 요청합니다. 촬영 JPEG은 앱 캐시의 `photos/` 임시 파일로 만들고 `FileProvider` URI를 목록·미리보기·업로드에 사용합니다. 기록 흐름이 끝나거나 사진을 삭제하면 촬영 캐시 파일을 정리합니다. 온도·습도·메모 등 일부 입력 초안은 `SavedStateHandle`로 복구하며, 사진 URI나 업로드 키는 프로세스 재생성 후 복구하지 않습니다.
+사진 흐름은 사진 종류 선택 → 기본 시스템 카메라 앱 촬영 또는 Android Photo Picker(`PickVisualMedia`) 앨범 선택 → 공유 `RecordDraftViewModel` 목록 반영 → 업로드 및 기록 제출 순서입니다. 카메라 앱은 사용자가 촬영 버튼을 눌렀을 때 열리며, AndroidX `TakePicture` 계약이 앱 캐시의 `photos/` 하위 `FileProvider` URI에 임시 접근 권한을 전달합니다. 앱은 `CAMERA` 권한을 요청하지 않습니다. 카메라가 취소되거나 파일이 비어 있으면 해당 임시 파일을 지웁니다. 사진 종류별 최대 2장까지 담으며, 저장 확인 화면 없이 제출하며, 저장은 `RecordDraftViewModel`의 `viewModelScope`에서 실행하며 연타를 차단합니다. POST 이후 취소되거나 응답을 확인하지 못한 제출은 로컬 표식을 유지해 같은 제출의 재전송을 차단합니다. 기록 흐름이 끝나거나 사진을 삭제하면 촬영 캐시 파일을 정리합니다. 온도·습도·메모 등 일부 입력 초안과 외부 카메라로 전달한 미완료 촬영 URI는 복구하지만, 선택 사진 URI와 업로드 키는 프로세스 재생성 후 복구하지 않습니다.
 
 ## 반응형 UI 진행 상태
-홈, 프로필 수정, 문의, 알림, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패, 탈퇴 안내·완료 화면에는 최대 600dp 중앙 콘텐츠 래퍼와 하단 동작 폭 제한을 적용했습니다. 로그인은 폼의 실제 높이에 따라 상단 여백을 줄이고 상태바·내비게이션 바·키보드 여백을 처리합니다. 키보드가 없을 때는 폼을 스크롤하고 하단 로그인 동작을 유지하며, 키보드가 열리면 폼과 하단 동작을 함께 스크롤해 짧은 높이에서도 입력칸을 확인할 수 있도록 합니다. 탈퇴 확인의 안내 문구는 별도 스크롤 영역을 제공합니다. 로그인 입력 영역, 알림 빈 상태, 탈퇴 완료 본문은 작은 화면에서 스크롤됩니다. 카메라 촬영 화면은 전체 화면 구성을 유지합니다. 2026-10-01 에뮬레이터에서 로그인 393×582dp 잘림 수정과 실제 IME 표시를 캡처로 확인했습니다. 확대 글꼴·탈퇴 화면의 넓은 폭·스크롤은 과거 계측 테스트로 검증했으나, 테스트 소스 제거 후 자동으로 재현할 수 없습니다. 저장 결과 제목·메시지·요약·버튼은 확대 글꼴에 맞춰 높이가 늘어나고, 메뉴는 짧은 화면에서 스크롤됩니다. 시트 본문도 최대 600dp로 제한하며 온도계 수동 입력 스위치에 접근성 이름을 연결했습니다. 저장 결과의 긴 요약·가로 오류 화면, 메뉴 스크롤, 태블릿 중앙 정렬과 스위치 semantics는 당시 계측 테스트로 확인했습니다. 이 결과는 역사적 기록이며 현재 자동 검증은 제공하지 않습니다. 모든 작업자 프레임의 인증된 화면과 기기 크기별 시각 비교는 아직 완료되지 않았습니다.
+홈, 프로필 수정, 문의, 알림, 기록 내역, 긴급 호출·호출 중, 사진 종류 선택, 온도 기록, 저장 성공·실패, 탈퇴 안내·완료 화면에는 최대 600dp 중앙 콘텐츠 래퍼와 하단 동작 폭 제한을 적용했습니다. 로그인은 폼의 실제 높이에 따라 상단 여백을 줄이고 상태바·내비게이션 바·키보드 여백을 처리합니다. 키보드가 없을 때는 폼을 스크롤하고 하단 로그인 동작을 유지하며, 키보드가 열리면 폼과 하단 동작을 함께 스크롤해 짧은 높이에서도 입력칸을 확인할 수 있도록 합니다. 탈퇴 확인의 안내 문구는 별도 스크롤 영역을 제공합니다. 로그인 입력 영역, 알림 빈 상태, 탈퇴 완료 본문은 작은 화면에서 스크롤됩니다. 사진 촬영 안내는 앱 화면에서 제공하며 촬영은 시스템 카메라 앱으로 전환합니다. 2026-10-01 에뮬레이터에서 로그인 393×582dp 잘림 수정과 실제 IME 표시를 캡처로 확인했습니다. 확대 글꼴·탈퇴 화면의 넓은 폭·스크롤은 과거 계측 테스트로 검증했으나, 테스트 소스 제거 후 자동으로 재현할 수 없습니다. 저장 결과 제목·메시지·요약·버튼은 확대 글꼴에 맞춰 높이가 늘어나고, 메뉴는 짧은 화면에서 스크롤됩니다. 시트 본문도 최대 600dp로 제한하며 온도계 수동 입력 스위치에 접근성 이름을 연결했습니다. 저장 결과의 긴 요약·가로 오류 화면, 메뉴 스크롤, 태블릿 중앙 정렬과 스위치 semantics는 당시 계측 테스트로 확인했습니다. 이 결과는 역사적 기록이며 현재 자동 검증은 제공하지 않습니다. 모든 작업자 프레임의 인증된 화면과 기기 크기별 시각 비교는 아직 완료되지 않았습니다.
 
 로그인 브랜드 이미지는 사용자 제공 투명 PNG를 `app/src/main/res/drawable-nodpi/heart_guard_logo.png`로 사용합니다. `BrandMark`는 80dp 영역에서 `ContentScale.Fit`으로 원본 비율을 유지합니다. 설치한 앱의 로그인 화면에서 PNG 표시를 시각 확인했으며 [검증 보고서](docs/verification/2026-10-04-functional-regression.md)에 캡처를 보관했습니다. 호출 취소 버튼에는 1dp 테두리와 surface 배경을 적용했습니다.
 
@@ -127,7 +127,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | 언어 | Kotlin 2.2.10 |
 | UI | Jetpack Compose (BOM 2026.02.01), Material 3 |
 | Navigation | AndroidX Navigation3 (`navigation3-runtime`, `navigation3-ui` 1.1.6), `NavDisplay` |
-| 사진 | CameraX 1.6.2, Android Photo Picker |
+| 사진 | AndroidX Activity `TakePicture`, Android Photo Picker |
 | DI | Hilt |
 | 네트워크 | Retrofit, OkHttp, kotlinx.serialization 컨버터 |
 | 이미지 | Coil 3.3.0 (`coil-compose`, `coil-network-okhttp`) — 기록 상세 사진 표시. 3.4 이상은 Kotlin 2.3+ stdlib이 필요해 현재 Kotlin 2.2와 호환되는 버전 사용 |
@@ -174,7 +174,7 @@ core/network/    # Retrofit·OkHttp, API 결과 및 인증 처리
 core/session/    # 세션 상태와 Keystore 기반 토큰 저장
 ```
 
-사진 Route에서 카메라 또는 앨범 출처를 선택합니다. CameraX 촬영 결과와 Photo Picker URI는 기록 종류별 목록을 보유한 공유 `RecordDraftViewModel`에 추가됩니다. 저장 버튼은 사진 1~2장을 업로드(URL 발급 → PUT)한 뒤 받은 `objectKey`로 `/api/v1/team/records`에 기록을 제출하며 `measuredAt`에는 첫 저장 버튼 시각을 사용하며, 같은 제출의 명확한 실패 후 재시도에서도 제출 ID와 해당 시각을 유지합니다.
+사진 Route에서 카메라 또는 앨범 출처를 선택합니다. 시스템 카메라 촬영 결과와 Photo Picker URI는 기록 종류별 목록을 보유한 공유 `RecordDraftViewModel`에 추가됩니다. 저장 버튼은 사진 1~2장을 업로드(URL 발급 → PUT)한 뒤 받은 `objectKey`로 `/api/v1/team/records`에 기록을 제출하며 `measuredAt`에는 첫 저장 버튼 시각을 사용하며, 같은 제출의 명확한 실패 후 재시도에서도 제출 ID와 해당 시각을 유지합니다.
 
 ## 프로젝트 구조
 ```text
