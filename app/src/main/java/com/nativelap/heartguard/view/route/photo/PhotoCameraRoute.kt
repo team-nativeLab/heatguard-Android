@@ -8,9 +8,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -30,13 +30,17 @@ internal fun HeartGuardPhotoCameraRoute(
     onBackClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    var pendingCaptureUriString by rememberSaveable {
-        mutableStateOf<String?>(null)
-    }
+    val pendingCaptureUriState =
+        rememberSaveable {
+            mutableStateOf<String?>(null)
+        }
+    var pendingCaptureUriString by pendingCaptureUriState
     var errorMessageResourceId by rememberSaveable {
         mutableStateOf<Int?>(null)
     }
-    val latestPendingCaptureUriString by rememberUpdatedState(pendingCaptureUriString)
+    var hasRequestedInitialCapture by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     val captureLauncher =
         rememberLauncherForActivityResult(
@@ -49,7 +53,13 @@ internal fun HeartGuardPhotoCameraRoute(
                 return@rememberLauncherForActivityResult
             }
 
-            if (!wasCaptureSuccessful || !context.hasNonEmptyCapture(captureUri)) {
+            if (!wasCaptureSuccessful) {
+                deleteCaptureFile(context, captureUri)
+                onBackClick()
+                return@rememberLauncherForActivityResult
+            }
+
+            if (!context.hasNonEmptyCapture(captureUri)) {
                 deleteCaptureFile(context, captureUri)
                 errorMessageResourceId = R.string.photo_camera_capture_failed
                 return@rememberLauncherForActivityResult
@@ -64,10 +74,36 @@ internal fun HeartGuardPhotoCameraRoute(
             }
         }
 
+    val launchCamera = {
+        if (pendingCaptureUriString == null) {
+            val captureTarget = createPhotoCaptureTarget(context)
+            if (captureTarget == null) {
+                errorMessageResourceId = R.string.photo_camera_file_unavailable
+            } else {
+                pendingCaptureUriString = captureTarget.uri.toString()
+                errorMessageResourceId = null
+                try {
+                    captureLauncher.launch(captureTarget.uri)
+                } catch (_: Exception) {
+                    deleteCaptureFile(context, captureTarget.uri)
+                    pendingCaptureUriString = null
+                    errorMessageResourceId = R.string.photo_camera_unavailable
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasRequestedInitialCapture) {
+            hasRequestedInitialCapture = true
+            launchCamera()
+        }
+    }
+
     DisposableEffect(context) {
         onDispose {
             if (context.findActivity()?.isChangingConfigurations != true) {
-                latestPendingCaptureUriString
+                pendingCaptureUriState.value
                     ?.let(Uri::parse)
                     ?.let { captureUri -> deleteCaptureFile(context, captureUri) }
             }
@@ -93,22 +129,7 @@ internal fun HeartGuardPhotoCameraRoute(
                 }
 
                 PhotoCameraScreenEvent.OpenSystemCameraClicked -> {
-                    if (pendingCaptureUriString == null) {
-                        val captureTarget = createPhotoCaptureTarget(context)
-                        if (captureTarget == null) {
-                            errorMessageResourceId = R.string.photo_camera_file_unavailable
-                        } else {
-                            pendingCaptureUriString = captureTarget.uri.toString()
-                            errorMessageResourceId = null
-                            try {
-                                captureLauncher.launch(captureTarget.uri)
-                            } catch (_: Exception) {
-                                deleteCaptureFile(context, captureTarget.uri)
-                                pendingCaptureUriString = null
-                                errorMessageResourceId = R.string.photo_camera_unavailable
-                            }
-                        }
-                    }
+                    launchCamera()
                 }
             }
         },
