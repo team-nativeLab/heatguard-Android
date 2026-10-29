@@ -134,8 +134,13 @@ class WorkerProfileRepositoryImpl
                 } catch (_: Exception) {
                     return ApiResult.Failure(ApiError.Unknown)
                 }
-            if (uploadStatus !in SUCCESS_STATUS_CODES) {
-                return ApiResult.Failure(ApiError.Http(statusCode = uploadStatus))
+            if (uploadStatus.statusCode !in SUCCESS_STATUS_CODES) {
+                return ApiResult.Failure(
+                    ApiError.Http(
+                        statusCode = uploadStatus.statusCode,
+                        errorCode = uploadStatus.errorCode,
+                    ),
+                )
             }
             if (!isCurrentTeamSession(expectedSessionGeneration)) {
                 return ApiResult.Failure(ApiError.SessionChanged)

@@ -2,11 +2,11 @@ package com.nativelap.heartguard.data.profile
 
 import android.content.Context
 import android.net.Uri
+import com.nativelap.heartguard.data.upload.ExactLengthPhotoBodyWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType
 import okhttp3.RequestBody
 import okio.BufferedSink
-import okio.source
 import java.io.FileNotFoundException
 import javax.inject.Inject
 
@@ -48,8 +48,12 @@ class ProfilePhotoFileReader
                     val inputStream =
                         contentResolver.openInputStream(payload.uri)
                             ?: throw FileNotFoundException("Profile photo could not be opened")
-                    inputStream.source().use { source ->
-                        sink.writeAll(source)
+                    inputStream.use { photoStream ->
+                        ExactLengthPhotoBodyWriter.write(
+                            inputStream = photoStream,
+                            sink = sink,
+                            expectedSizeBytes = payload.sizeBytes,
+                        )
                     }
                 }
             }

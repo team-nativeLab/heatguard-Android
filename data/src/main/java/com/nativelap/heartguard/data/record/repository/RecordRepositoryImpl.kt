@@ -13,6 +13,7 @@ import com.nativelap.heartguard.data.record.dto.UploadFileRequestDto
 import com.nativelap.heartguard.data.record.mapper.toApiValue
 import com.nativelap.heartguard.data.record.mapper.toDomain
 import com.nativelap.heartguard.data.record.remote.RecordRemoteDataSource
+import com.nativelap.heartguard.data.upload.PresignedUploadHeaderValidator
 import com.nativelap.heartguard.domain.record.model.FieldRecord
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.repository.RecordRepository
@@ -78,6 +79,16 @@ class RecordRepositoryImpl
             pendingPayloads.zip(uploadSlots).forEach { (photoPayload, uploadSlot) ->
                 if (!FieldPhotoValidation.isUploadUsableAt(uploadSlot.uploadUrl, uploadSlot.expiresAt, Instant.now())) {
                     return ApiResult.Failure(ApiError.Http(statusCode = HTTP_GONE))
+                }
+                if (
+                    !PresignedUploadHeaderValidator.matchesUpload(
+                        requiredHeaders = uploadSlot.requiredHeaders,
+                        expectedContentType = photoPayload.contentType,
+                        expectedSizeBytes = photoPayload.sizeBytes,
+                        requiresContentLength = false,
+                    )
+                ) {
+                    return ApiResult.Failure(ApiError.Serialization)
                 }
                 val uploadResult =
                     recordRemoteDataSource.uploadToPresignedUrl(
