@@ -1,8 +1,9 @@
 package com.nativelap.heartguard.domain.site.model
 
 data class AppLinkedSite(
+    val teamId: String,
+    val teamName: String,
     val siteId: String,
     val siteName: String,
-    val managerName: String?,
-    val linkedAt: String,
+    val companyId: String?,
 )

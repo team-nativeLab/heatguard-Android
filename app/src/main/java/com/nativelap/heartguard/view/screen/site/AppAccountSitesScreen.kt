@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -154,20 +154,25 @@ internal fun AppAccountSitesScreen(
                         ) {
                             items(
                                 items = uiState.linkedSites,
-                                key = AppLinkedSite::siteId,
+                                key = AppLinkedSite::teamId,
                             ) { site ->
                                 SiteSelectionCard(
                                     site = site,
-                                    isSelected = uiState.selectedSiteId == site.siteId,
-                                    isSelecting = uiState.selectingSiteId == site.siteId,
-                                    isUnlinking = uiState.isUnlinkingSite && uiState.selectedSiteId == site.siteId,
+                                    isSelected = uiState.selectedTeamId == site.teamId,
+                                    isSelecting = uiState.selectingTeamId == site.teamId,
+                                    isUnlinking = uiState.unlinkingTeamId == site.teamId,
                                     isEnabled =
                                         !uiState.isSelectingSite &&
                                             !uiState.isUnlinkingSite &&
                                             !uiState.isLoading &&
                                             !uiState.isLoadingDashboard,
                                     onClick = {
-                                        onEvent(AppAccountSitesScreenEvent.SiteClicked(site.siteId))
+                                        onEvent(
+                                            AppAccountSitesScreenEvent.TeamClicked(
+                                                teamId = site.teamId,
+                                                siteId = site.siteId,
+                                            ),
+                                        )
                                     },
                                 )
                             }
@@ -256,6 +261,7 @@ private fun SiteSelectionCard(
                 isSelected -> R.string.app_account_site_selected_action_description
                 else -> R.string.app_account_site_unselected_action_description
             },
+            site.teamName,
             site.siteName,
         )
 
@@ -263,7 +269,7 @@ private fun SiteSelectionCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(SITE_SELECTION_CARD_HEIGHT)
+                .heightIn(min = SITE_SELECTION_CARD_HEIGHT)
                 .semantics(mergeDescendants = true) {
                     contentDescription = actionDescription
                     selected = isSelected
@@ -294,19 +300,29 @@ private fun SiteSelectionCard(
             } else {
                 Spacer(modifier = Modifier.size(SITE_SELECTION_SELECTED_ICON_SIZE))
             }
-            Text(
-                text = site.siteName,
+            Column(
                 modifier = Modifier.weight(1f).padding(start = SITE_SELECTION_CARD_CONTENT_GAP),
-                color = siteNameColor,
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontSize = 16.sp,
-                        lineHeight = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            ) {
+                Text(
+                    text = site.siteName,
+                    color = siteNameColor,
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontSize = 16.sp,
+                            lineHeight = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = site.teamName,
+                    color = MaterialTheme.extraColors.secondaryText,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Text(
                 text = statusLabel,
                 color = labelColor,
