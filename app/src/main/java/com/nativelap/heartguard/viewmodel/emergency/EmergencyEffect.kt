@@ -4,17 +4,21 @@ package com.nativelap.heartguard.viewmodel.emergency
 sealed interface EmergencyEffect {
     val flowGeneration: Long
     val sessionGeneration: Long
-    val callId: String
 
     data class CallStarted(
         override val flowGeneration: Long,
         override val sessionGeneration: Long,
-        override val callId: String,
+        val callId: String,
+    ) : EmergencyEffect
+
+    data class RegistrationDismissed(
+        override val flowGeneration: Long,
+        override val sessionGeneration: Long,
     ) : EmergencyEffect
 
     data class CallClosed(
         override val flowGeneration: Long,
         override val sessionGeneration: Long,
-        override val callId: String,
+        val callId: String,
     ) : EmergencyEffect
 }

@@ -21,7 +21,6 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.component.HeartGuardSheetSurface
 import com.nativelap.heartguard.view.component.emergency.CallCancelButton
-import com.nativelap.heartguard.view.component.emergency.EmergencyAlertBanner
 import com.nativelap.heartguard.view.component.emergency.EmergencyCallIndicator
 import com.nativelap.heartguard.view.component.emergency.EmergencyContactCard
 
@@ -71,12 +70,6 @@ fun EmergencyScreen(
                         fontSize = HeartGuardFontSize.PageTitle,
                         lineHeight = HeartGuardFontSize.PageTitle,
                     ),
-            )
-
-            EmergencyAlertBanner(
-                title = stringResource(R.string.emergency_alert_title),
-                description = stringResource(R.string.emergency_alert_description),
-                modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordPhotoCardHorizontal),
             )
 
             EmergencyCallIndicator(

@@ -59,6 +59,7 @@ class EmergencyViewModel
         // 호출 의도 1회에 하나다. 등록이 실패해 다시 누르면 같은 키를 보내 서버에 호출이 중복 생성되지 않게 한다.
         private var pendingIdempotencyKey: String? = null
         private var consecutivePollingFailureCount = 0
+        private var dismissAfterRegistration = false
 
         init {
             // 백그라운드에서 세션이 끝나도 3초 폴링이 이전 계정 호출을 계속 조회하지 않도록 함께 정리한다.
@@ -105,18 +106,52 @@ class EmergencyViewModel
                         }
 
                         is ApiResult.Failure -> {
-                            if (registerResult.error.isActiveCallAlreadyExists()) {
+                            if (shouldDismissAfterRegistrationFailure(
+                                    dismissRequested = dismissAfterRegistration,
+                                    previousMayExist = currentState.registrationMayExist,
+                                    error = registerResult.error,
+                                )
+                            ) {
+                                dismissRejectedRegistration()
+                            } else if (!registerResult.error.mayHaveCreatedCall()) {
+                                showRegistrationFailure(
+                                    registrationMayExist =
+                                        registrationMayExistAfterFailure(
+                                            previousMayExist = currentState.registrationMayExist,
+                                            error = registerResult.error,
+                                        ),
+                                )
+                            } else if (registerResult.error.isActiveCallAlreadyExists() || dismissAfterRegistration) {
                                 resumeCurrentCall(
                                     shouldOpenCallScreen = true,
                                     onNoActiveCall = ::showRegistrationFailure,
                                     owningFlow = owningFlow,
                                 )
                             } else {
-                                showRegistrationFailure()
+                                showRegistrationFailure(registerResult.error.mayHaveCreatedCall())
                             }
                         }
                     }
                 }
+        }
+
+        /** 등록 응답을 기다린 뒤 생성된 호출을 취소한다. */
+        fun requestDismissDuringRegistration() {
+            if (mutableUiState.value.isRegistering) {
+                dismissAfterRegistration = true
+            } else if (mutableUiState.value.registrationMayExist) {
+                dismissAfterRegistration = true
+                val owningFlow = beginFlow()
+                mutableUiState.value = mutableUiState.value.copy(isRegistering = true)
+                requestJob =
+                    viewModelScope.launch {
+                        resumeCurrentCall(
+                            shouldOpenCallScreen = true,
+                            onNoActiveCall = ::showRegistrationFailure,
+                            owningFlow = owningFlow,
+                        )
+                    }
+            }
         }
 
         /** 홈 조회에 진행 중인 긴급호출이 있을 때마다 호출한다. 서버의 현재 호출이 진행 중이면 이어받는다.
@@ -250,6 +285,7 @@ class EmergencyViewModel
             statusUpdateJob?.cancel()
             statusUpdateJob = null
             pendingIdempotencyKey = null
+            dismissAfterRegistration = false
             consecutivePollingFailureCount = 0
             mutableUiState.value = EmergencyUiState()
             while (effectChannel.tryReceive().isSuccess) {
@@ -316,13 +352,21 @@ class EmergencyViewModel
             if (shouldOpenCallScreen) {
                 sendCallStarted()
             }
+            if (dismissAfterRegistration) {
+                dismissAfterRegistration = false
+                updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+            }
         }
 
-        private fun showRegistrationFailure() {
+        private fun showRegistrationFailure() = showRegistrationFailure(registrationMayExist = true)
+
+        private fun showRegistrationFailure(registrationMayExist: Boolean) {
+            dismissAfterRegistration = false
             mutableUiState.value =
                 mutableUiState.value.copy(
                     isRegistering = false,
                     hasRegistrationFailed = true,
+                    registrationMayExist = registrationMayExist,
                 )
         }
 
@@ -386,6 +430,16 @@ class EmergencyViewModel
             }
         }
 
+        private fun dismissRejectedRegistration() {
+            reset()
+            effectChannel.trySend(
+                EmergencyEffect.RegistrationDismissed(
+                    flowGeneration = flowGeneration,
+                    sessionGeneration = sessionManager.getSnapshot().generation,
+                ),
+            )
+        }
+
         private fun closeCallFlow() {
             val closedCallId = mutableUiState.value.callId ?: return
             reset()
@@ -407,6 +461,7 @@ class EmergencyViewModel
             return when (effect) {
                 is EmergencyEffect.CallStarted -> effect.callId == mutableUiState.value.callId
                 is EmergencyEffect.CallClosed -> mutableUiState.value.callId == null
+                is EmergencyEffect.RegistrationDismissed -> mutableUiState.value.callId == null
             }
         }
 
