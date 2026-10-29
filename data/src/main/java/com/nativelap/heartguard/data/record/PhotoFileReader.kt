@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.record
 
 import android.content.Context
 import android.net.Uri
+import com.nativelap.heartguard.data.upload.ExactLengthPhotoBodyWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType
 import okhttp3.RequestBody
@@ -86,22 +87,11 @@ class PhotoFileReader
                         contentResolver.openInputStream(payload.photoUri)
                             ?: throw FileNotFoundException("사진 파일을 열 수 없습니다: ${payload.photoUri}")
                     inputStream.use { photoStream ->
-                        val readBuffer = ByteArray(READ_BUFFER_SIZE)
-                        var writtenBytes = 0L
-                        while (true) {
-                            val readCount = photoStream.read(readBuffer)
-                            if (readCount < 0) {
-                                break
-                            }
-                            if (writtenBytes + readCount > payload.sizeBytes) {
-                                throw IOException("사진 파일 크기가 업로드 요청 이후 변경되었습니다")
-                            }
-                            sink.write(readBuffer, 0, readCount)
-                            writtenBytes += readCount
-                        }
-                        if (writtenBytes != payload.sizeBytes) {
-                            throw IOException("사진 파일 크기가 업로드 요청 이후 변경되었습니다")
-                        }
+                        ExactLengthPhotoBodyWriter.write(
+                            inputStream = photoStream,
+                            sink = sink,
+                            expectedSizeBytes = payload.sizeBytes,
+                        )
                     }
                 }
             }

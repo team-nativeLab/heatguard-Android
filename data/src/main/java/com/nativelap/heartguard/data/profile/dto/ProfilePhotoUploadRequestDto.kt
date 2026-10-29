@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.data.profile.dto
 
+import com.nativelap.heartguard.data.upload.PresignedUploadHeaderValidator
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -38,12 +39,5 @@ data class ProfilePhotoResponseDto(
 )
 
 /** Profile upload URLs must carry the same byte length that the streaming request body will send. */
-internal fun ProfilePhotoUploadResponseDto.hasMatchingContentLength(sizeBytes: Long): Boolean {
-    val contentLengthHeader =
-        requiredHeaders.entries.singleOrNull { (headerName, _) ->
-            headerName.equals(CONTENT_LENGTH_HEADER, ignoreCase = true)
-        } ?: return false
-    return contentLengthHeader.value.toLongOrNull() == sizeBytes
-}
-
-private const val CONTENT_LENGTH_HEADER = "Content-Length"
+internal fun ProfilePhotoUploadResponseDto.hasMatchingContentLength(sizeBytes: Long): Boolean =
+    PresignedUploadHeaderValidator.hasMatchingContentLength(requiredHeaders, sizeBytes)

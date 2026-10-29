@@ -14,6 +14,7 @@ import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadResponseDto
 import com.nativelap.heartguard.data.profile.dto.UpdateWorkerProfileRequestDto
 import com.nativelap.heartguard.data.profile.dto.WorkerProfileResponseDto
 import com.nativelap.heartguard.data.profile.dto.hasMatchingContentLength
+import com.nativelap.heartguard.data.upload.PresignedUploadHeaderValidator
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -86,6 +87,10 @@ class WorkerProfileRemoteDataSourceImpl
                     upload.uploadId.isNotBlank() &&
                         upload.uploadUrl.isNotBlank() &&
                         upload.expiresAt.isNotBlank() &&
+                        PresignedUploadHeaderValidator.hasMatchingContentType(
+                            requiredHeaders = upload.requiredHeaders,
+                            expectedContentType = request.contentType,
+                        ) &&
                         upload.hasMatchingContentLength(request.size)
                 }
 

@@ -48,10 +48,15 @@ class RecordRemoteDataSourceImpl
                 }
             return when (uploadResult) {
                 is ApiResult.Success -> {
-                    if (uploadResult.value in SUCCESS_STATUS_CODES) {
+                    if (uploadResult.value.statusCode in SUCCESS_STATUS_CODES) {
                         ApiResult.Success(Unit)
                     } else {
-                        ApiResult.Failure(ApiError.Http(statusCode = uploadResult.value))
+                        ApiResult.Failure(
+                            ApiError.Http(
+                                statusCode = uploadResult.value.statusCode,
+                                errorCode = uploadResult.value.errorCode,
+                            ),
+                        )
                     }
                 }
 
