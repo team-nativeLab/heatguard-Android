@@ -22,5 +22,6 @@ internal fun AppAccountSitesRoute(
         uiState = uiState,
         onBackClick = onBackClick,
         onSelectSite = viewModel::selectSite,
+        onRetryClick = viewModel::refresh,
     )
 }
