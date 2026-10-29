@@ -1,7 +1,7 @@
 package com.nativelap.heartguard.domain.site.usecase
 
 import com.nativelap.heartguard.core.network.ApiResult
-import com.nativelap.heartguard.domain.site.model.AppLinkedSite
+import com.nativelap.heartguard.domain.site.model.AppLinkedSites
 import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import javax.inject.Inject
 
@@ -10,6 +10,6 @@ class GetAppLinkedSitesUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        suspend operator fun invoke(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> =
+        suspend operator fun invoke(expectedSessionGeneration: Long): ApiResult<AppLinkedSites> =
             appSiteLinkRepository.getLinkedSites(expectedSessionGeneration)
     }

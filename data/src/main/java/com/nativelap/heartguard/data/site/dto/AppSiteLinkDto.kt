@@ -38,24 +38,30 @@ data class AppSiteLinkClaimResponseDto(
 data class AppLinkedSitesResponseDto(
     @SerialName("items")
     val items: List<AppLinkedSiteDto> = emptyList(),
+    @SerialName("selectedTeamId")
+    val selectedTeamId: String?,
 )
 
 @Serializable
 data class AppLinkedSiteDto(
+    @SerialName("teamId")
+    val teamId: String,
+    @SerialName("teamName")
+    val teamName: String,
     @SerialName("siteId")
     val siteId: String,
     @SerialName("siteName")
     val siteName: String,
-    @SerialName("managerName")
-    val managerName: String? = null,
-    @SerialName("linkedAt")
-    val linkedAt: String,
+    @SerialName("companyId")
+    val companyId: String? = null,
 )
 
 @Serializable
 data class AppSiteSelectionResponseDto(
+    @SerialName("teamId")
+    val teamId: String,
+    @SerialName("teamName")
+    val teamName: String,
     @SerialName("siteId")
     val siteId: String,
-    @SerialName("siteName")
-    val siteName: String,
 )

@@ -5,7 +5,8 @@ internal sealed interface AppAccountSitesScreenEvent {
 
     data object RetryClicked : AppAccountSitesScreenEvent
 
-    data class SiteClicked(
+    data class TeamClicked(
+        val teamId: String,
         val siteId: String,
     ) : AppAccountSitesScreenEvent
 }

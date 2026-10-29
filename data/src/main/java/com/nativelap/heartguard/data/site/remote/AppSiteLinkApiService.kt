@@ -15,7 +15,7 @@ import retrofit2.http.Tag
 
 interface AppSiteLinkApiService {
     @DELETE("api/v1/team/memberships/{teamId}")
-    suspend fun unlinkSite(
+    suspend fun unlinkTeam(
         @Path("teamId") teamId: String,
         @Tag owningSession: RequestSessionGeneration,
     )
@@ -32,7 +32,7 @@ interface AppSiteLinkApiService {
     ): ApiEnvelope<AppLinkedSitesResponseDto>
 
     @POST("api/v1/team/memberships/{teamId}/select")
-    suspend fun selectSite(
+    suspend fun selectTeam(
         @Path("teamId") teamId: String,
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppSiteSelectionResponseDto>

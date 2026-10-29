@@ -7,7 +7,7 @@ import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.data.site.mapper.toDomain
 import com.nativelap.heartguard.data.site.remote.AppSiteLinkRemoteDataSource
-import com.nativelap.heartguard.domain.site.model.AppLinkedSite
+import com.nativelap.heartguard.domain.site.model.AppLinkedSites
 import com.nativelap.heartguard.domain.site.model.AppSelectedSite
 import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
 import com.nativelap.heartguard.domain.site.model.AppSiteLinkClaim
@@ -60,7 +60,7 @@ class AppSiteLinkRepositoryImpl
                     ).map { response -> response.toDomain() }
             }
 
-        override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<List<AppLinkedSite>> {
+        override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<AppLinkedSites> {
             val requestSession = sessionManager.getSnapshot()
             if (requestSession.role != SessionRole.TEAM_MEMBER ||
                 requestSession.generation != expectedSessionGeneration
@@ -74,11 +74,24 @@ class AppSiteLinkRepositoryImpl
             }
             result as ApiResult.Success
             return try {
-                val sites = result.value.items.map { site -> site.toDomain() }
-                if (selectedSiteIdAtRequest != null && sites.none { it.siteId == selectedSiteIdAtRequest }) {
-                    sessionManager.clearSelectedSiteIdForSession(requestSession, selectedSiteIdAtRequest)
+                val linkedSites = result.value.toDomain()
+                val selectedTeam =
+                    linkedSites.items.firstOrNull { site ->
+                        site.teamId == linkedSites.selectedTeamId
+                    }
+                val selectedSiteId = selectedTeam?.siteId
+                if (selectedSiteIdAtRequest != selectedSiteId) {
+                    if (selectedSiteId == null) {
+                        selectedSiteIdAtRequest?.let { previousSiteId ->
+                            sessionManager.clearSelectedSiteIdForSession(requestSession, previousSiteId)
+                        }
+                    } else {
+                        sessionManager.saveSelectedSiteIdForSession(selectedSiteId, requestSession)
+                    }
                 }
-                ApiResult.Success(sites)
+                ApiResult.Success(
+                    linkedSites.copy(selectedTeamId = selectedTeam?.teamId),
+                )
             } catch (cancellationException: CancellationException) {
                 throw cancellationException
             } catch (_: Exception) {
@@ -86,11 +99,12 @@ class AppSiteLinkRepositoryImpl
             }
         }
 
-        override suspend fun unlinkSite(
+        override suspend fun unlinkTeam(
+            teamId: String,
             siteId: String,
             expectedSessionGeneration: Long,
         ): ApiResult<Unit> {
-            if (siteId.isBlank()) {
+            if (teamId.isBlank() || siteId.isBlank()) {
                 return ApiResult.Failure(ApiError.Unknown)
             }
             val requestSession = sessionManager.getSnapshot()
@@ -100,7 +114,7 @@ class AppSiteLinkRepositoryImpl
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
             val selectedSiteIdAtRequest = sessionManager.getSelectedSiteId()
-            val result = appSiteLinkRemoteDataSource.unlinkSite(siteId, expectedSessionGeneration)
+            val result = appSiteLinkRemoteDataSource.unlinkTeam(teamId, expectedSessionGeneration)
             if (result is ApiResult.Success) {
                 try {
                     if (selectedSiteIdAtRequest == siteId) {
@@ -115,11 +129,11 @@ class AppSiteLinkRepositoryImpl
             return result
         }
 
-        override suspend fun selectSite(
-            siteId: String,
+        override suspend fun selectTeam(
+            teamId: String,
             expectedSessionGeneration: Long,
         ): ApiResult<AppSelectedSite> {
-            if (siteId.isBlank()) {
+            if (teamId.isBlank()) {
                 return ApiResult.Failure(ApiError.Unknown)
             }
             val requestSession = sessionManager.getSnapshot()
@@ -129,14 +143,20 @@ class AppSiteLinkRepositoryImpl
             if (requestSession.generation != expectedSessionGeneration) {
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
-            return when (val result = appSiteLinkRemoteDataSource.selectSite(siteId, expectedSessionGeneration)) {
+            return when (
+                val result =
+                    appSiteLinkRemoteDataSource.selectTeam(
+                        teamId,
+                        expectedSessionGeneration,
+                    )
+            ) {
                 is ApiResult.Failure -> {
                     result
                 }
 
                 is ApiResult.Success -> {
                     try {
-                        if (sessionManager.saveSelectedSiteIdForSession(siteId, requestSession)) {
+                        if (sessionManager.saveSelectedSiteIdForSession(result.value.siteId, requestSession)) {
                             ApiResult.Success(result.value.toDomain())
                         } else {
                             ApiResult.Failure(ApiError.SessionChanged)

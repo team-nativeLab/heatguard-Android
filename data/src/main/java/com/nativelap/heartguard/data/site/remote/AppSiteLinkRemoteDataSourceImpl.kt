@@ -31,13 +31,13 @@ class AppSiteLinkRemoteDataSourceImpl
                     response.summary.todayRecordCount >= 0 && response.summary.activeEmergencyCount >= 0
                 }
 
-        override suspend fun unlinkSite(
-            siteId: String,
+        override suspend fun unlinkTeam(
+            teamId: String,
             expectedSessionGeneration: Long,
         ): ApiResult<Unit> =
             apiExecutor.execute {
-                appSiteLinkApiService.unlinkSite(
-                    siteId,
+                appSiteLinkApiService.unlinkTeam(
+                    teamId,
                     RequestSessionGeneration(expectedSessionGeneration),
                 )
             }
@@ -66,19 +66,36 @@ class AppSiteLinkRemoteDataSourceImpl
                     appSiteLinkApiService.getLinkedSites(
                         RequestSessionGeneration(expectedSessionGeneration),
                     )
-                }.requireSuccessData()
+                }.requireSuccessData { response ->
+                    val hasValidSiteIds =
+                        response.items.all { linkedSite ->
+                            linkedSite.teamId.isNotBlank() && linkedSite.siteId.isNotBlank()
+                        }
+                    val hasUniqueTeamIds =
+                        response.items
+                            .map { linkedSite -> linkedSite.teamId }
+                            .distinct()
+                            .size == response.items.size
+                    val hasListedSelectedTeam =
+                        response.selectedTeamId == null ||
+                            response.items.any { linkedSite -> linkedSite.teamId == response.selectedTeamId }
 
-        override suspend fun selectSite(
-            siteId: String,
+                    hasValidSiteIds && hasUniqueTeamIds && hasListedSelectedTeam
+                }
+
+        override suspend fun selectTeam(
+            teamId: String,
             expectedSessionGeneration: Long,
         ): ApiResult<AppSiteSelectionResponseDto> =
             apiExecutor
                 .execute {
-                    appSiteLinkApiService.selectSite(
-                        siteId,
+                    appSiteLinkApiService.selectTeam(
+                        teamId,
                         RequestSessionGeneration(expectedSessionGeneration),
                     )
                 }.requireSuccessData { response ->
-                    response.siteId == siteId && response.siteName.isNotBlank()
+                    response.teamId == teamId &&
+                        response.teamName.isNotBlank() &&
+                        response.siteId.isNotBlank()
                 }
     }
