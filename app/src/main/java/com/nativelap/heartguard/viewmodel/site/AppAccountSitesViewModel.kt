@@ -109,6 +109,7 @@ internal class AppAccountSitesViewModel
                     isSelectingSite = true,
                     selectingSiteId = siteId,
                     hasSelectionFailure = false,
+                    hasUnlinkFailure = false,
                 )
             }
             launchSessionRequest(expectedSession) {
@@ -203,7 +204,13 @@ internal class AppAccountSitesViewModel
             if (!isCurrentSession(expectedSession) || isBusy()) {
                 return
             }
-            mutableUiState.update { it.copy(isUnlinkingSite = true, hasUnlinkFailure = false) }
+            mutableUiState.update {
+                it.copy(
+                    isUnlinkingSite = true,
+                    hasSelectionFailure = false,
+                    hasUnlinkFailure = false,
+                )
+            }
             launchSessionRequest(expectedSession) {
                 when (unlinkAppSiteUseCase(siteId, expectedSession.generation)) {
                     is ApiResult.Success -> {

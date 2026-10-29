@@ -7,6 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.view.screen.site.AppAccountSitesScreen
+import com.nativelap.heartguard.view.screen.site.AppAccountSitesScreenEvent
 import com.nativelap.heartguard.viewmodel.site.AppAccountSitesViewModel
 
 @Composable
@@ -20,8 +21,24 @@ internal fun AppAccountSitesRoute(
     }
     AppAccountSitesScreen(
         uiState = uiState,
-        onBackClick = onBackClick,
-        onSelectSite = viewModel::selectSite,
-        onRetryClick = viewModel::refresh,
+        onEvent = { event ->
+            when (event) {
+                AppAccountSitesScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
+
+                AppAccountSitesScreenEvent.RetryClicked -> {
+                    viewModel.refresh()
+                }
+
+                is AppAccountSitesScreenEvent.SiteClicked -> {
+                    if (uiState.selectedSiteId == event.siteId) {
+                        viewModel.unlinkSite(event.siteId)
+                    } else {
+                        viewModel.selectSite(event.siteId)
+                    }
+                }
+            }
+        },
     )
 }

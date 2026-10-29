@@ -14,26 +14,26 @@ import retrofit2.http.Path
 import retrofit2.http.Tag
 
 interface AppSiteLinkApiService {
-    @DELETE("api/v1/team/sites/{siteId}/link")
+    @DELETE("api/v1/team/memberships/{teamId}")
     suspend fun unlinkSite(
-        @Path("siteId") siteId: String,
+        @Path("teamId") teamId: String,
         @Tag owningSession: RequestSessionGeneration,
     )
 
-    @POST("api/v1/team/links/claim")
+    @POST("api/v1/team/invitations/accept")
     suspend fun claim(
         @Body request: ClaimAppSiteLinkRequestDto,
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppSiteLinkClaimResponseDto>
 
-    @GET("api/v1/team/sites")
+    @GET("api/v1/team/memberships")
     suspend fun getLinkedSites(
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppLinkedSitesResponseDto>
 
-    @POST("api/v1/team/sites/{siteId}/select")
+    @POST("api/v1/team/memberships/{teamId}/select")
     suspend fun selectSite(
-        @Path("siteId") siteId: String,
+        @Path("teamId") teamId: String,
         @Tag owningSession: RequestSessionGeneration,
     ): ApiEnvelope<AppSiteSelectionResponseDto>
 }

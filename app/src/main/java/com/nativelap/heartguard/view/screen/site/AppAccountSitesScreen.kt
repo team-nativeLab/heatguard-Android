@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.screen.site
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -34,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,9 +51,7 @@ import com.nativelap.heartguard.viewmodel.site.AppAccountSitesUiState
 @Composable
 internal fun AppAccountSitesScreen(
     uiState: AppAccountSitesUiState,
-    onBackClick: () -> Unit,
-    onSelectSite: (String) -> Unit,
-    onRetryClick: () -> Unit,
+    onEvent: (AppAccountSitesScreenEvent) -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.extraColors.pageBackground,
@@ -70,7 +71,7 @@ internal fun AppAccountSitesScreen(
                 },
                 navigationIcon = {
                     IconButton(
-                        onClick = onBackClick,
+                        onClick = { onEvent(AppAccountSitesScreenEvent.BackClicked) },
                         modifier = Modifier.padding(start = SITE_SELECTION_BACK_BUTTON_START),
                     ) {
                         Icon(
@@ -105,7 +106,7 @@ internal fun AppAccountSitesScreen(
                     CenteredStatusMessage(
                         message = stringResource(R.string.app_account_sites_error),
                         color = MaterialTheme.colorScheme.error,
-                        onRetryClick = onRetryClick,
+                        onRetryClick = { onEvent(AppAccountSitesScreenEvent.RetryClicked) },
                     )
                 }
 
@@ -129,13 +130,20 @@ internal fun AppAccountSitesScreen(
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                             )
-                            Button(onClick = onRetryClick) {
+                            Button(onClick = { onEvent(AppAccountSitesScreenEvent.RetryClicked) }) {
                                 Text(text = stringResource(R.string.common_retry))
                             }
                         }
                         if (uiState.hasSelectionFailure) {
                             Text(
                                 text = stringResource(R.string.app_account_site_selection_error),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        if (uiState.hasUnlinkFailure) {
+                            Text(
+                                text = stringResource(R.string.app_account_site_unlink_error),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                             )
@@ -152,8 +160,15 @@ internal fun AppAccountSitesScreen(
                                     site = site,
                                     isSelected = uiState.selectedSiteId == site.siteId,
                                     isSelecting = uiState.selectingSiteId == site.siteId,
-                                    isEnabled = !uiState.isSelectingSite && !uiState.isLoading,
-                                    onClick = { onSelectSite(site.siteId) },
+                                    isUnlinking = uiState.isUnlinkingSite && uiState.selectedSiteId == site.siteId,
+                                    isEnabled =
+                                        !uiState.isSelectingSite &&
+                                            !uiState.isUnlinkingSite &&
+                                            !uiState.isLoading &&
+                                            !uiState.isLoadingDashboard,
+                                    onClick = {
+                                        onEvent(AppAccountSitesScreenEvent.SiteClicked(site.siteId))
+                                    },
                                 )
                             }
                         }
@@ -197,6 +212,7 @@ private fun SiteSelectionCard(
     site: AppLinkedSite,
     isSelected: Boolean,
     isSelecting: Boolean,
+    isUnlinking: Boolean,
     isEnabled: Boolean,
     onClick: () -> Unit,
 ) {
@@ -226,13 +242,21 @@ private fun SiteSelectionCard(
         }
     val statusLabel =
         stringResource(
-            if (isSelecting) {
-                R.string.app_account_site_selecting
-            } else if (isSelected) {
-                R.string.team_site_selection_badge
-            } else {
-                R.string.team_site_selection_unselected_badge
+            when {
+                isUnlinking -> R.string.app_account_site_unlinking
+                isSelecting -> R.string.app_account_site_selecting
+                isSelected -> R.string.app_account_site_unlink_again
+                else -> R.string.team_site_selection_unselected_badge
             },
+        )
+    val actionDescription =
+        stringResource(
+            when {
+                isUnlinking -> R.string.app_account_site_unlinking_action_description
+                isSelected -> R.string.app_account_site_selected_action_description
+                else -> R.string.app_account_site_unselected_action_description
+            },
+            site.siteName,
         )
 
     Surface(
@@ -240,10 +264,12 @@ private fun SiteSelectionCard(
             Modifier
                 .fillMaxWidth()
                 .height(SITE_SELECTION_CARD_HEIGHT)
-                .selectable(
-                    selected = isSelected,
-                    enabled = isEnabled && !isSelected,
-                    role = Role.RadioButton,
+                .semantics(mergeDescendants = true) {
+                    contentDescription = actionDescription
+                    selected = isSelected
+                }.clickable(
+                    enabled = isEnabled,
+                    role = Role.Button,
                     onClick = onClick,
                 ),
         shape = RoundedCornerShape(SITE_SELECTION_CARD_RADIUS),

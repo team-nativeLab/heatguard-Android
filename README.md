@@ -60,11 +60,11 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 
 알림과 휴식 기록 계약은 사용자 제공 Downloads의 `개인 페이지 & 공유된 페이지 11` 명세를 기준으로 합니다. 알림 분류 매핑은 `RECORD`→`RECORD_CREATED`, `EMERGENCY`→`EMERGENCY_ACKNOWLEDGED`, `NOTICE`→`INQUIRY_ANSWERED`입니다.
 
-앱은 작업자 인증·기능에 Team API를 사용합니다. #32는 단계별 Team 이메일 인증과 가입 계약을 명시하며, 가입은 세션을 만들지 않고 로그인 토큰이나 쿠키를 발급하지 않습니다. 가입 완료 후 로그인 API를 별도로 호출해야 합니다. 프로필 사진 API는 `TEAM_MEMBER` 권한으로 사용할 수 있으며 팀 소속은 요구하지 않습니다. 체크리스트·기록 조회에는 활성 팀 소속이 필요합니다. 커스텀 URI `heartguard://team/invitations/{token}`만 수신하며 HTTPS 링크는 처리하지 않습니다. 토큰은 Keystore 암호화 저장소에 성공·취소까지 보관합니다. 기존 `APP_ACCOUNT` 토큰을 `TEAM_MEMBER`로 재분류하지 않으며, 앱은 이전 세션을 로컬에서 만료시킵니다. 서버는 마이그레이션 전에 발급된 앱 토큰을 폐기하거나 만료시키는 정책을 적용해야 합니다.
+앱은 작업자 인증·기능에 Team API를 사용합니다. 서버의 `/auth/app/*` API는 이전 버전 호환용으로 유지하며, 현재 앱의 실제 로그인은 `/api/v1/auth/team/login`을 통해 `TEAM_MEMBER` 세션을 사용합니다. #32는 단계별 Team 이메일 인증과 가입 계약을 명시하며, 가입은 세션을 만들지 않고 로그인 토큰이나 쿠키를 발급하지 않습니다. 가입 완료 후 로그인 API를 별도로 호출해야 합니다. 프로필 사진 API는 `TEAM_MEMBER` 권한으로 사용할 수 있으며 팀 소속은 요구하지 않습니다. 체크리스트·기록 조회에는 활성 팀 소속이 필요합니다. 커스텀 URI `heartguard://team/invitations/{token}`만 수신하며 HTTPS 링크는 처리하지 않습니다. 토큰은 Keystore 암호화 저장소에 성공·취소까지 보관합니다. 기존 `APP_ACCOUNT` 토큰을 `TEAM_MEMBER`로 재분류하지 않으며, 앱은 이전 세션을 로컬에서 만료시킵니다. 서버는 마이그레이션 전에 발급된 앱 토큰을 폐기하거나 만료시키는 정책을 적용해야 합니다.
 
 | API | 앱 연동 | 비고 |
 |---|---|---|
-| `POST /auth/team/login`, `POST /auth/team/logout` | 연결 | 응답 `data{accessToken, expiresAt, user, siteId, teamId}`, refresh token 없음 |
+| `POST /api/v1/auth/team/login`, `POST /api/v1/auth/team/logout` | 연결 | 실제 로그인은 `TEAM_MEMBER` 세션을 사용합니다. 응답 `data{accessToken, expiresAt, user, siteId, teamId}`, refresh token 없음 |
 | `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, companyName, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`과 마지막으로 받은 `version`을 보냄. 409는 최신 정보 재조회 후 안내 |
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
 | `GET /team` | 연결 | 기상 미입력 시 기상·비교 필드는 null, 관리자 연락처는 빈 문자열일 수 있음. 응답 DTO가 `company.phone`, `weather.observedAt`·`skyStatus`·`temperatureDelta`·비교값, `unreadNotificationCount`를 파싱한다. 화면에서 사용하는 값만 Domain에 매핑한다. |
@@ -79,7 +79,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `GET /team/checklist`, `PUT /team/checklist/items/{itemId}` | 연결 | GET은 날짜 쿼리 없이 서버의 서울 날짜와 활성 항목을 반환합니다. PUT 응답의 체크 상태를 반영하고 재진입 시 다시 조회합니다. 체크 상태는 같은 팀에서 공유됩니다. |
 | `POST /auth/team/email-codes`, `POST /auth/team/email-codes/verify`, `POST /auth/team/register`, `POST /auth/team/login`, `POST /auth/team/logout` | 연결 | 인증코드 검증이 일회성 `verificationToken`을 반환하고 가입 요청에 사용합니다. 인증·가입 API는 PUBLIC입니다. 가입은 무소속 `TEAM_MEMBER` 계정을 만들며 세션을 발급하지 않으므로, 가입 성공 후 로그인 화면으로 이동해 사용자가 명시적으로 로그인합니다. 서버 #32 테스트 서버 배포 완료; SMTP 실환경 전달은 확인 필요. |
 | `POST /auth/team/profile-photo/uploads`, `PUT /auth/team/profile-photo`, `GET /auth/team/profile-photo`, `DELETE /auth/team/profile-photo` | UI까지 연결 | 조회, presigned URL 발급, 파일 PUT, 업로드 확정, 사진 연결 해제를 프로필 화면에서 제공합니다. 허용 MIME은 JPEG·PNG·WebP, 파일 크기는 1~5 MiB. 서명 URL은 메모리에서만 사용하며 서버가 반환한 만료 시각을 확인합니다. 서버 API 배포 완료, S3 PUT은 `403 InvalidAccessKeyId`로 실환경 성공 검증 미완료. |
-| `POST /team/links/claim`, `GET /team/sites`, `POST /team/sites/{siteId}/select`, `DELETE /team/sites/{siteId}/link` | Android Team 계약 반영, 서버 검증 대기 | 커스텀 URI 현장 연결 토큰과 담당자 전화번호로 현장을 연동하고 목록·선택·연결 해제를 제공한다. 전화번호 대조는 SMS 인증이 아니다. pending 토큰은 Keystore 암호화 저장소에 연결 성공·취소까지 보관한다. |
+| `POST /api/v1/team/invitations/accept`, `GET /api/v1/team/memberships`, `POST /api/v1/team/memberships/{teamId}/select`, `DELETE /api/v1/team/memberships/{teamId}` | Android 경로 수정, 서버 검증 대기 | 요청·응답 DTO는 현재 `token`·`managerPhone` 및 `siteId`·`siteName` 형식을 유지하며 `teamId`는 현장 ID와 같은 값이다. 커스텀 URI 초대 토큰을 Keystore 암호화 저장소에 성공·취소까지 보관한다. 종료된 관리자 연동 경로 `/app/links/claim`·`/app/sites`는 사용하지 않는다. |
 | `GET /team/dashboard` | Android Team 계약 반영, 서버 검증 대기 | Team 세션으로 선택 현장 대시보드를 조회하고 전송 직전 저장된 `X-Site-Id`를 읽는다. 서버는 요청 현장이 해당 Team 계정에 연결됐는지 검증해야 한다. 작업·자료·팀원 관리 전체 화면은 아직 구현하지 않았다. |
 | `GET /team/inquiries/{inquiryId}` | 미연결 | 작업자 앱 문의 상세 화면과 목록 화살표를 만들지 않기로 한 사용자 결정에 따라 범위 제외 |
 
