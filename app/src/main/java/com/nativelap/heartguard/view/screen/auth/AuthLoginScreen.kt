@@ -247,7 +247,8 @@ fun AuthLoginScreen(
                                 } else {
                                     0.dp
                                 },
-                        ).widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
+                        ).padding(bottom = HeartGuardSpacing.AuthActionBottom)
+                        .widthIn(max = HeartGuardComponentSize.AuthActionMaxWidth)
                         .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -285,6 +286,7 @@ fun AuthLoginScreen(
                         )
                         Text(
                             text = stringResource(R.string.auth_signup_link),
+                            modifier = Modifier.padding(start = HeartGuardSpacing.AuthTitleDescription),
                             color = MaterialTheme.extraColors.authPrimary,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(

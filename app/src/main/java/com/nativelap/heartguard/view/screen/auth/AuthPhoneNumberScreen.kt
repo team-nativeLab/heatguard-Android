@@ -64,6 +64,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.auth.AuthTitleBlock
 import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 
 @Composable
 internal fun AuthPhoneNumberScreen(
@@ -210,6 +211,7 @@ private fun PhoneNumberInput(
             modifier =
                 Modifier
                     .weight(1f)
+                    .keyboardInputBounds()
                     .semantics {
                         contentDescription = phoneNumberLabel
                     },

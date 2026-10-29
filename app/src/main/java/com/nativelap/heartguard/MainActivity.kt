@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import com.nativelap.heartguard.core.session.AppLinkTokenStore
 import com.nativelap.heartguard.navigation.HeartGuardNavHost
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
+import com.nativelap.heartguard.view.component.input.KeyboardDismissContainer
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -38,7 +39,9 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             HeartGuardTheme {
-                HeartGuardNavHost()
+                KeyboardDismissContainer {
+                    HeartGuardNavHost()
+                }
             }
         }
     }
