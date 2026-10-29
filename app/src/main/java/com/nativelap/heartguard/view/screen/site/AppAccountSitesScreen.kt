@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,6 +50,7 @@ internal fun AppAccountSitesScreen(
     uiState: AppAccountSitesUiState,
     onBackClick: () -> Unit,
     onSelectSite: (String) -> Unit,
+    onRetryClick: () -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.extraColors.pageBackground,
@@ -103,6 +105,7 @@ internal fun AppAccountSitesScreen(
                     CenteredStatusMessage(
                         message = stringResource(R.string.app_account_sites_error),
                         color = MaterialTheme.colorScheme.error,
+                        onRetryClick = onRetryClick,
                     )
                 }
 
@@ -126,6 +129,9 @@ internal fun AppAccountSitesScreen(
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                             )
+                            Button(onClick = onRetryClick) {
+                                Text(text = stringResource(R.string.common_retry))
+                            }
                         }
                         if (uiState.hasSelectionFailure) {
                             Text(
@@ -162,16 +168,27 @@ internal fun AppAccountSitesScreen(
 private fun CenteredStatusMessage(
     message: String,
     color: Color = MaterialTheme.extraColors.secondaryText,
+    onRetryClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = message,
-            color = color,
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+        ) {
+            Text(
+                text = message,
+                color = color,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (onRetryClick != null) {
+                Button(onClick = onRetryClick) {
+                    Text(text = stringResource(R.string.common_retry))
+                }
+            }
+        }
     }
 }
 
