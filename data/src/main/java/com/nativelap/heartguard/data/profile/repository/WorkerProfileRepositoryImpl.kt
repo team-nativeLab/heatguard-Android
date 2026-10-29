@@ -126,7 +126,6 @@ class WorkerProfileRepositoryImpl
                         uploadUrl = uploadLink.uploadUrl,
                         requiredHeaders = uploadLink.requiredHeaders,
                         photoContent = profilePhotoFileReader.createRequestBody(uploadPayload),
-                        allowRedirects = false,
                     )
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException

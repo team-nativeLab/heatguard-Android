@@ -15,5 +15,5 @@ data class UploadSlotDto(
     val objectKey: String,
     val uploadUrl: String,
     val requiredHeaders: Map<String, String> = emptyMap(),
-    val expiresAt: String? = null,
+    val expiresAt: String,
 )
