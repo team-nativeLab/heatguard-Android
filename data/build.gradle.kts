@@ -7,11 +7,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-val releaseBaseUrl = providers.gradleProperty("HEARTGUARD_RELEASE_BASE_URL").orElse("").get()
+val releaseBaseUrl =
+    providers
+        .gradleProperty("HEARTGUARD_RELEASE_BASE_URL")
+        .orElse("https://d2f845gr2v9cs2.cloudfront.net/")
+        .get()
 val debugBaseUrl =
     providers
         .gradleProperty("HEARTGUARD_DEBUG_BASE_URL")
-        .orElse("https://heatguard-temp.https.gsmsv.site/")
+        .orElse("https://d2f845gr2v9cs2.cloudfront.net/")
         .get()
 
 fun String.asBuildConfigString(): String =
@@ -59,8 +63,7 @@ val validateReleaseServerConfiguration =
             require(
                 isValidReleaseBaseUrl,
             ) {
-                "Release build requires a real HTTPS server URL ending in /; set " +
-                    "HEARTGUARD_RELEASE_BASE_URL in your Gradle user properties."
+                "Release build requires a valid HTTPS server URL ending in /."
             }
         }
     }

@@ -217,7 +217,7 @@ cd heatguard-Android
 ```
 
 ### 환경 설정
-서버 기본 주소는 Gradle 속성으로 설정하며, `data/build.gradle.kts`에서 `com.nativelap.heartguard.data.BuildConfig.BASE_URL`을 생성합니다. Debug는 `HEARTGUARD_DEBUG_BASE_URL`을 지정할 수 있고, 지정하지 않으면 제공받은 테스트 서버 주소(`https://heatguard-temp.https.gsmsv.site/`)를 사용합니다. 다른 API 서버에 연결하려면 유효한 HTTPS 주소와 마지막 `/`를 포함해 설정하세요.
+서버 기본 주소는 `data/build.gradle.kts`에서 `com.nativelap.heartguard.data.BuildConfig.BASE_URL`로 생성합니다. Debug와 Release는 기본으로 `https://d2f845gr2v9cs2.cloudfront.net/`를 사용합니다. `HEARTGUARD_DEBUG_BASE_URL` 또는 `HEARTGUARD_RELEASE_BASE_URL` Gradle 속성으로 빌드 타입별 주소를 선택적으로 재정의할 수 있습니다. 재정의 주소는 유효한 HTTPS URL이어야 하며 마지막 `/`를 포함해야 합니다.
 
 ```properties
 # ~/.gradle/gradle.properties 또는 -P Gradle 속성으로 설정
@@ -225,7 +225,7 @@ HEARTGUARD_DEBUG_BASE_URL=https://YOUR_DEBUG_API_HOST/
 HEARTGUARD_RELEASE_BASE_URL=https://YOUR_RELEASE_API_HOST/
 ```
 
-Release 빌드는 유효한 실제 HTTPS 서버 주소가 설정되지 않으면 `:data:validateReleaseServerConfiguration` 검증 단계에서 실패합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 당시 명세 기반 단위 테스트까지만 검증했습니다. 해당 테스트 소스는 현재 제거되어 자동 검증을 다시 실행할 수 없습니다.
+Release 빌드도 `:data:validateReleaseServerConfiguration` 단계에서 기본 주소 또는 재정의 주소의 HTTPS URL 형식이 유효한지 검증합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 당시 명세 기반 단위 테스트까지만 검증했습니다. 해당 테스트 소스는 현재 제거되어 자동 검증을 다시 실행할 수 없습니다.
 
 ## 검증과 품질 검사
 사용자 요청에 따라 네 모듈(`app`, `core`, `domain`, `data`)의 `src/test`, `src/androidTest`, `src/testFixtures` 테스트 소스와 테스트 전용 구성을 제거했습니다. 따라서 현재 단위·계측 테스트는 없으며 `testDebugUnitTest`, `connectedDebugAndroidTest`로 기능 회귀를 자동 확인할 수 없습니다. 인증·세션·권한 분리·기록 저장 안전성을 포함한 과거 테스트 보호도 더 이상 실행되지 않습니다.
