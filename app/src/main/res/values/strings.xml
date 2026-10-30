@@ -510,6 +510,14 @@
     <string name="checklist_overview_badge_current">진행 중</string>
     <string name="checklist_overview_badge_upcoming">예정</string>
     <string name="checklist_overview_timeline_warning">!</string>
+    <string name="checklist_rounds_completed_summary">%1$d / %2$d 회차 완료</string>
+    <string name="checklist_round_status_in_progress">진행 중</string>
+    <string name="checklist_round_status_scheduled">예정</string>
+    <string name="checklist_round_status_unknown">상태 확인 필요</string>
+    <string name="checklist_round_ends_at_format">마감 %1$s</string>
+    <string name="checklist_round_completed_at_format">완료 %1$s</string>
+    <string name="checklist_round_read_only">이 회차는 읽기 전용이에요.</string>
+    <string name="checklist_round_save_failure">저장하지 못했어요. 최신 상태를 확인해 주세요.</string>
     <string name="checklist_selected_period_heading_format">%1$02d:%2$02d 체크</string>
     <string name="checklist_complete_action_progress">체크 완료 (%1$d/%2$d)</string>
     <string name="checklist_complete_action">체크 완료</string>

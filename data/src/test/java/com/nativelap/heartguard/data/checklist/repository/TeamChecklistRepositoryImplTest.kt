@@ -3,8 +3,12 @@ package com.nativelap.heartguard.data.checklist.repository
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.data.checklist.dto.ChecklistItemStatusDto
+import com.nativelap.heartguard.data.checklist.dto.ChecklistRoundItemStatusDto
 import com.nativelap.heartguard.data.checklist.dto.TeamChecklistResponseDto
+import com.nativelap.heartguard.data.checklist.dto.TeamChecklistRoundDetailResponseDto
+import com.nativelap.heartguard.data.checklist.dto.TeamChecklistRoundsResponseDto
 import com.nativelap.heartguard.data.checklist.dto.UpdateChecklistItemRequestDto
+import com.nativelap.heartguard.data.checklist.dto.UpdateChecklistRoundItemRequestDto
 import com.nativelap.heartguard.data.checklist.remote.TeamChecklistRemoteDataSource
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -23,6 +27,20 @@ class TeamChecklistRepositoryImplTest {
                         itemId: String,
                         request: UpdateChecklistItemRequestDto,
                     ): ApiResult<ChecklistItemStatusDto> = ApiResult.Failure(ApiError.Unknown)
+
+                    override suspend fun getRounds(date: String): ApiResult<TeamChecklistRoundsResponseDto> =
+                        ApiResult.Failure(ApiError.Unknown)
+
+                    override suspend fun getRound(
+                        roundId: String,
+                        date: String,
+                    ): ApiResult<TeamChecklistRoundDetailResponseDto> = ApiResult.Failure(ApiError.Unknown)
+
+                    override suspend fun setRoundItemChecked(
+                        roundId: String,
+                        itemId: String,
+                        request: UpdateChecklistRoundItemRequestDto,
+                    ): ApiResult<ChecklistRoundItemStatusDto> = ApiResult.Failure(ApiError.Unknown)
                 }
 
             val result = TeamChecklistRepositoryImpl(remoteDataSource).getChecklist()

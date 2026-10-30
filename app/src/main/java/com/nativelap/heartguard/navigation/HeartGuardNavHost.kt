@@ -33,6 +33,8 @@ import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistOverviewRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistRoundDetailRoute
+import com.nativelap.heartguard.view.route.checklist.ChecklistRoundsRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardCallingRoute
 import com.nativelap.heartguard.view.route.emergency.HeartGuardEmergencyRoute
@@ -60,6 +62,7 @@ import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
 import com.nativelap.heartguard.view.route.site.SiteUnlinkConfirmationRoute
 import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
 import com.nativelap.heartguard.viewmodel.emergency.EmergencyViewModel
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
@@ -304,6 +307,7 @@ private fun HeartGuardMainNavDisplay(
     val inquiryViewModel: InquiryViewModel = hiltViewModel()
     val recordSubmissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val checklistViewModel: ChecklistViewModel = hiltViewModel()
+    val checklistRoundsViewModel: ChecklistRoundsViewModel = hiltViewModel(key = "checklist-rounds")
 
     // 입력 초안은 SavedStateHandle로 복원하고 세션 로그아웃·만료 시 ViewModel이 직접 사진과 값을 정리한다.
     // Emergency·Calling 화면이 공유하는 EmergencyViewModel도 같은 이유로 수동 ViewModelStoreOwner
@@ -559,21 +563,32 @@ private fun HeartGuardMainNavDisplay(
                     )
                 }
                 entry<HeartGuardDestination.ChecklistOverview> {
-                    ChecklistOverviewRoute(
-                        checklistViewModel = checklistViewModel,
-                        schedule = checkSchedule.takeIf { homeUiState is HomeUiState.Success },
+                    ChecklistRoundsRoute(
+                        viewModel = checklistRoundsViewModel,
                         siteLabel = checklistSiteLabel,
-                        isScheduleLoading = homeUiState is HomeUiState.Loading,
-                        hasScheduleLoadError = homeUiState is HomeUiState.Error,
                         onBackClick = ::goBack,
-                        onScheduleRetryClick = homeViewModel::loadTeamSiteOverview,
-                        onNewDay = homeViewModel::refreshForNewDay,
-                        onPeriodClick = { time ->
-                            if (checkSchedule?.nextCheckTime == time) {
-                                backStack.add(HeartGuardDestination.ChecklistPeriod(time = time.toString()))
-                            }
+                        onRoundClick = { date, roundId ->
+                            backStack.add(
+                                HeartGuardDestination.ChecklistRoundDetail(
+                                    date = date.toString(),
+                                    roundId = roundId,
+                                ),
+                            )
                         },
                     )
+                }
+                entry<HeartGuardDestination.ChecklistRoundDetail> { destination ->
+                    val date = runCatching { java.time.LocalDate.parse(destination.date) }.getOrNull()
+                    if (date != null) {
+                        ChecklistRoundDetailRoute(
+                            viewModel = checklistRoundsViewModel,
+                            date = date,
+                            roundId = destination.roundId,
+                            onBackClick = ::goBack,
+                        )
+                    } else {
+                        LaunchedEffect(destination) { goBack() }
+                    }
                 }
                 entry<HeartGuardDestination.ChecklistDemoOverview> {
                     ChecklistOverviewRoute(
