@@ -33,6 +33,14 @@ import kotlin.test.assertTrue
 
 class FieldPhotoContractTest {
     @Test
+    fun `presigned upload client disables connection retries`() {
+        val externalUploadClient = OkHttpClient.Builder().build()
+        val uploadClient = ExternalUploadService(externalUploadClient).createUploadClient()
+
+        assertFalse(uploadClient.retryOnConnectionFailure)
+    }
+
+    @Test
     fun `upload request contains only content type and actual size`() {
         val request =
             UploadRequestDto(

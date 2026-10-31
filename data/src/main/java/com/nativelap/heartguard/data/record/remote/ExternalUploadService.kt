@@ -38,12 +38,7 @@ class ExternalUploadService
             requiredHeaders.forEach { (headerName, headerValue) ->
                 requestBuilder.header(headerName, headerValue)
             }
-            val uploadClient =
-                externalUploadClient
-                    .newBuilder()
-                    .followRedirects(false)
-                    .followSslRedirects(false)
-                    .build()
+            val uploadClient = createUploadClient()
             val uploadCall = uploadClient.newCall(requestBuilder.build())
 
             return suspendCancellableCoroutine { continuation ->
@@ -84,6 +79,14 @@ class ExternalUploadService
                 )
             }
         }
+
+        internal fun createUploadClient(): OkHttpClient =
+            externalUploadClient
+                .newBuilder()
+                .retryOnConnectionFailure(false)
+                .followRedirects(false)
+                .followSslRedirects(false)
+                .build()
 
         private fun Response.readS3UploadErrorCode(): String? {
             if (isSuccessful) {
