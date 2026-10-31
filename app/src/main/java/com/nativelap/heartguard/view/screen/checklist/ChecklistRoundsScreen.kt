@@ -6,15 +6,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,9 +27,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -33,7 +37,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -53,7 +60,10 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.checklist.model.ChecklistRoundStatus
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
+import com.nativelap.heartguard.view.component.control.HeartGuardCheckbox
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundCardUiModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundDetailUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundItemUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsOverviewUiModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsUiState
@@ -126,15 +136,22 @@ internal fun ChecklistRoundDetailScreen(
     uiState: ChecklistRoundsUiState,
     date: LocalDate,
     roundId: String,
+    siteLabel: String?,
     onBackClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onRetryRoundsClick: () -> Unit,
     onItemCheckedChange: (String, Boolean) -> Unit,
 ) {
     val detail = uiState.roundDetail?.takeIf { it.date == date && it.roundId == roundId }
+    val isComplete = detail != null && detail.totalItems > 0 && detail.checkedItems >= detail.totalItems
     Scaffold(
+        containerColor = MaterialTheme.extraColors.pageBackground,
         topBar = {
-            TopAppBar(
-                title = { Text(roundId) },
+            CenterAlignedTopAppBar(
+                title = { Text(stringResource(R.string.checklist_title)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.extraColors.pageBackground,
+                ),
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -145,6 +162,34 @@ internal fun ChecklistRoundDetailScreen(
                 },
             )
         },
+        bottomBar = {
+            if (detail != null) {
+                BottomActionBar {
+                    Button(
+                        onClick = onBackClick,
+                        enabled = isComplete && uiState.savingItemIds.isEmpty(),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                            disabledContentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    ) {
+                        Text(
+                            if (isComplete) {
+                                stringResource(R.string.checklist_complete_action)
+                            } else {
+                                stringResource(
+                                    R.string.checklist_complete_action_progress,
+                                    detail.checkedItems,
+                                    detail.totalItems,
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+        },
     ) { padding ->
         when {
             uiState.isLoadingDetail && detail == null -> {
@@ -154,49 +199,68 @@ internal fun ChecklistRoundDetailScreen(
             }
 
             uiState.hasDetailLoadError && detail == null -> {
-                Button(onClick = onRetryClick, modifier = Modifier.padding(padding)) {
-                    Text(stringResource(R.string.common_retry))
+                Column(
+                    Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(stringResource(R.string.checklist_load_failure))
+                    Button(onClick = onRetryClick) { Text(stringResource(R.string.common_retry)) }
                 }
             }
 
             detail != null -> {
-                LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp)) {
+                LazyColumn(
+                    Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     item {
-                        Column(
-                            Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
+                        ChecklistRoundDetailSummary(
+                            detail = detail,
+                            siteLabel = siteLabel,
+                            rounds = uiState.rounds?.takeIf { it.date == date }?.rounds.orEmpty(),
+                            onRetryRoundsClick = onRetryRoundsClick,
+                            isLoadingRounds = uiState.isLoadingRounds,
+                            hasRoundsLoadError = uiState.hasRoundsLoadError,
+                            hasSaveError = uiState.hasSaveError,
+                        )
+                    }
+                    if (detail.items.isEmpty()) {
+                        item {
                             Text(
-                                stringResource(
-                                    R.string.checklist_overview_items_completed_format,
-                                    detail.checkedItems,
-                                    detail.totalItems,
-                                ),
+                                stringResource(R.string.checklist_empty),
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                color = MaterialTheme.extraColors.secondaryText,
                             )
-                            LinearProgressIndicator(
-                                progress = { detail.progressPercent.coerceIn(0, 100) / 100f },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            if (!detail.canEdit) {
-                                Text(
-                                    stringResource(R.string.checklist_round_read_only),
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                            }
-                            if (uiState.hasSaveError) {
-                                Text(
-                                    stringResource(R.string.checklist_round_save_failure),
-                                    color = MaterialTheme.colorScheme.error,
-                                )
+                        }
+                    }
+                    if (detail.items.isNotEmpty()) {
+                        item {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surface),
+                            ) {
+                                detail.items.forEachIndexed { index, row ->
+                                    ChecklistRoundItemRow(
+                                        item = row,
+                                        enabled = detail.canEdit && uiState.savingItemIds.isEmpty() && !isComplete,
+                                        showDivider = index < detail.items.lastIndex,
+                                        onCheckedChange = { checked -> onItemCheckedChange(row.itemId, checked) },
+                                    )
+                                }
                             }
                         }
                     }
-                    items(detail.items, key = { row -> row.itemId }) { row ->
-                        ChecklistRoundItemRow(
-                            item = row,
-                            enabled = detail.canEdit && uiState.savingItemIds.isEmpty(),
-                            onCheckedChange = { checked -> onItemCheckedChange(row.itemId, checked) },
-                        )
+                    if (!detail.canEdit) {
+                        item {
+                            Text(
+                                stringResource(R.string.checklist_round_read_only),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.extraColors.secondaryText,
+                            )
+                        }
                     }
                     if (uiState.hasDetailLoadError) {
                         item { TextButton(onClick = onRetryClick) { Text(stringResource(R.string.common_retry)) } }
@@ -208,6 +272,212 @@ internal fun ChecklistRoundDetailScreen(
                 Unit
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChecklistRoundDetailSummary(
+    detail: ChecklistRoundDetailUiModel,
+    siteLabel: String?,
+    rounds: List<ChecklistRoundCardUiModel>,
+    onRetryRoundsClick: () -> Unit,
+    isLoadingRounds: Boolean,
+    hasRoundsLoadError: Boolean,
+    hasSaveError: Boolean,
+) {
+    val allItemsChecked = detail.totalItems > 0 && detail.checkedItems >= detail.totalItems
+    val statusLabelResource =
+        when (detail.status) {
+            ChecklistRoundStatus.COMPLETED -> R.string.checklist_status_complete
+            ChecklistRoundStatus.IN_PROGRESS -> {
+                if (allItemsChecked) R.string.checklist_status_complete else R.string.checklist_status_in_progress
+            }
+            ChecklistRoundStatus.MISSED -> R.string.checklist_overview_status_missed
+            ChecklistRoundStatus.SCHEDULED -> R.string.checklist_round_status_scheduled
+            ChecklistRoundStatus.UNKNOWN -> R.string.checklist_round_status_unknown
+        }
+    val statusColor =
+        when (detail.status) {
+            ChecklistRoundStatus.COMPLETED -> MaterialTheme.extraColors.checklistComplete
+            ChecklistRoundStatus.IN_PROGRESS -> {
+                if (allItemsChecked) MaterialTheme.extraColors.checklistComplete else MaterialTheme.colorScheme.primary
+            }
+            ChecklistRoundStatus.MISSED -> MaterialTheme.colorScheme.error
+            ChecklistRoundStatus.SCHEDULED,
+            ChecklistRoundStatus.UNKNOWN,
+            -> MaterialTheme.extraColors.secondaryText
+        }
+    Column(
+        Modifier.fillMaxWidth().padding(top = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(
+                        R.string.checklist_selected_period_heading_format,
+                        detail.startsAt.hour,
+                        detail.startsAt.minute,
+                    ),
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.extraColors.strongText,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    stringResource(statusLabelResource),
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(statusColor.copy(alpha = 0.12f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    color = statusColor,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+            siteLabel?.let {
+                Text(it, color = MaterialTheme.extraColors.secondaryText, style = MaterialTheme.typography.bodySmall)
+            }
+            LinearProgressIndicator(
+                progress = { detail.progressPercent.coerceIn(0, 100) / 100f },
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)),
+                color = statusColor,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+            Text(
+                stringResource(R.string.checklist_progress_format, detail.checkedItems, detail.totalItems),
+                color = statusColor,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        if (rounds.isNotEmpty()) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                maxItemsInEachRow = 5,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                rounds.forEach { round ->
+                    val isSelected = round.roundId == detail.roundId
+                    ChecklistRoundStatusChip(
+                        round = round,
+                        isSelected = isSelected,
+                        isSelectedComplete =
+                            isSelected &&
+                                (detail.status == ChecklistRoundStatus.COMPLETED ||
+                                    (detail.status == ChecklistRoundStatus.IN_PROGRESS && allItemsChecked)),
+                    )
+                }
+            }
+        }
+        Text(
+            stringResource(R.string.checklist_guidance),
+            color = MaterialTheme.extraColors.secondaryText,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        if (hasSaveError) {
+            Text(stringResource(R.string.checklist_round_save_failure), color = MaterialTheme.colorScheme.error)
+        }
+        if (rounds.isEmpty()) {
+            when {
+                isLoadingRounds -> CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                hasRoundsLoadError -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            stringResource(R.string.checklist_overview_load_failure),
+                            color = MaterialTheme.extraColors.secondaryText,
+                        )
+                        TextButton(onClick = onRetryRoundsClick) { Text(stringResource(R.string.common_retry)) }
+                    }
+                }
+                else -> TextButton(onClick = onRetryRoundsClick) { Text(stringResource(R.string.common_retry)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChecklistRoundStatusChip(
+    round: ChecklistRoundCardUiModel,
+    isSelected: Boolean,
+    isSelectedComplete: Boolean,
+) {
+    val isCompleted = round.status == ChecklistRoundStatus.COMPLETED
+    val isMissed = round.status == ChecklistRoundStatus.MISSED
+    val isCurrentSelection = isSelected
+    val statusLabel =
+        stringResource(
+            if (isSelectedComplete) {
+                R.string.checklist_period_recorded
+            } else {
+                when (round.status) {
+                    ChecklistRoundStatus.COMPLETED -> R.string.checklist_period_recorded
+                    ChecklistRoundStatus.MISSED -> R.string.checklist_period_warning
+                    ChecklistRoundStatus.IN_PROGRESS -> R.string.checklist_period_current
+                    ChecklistRoundStatus.SCHEDULED -> R.string.checklist_period_upcoming
+                    ChecklistRoundStatus.UNKNOWN -> R.string.checklist_round_status_unknown
+                }
+            },
+        )
+    val accessibilityDescription =
+        stringResource(
+            R.string.checklist_period_accessibility_format,
+            round.startsAt.hour,
+            round.startsAt.minute,
+            statusLabel,
+        )
+    val backgroundColor = when {
+        isCurrentSelection -> MaterialTheme.colorScheme.primary
+        isMissed -> MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val foregroundColor = when {
+        isCurrentSelection -> MaterialTheme.colorScheme.onPrimary
+        isMissed -> MaterialTheme.colorScheme.error
+        round.status == ChecklistRoundStatus.SCHEDULED || round.status == ChecklistRoundStatus.UNKNOWN -> {
+            MaterialTheme.extraColors.strongText.copy(alpha = 0.72f)
+        }
+        else -> MaterialTheme.extraColors.strongText
+    }
+    val borderColor = when {
+        isCurrentSelection -> MaterialTheme.colorScheme.primary
+        isMissed -> MaterialTheme.colorScheme.error.copy(alpha = 0.25f)
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
+    Row(
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(50))
+                .background(backgroundColor)
+                .border(1.dp, borderColor, RoundedCornerShape(50))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .clearAndSetSemantics { contentDescription = accessibilityDescription },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        if (isCurrentSelection && !isSelectedComplete) {
+            Text("●", color = foregroundColor, style = MaterialTheme.typography.labelSmall)
+        } else if (isCompleted || isSelectedComplete) {
+            Text(
+                "✓",
+                color = if (isCurrentSelection) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        } else if (isMissed) {
+            Text("!", color = foregroundColor, style = MaterialTheme.typography.labelSmall)
+        }
+        Text(
+            round.startsAt.format(HOUR_FORMATTER),
+            color = foregroundColor,
+            style = MaterialTheme.typography.labelSmall,
+        )
     }
 }
 
@@ -455,22 +725,59 @@ private fun ChecklistTimelineRail(
 internal fun ChecklistRoundItemRow(
     item: ChecklistRoundItemUiModel,
     enabled: Boolean,
+    showDivider: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
+    val dividerColor = MaterialTheme.extraColors.checklistDivider
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) {
-                onCheckedChange(!item.isChecked)
-            }.padding(vertical = 8.dp),
+            .heightIn(min = 55.dp)
+            .background(MaterialTheme.colorScheme.surface)
+            .then(
+                if (showDivider) {
+                    Modifier.drawBehind {
+                        drawLine(
+                            color = dividerColor,
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                    }
+                } else {
+                    Modifier
+                },
+            ).toggleable(
+                value = item.isChecked,
+                enabled = enabled,
+                role = Role.Checkbox,
+                onValueChange = onCheckedChange,
+            ).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = item.isChecked, enabled = enabled, onCheckedChange = onCheckedChange)
-        Text(item.title, modifier = Modifier.weight(1f))
+        HeartGuardCheckbox(
+            isChecked = item.isChecked,
+            onCheckedChange = {},
+            contentDescription = item.title,
+            isEnabled = enabled,
+            isInteractive = false,
+            isCircular = true,
+        )
+        Text(
+            item.title,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+            color =
+                if (item.isChecked) {
+                    MaterialTheme.extraColors.checklistCompletedText
+                } else {
+                    MaterialTheme.extraColors.strongText
+                },
+        )
     }
 }
 
 private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
+private val HOUR_FORMATTER = DateTimeFormatter.ofPattern("HH'시'", Locale.KOREAN)
 private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
 private val TIMELINE_RAIL_WIDTH = 20.dp
 private val TIMELINE_DOT_SIZE = 12.dp

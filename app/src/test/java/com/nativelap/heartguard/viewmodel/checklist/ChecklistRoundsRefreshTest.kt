@@ -75,6 +75,72 @@ class ChecklistRoundsRefreshTest {
     }
 
     @Test
+    fun `rounds response guard accepts selected historical date and rejects stale requests`() {
+        val historicalDate = LocalDate.parse("2026-10-29")
+
+        assertTrue(
+            shouldApplyChecklistRoundsResponse(
+                requestDate = historicalDate,
+                stateDate = historicalDate,
+                isLatestRequest = true,
+                isCurrentSession = true,
+            ),
+        )
+        assertFalse(
+            shouldApplyChecklistRoundsResponse(
+                requestDate = historicalDate,
+                stateDate = LocalDate.parse("2026-10-30"),
+                isLatestRequest = true,
+                isCurrentSession = true,
+            ),
+        )
+        assertFalse(
+            shouldApplyChecklistRoundsResponse(
+                requestDate = historicalDate,
+                stateDate = historicalDate,
+                isLatestRequest = false,
+                isCurrentSession = true,
+            ),
+        )
+        assertFalse(
+            shouldApplyChecklistRoundsResponse(
+                requestDate = historicalDate,
+                stateDate = historicalDate,
+                isLatestRequest = true,
+                isCurrentSession = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `historical rounds load response updates the visible list`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val currentDate = LocalDate.parse("2026-10-30")
+            val historicalDate = currentDate.minusDays(1)
+            val repository =
+                FakeTeamChecklistRepository(
+                    getRound = { roundId, requestDate -> ApiResult.Success(roundDetail(requestDate, roundId)) },
+                    getRounds = { requestDate -> ApiResult.Success(roundsOverview(requestDate, progressPercent = 100)) },
+                )
+            val (viewModel, _) = createLoadedViewModel(repository, dispatcher, currentDate)
+
+            try {
+                viewModel.loadRounds(historicalDate)
+                runCurrent()
+
+                assertEquals(historicalDate, viewModel.uiState.value.date)
+                assertEquals(historicalDate, viewModel.uiState.value.rounds?.date)
+                assertEquals(100, viewModel.uiState.value.rounds?.progressPercent)
+                assertFalse(viewModel.uiState.value.isLoadingRounds)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
     fun `edit gate follows Seoul local date and inclusive start exclusive end`() {
         val seoulZone = ZoneId.of("Asia/Seoul")
         val roundDate = LocalDate.parse("2026-10-30")

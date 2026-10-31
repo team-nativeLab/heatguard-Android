@@ -386,9 +386,12 @@ internal class ChecklistRoundsViewModel
             date: LocalDate,
             sessionGeneration: Long,
         ): Boolean =
-            roundsRequestGeneration.isCurrent(request) &&
-                date == LocalDate.now(clock) &&
-                isCurrentSession(sessionGeneration)
+            shouldApplyChecklistRoundsResponse(
+                requestDate = date,
+                stateDate = mutableUiState.value.date,
+                isLatestRequest = roundsRequestGeneration.isCurrent(request),
+                isCurrentSession = isCurrentSession(sessionGeneration),
+            )
 
         private fun isCurrentDetailRequest(
             request: Long,
@@ -479,6 +482,14 @@ internal fun resolveChecklistRoundRetryTarget(
     val date = requestedRoundDate ?: return null
     return ChecklistRoundRetryTarget(roundId, date)
 }
+
+internal fun shouldApplyChecklistRoundsResponse(
+    requestDate: LocalDate,
+    stateDate: LocalDate?,
+    isLatestRequest: Boolean,
+    isCurrentSession: Boolean,
+): Boolean =
+    requestDate == stateDate && isLatestRequest && isCurrentSession
 
 internal fun isChecklistRoundEditable(
     date: LocalDate,
