@@ -7,8 +7,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.nativelap.heartguard.view.screen.checklist.ChecklistOverviewScreen
 import com.nativelap.heartguard.view.screen.checklist.ChecklistRoundDetailScreen
-import com.nativelap.heartguard.view.screen.checklist.ChecklistRoundsScreen
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsViewModel
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -32,11 +32,15 @@ internal fun ChecklistRoundsRoute(
         }
     }
 
-    ChecklistRoundsScreen(
-        uiState = state,
+    ChecklistOverviewScreen(
+        schedule = null,
         siteLabel = siteLabel,
+        isLoading = state.isLoadingRounds,
+        hasLoadError = state.hasRoundsLoadError,
         onBackClick = onBackClick,
         onRetryClick = viewModel::retryRounds,
+        onPeriodClick = {},
+        roundsUiState = state,
         onRoundClick = onRoundClick,
     )
 }

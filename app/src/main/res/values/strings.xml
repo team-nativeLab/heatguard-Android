@@ -516,6 +516,12 @@
     <string name="checklist_round_status_unknown">상태 확인 필요</string>
     <string name="checklist_round_ends_at_format">마감 %1$s</string>
     <string name="checklist_round_completed_at_format">완료 %1$s</string>
+    <string name="checklist_round_completed_with_time_format">%1$d개 항목 · %2$s 완료</string>
+    <string name="checklist_round_completed_without_time_format">%1$d개 항목 · 완료</string>
+    <string name="checklist_round_missed_description_format">%1$d / %2$d 체크 · 기한 지남</string>
+    <string name="checklist_round_in_progress_description_format">%1$d / %2$d 체크 · %3$s까지</string>
+    <string name="checklist_round_scheduled_description_format">%1$s부터 체크할 수 있어요</string>
+    <string name="checklist_round_unknown_description_format">%1$d / %2$d 체크 · 상태 확인 필요</string>
     <string name="checklist_round_read_only">이 회차는 읽기 전용이에요.</string>
     <string name="checklist_round_save_failure">저장하지 못했어요. 최신 상태를 확인해 주세요.</string>
     <string name="checklist_selected_period_heading_format">%1$02d:%2$02d 체크</string>
