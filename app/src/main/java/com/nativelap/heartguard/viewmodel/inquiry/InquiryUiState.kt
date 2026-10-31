@@ -10,8 +10,7 @@ data class InquiryUiState(
     val hasError: Boolean = false,
     val listState: InquiryListState = InquiryListState.Loading,
 ) {
-    fun canSubmitInquiry(): Boolean =
-        !isSubmitting && title.isNotBlank() && content.isNotBlank()
+    fun canSubmitInquiry(): Boolean = !isSubmitting && title.isNotBlank() && content.isNotBlank()
 
     fun afterSubmissionFailure(): InquiryUiState =
         copy(

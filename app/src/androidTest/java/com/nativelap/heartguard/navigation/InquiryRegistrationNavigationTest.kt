@@ -29,12 +29,12 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRegistrationRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryViewModel
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class InquiryRegistrationNavigationTest {

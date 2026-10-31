@@ -16,12 +16,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,128 +30,135 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class InquiryViewModelTest {
     @Test
-    fun `successful submission emits one list navigation effect`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeInquiryRepository()
-        repository.submitResults += ApiResult.Success(SUBMISSION)
-        val fixture = createFixture(repository)
-        val effects = mutableListOf<InquiryEffect>()
-        val effectCollector =
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                fixture.viewModel.effects.collect(effects::add)
+    fun `successful submission emits one list navigation effect`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeInquiryRepository()
+            repository.submitResults += ApiResult.Success(SUBMISSION)
+            val fixture = createFixture(repository)
+            val effects = mutableListOf<InquiryEffect>()
+            val effectCollector =
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    fixture.viewModel.effects.collect(effects::add)
+                }
+
+            try {
+                fixture.viewModel.updateTitle("제목")
+                fixture.viewModel.updateContent("내용")
+                fixture.viewModel.submitInquiry()
+                advanceUntilIdle()
+
+                assertEquals(1, repository.submitCallCount)
+                assertEquals(0, repository.getCallCount)
+                assertEquals(listOf<InquiryEffect>(InquiryEffect.NavigateToList), effects)
+                assertEquals("", fixture.viewModel.uiState.value.title)
+                assertEquals("", fixture.viewModel.uiState.value.content)
+                assertFalse(fixture.viewModel.uiState.value.isSubmitting)
+            } finally {
+                effectCollector.cancel()
+                fixture.viewModelStore.clear()
+                Dispatchers.resetMain()
             }
-
-        try {
-            fixture.viewModel.updateTitle("제목")
-            fixture.viewModel.updateContent("내용")
-            fixture.viewModel.submitInquiry()
-            advanceUntilIdle()
-
-            assertEquals(1, repository.submitCallCount)
-            assertEquals(0, repository.getCallCount)
-            assertEquals(listOf<InquiryEffect>(InquiryEffect.NavigateToList), effects)
-            assertEquals("", fixture.viewModel.uiState.value.title)
-            assertEquals("", fixture.viewModel.uiState.value.content)
-            assertFalse(fixture.viewModel.uiState.value.isSubmitting)
-        } finally {
-            effectCollector.cancel()
-            fixture.viewModelStore.clear()
-            Dispatchers.resetMain()
         }
-    }
 
     @Test
-    fun `failed submission keeps input and permits a user retry`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeInquiryRepository()
-        repository.submitResults += ApiResult.Failure(ApiError.Network)
-        repository.submitResults += ApiResult.Success(SUBMISSION)
-        val fixture = createFixture(repository)
-        val effects = mutableListOf<InquiryEffect>()
-        val effectCollector =
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                fixture.viewModel.effects.collect(effects::add)
+    fun `failed submission keeps input and permits a user retry`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeInquiryRepository()
+            repository.submitResults += ApiResult.Failure(ApiError.Network)
+            repository.submitResults += ApiResult.Success(SUBMISSION)
+            val fixture = createFixture(repository)
+            val effects = mutableListOf<InquiryEffect>()
+            val effectCollector =
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    fixture.viewModel.effects.collect(effects::add)
+                }
+
+            try {
+                fixture.viewModel.updateTitle("제목")
+                fixture.viewModel.updateContent("내용")
+                fixture.viewModel.submitInquiry()
+                advanceUntilIdle()
+
+                assertEquals(1, repository.submitCallCount)
+                assertEquals("제목", fixture.viewModel.uiState.value.title)
+                assertEquals("내용", fixture.viewModel.uiState.value.content)
+                assertTrue(fixture.viewModel.uiState.value.hasError)
+                assertTrue(
+                    fixture.viewModel.uiState.value
+                        .canSubmitInquiry(),
+                )
+                assertTrue(effects.isEmpty())
+
+                fixture.viewModel.submitInquiry()
+                advanceUntilIdle()
+
+                assertEquals(2, repository.submitCallCount)
+                assertEquals(listOf<InquiryEffect>(InquiryEffect.NavigateToList), effects)
+            } finally {
+                effectCollector.cancel()
+                fixture.viewModelStore.clear()
+                Dispatchers.resetMain()
             }
-
-        try {
-            fixture.viewModel.updateTitle("제목")
-            fixture.viewModel.updateContent("내용")
-            fixture.viewModel.submitInquiry()
-            advanceUntilIdle()
-
-            assertEquals(1, repository.submitCallCount)
-            assertEquals("제목", fixture.viewModel.uiState.value.title)
-            assertEquals("내용", fixture.viewModel.uiState.value.content)
-            assertTrue(fixture.viewModel.uiState.value.hasError)
-            assertTrue(fixture.viewModel.uiState.value.canSubmitInquiry())
-            assertTrue(effects.isEmpty())
-
-            fixture.viewModel.submitInquiry()
-            advanceUntilIdle()
-
-            assertEquals(2, repository.submitCallCount)
-            assertEquals(listOf<InquiryEffect>(InquiryEffect.NavigateToList), effects)
-        } finally {
-            effectCollector.cancel()
-            fixture.viewModelStore.clear()
-            Dispatchers.resetMain()
         }
-    }
 
     @Test
-    fun `submission in progress blocks duplicate post calls`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeInquiryRepository()
-        val pendingSubmission = CompletableDeferred<ApiResult<InquirySubmission>>()
-        repository.submitBlock = { pendingSubmission.await() }
-        val fixture = createFixture(repository)
-        val effects = mutableListOf<InquiryEffect>()
-        val effectCollector =
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                fixture.viewModel.effects.collect(effects::add)
+    fun `submission in progress blocks duplicate post calls`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeInquiryRepository()
+            val pendingSubmission = CompletableDeferred<ApiResult<InquirySubmission>>()
+            repository.submitBlock = { pendingSubmission.await() }
+            val fixture = createFixture(repository)
+            val effects = mutableListOf<InquiryEffect>()
+            val effectCollector =
+                backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    fixture.viewModel.effects.collect(effects::add)
+                }
+
+            try {
+                fixture.viewModel.updateTitle("제목")
+                fixture.viewModel.updateContent("내용")
+                fixture.viewModel.submitInquiry()
+                runCurrent()
+
+                assertEquals(1, repository.submitCallCount)
+                assertTrue(fixture.viewModel.uiState.value.isSubmitting)
+
+                fixture.viewModel.submitInquiry()
+                runCurrent()
+
+                assertEquals(1, repository.submitCallCount)
+                pendingSubmission.complete(ApiResult.Success(SUBMISSION))
+                advanceUntilIdle()
+
+                assertEquals(1, repository.submitCallCount)
+                assertEquals(listOf<InquiryEffect>(InquiryEffect.NavigateToList), effects)
+            } finally {
+                effectCollector.cancel()
+                fixture.viewModelStore.clear()
+                Dispatchers.resetMain()
             }
-
-        try {
-            fixture.viewModel.updateTitle("제목")
-            fixture.viewModel.updateContent("내용")
-            fixture.viewModel.submitInquiry()
-            runCurrent()
-
-            assertEquals(1, repository.submitCallCount)
-            assertTrue(fixture.viewModel.uiState.value.isSubmitting)
-
-            fixture.viewModel.submitInquiry()
-            runCurrent()
-
-            assertEquals(1, repository.submitCallCount)
-            pendingSubmission.complete(ApiResult.Success(SUBMISSION))
-            advanceUntilIdle()
-
-            assertEquals(1, repository.submitCallCount)
-            assertEquals(listOf<InquiryEffect>(InquiryEffect.NavigateToList), effects)
-        } finally {
-            effectCollector.cancel()
-            fixture.viewModelStore.clear()
-            Dispatchers.resetMain()
         }
-    }
 
     @Test
-    fun `opening list starts exactly one page request`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeInquiryRepository()
-        val fixture = createFixture(repository)
+    fun `opening list starts exactly one page request`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeInquiryRepository()
+            val fixture = createFixture(repository)
 
-        try {
-            fixture.viewModel.openInquiry()
-            advanceUntilIdle()
+            try {
+                fixture.viewModel.openInquiry()
+                advanceUntilIdle()
 
-            assertEquals(1, repository.getCallCount)
-        } finally {
-            fixture.viewModelStore.clear()
-            Dispatchers.resetMain()
+                assertEquals(1, repository.getCallCount)
+            } finally {
+                fixture.viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
         }
-    }
 
     private fun createFixture(repository: FakeInquiryRepository): Fixture {
         val viewModelStore = ViewModelStore()
