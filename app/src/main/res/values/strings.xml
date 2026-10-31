@@ -3,6 +3,7 @@
     <string name="brand_name">현장가드</string>
     <string name="common_menu">메뉴</string>
     <string name="common_notifications">알림</string>
+    <string name="common_notifications_unread">알림, 읽지 않은 알림 있음</string>
     <string name="common_back_description">뒤로 가기</string>
     <string name="common_confirm">확인</string>
     <string name="common_cancel">취소</string>

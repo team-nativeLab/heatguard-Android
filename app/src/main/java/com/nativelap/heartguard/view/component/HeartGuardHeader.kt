@@ -1,10 +1,14 @@
 package com.nativelap.heartguard.view.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -32,6 +37,7 @@ fun HeartGuardHeader(
     onMenuClick: () -> Unit,
     onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
+    hasUnreadNotifications: Boolean = false,
 ) {
     // 접근성을 위해 아이콘 버튼은 48dp 터치 타깃(HeartGuardComponentSize.TouchTarget)을 유지하지만,
     // 실제 아이콘은 그 안에서 28dp(HeartGuardIconSize.HeaderAction)로 중앙 배치되어
@@ -77,13 +83,36 @@ fun HeartGuardHeader(
             )
         }
 
-        HeartGuardHeaderActionButton(
-            iconPainter = notificationPainter,
-            iconContentDescription = stringResource(R.string.common_notifications),
-            onClick = onNotificationClick,
-        )
+        Box(
+            modifier = Modifier.size(HeartGuardComponentSize.TouchTarget),
+            contentAlignment = Alignment.Center,
+        ) {
+            HeartGuardHeaderActionButton(
+                iconPainter = notificationPainter,
+                iconContentDescription =
+                    if (hasUnreadNotifications) {
+                        stringResource(R.string.common_notifications_unread)
+                    } else {
+                        stringResource(R.string.common_notifications)
+                    },
+                onClick = onNotificationClick,
+            )
+
+            if (hasUnreadNotifications) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-2).dp)
+                            .size(HeartGuardUnreadIndicatorSize)
+                            .background(MaterialTheme.colorScheme.error, CircleShape),
+                )
+            }
+        }
     }
 }
+
+private val HeartGuardUnreadIndicatorSize = 8.dp
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable

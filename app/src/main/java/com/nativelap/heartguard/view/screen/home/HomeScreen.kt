@@ -54,6 +54,7 @@ fun HomeScreen(
     onChecklistClick: () -> Unit,
     onRecordClick: () -> Unit,
     modifier: Modifier = Modifier,
+    hasUnreadNotifications: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
@@ -82,6 +83,7 @@ fun HomeScreen(
                         title = stringResource(R.string.brand_name),
                         menuPainter = painterResource(R.drawable.menu_hamburger),
                         notificationPainter = painterResource(R.drawable.notification_bell),
+                        hasUnreadNotifications = hasUnreadNotifications,
                         onMenuClick = onMenuClick,
                         onNotificationClick = onNotificationClick,
                     )
