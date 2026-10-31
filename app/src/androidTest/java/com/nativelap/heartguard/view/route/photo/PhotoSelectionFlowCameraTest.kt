@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -282,11 +282,15 @@ private fun PhotoSelectionFlowTestContent(selectedPhotoUris: MutableList<Uri>) {
     }
 }
 
-private class TestActivityResultRegistryOwner(context: Context) : ActivityResultRegistryOwner {
+private class TestActivityResultRegistryOwner(
+    context: Context,
+) : ActivityResultRegistryOwner {
     override val activityResultRegistry = RecordingActivityResultRegistry(context)
 }
 
-private class RecordingActivityResultRegistry(private val context: Context) : ActivityResultRegistry() {
+private class RecordingActivityResultRegistry(
+    private val context: Context,
+) : ActivityResultRegistry() {
     val launches = mutableListOf<CameraLaunch>()
     var failLaunch = false
 
@@ -314,7 +318,9 @@ private class RecordingActivityResultRegistry(private val context: Context) : Ac
     }
 }
 
-private class ConfigurationChangingActivity(baseContext: Context) : Activity() {
+private class ConfigurationChangingActivity(
+    baseContext: Context,
+) : Activity() {
     init {
         attachBaseContext(baseContext)
     }
