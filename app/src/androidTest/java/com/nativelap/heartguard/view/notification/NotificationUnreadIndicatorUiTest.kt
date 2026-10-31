@@ -55,15 +55,15 @@ class NotificationUnreadIndicatorUiTest {
             unit = "%",
             cardWidth = 320.dp,
             columnStart = 62.dp,
-            columnEnd = 92.dp,
+            columnEnd = 98.dp,
             checkLineHeights = true,
         )
         assertSameLineAndUnitFollows(
             value = "24.8",
             unit = "°C",
             cardWidth = 320.dp,
-            columnStart = 161.dp,
-            columnEnd = 207.dp,
+            columnStart = 159.dp,
+            columnEnd = 205.dp,
             checkLineHeights = true,
         )
         assertFigmaCardBounds()
@@ -77,6 +77,30 @@ class NotificationUnreadIndicatorUiTest {
         assertSameLineAndUnitFollows("41", "%", cardWidth = 278.dp)
         assertSameLineAndUnitFollows("24.8", "°C", cardWidth = 278.dp)
         assertMetricLabelsAreStacked()
+    }
+
+    @Test
+    fun homeWeatherMetricsStayHorizontalAtTypicalHomeCardWidth() {
+        setWeatherMetricsCard(
+            cardWidth = 311.dp,
+            humidityValue = "100%",
+        )
+
+        assertSameLineAndUnitFollows(
+            value = "100",
+            unit = "%",
+            cardWidth = 311.dp,
+            columnStart = 62.dp,
+            columnEnd = 98.dp,
+        )
+        assertSameLineAndUnitFollows(
+            value = "24.8",
+            unit = "°C",
+            cardWidth = 311.dp,
+            columnStart = 159.dp,
+            columnEnd = 205.dp,
+        )
+        assertMetricGroupsShareRow()
     }
 
     @Test
@@ -211,6 +235,7 @@ class NotificationUnreadIndicatorUiTest {
     private fun setWeatherMetricsCard(
         cardWidth: Dp,
         fontScale: Float = 1f,
+        humidityValue: String = "41%",
     ) {
         composeRule.setContent {
             val currentDensity = LocalDensity.current
@@ -222,7 +247,7 @@ class NotificationUnreadIndicatorUiTest {
                         Box(Modifier.width(cardWidth).testTag("home-weather-metrics-card")) {
                             HomeWeatherMetricsCard(
                                 humidityLabel = "습도",
-                                humidity = "41%",
+                                humidity = humidityValue,
                                 feelsLikeTemperatureLabel = "체감온도",
                                 feelsLikeTemperature = "24.8°C",
                                 weatherLabel = "날씨",
@@ -286,9 +311,26 @@ class NotificationUnreadIndicatorUiTest {
 
         assertTrue(abs(metricBounds[0].center.y - metricBounds[1].center.y) <= centerTolerance)
         assertTrue(abs(metricBounds[1].center.y - metricBounds[2].center.y) <= centerTolerance)
-        assertNear(metricBounds[0].width, with(composeRule.density) { 81.5.dp.toPx() })
+        assertNear(metricBounds[0].width, with(composeRule.density) { 89.dp.toPx() })
         assertNear(metricBounds[1].width, with(composeRule.density) { 101.5.dp.toPx() })
         assertNear(metricBounds[2].width, with(composeRule.density) { 76.5.dp.toPx() })
+    }
+
+    private fun assertMetricGroupsShareRow() {
+        val metricBounds =
+            listOf(
+                "home-weather-metric-humidity",
+                "home-weather-metric-feels-like",
+                "home-weather-metric-weather",
+            ).map { tag ->
+                composeRule.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+            }
+        val centerTolerance = with(composeRule.density) { 1.dp.toPx() }
+
+        assertTrue(abs(metricBounds[0].center.y - metricBounds[1].center.y) <= centerTolerance)
+        assertTrue(abs(metricBounds[1].center.y - metricBounds[2].center.y) <= centerTolerance)
+        assertTrue(metricBounds[0].right < metricBounds[1].left)
+        assertTrue(metricBounds[1].right < metricBounds[2].left)
     }
 
     private fun containsColor(
@@ -365,21 +407,21 @@ class NotificationUnreadIndicatorUiTest {
         val weatherLabel = composeRule.onNodeWithText("날씨").fetchSemanticsNode().boundsInRoot
         val density = composeRule.density
 
-        assertBounds(humidityMetric, left = 18.dp, width = 74.dp)
-        assertBounds(firstDivider, left = 104.dp, width = 1.dp)
-        assertBounds(feelsLikeMetric, left = 117.dp, width = 90.dp)
-        assertBounds(secondDivider, left = 219.dp, width = 1.dp)
-        assertBounds(weatherMetric, left = 232.dp, width = 70.dp)
+        assertBounds(humidityMetric, left = 18.dp, width = 80.dp)
+        assertBounds(firstDivider, left = 106.dp, width = 1.dp)
+        assertBounds(feelsLikeMetric, left = 115.dp, width = 90.dp)
+        assertBounds(secondDivider, left = 213.dp, width = 1.dp)
+        assertBounds(weatherMetric, left = 222.dp, width = 70.dp)
         assertBounds(humidityIcon, left = 18.dp, width = 36.dp)
-        assertBounds(feelsLikeIcon, left = 117.dp, width = 36.dp)
-        assertBounds(weatherIcon, left = 232.dp, width = 36.dp)
-        assertNear(firstDivider.left - humidityMetric.right, with(density) { 12.dp.toPx() })
-        assertNear(feelsLikeMetric.left - firstDivider.right, with(density) { 12.dp.toPx() })
-        assertNear(secondDivider.left - feelsLikeMetric.right, with(density) { 12.dp.toPx() })
-        assertNear(weatherMetric.left - secondDivider.right, with(density) { 12.dp.toPx() })
+        assertBounds(feelsLikeIcon, left = 115.dp, width = 36.dp)
+        assertBounds(weatherIcon, left = 222.dp, width = 36.dp)
+        assertNear(firstDivider.left - humidityMetric.right, with(density) { 8.dp.toPx() })
+        assertNear(feelsLikeMetric.left - firstDivider.right, with(density) { 8.dp.toPx() })
+        assertNear(secondDivider.left - feelsLikeMetric.right, with(density) { 8.dp.toPx() })
+        assertNear(weatherMetric.left - secondDivider.right, with(density) { 8.dp.toPx() })
         assertNear(humidityLabel.left, with(density) { 62.dp.toPx() })
-        assertNear(feelsLikeLabel.left, with(density) { 161.dp.toPx() })
-        assertNear(weatherLabel.left, with(density) { 276.dp.toPx() })
+        assertNear(feelsLikeLabel.left, with(density) { 159.dp.toPx() })
+        assertNear(weatherLabel.left, with(density) { 266.dp.toPx() })
         assertTextHeight("습도", expectedHeight = 14.sp)
         assertTextHeight("체감온도", expectedHeight = 14.sp)
         assertTextHeight("날씨", expectedHeight = 14.sp)
