@@ -38,8 +38,16 @@ class HomeFixedRecordActionUiTest {
     @Test
     fun recordActionMatchesFigmaWidthAndRespectsNavigationInset() {
         val navigationInsetPx = setHomeScreen(width = 402.dp, height = 978.dp)
-        val screenBounds = composeRule.onNodeWithTag(HOME_SCREEN_TEST_TAG).fetchSemanticsNode().boundsInRoot
-        val actionBounds = composeRule.onNodeWithTag(HOME_RECORD_ACTION_TEST_TAG).fetchSemanticsNode().boundsInRoot
+        val screenBounds =
+            composeRule
+                .onNodeWithTag(HOME_SCREEN_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val actionBounds =
+            composeRule
+                .onNodeWithTag(HOME_RECORD_ACTION_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
 
         assertNear(actionBounds.left - screenBounds.left, with(composeRule.density) { 28.dp.toPx() })
         assertNear(actionBounds.width, with(composeRule.density) { 346.dp.toPx() })
@@ -70,7 +78,8 @@ class HomeFixedRecordActionUiTest {
         actionNode.assertHasClickAction()
         val initialActionBounds = actionNode.fetchSemanticsNode().boundsInRoot
 
-        composeRule.onNodeWithTag(HOME_SCROLL_CONTENT_TEST_TAG)
+        composeRule
+            .onNodeWithTag(HOME_SCROLL_CONTENT_TEST_TAG)
             .performScrollToIndex(HOME_RECORD_HISTORY_ITEM_INDEX)
         composeRule.waitForIdle()
 
@@ -78,8 +87,10 @@ class HomeFixedRecordActionUiTest {
         assertNear(scrolledActionBounds.left, initialActionBounds.left)
         assertNear(scrolledActionBounds.top, initialActionBounds.top)
         val lastRecordCardBounds =
-            composeRule.onNodeWithTag(HOME_RECORD_HISTORY_CARD_TEST_TAG)
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag(HOME_RECORD_HISTORY_CARD_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
         assertTrue(
             lastRecordCardBounds.bottom + with(composeRule.density) { 10.dp.toPx() } <=
                 scrolledActionBounds.top,
