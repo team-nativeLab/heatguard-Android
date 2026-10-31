@@ -582,6 +582,7 @@ private fun HeartGuardMainNavDisplay(
                             viewModel = checklistRoundsViewModel,
                             date = selectedDate,
                             roundId = destination.roundId,
+                            siteLabel = checklistSiteLabel,
                             onBackClick = ::goBack,
                         )
                     } else {

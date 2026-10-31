@@ -50,6 +50,7 @@ internal fun ChecklistRoundDetailRoute(
     viewModel: ChecklistRoundsViewModel,
     date: LocalDate,
     roundId: String,
+    siteLabel: String?,
     onBackClick: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,8 +69,10 @@ internal fun ChecklistRoundDetailRoute(
         uiState = state,
         date = date,
         roundId = roundId,
+        siteLabel = siteLabel,
         onBackClick = onBackClick,
         onRetryClick = viewModel::retryRound,
+        onRetryRoundsClick = { viewModel.loadRounds(date) },
         onItemCheckedChange = { itemId, checked ->
             viewModel.setRoundItemChecked(roundId, date, itemId, checked)
         },
