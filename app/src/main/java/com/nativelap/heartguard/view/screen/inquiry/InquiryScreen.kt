@@ -59,23 +59,9 @@ fun InquiryScreen(
             BottomActionBar {
                 RecordSaveButton(
                     title =
-                        stringResource(
-                            if (uiState.submission == null) {
-                                R.string.inquiry_submit
-                            } else {
-                                R.string.inquiry_done
-                            },
-                        ),
-                    onClick = {
-                        if (uiState.submission == null) {
-                            onEvent(InquiryScreenEvent.SubmitClicked)
-                        } else {
-                            onEvent(InquiryScreenEvent.BackClicked)
-                        }
-                    },
-                    enabled =
-                        uiState.submission != null ||
-                            (!uiState.isSubmitting && uiState.title.isNotBlank() && uiState.content.isNotBlank()),
+                        stringResource(R.string.inquiry_submit),
+                    onClick = { onEvent(InquiryScreenEvent.SubmitClicked) },
+                    enabled = uiState.canSubmitInquiry(),
                 )
             }
         },
@@ -127,15 +113,6 @@ fun InquiryScreen(
                 }
                 if (uiState.hasError) {
                     Text(stringResource(R.string.inquiry_submit_error), color = MaterialTheme.colorScheme.error)
-                }
-                uiState.submission?.let { submission ->
-                    Text(
-                        text =
-                            stringResource(R.string.inquiry_submit_success) + "\n" +
-                                stringResource(R.string.inquiry_submit_receipt, submission.inquiryId),
-                        color = MaterialTheme.extraColors.strongText,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    )
                 }
             }
         }

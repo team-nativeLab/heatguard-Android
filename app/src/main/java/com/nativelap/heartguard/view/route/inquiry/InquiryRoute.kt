@@ -4,9 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.nativelap.heartguard.view.screen.inquiry.InquiryListScreen
 import com.nativelap.heartguard.view.screen.inquiry.InquiryScreen
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryEffect
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryViewModel
 
@@ -19,8 +24,9 @@ internal fun HeartGuardInquiryRoute(
 ) {
     val uiState by inquiryViewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(inquiryViewModel) {
+    LifecycleResumeEffect(inquiryViewModel) {
         inquiryViewModel.openInquiry()
+        onPauseOrDispose {}
     }
 
     InquiryListScreen(
@@ -52,6 +58,18 @@ internal fun HeartGuardInquiryRegistrationRoute(
     inquiryViewModel: InquiryViewModel,
 ) {
     val uiState by inquiryViewModel.uiState.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(inquiryViewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            inquiryViewModel.effects.collect { effect ->
+                when (effect) {
+                    InquiryEffect.NavigateToList -> onBackClick()
+                }
+            }
+        }
+    }
+
     InquiryScreen(
         uiState = uiState,
         onEvent = { event ->
