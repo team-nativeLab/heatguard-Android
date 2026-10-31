@@ -32,104 +32,108 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class TeamNotificationUnreadViewModelTest {
     @Test
-    fun `refresh uses server unread count and existing first page contract`() = runTest {
-        val fixture = createFixture()
-        try {
-            fixture.repository.response = {
-                ApiResult.Success(notificationPage(unreadCount = 6))
-            }
-
-            fixture.viewModel.refresh()
-            runCurrent()
-
-            assertEquals(6, fixture.viewModel.uiState.value.unreadCount)
-            assertTrue(fixture.viewModel.uiState.value.hasUnread)
-            assertEquals(
-                listOf(NotificationRequest(NotificationCategory.ALL, cursor = null, limit = 20)),
-                fixture.repository.requests,
-            )
-        } finally {
-            fixture.close()
-        }
-    }
-
-    @Test
-    fun `failed refresh preserves the last server confirmed count`() = runTest {
-        val fixture = createFixture()
-        try {
-            fixture.repository.response = {
-                ApiResult.Success(notificationPage(unreadCount = 3))
-            }
-            fixture.viewModel.refresh()
-            runCurrent()
-            assertEquals(3, fixture.viewModel.uiState.value.unreadCount)
-
-            fixture.repository.response = {
-                ApiResult.Failure(ApiError.Network)
-            }
-            fixture.viewModel.refresh()
-            runCurrent()
-
-            assertEquals(3, fixture.viewModel.uiState.value.unreadCount)
-            assertTrue(fixture.viewModel.uiState.value.hasUnread)
-        } finally {
-            fixture.close()
-        }
-    }
-
-    @Test
-    fun `session end clears unread state and cancels the active refresh`() = runTest {
-        val fixture = createFixture()
-        try {
-            fixture.repository.response = {
-                ApiResult.Success(notificationPage(unreadCount = 5))
-            }
-            fixture.viewModel.refresh()
-            runCurrent()
-            assertEquals(5, fixture.viewModel.uiState.value.unreadCount)
-
-            val pendingResult = CompletableDeferred<ApiResult<TeamNotificationPage>>()
-            var cancellationObserved = false
-            fixture.repository.response = {
-                try {
-                    pendingResult.await()
-                } catch (exception: CancellationException) {
-                    cancellationObserved = true
-                    throw exception
+    fun `refresh uses server unread count and existing first page contract`() =
+        runTest {
+            val fixture = createFixture()
+            try {
+                fixture.repository.response = {
+                    ApiResult.Success(notificationPage(unreadCount = 6))
                 }
+
+                fixture.viewModel.refresh()
+                runCurrent()
+
+                assertEquals(6, fixture.viewModel.uiState.value.unreadCount)
+                assertTrue(fixture.viewModel.uiState.value.hasUnread)
+                assertEquals(
+                    listOf(NotificationRequest(NotificationCategory.ALL, cursor = null, limit = 20)),
+                    fixture.repository.requests,
+                )
+            } finally {
+                fixture.close()
             }
-            fixture.viewModel.refresh()
-            runCurrent()
-
-            fixture.sessionManager.expireSession()
-            runCurrent()
-
-            assertNull(fixture.viewModel.uiState.value.unreadCount)
-            assertFalse(fixture.viewModel.uiState.value.hasUnread)
-            assertTrue(cancellationObserved)
-        } finally {
-            fixture.close()
         }
-    }
 
     @Test
-    fun `success from a previous session is not applied after session generation changes`() = runTest {
-        val fixture = createFixture()
-        try {
-            fixture.repository.response = {
-                fixture.sessionManager.expireSession()
-                ApiResult.Success(notificationPage(unreadCount = 99))
+    fun `failed refresh preserves the last server confirmed count`() =
+        runTest {
+            val fixture = createFixture()
+            try {
+                fixture.repository.response = {
+                    ApiResult.Success(notificationPage(unreadCount = 3))
+                }
+                fixture.viewModel.refresh()
+                runCurrent()
+                assertEquals(3, fixture.viewModel.uiState.value.unreadCount)
+
+                fixture.repository.response = {
+                    ApiResult.Failure(ApiError.Network)
+                }
+                fixture.viewModel.refresh()
+                runCurrent()
+
+                assertEquals(3, fixture.viewModel.uiState.value.unreadCount)
+                assertTrue(fixture.viewModel.uiState.value.hasUnread)
+            } finally {
+                fixture.close()
             }
-
-            fixture.viewModel.refresh()
-            runCurrent()
-
-            assertNull(fixture.viewModel.uiState.value.unreadCount)
-            assertFalse(fixture.viewModel.uiState.value.hasUnread)
-        } finally {
-            fixture.close()
         }
-    }
+
+    @Test
+    fun `session end clears unread state and cancels the active refresh`() =
+        runTest {
+            val fixture = createFixture()
+            try {
+                fixture.repository.response = {
+                    ApiResult.Success(notificationPage(unreadCount = 5))
+                }
+                fixture.viewModel.refresh()
+                runCurrent()
+                assertEquals(5, fixture.viewModel.uiState.value.unreadCount)
+
+                val pendingResult = CompletableDeferred<ApiResult<TeamNotificationPage>>()
+                var cancellationObserved = false
+                fixture.repository.response = {
+                    try {
+                        pendingResult.await()
+                    } catch (exception: CancellationException) {
+                        cancellationObserved = true
+                        throw exception
+                    }
+                }
+                fixture.viewModel.refresh()
+                runCurrent()
+
+                fixture.sessionManager.expireSession()
+                runCurrent()
+
+                assertNull(fixture.viewModel.uiState.value.unreadCount)
+                assertFalse(fixture.viewModel.uiState.value.hasUnread)
+                assertTrue(cancellationObserved)
+            } finally {
+                fixture.close()
+            }
+        }
+
+    @Test
+    fun `success from a previous session is not applied after session generation changes`() =
+        runTest {
+            val fixture = createFixture()
+            try {
+                fixture.repository.response = {
+                    fixture.sessionManager.expireSession()
+                    ApiResult.Success(notificationPage(unreadCount = 99))
+                }
+
+                fixture.viewModel.refresh()
+                runCurrent()
+
+                assertNull(fixture.viewModel.uiState.value.unreadCount)
+                assertFalse(fixture.viewModel.uiState.value.hasUnread)
+            } finally {
+                fixture.close()
+            }
+        }
 
     private suspend fun TestScope.createFixture(): Fixture {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -144,9 +148,10 @@ class TeamNotificationUnreadViewModelTest {
                 getTeamNotificationsUseCase = GetTeamNotificationsUseCase(repository),
                 sessionManager = sessionManager,
             )
-        val viewModelStore = ViewModelStore().apply {
-            put("notification-unread-test", viewModel)
-        }
+        val viewModelStore =
+            ViewModelStore().apply {
+                put("notification-unread-test", viewModel)
+            }
         sessionManager.onLoginSucceeded(SessionToken("test-session-token"))
         runCurrent()
 

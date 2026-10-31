@@ -68,7 +68,9 @@ internal class TeamNotificationUnreadViewModel
                                 }
                             }
 
-                            is ApiResult.Failure -> Unit
+                            is ApiResult.Failure -> {
+                                Unit
+                            }
                         }
                     } catch (exception: CancellationException) {
                         throw exception
