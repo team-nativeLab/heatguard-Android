@@ -102,9 +102,11 @@ fun HeartGuardHeader(
                 Box(
                     modifier =
                         Modifier
-                            .align(Alignment.BottomCenter)
-                            .offset(y = (-2).dp)
-                            .size(HeartGuardUnreadIndicatorSize)
+                            .align(Alignment.TopEnd)
+                            .offset(
+                                x = -HeartGuardUnreadIndicatorEdgeOffset,
+                                y = HeartGuardUnreadIndicatorEdgeOffset,
+                            ).size(HeartGuardUnreadIndicatorSize)
                             .background(MaterialTheme.colorScheme.error, CircleShape),
                 )
             }
@@ -113,6 +115,7 @@ fun HeartGuardHeader(
 }
 
 private val HeartGuardUnreadIndicatorSize = 8.dp
+private val HeartGuardUnreadIndicatorEdgeOffset = 6.dp
 
 @Preview(showBackground = true, widthDp = 402)
 @Composable
