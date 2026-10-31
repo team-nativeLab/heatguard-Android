@@ -106,8 +106,7 @@ fun HeartGuardHeader(
                             .offset(
                                 x = -HeartGuardUnreadIndicatorEdgeOffset,
                                 y = HeartGuardUnreadIndicatorEdgeOffset,
-                            )
-                            .size(HeartGuardUnreadIndicatorSize)
+                            ).size(HeartGuardUnreadIndicatorSize)
                             .background(MaterialTheme.colorScheme.error, CircleShape),
                 )
             }

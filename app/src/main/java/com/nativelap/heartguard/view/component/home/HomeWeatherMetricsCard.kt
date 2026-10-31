@@ -274,6 +274,7 @@ private val HOME_METRIC_FIGMA_SHADOW_ELEVATION = 4.dp
 private val HomeHumidityValueColumnMinWidth = 30.dp
 private val HomeFeelsLikeValueColumnMinWidth = 46.dp
 private val HomeWeatherValueColumnMinWidth = 26.dp
+
 private fun humidityMetricWrapperWidth(valueColumnWidth: Dp): Dp =
     HeartGuardIconSize.HomeMetric + HeartGuardSpacing.Compact + valueColumnWidth
 

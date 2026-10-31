@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -294,11 +294,10 @@ class NotificationUnreadIndicatorUiTest {
     private fun containsColor(
         pixels: PixelMap,
         expectedColor: Color,
-    ): Boolean {
-        return (0 until pixels.height).any { y ->
+    ): Boolean =
+        (0 until pixels.height).any { y ->
             (0 until pixels.width).any { x -> pixels[x, y] == expectedColor }
         }
-    }
 
     private fun containsIconColor(
         pixels: PixelMap,
@@ -306,8 +305,10 @@ class NotificationUnreadIndicatorUiTest {
         expectedColor: Color,
     ): Boolean {
         val bounds =
-            composeRule.onNodeWithTag(iconTestTag)
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag(iconTestTag)
+                .fetchSemanticsNode()
+                .boundsInRoot
         val left = bounds.left.roundToInt().coerceAtLeast(0)
         val top = bounds.top.roundToInt().coerceAtLeast(0)
         val right = bounds.right.roundToInt().coerceAtMost(pixels.width)
@@ -320,29 +321,45 @@ class NotificationUnreadIndicatorUiTest {
 
     private fun assertFigmaMetricColumnPositions() {
         val humidityMetric =
-            composeRule.onNodeWithTag("home-weather-metric-humidity")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-metric-humidity")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val firstDivider =
-            composeRule.onNodeWithTag("home-weather-divider-first")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-divider-first")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val feelsLikeMetric =
-            composeRule.onNodeWithTag("home-weather-metric-feels-like")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-metric-feels-like")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val secondDivider =
-            composeRule.onNodeWithTag("home-weather-divider-second")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-divider-second")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val weatherMetric =
-            composeRule.onNodeWithTag("home-weather-metric-weather")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-metric-weather")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val humidityIcon =
-            composeRule.onNodeWithTag("home-weather-icon-humidity")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-icon-humidity")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val feelsLikeIcon =
-            composeRule.onNodeWithTag("home-weather-icon-feels-like")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-icon-feels-like")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val weatherIcon =
-            composeRule.onNodeWithTag("home-weather-icon-weather")
-                .fetchSemanticsNode().boundsInRoot
+            composeRule
+                .onNodeWithTag("home-weather-icon-weather")
+                .fetchSemanticsNode()
+                .boundsInRoot
         val humidityLabel = composeRule.onNodeWithText("습도").fetchSemanticsNode().boundsInRoot
         val feelsLikeLabel = composeRule.onNodeWithText("체감온도").fetchSemanticsNode().boundsInRoot
         val weatherLabel = composeRule.onNodeWithText("날씨").fetchSemanticsNode().boundsInRoot
@@ -379,9 +396,10 @@ class NotificationUnreadIndicatorUiTest {
     }
 
     private fun assertMetricLabelsAreStacked() {
-        val labelBounds = listOf("습도", "체감온도", "날씨").map { label ->
-            composeRule.onNodeWithText(label).fetchSemanticsNode().boundsInRoot
-        }
+        val labelBounds =
+            listOf("습도", "체감온도", "날씨").map { label ->
+                composeRule.onNodeWithText(label).fetchSemanticsNode().boundsInRoot
+            }
 
         assertTrue(labelBounds[0].center.y < labelBounds[1].center.y)
         assertTrue(labelBounds[1].center.y < labelBounds[2].center.y)
