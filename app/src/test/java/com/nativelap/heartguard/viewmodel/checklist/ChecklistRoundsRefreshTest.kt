@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.viewmodel.checklist
 
+import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
@@ -16,12 +17,6 @@ import com.nativelap.heartguard.domain.checklist.repository.TeamChecklistReposit
 import com.nativelap.heartguard.domain.checklist.usecase.GetTeamChecklistRoundUseCase
 import com.nativelap.heartguard.domain.checklist.usecase.GetTeamChecklistRoundsUseCase
 import com.nativelap.heartguard.domain.checklist.usecase.SetTeamChecklistRoundItemCheckedUseCase
-import androidx.lifecycle.viewModelScope
-import java.time.Clock
-import java.time.Instant
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.ZoneId
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,6 +27,11 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -154,157 +154,175 @@ class ChecklistRoundsRefreshTest {
     }
 
     @Test
-    fun `post-save detail and rounds refresh start together and keep independent outcomes`() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(dispatcher)
-        val date = LocalDate.parse("2026-10-30")
-        val firstDetailResult = CompletableDeferred<ApiResult<TeamChecklistRoundDetail>>()
-        val firstRoundsResult = CompletableDeferred<ApiResult<TeamChecklistRounds>>()
-        val secondDetailResult = CompletableDeferred<ApiResult<TeamChecklistRoundDetail>>()
-        val secondRoundsResult = CompletableDeferred<ApiResult<TeamChecklistRounds>>()
-        val firstDetailStarted = CompletableDeferred<Unit>()
-        val firstRoundsStarted = CompletableDeferred<Unit>()
-        val secondDetailStarted = CompletableDeferred<Unit>()
-        val secondRoundsStarted = CompletableDeferred<Unit>()
-        var detailRequestCount = 0
-        var roundsRequestCount = 0
-        val repository =
-            FakeTeamChecklistRepository(
-                getRound = { roundId, requestDate ->
-                    detailRequestCount += 1
-                    when (detailRequestCount) {
-                        1 -> ApiResult.Success(roundDetail(requestDate, roundId))
-                        2 -> {
-                            firstDetailStarted.complete(Unit)
-                            firstDetailResult.await()
+    fun `post-save detail and rounds refresh start together and keep independent outcomes`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val date = LocalDate.parse("2026-10-30")
+            val firstDetailResult = CompletableDeferred<ApiResult<TeamChecklistRoundDetail>>()
+            val firstRoundsResult = CompletableDeferred<ApiResult<TeamChecklistRounds>>()
+            val secondDetailResult = CompletableDeferred<ApiResult<TeamChecklistRoundDetail>>()
+            val secondRoundsResult = CompletableDeferred<ApiResult<TeamChecklistRounds>>()
+            val firstDetailStarted = CompletableDeferred<Unit>()
+            val firstRoundsStarted = CompletableDeferred<Unit>()
+            val secondDetailStarted = CompletableDeferred<Unit>()
+            val secondRoundsStarted = CompletableDeferred<Unit>()
+            var detailRequestCount = 0
+            var roundsRequestCount = 0
+            val repository =
+                FakeTeamChecklistRepository(
+                    getRound = { roundId, requestDate ->
+                        detailRequestCount += 1
+                        when (detailRequestCount) {
+                            1 -> {
+                                ApiResult.Success(roundDetail(requestDate, roundId))
+                            }
+
+                            2 -> {
+                                firstDetailStarted.complete(Unit)
+                                firstDetailResult.await()
+                            }
+
+                            else -> {
+                                secondDetailStarted.complete(Unit)
+                                secondDetailResult.await()
+                            }
                         }
-                        else -> {
-                            secondDetailStarted.complete(Unit)
-                            secondDetailResult.await()
+                    },
+                    getRounds = { requestDate ->
+                        roundsRequestCount += 1
+                        when (roundsRequestCount) {
+                            1 -> {
+                                ApiResult.Success(roundsOverview(requestDate))
+                            }
+
+                            2 -> {
+                                firstRoundsStarted.complete(Unit)
+                                firstRoundsResult.await()
+                            }
+
+                            else -> {
+                                secondRoundsStarted.complete(Unit)
+                                secondRoundsResult.await()
+                            }
                         }
-                    }
-                },
-                getRounds = { requestDate ->
-                    roundsRequestCount += 1
-                    when (roundsRequestCount) {
-                        1 -> ApiResult.Success(roundsOverview(requestDate))
-                        2 -> {
-                            firstRoundsStarted.complete(Unit)
-                            firstRoundsResult.await()
-                        }
-                        else -> {
-                            secondRoundsStarted.complete(Unit)
-                            secondRoundsResult.await()
-                        }
-                    }
-                },
-            )
-        val (viewModel, sessionManager) = createLoadedViewModel(repository, dispatcher, date)
+                    },
+                )
+            val (viewModel, sessionManager) = createLoadedViewModel(repository, dispatcher, date)
 
-        try {
-            viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = true)
-            runCurrent()
+            try {
+                viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = true)
+                runCurrent()
 
-            assertTrue(firstDetailStarted.isCompleted)
-            assertTrue(firstRoundsStarted.isCompleted)
+                assertTrue(firstDetailStarted.isCompleted)
+                assertTrue(firstRoundsStarted.isCompleted)
 
-            firstDetailResult.complete(ApiResult.Failure(ApiError.Network))
-            runCurrent()
+                firstDetailResult.complete(ApiResult.Failure(ApiError.Network))
+                runCurrent()
 
-            assertTrue(viewModel.uiState.value.hasDetailLoadError)
-            assertTrue(viewModel.uiState.value.isLoadingRounds)
+                assertTrue(viewModel.uiState.value.hasDetailLoadError)
+                assertTrue(viewModel.uiState.value.isLoadingRounds)
 
-            firstRoundsResult.complete(ApiResult.Success(roundsOverview(date, progressPercent = 100)))
-            runCurrent()
+                firstRoundsResult.complete(ApiResult.Success(roundsOverview(date, progressPercent = 100)))
+                runCurrent()
 
-            assertFalse(viewModel.uiState.value.hasRoundsLoadError)
-            assertFalse(viewModel.uiState.value.isLoadingRounds)
-            assertEquals(100, viewModel.uiState.value.rounds?.progressPercent)
-            assertTrue(viewModel.uiState.value.hasDetailLoadError)
+                assertFalse(viewModel.uiState.value.hasRoundsLoadError)
+                assertFalse(viewModel.uiState.value.isLoadingRounds)
+                assertEquals(
+                    100,
+                    viewModel.uiState.value.rounds
+                        ?.progressPercent,
+                )
+                assertTrue(viewModel.uiState.value.hasDetailLoadError)
 
-            viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = false)
-            runCurrent()
+                viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = false)
+                runCurrent()
 
-            assertTrue(secondDetailStarted.isCompleted)
-            assertTrue(secondRoundsStarted.isCompleted)
+                assertTrue(secondDetailStarted.isCompleted)
+                assertTrue(secondRoundsStarted.isCompleted)
 
-            secondDetailResult.complete(
-                ApiResult.Success(
-                    roundDetail(date, ROUND_ID, checked = false),
-                ),
-            )
-            secondRoundsResult.complete(ApiResult.Failure(ApiError.Network))
-            runCurrent()
+                secondDetailResult.complete(
+                    ApiResult.Success(
+                        roundDetail(date, ROUND_ID, checked = false),
+                    ),
+                )
+                secondRoundsResult.complete(ApiResult.Failure(ApiError.Network))
+                runCurrent()
 
-            assertFalse(viewModel.uiState.value.hasDetailLoadError)
-            assertEquals(0, viewModel.uiState.value.roundDetail?.checkedItems)
-            assertTrue(viewModel.uiState.value.hasRoundsLoadError)
-            assertFalse(viewModel.uiState.value.isLoadingDetail)
-            assertFalse(viewModel.uiState.value.isLoadingRounds)
-        } finally {
-            viewModel.viewModelScope.cancel()
-            Dispatchers.resetMain()
+                assertFalse(viewModel.uiState.value.hasDetailLoadError)
+                assertEquals(
+                    0,
+                    viewModel.uiState.value.roundDetail
+                        ?.checkedItems,
+                )
+                assertTrue(viewModel.uiState.value.hasRoundsLoadError)
+                assertFalse(viewModel.uiState.value.isLoadingDetail)
+                assertFalse(viewModel.uiState.value.isLoadingRounds)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
         }
-    }
 
     @Test
-    fun `session change clears pending parallel refresh responses`() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(dispatcher)
-        val date = LocalDate.parse("2026-10-30")
-        val detailStarted = CompletableDeferred<Unit>()
-        val roundsStarted = CompletableDeferred<Unit>()
-        val detailResult = CompletableDeferred<ApiResult<TeamChecklistRoundDetail>>()
-        val roundsResult = CompletableDeferred<ApiResult<TeamChecklistRounds>>()
-        var detailRequestCount = 0
-        var roundsRequestCount = 0
-        val repository =
-            FakeTeamChecklistRepository(
-                getRound = { roundId, requestDate ->
-                    detailRequestCount += 1
-                    if (detailRequestCount == 1) {
-                        ApiResult.Success(roundDetail(requestDate, roundId))
-                    } else {
-                        detailStarted.complete(Unit)
-                        detailResult.await()
-                    }
-                },
-                getRounds = { requestDate ->
-                    roundsRequestCount += 1
-                    if (roundsRequestCount == 1) {
-                        ApiResult.Success(roundsOverview(requestDate))
-                    } else {
-                        roundsStarted.complete(Unit)
-                        roundsResult.await()
-                    }
-                },
-            )
-        val (viewModel, sessionManager) = createLoadedViewModel(repository, dispatcher, date)
+    fun `session change clears pending parallel refresh responses`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val date = LocalDate.parse("2026-10-30")
+            val detailStarted = CompletableDeferred<Unit>()
+            val roundsStarted = CompletableDeferred<Unit>()
+            val detailResult = CompletableDeferred<ApiResult<TeamChecklistRoundDetail>>()
+            val roundsResult = CompletableDeferred<ApiResult<TeamChecklistRounds>>()
+            var detailRequestCount = 0
+            var roundsRequestCount = 0
+            val repository =
+                FakeTeamChecklistRepository(
+                    getRound = { roundId, requestDate ->
+                        detailRequestCount += 1
+                        if (detailRequestCount == 1) {
+                            ApiResult.Success(roundDetail(requestDate, roundId))
+                        } else {
+                            detailStarted.complete(Unit)
+                            detailResult.await()
+                        }
+                    },
+                    getRounds = { requestDate ->
+                        roundsRequestCount += 1
+                        if (roundsRequestCount == 1) {
+                            ApiResult.Success(roundsOverview(requestDate))
+                        } else {
+                            roundsStarted.complete(Unit)
+                            roundsResult.await()
+                        }
+                    },
+                )
+            val (viewModel, sessionManager) = createLoadedViewModel(repository, dispatcher, date)
 
-        try {
-            viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = true)
-            runCurrent()
+            try {
+                viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = true)
+                runCurrent()
 
-            assertTrue(detailStarted.isCompleted)
-            assertTrue(roundsStarted.isCompleted)
+                assertTrue(detailStarted.isCompleted)
+                assertTrue(roundsStarted.isCompleted)
 
-            sessionManager.onLoginSucceeded(SessionToken("next-session-token"))
-            runCurrent()
+                sessionManager.onLoginSucceeded(SessionToken("next-session-token"))
+                runCurrent()
 
-            detailResult.complete(ApiResult.Success(roundDetail(date, ROUND_ID, checked = true)))
-            roundsResult.complete(ApiResult.Success(roundsOverview(date, progressPercent = 100)))
-            runCurrent()
+                detailResult.complete(ApiResult.Success(roundDetail(date, ROUND_ID, checked = true)))
+                roundsResult.complete(ApiResult.Success(roundsOverview(date, progressPercent = 100)))
+                runCurrent()
 
-            assertNull(viewModel.uiState.value.roundDetail)
-            assertNull(viewModel.uiState.value.rounds)
-            assertNull(viewModel.uiState.value.date)
-            assertFalse(viewModel.uiState.value.hasDetailLoadError)
-            assertFalse(viewModel.uiState.value.hasRoundsLoadError)
-        } finally {
-            viewModel.viewModelScope.cancel()
-            Dispatchers.resetMain()
+                assertNull(viewModel.uiState.value.roundDetail)
+                assertNull(viewModel.uiState.value.rounds)
+                assertNull(viewModel.uiState.value.date)
+                assertFalse(viewModel.uiState.value.hasDetailLoadError)
+                assertFalse(viewModel.uiState.value.hasRoundsLoadError)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
         }
-    }
 
     private suspend fun TestScope.createLoadedViewModel(
         repository: FakeTeamChecklistRepository,
@@ -336,59 +354,64 @@ class ChecklistRoundsRefreshTest {
         date: LocalDate,
         roundId: String,
         checked: Boolean = false,
-    ) =
-        TeamChecklistRoundDetail(
-            date = date,
-            teamId = "team-1",
-            roundId = roundId,
-            startsAt = OffsetDateTime.parse("2026-10-30T08:00:00+09:00"),
-            endsAt = OffsetDateTime.parse("2026-10-30T10:00:00+09:00"),
-            status = ChecklistRoundStatus.IN_PROGRESS,
-            totalItems = 1,
-            checkedItems = if (checked) 1 else 0,
-            progressPercent = if (checked) 100 else 0,
-            completedAt = null,
-            items =
-                listOf(
-                    TeamChecklistRoundItem(
-                        itemId = ITEM_ID,
-                        text = "작업 상태 확인",
-                        sortOrder = 0,
-                        checked = checked,
-                        checkedAt = null,
-                    ),
+    ) = TeamChecklistRoundDetail(
+        date = date,
+        teamId = "team-1",
+        roundId = roundId,
+        startsAt = OffsetDateTime.parse("2026-10-30T08:00:00+09:00"),
+        endsAt = OffsetDateTime.parse("2026-10-30T10:00:00+09:00"),
+        status = ChecklistRoundStatus.IN_PROGRESS,
+        totalItems = 1,
+        checkedItems = if (checked) 1 else 0,
+        progressPercent = if (checked) 100 else 0,
+        completedAt = null,
+        items =
+            listOf(
+                TeamChecklistRoundItem(
+                    itemId = ITEM_ID,
+                    text = "작업 상태 확인",
+                    sortOrder = 0,
+                    checked = checked,
+                    checkedAt = null,
                 ),
-        )
+            ),
+    )
 
     private fun roundsOverview(
         date: LocalDate,
         progressPercent: Int = 0,
-    ) =
-        TeamChecklistRounds(
-            date = date,
-            teamId = "team-1",
-            summary =
-                ChecklistRoundSummary(
-                    totalRounds = 1,
-                    completedRounds = if (progressPercent == 100) 1 else 0,
-                    missedRounds = 0,
-                    remainingRounds = if (progressPercent == 100) 0 else 1,
+    ) = TeamChecklistRounds(
+        date = date,
+        teamId = "team-1",
+        summary =
+            ChecklistRoundSummary(
+                totalRounds = 1,
+                completedRounds = if (progressPercent == 100) 1 else 0,
+                missedRounds = 0,
+                remainingRounds = if (progressPercent == 100) 0 else 1,
+                progressPercent = progressPercent,
+            ),
+        items =
+            listOf(
+                TeamChecklistRoundSummary(
+                    roundId = ROUND_ID,
+                    startsAt = OffsetDateTime.parse("2026-10-30T08:00:00+09:00"),
+                    endsAt = OffsetDateTime.parse("2026-10-30T10:00:00+09:00"),
+                    status =
+                        if (progressPercent ==
+                            100
+                        ) {
+                            ChecklistRoundStatus.COMPLETED
+                        } else {
+                            ChecklistRoundStatus.IN_PROGRESS
+                        },
+                    totalItems = 1,
+                    checkedItems = if (progressPercent == 100) 1 else 0,
                     progressPercent = progressPercent,
+                    completedAt = null,
                 ),
-            items =
-                listOf(
-                    TeamChecklistRoundSummary(
-                        roundId = ROUND_ID,
-                        startsAt = OffsetDateTime.parse("2026-10-30T08:00:00+09:00"),
-                        endsAt = OffsetDateTime.parse("2026-10-30T10:00:00+09:00"),
-                        status = if (progressPercent == 100) ChecklistRoundStatus.COMPLETED else ChecklistRoundStatus.IN_PROGRESS,
-                        totalItems = 1,
-                        checkedItems = if (progressPercent == 100) 1 else 0,
-                        progressPercent = progressPercent,
-                        completedAt = null,
-                    ),
-                ),
-        )
+            ),
+    )
 
     private class FakeTeamChecklistRepository(
         private val getRound: suspend (String, LocalDate) -> ApiResult<TeamChecklistRoundDetail>,
@@ -412,16 +435,15 @@ class ChecklistRoundsRefreshTest {
             roundId: String,
             itemId: String,
             checked: Boolean,
-        ) =
-            ApiResult.Success(
-                ChecklistRoundItemCheckUpdate(
-                    date = LocalDate.parse("2026-10-30"),
-                    roundId = roundId,
-                    itemId = itemId,
-                    checked = checked,
-                    checkedAt = null,
-                ),
-            )
+        ) = ApiResult.Success(
+            ChecklistRoundItemCheckUpdate(
+                date = LocalDate.parse("2026-10-30"),
+                roundId = roundId,
+                itemId = itemId,
+                checked = checked,
+                checkedAt = null,
+            ),
+        )
     }
 
     private class TestTokenStorage : TokenStorage {

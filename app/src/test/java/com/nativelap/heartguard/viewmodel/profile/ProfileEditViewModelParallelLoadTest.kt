@@ -21,10 +21,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.resetMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -32,66 +32,67 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProfileEditViewModelParallelLoadTest {
     @Test
-    fun `profile success is retained when parallel photo lookup fails`() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(dispatcher)
-        val profileStarted = CompletableDeferred<Unit>()
-        val photoStarted = CompletableDeferred<Unit>()
-        val profileResult = CompletableDeferred<ApiResult<WorkerProfile>>()
-        val photoResult = CompletableDeferred<ApiResult<ProfilePhoto?>>()
-        val repository =
-            FakeWorkerProfileRepository(
-                getProfile = {
-                    profileStarted.complete(Unit)
-                    profileResult.await()
-                },
-                getProfilePhoto = {
-                    photoStarted.complete(Unit)
-                    photoResult.await()
-                },
-            )
-        val sessionManager = SessionManager(TestTokenStorage(), dispatcher)
-        sessionManager.onLoginSucceeded(SessionToken("profile-session-token"))
-        val viewModel =
-            ProfileEditViewModel(
-                getWorkerProfileUseCase = GetWorkerProfileUseCase(repository),
-                getWorkerProfilePhotoUseCase = GetWorkerProfilePhotoUseCase(repository),
-                updateWorkerNameUseCase = UpdateWorkerNameUseCase(repository),
-                uploadWorkerProfilePhotoUseCase = UploadWorkerProfilePhotoUseCase(repository),
-                deleteWorkerProfilePhotoUseCase = DeleteWorkerProfilePhotoUseCase(repository),
-                sessionManager = sessionManager,
-            )
+    fun `profile success is retained when parallel photo lookup fails`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val profileStarted = CompletableDeferred<Unit>()
+            val photoStarted = CompletableDeferred<Unit>()
+            val profileResult = CompletableDeferred<ApiResult<WorkerProfile>>()
+            val photoResult = CompletableDeferred<ApiResult<ProfilePhoto?>>()
+            val repository =
+                FakeWorkerProfileRepository(
+                    getProfile = {
+                        profileStarted.complete(Unit)
+                        profileResult.await()
+                    },
+                    getProfilePhoto = {
+                        photoStarted.complete(Unit)
+                        photoResult.await()
+                    },
+                )
+            val sessionManager = SessionManager(TestTokenStorage(), dispatcher)
+            sessionManager.onLoginSucceeded(SessionToken("profile-session-token"))
+            val viewModel =
+                ProfileEditViewModel(
+                    getWorkerProfileUseCase = GetWorkerProfileUseCase(repository),
+                    getWorkerProfilePhotoUseCase = GetWorkerProfilePhotoUseCase(repository),
+                    updateWorkerNameUseCase = UpdateWorkerNameUseCase(repository),
+                    uploadWorkerProfilePhotoUseCase = UploadWorkerProfilePhotoUseCase(repository),
+                    deleteWorkerProfilePhotoUseCase = DeleteWorkerProfilePhotoUseCase(repository),
+                    sessionManager = sessionManager,
+                )
 
-        try {
-            viewModel.loadProfile()
-            runCurrent()
+            try {
+                viewModel.loadProfile()
+                runCurrent()
 
-            assertTrue(profileStarted.isCompleted)
-            assertTrue(photoStarted.isCompleted)
+                assertTrue(profileStarted.isCompleted)
+                assertTrue(photoStarted.isCompleted)
 
-            profileResult.complete(
-                ApiResult.Success(
-                    WorkerProfile(
-                        userId = "worker-1",
-                        name = "작업자",
-                        email = "worker@example.invalid",
-                        companyName = "현장 회사",
-                        version = 3L,
+                profileResult.complete(
+                    ApiResult.Success(
+                        WorkerProfile(
+                            userId = "worker-1",
+                            name = "작업자",
+                            email = "worker@example.invalid",
+                            companyName = "현장 회사",
+                            version = 3L,
+                        ),
                     ),
-                ),
-            )
-            photoResult.complete(ApiResult.Failure(ApiError.Network))
-            runCurrent()
+                )
+                photoResult.complete(ApiResult.Failure(ApiError.Network))
+                runCurrent()
 
-            val loadedProfile = viewModel.uiState.value.loadState as ProfileLoadState.Loaded
-            assertEquals("작업자", loadedProfile.userName)
-            assertEquals("worker@example.invalid", loadedProfile.email)
-            assertEquals(ProfilePhotoSaveError.LOAD_FAILED, viewModel.uiState.value.profilePhotoSaveError)
-        } finally {
-            viewModel.viewModelScope.cancel()
-            Dispatchers.resetMain()
+                val loadedProfile = viewModel.uiState.value.loadState as ProfileLoadState.Loaded
+                assertEquals("작업자", loadedProfile.userName)
+                assertEquals("worker@example.invalid", loadedProfile.email)
+                assertEquals(ProfilePhotoSaveError.LOAD_FAILED, viewModel.uiState.value.profilePhotoSaveError)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
         }
-    }
 
     private class FakeWorkerProfileRepository(
         private val getProfile: suspend () -> ApiResult<WorkerProfile>,

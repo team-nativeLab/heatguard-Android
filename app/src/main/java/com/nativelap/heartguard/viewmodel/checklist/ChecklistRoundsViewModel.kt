@@ -280,9 +280,9 @@ internal class ChecklistRoundsViewModel
                         is ApiResult.Success -> {
                             if (
                                 detailRequestGeneration.isCurrent(detailRequest) &&
-                                    isCurrentSession(sessionGeneration) &&
-                                    requestedRoundId == roundId &&
-                                    requestedRoundDate == date
+                                isCurrentSession(sessionGeneration) &&
+                                requestedRoundId == roundId &&
+                                requestedRoundDate == date
                             ) {
                                 mutableUiState.value =
                                     mutableUiState.value.copy(
@@ -296,7 +296,7 @@ internal class ChecklistRoundsViewModel
                         is ApiResult.Failure -> {
                             if (
                                 detailRequestGeneration.isCurrent(detailRequest) &&
-                                    isCurrentSession(sessionGeneration)
+                                isCurrentSession(sessionGeneration)
                             ) {
                                 mutableUiState.value =
                                     mutableUiState.value.copy(
@@ -313,7 +313,7 @@ internal class ChecklistRoundsViewModel
                         is ApiResult.Success -> {
                             if (
                                 roundsRequestGeneration.isCurrent(roundsRequest) &&
-                                    isCurrentSession(sessionGeneration)
+                                isCurrentSession(sessionGeneration)
                             ) {
                                 mutableUiState.value =
                                     mutableUiState.value.copy(
@@ -328,7 +328,7 @@ internal class ChecklistRoundsViewModel
                         is ApiResult.Failure -> {
                             if (
                                 roundsRequestGeneration.isCurrent(roundsRequest) &&
-                                    isCurrentSession(sessionGeneration)
+                                isCurrentSession(sessionGeneration)
                             ) {
                                 mutableUiState.value =
                                     mutableUiState.value.copy(
