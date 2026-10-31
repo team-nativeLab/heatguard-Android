@@ -40,7 +40,6 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | RecordTypeSelection | 온도계 기록 / 작업 사진 / 휴식 사진 중 기록 유형 선택 (바텀시트) |
 | TemperatureRecord | 온도계 측정값 입력 |
 | FieldPhoto / WorkPhoto / RestPhoto | 사진 종류 선택 후 기본 시스템 카메라 앱 촬영 또는 Photo Picker 앨범 선택 (종류별 최대 2장). 휴식 기록은 시작·종료 시각을 TimePicker로 선택하고 자정을 넘기는 구간을 지원 |
-| PhotoCamera | 선택한 기록 유형으로 기본 시스템 카메라 앱을 열어 촬영 |
 | SaveSuccess / SaveFailure | 저장 성공·명확한 실패·결과 확인 필요를 구분. 결과 불명 제출은 재전송 대신 기록 내역 확인을 안내하며, 성공 후 로컬 정리 실패는 별도 경고 |
 | WithdrawNotice / WithdrawConfirm / WithdrawDone | 회원탈퇴 안내·확인·완료. 현재 비밀번호 확인 후 팀 계정과 세션을 비활성화 |
 
