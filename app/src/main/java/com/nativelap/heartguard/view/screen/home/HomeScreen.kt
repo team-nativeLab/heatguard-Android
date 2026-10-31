@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,6 +24,7 @@ import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+import com.nativelap.heartguard.view.component.BottomActionBar
 import com.nativelap.heartguard.view.component.HeartGuardHeader
 import com.nativelap.heartguard.view.component.home.CheckTimelineItem
 import com.nativelap.heartguard.view.component.home.HomeAdditionalRecordCard
@@ -59,6 +61,17 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
+        bottomBar = {
+            BottomActionBar {
+                Box(modifier = Modifier.padding(top = HeartGuardSpacing.Tight / 2)) {
+                    RecordSaveButton(
+                        title = stringResource(R.string.home_record_action),
+                        onClick = onRecordClick,
+                        modifier = Modifier.testTag(HOME_RECORD_ACTION_TEST_TAG),
+                    )
+                }
+            }
+        },
     ) { innerPadding ->
         Box(
             modifier =
@@ -71,11 +84,9 @@ fun HomeScreen(
                 modifier =
                     Modifier
                         .widthIn(max = 600.dp)
-                        .fillMaxSize(),
-                contentPadding =
-                    PaddingValues(
-                        bottom = HeartGuardSpacing.LargeSection,
-                    ),
+                        .fillMaxSize()
+                        .testTag(HOME_SCROLL_CONTENT_TEST_TAG),
+                contentPadding = PaddingValues(bottom = homeRecordActionContentGap),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
             ) {
                 item {
@@ -188,26 +199,21 @@ fun HomeScreen(
                         description = stringResource(R.string.home_record_history_description),
                         iconPainter = painterResource(R.drawable.home_history),
                         onClick = onRecordHistoryClick,
-                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                    )
-                }
-
-                item {
-                    RecordSaveButton(
-                        title = stringResource(R.string.home_record_action),
-                        onClick = onRecordClick,
                         modifier =
-                            Modifier.padding(
-                                start = HeartGuardSpacing.HomeContentHorizontal,
-                                top = HeartGuardSpacing.Tight / 2,
-                                end = HeartGuardSpacing.HomeContentHorizontal,
-                            ),
+                            Modifier
+                                .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal)
+                                .testTag(HOME_RECORD_HISTORY_CARD_TEST_TAG),
                     )
                 }
             }
         }
     }
 }
+
+private const val HOME_RECORD_ACTION_TEST_TAG = "home-record-action"
+private const val HOME_SCROLL_CONTENT_TEST_TAG = "home-scroll-content"
+private const val HOME_RECORD_HISTORY_CARD_TEST_TAG = "home-record-history-card"
+private val homeRecordActionContentGap = 10.dp
 
 @Preview(showBackground = true, widthDp = 402, heightDp = 978)
 @Composable
