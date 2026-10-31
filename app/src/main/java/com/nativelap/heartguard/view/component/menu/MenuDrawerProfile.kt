@@ -13,10 +13,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.HeartGuardIconSize
@@ -24,9 +31,10 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.valueOrEmptyText
+import com.nativelap.heartguard.viewmodel.menu.isHttpsProfilePhotoUrl
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
 
-/** 메뉴 드로어 상단에 이름 첫 글자 아바타와 이름·팀명·작업 위치·이메일을 보여준다. */
+/** 메뉴 드로어 상단에 프로필 사진 또는 이름 첫 글자 아바타와 사용자 정보를 보여준다. */
 @Composable
 fun MenuDrawerProfile(
     profile: MenuDrawerProfileUiModel,
@@ -47,15 +55,25 @@ fun MenuDrawerProfile(
                     ),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = valueOrEmptyText(profile.avatarInitial),
-                color = MaterialTheme.colorScheme.primary,
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontSize = HeartGuardFontSize.MenuProfileName,
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
+            val photoUrl = profile.photoUrl.takeIf(::isHttpsProfilePhotoUrl)
+            if (photoUrl != null) {
+                SubcomposeAsyncImage(
+                    model =
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(photoUrl)
+                            .memoryCachePolicy(CachePolicy.DISABLED)
+                            .diskCachePolicy(CachePolicy.DISABLED)
+                            .build(),
+                    contentDescription = stringResource(R.string.menu_profile_photo_description),
+                    modifier = Modifier.size(HeartGuardIconSize.MenuAvatar).clip(CircleShape),
+                    contentScale = ContentScale.Crop,
+                    loading = { MenuDrawerAvatarInitial(profile.avatarInitial) },
+                    error = { MenuDrawerAvatarInitial(profile.avatarInitial) },
+                    success = { SubcomposeAsyncImageContent() },
+                )
+            } else {
+                MenuDrawerAvatarInitial(profile.avatarInitial)
+            }
         }
 
         Column(modifier = Modifier.weight(1f)) {
@@ -97,6 +115,19 @@ fun MenuDrawerProfile(
             )
         }
     }
+}
+
+@Composable
+private fun MenuDrawerAvatarInitial(initial: String) {
+    Text(
+        text = valueOrEmptyText(initial),
+        color = MaterialTheme.colorScheme.primary,
+        style =
+            MaterialTheme.typography.titleMedium.copy(
+                fontSize = HeartGuardFontSize.MenuProfileName,
+                fontWeight = FontWeight.Bold,
+            ),
+    )
 }
 
 @Preview(showBackground = true, widthDp = 252)
