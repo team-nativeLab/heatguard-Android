@@ -10,9 +10,12 @@ import com.nativelap.heartguard.domain.inquiry.usecase.GetInquiriesUseCase
 import com.nativelap.heartguard.domain.inquiry.usecase.SubmitInquiryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,6 +29,9 @@ class InquiryViewModel
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(InquiryUiState())
         val uiState: StateFlow<InquiryUiState> = mutableUiState.asStateFlow()
+
+        private val effectChannel = Channel<InquiryEffect>(Channel.BUFFERED)
+        val effects: Flow<InquiryEffect> = effectChannel.receiveAsFlow()
 
         private var submitInquiryJob: Job? = null
         private var loadInquiriesJob: Job? = null
@@ -45,11 +51,10 @@ class InquiryViewModel
             }
         }
 
-        /** 화면에 들어올 때 호출한다. 이전 접수 결과·오류 안내를 지우고 내 문의 목록을 새로 조회한다(작성 중인 입력은 유지). */
+        /** 화면에 들어올 때 호출한다. 이전 오류 안내를 지우고 내 문의 목록을 새로 조회한다(작성 중인 입력은 유지). */
         fun openInquiry() {
             mutableUiState.value =
                 mutableUiState.value.copy(
-                    submission = null,
                     hasError = false,
                 )
             loadInquiries()
@@ -140,7 +145,6 @@ class InquiryViewModel
             mutableUiState.value =
                 mutableUiState.value.copy(
                     title = title,
-                    submission = null,
                     hasError = false,
                 )
         }
@@ -150,7 +154,6 @@ class InquiryViewModel
             mutableUiState.value =
                 mutableUiState.value.copy(
                     content = content.takeCodePoints(INQUIRY_CONTENT_LIMIT),
-                    submission = null,
                     hasError = false,
                 )
         }
@@ -167,17 +170,16 @@ class InquiryViewModel
             return substring(0, offsetByCodePoints(0, maxCodePoints))
         }
 
-        /** 제목과 내용을 서버에 등록하고 접수 결과 또는 재시도 가능한 오류 상태를 반영한다. */
+        /** 제목과 내용을 서버에 등록하고 성공 시 목록 복귀 효과를 보낸다. */
         fun submitInquiry() {
             val currentState = mutableUiState.value
-            if (currentState.isSubmitting || currentState.title.isBlank() || currentState.content.isBlank()) {
+            if (!currentState.canSubmitInquiry()) {
                 return
             }
 
             mutableUiState.value =
                 currentState.copy(
                     isSubmitting = true,
-                    submission = null,
                     hasError = false,
                 )
             submitInquiryJob =
@@ -190,23 +192,17 @@ class InquiryViewModel
                             )
                     ) {
                         is ApiResult.Success -> {
-                            // 등록이 끝나면 입력을 비우고, 새 문의가 목록 맨 위에 보이도록 목록을 다시 조회한다.
                             mutableUiState.value =
                                 mutableUiState.value.copy(
                                     title = "",
                                     content = "",
                                     isSubmitting = false,
-                                    submission = submitResult.value,
                                 )
-                            loadInquiries()
+                            effectChannel.send(InquiryEffect.NavigateToList)
                         }
 
                         is ApiResult.Failure -> {
-                            mutableUiState.value =
-                                mutableUiState.value.copy(
-                                    isSubmitting = false,
-                                    hasError = true,
-                                )
+                            mutableUiState.value = mutableUiState.value.afterSubmissionFailure()
                         }
                     }
                 }
