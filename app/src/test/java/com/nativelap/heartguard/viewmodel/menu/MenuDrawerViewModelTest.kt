@@ -34,109 +34,112 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class MenuDrawerViewModelTest {
     @Test
-    fun `profile response is applied when photo request fails`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeWorkerProfileRepository()
-        repository.photoRequest = {
-            ApiResult.Failure(ApiError.Network)
+    fun `profile response is applied when photo request fails`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeWorkerProfileRepository()
+            repository.photoRequest = {
+                ApiResult.Failure(ApiError.Network)
+            }
+            val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
+            val viewModelStore = ViewModelStore()
+
+            try {
+                val viewModel = createViewModel(repository, sessionManager, viewModelStore)
+                runCurrent()
+
+                viewModel.loadProfile()
+                runCurrent()
+
+                assertEquals("현장 작업자", viewModel.profile.value.userName)
+                assertEquals("worker@example.test", viewModel.profile.value.email)
+                assertNull(viewModel.profile.value.photoUrl)
+                assertEquals(1, repository.profileRequestCount)
+                assertEquals(1, repository.photoRequestCount)
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
         }
-        val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
-        val viewModelStore = ViewModelStore()
-
-        try {
-            val viewModel = createViewModel(repository, sessionManager, viewModelStore)
-            runCurrent()
-
-            viewModel.loadProfile()
-            runCurrent()
-
-            assertEquals("현장 작업자", viewModel.profile.value.userName)
-            assertEquals("worker@example.test", viewModel.profile.value.email)
-            assertNull(viewModel.profile.value.photoUrl)
-            assertEquals(1, repository.profileRequestCount)
-            assertEquals(1, repository.photoRequestCount)
-        } finally {
-            viewModelStore.clear()
-            Dispatchers.resetMain()
-        }
-    }
 
     @Test
-    fun `profile and photo requests start concurrently`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val profileStarted = CompletableDeferred<Unit>()
-        val photoStarted = CompletableDeferred<Unit>()
-        val releaseRequests = CompletableDeferred<Unit>()
-        val repository = FakeWorkerProfileRepository()
-        repository.profileRequest = {
-            profileStarted.complete(Unit)
-            releaseRequests.await()
-            ApiResult.Success(testProfile)
+    fun `profile and photo requests start concurrently`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val profileStarted = CompletableDeferred<Unit>()
+            val photoStarted = CompletableDeferred<Unit>()
+            val releaseRequests = CompletableDeferred<Unit>()
+            val repository = FakeWorkerProfileRepository()
+            repository.profileRequest = {
+                profileStarted.complete(Unit)
+                releaseRequests.await()
+                ApiResult.Success(testProfile)
+            }
+            repository.photoRequest = {
+                photoStarted.complete(Unit)
+                releaseRequests.await()
+                ApiResult.Success(ProfilePhoto("https://images.example.test/profile", null))
+            }
+            val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
+            val viewModelStore = ViewModelStore()
+
+            try {
+                val viewModel = createViewModel(repository, sessionManager, viewModelStore)
+                runCurrent()
+
+                viewModel.loadProfile()
+                runCurrent()
+
+                assertTrue(profileStarted.isCompleted)
+                assertTrue(photoStarted.isCompleted)
+                assertNull(viewModel.profile.value.userName)
+
+                releaseRequests.complete(Unit)
+                runCurrent()
+
+                assertEquals(testProfile.name, viewModel.profile.value.userName)
+                assertEquals("https://images.example.test/profile", viewModel.profile.value.photoUrl)
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
         }
-        repository.photoRequest = {
-            photoStarted.complete(Unit)
-            releaseRequests.await()
-            ApiResult.Success(ProfilePhoto("https://images.example.test/profile", null))
-        }
-        val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
-        val viewModelStore = ViewModelStore()
-
-        try {
-            val viewModel = createViewModel(repository, sessionManager, viewModelStore)
-            runCurrent()
-
-            viewModel.loadProfile()
-            runCurrent()
-
-            assertTrue(profileStarted.isCompleted)
-            assertTrue(photoStarted.isCompleted)
-            assertNull(viewModel.profile.value.userName)
-
-            releaseRequests.complete(Unit)
-            runCurrent()
-
-            assertEquals(testProfile.name, viewModel.profile.value.userName)
-            assertEquals("https://images.example.test/profile", viewModel.profile.value.photoUrl)
-        } finally {
-            viewModelStore.clear()
-            Dispatchers.resetMain()
-        }
-    }
 
     @Test
-    fun `response from previous session is not applied after account changes`() = runTest {
-        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val repository = FakeWorkerProfileRepository()
-        var sessionManager: SessionManager? = null
-        repository.photoRequest = {
-            sessionManager?.onLoginSucceeded(
-                SessionToken(
-                    accessToken = "second-account-token",
-                    role = SessionRole.TEAM_MEMBER,
-                ),
-            )
-            ApiResult.Success(ProfilePhoto("https://images.example.test/previous-account", null))
+    fun `response from previous session is not applied after account changes`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val repository = FakeWorkerProfileRepository()
+            var sessionManager: SessionManager? = null
+            repository.photoRequest = {
+                sessionManager?.onLoginSucceeded(
+                    SessionToken(
+                        accessToken = "second-account-token",
+                        role = SessionRole.TEAM_MEMBER,
+                    ),
+                )
+                ApiResult.Success(ProfilePhoto("https://images.example.test/previous-account", null))
+            }
+            val activeSessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
+            sessionManager = activeSessionManager
+            val viewModelStore = ViewModelStore()
+
+            try {
+                val viewModel = createViewModel(repository, activeSessionManager, viewModelStore)
+                runCurrent()
+
+                viewModel.loadProfile()
+                runCurrent()
+
+                assertEquals(3L, activeSessionManager.getSnapshot().generation)
+                assertNull(viewModel.profile.value.userName)
+                assertNull(viewModel.profile.value.email)
+                assertNull(viewModel.profile.value.photoUrl)
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
         }
-        val activeSessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
-        sessionManager = activeSessionManager
-        val viewModelStore = ViewModelStore()
-
-        try {
-            val viewModel = createViewModel(repository, activeSessionManager, viewModelStore)
-            runCurrent()
-
-            viewModel.loadProfile()
-            runCurrent()
-
-            assertEquals(3L, activeSessionManager.getSnapshot().generation)
-            assertNull(viewModel.profile.value.userName)
-            assertNull(viewModel.profile.value.email)
-            assertNull(viewModel.profile.value.photoUrl)
-        } finally {
-            viewModelStore.clear()
-            Dispatchers.resetMain()
-        }
-    }
 
     private suspend fun createAuthenticatedSession(dispatcher: CoroutineDispatcher): SessionManager {
         val sessionManager = SessionManager(FakeTokenStorage(), dispatcher)

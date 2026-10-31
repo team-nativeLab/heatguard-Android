@@ -31,8 +31,8 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.valueOrEmptyText
-import com.nativelap.heartguard.viewmodel.menu.isHttpsProfilePhotoUrl
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
+import com.nativelap.heartguard.viewmodel.menu.isHttpsProfilePhotoUrl
 
 /** 메뉴 드로어 상단에 프로필 사진 또는 이름 첫 글자 아바타와 사용자 정보를 보여준다. */
 @Composable
@@ -59,7 +59,8 @@ fun MenuDrawerProfile(
             if (photoUrl != null) {
                 SubcomposeAsyncImage(
                     model =
-                        ImageRequest.Builder(LocalContext.current)
+                        ImageRequest
+                            .Builder(LocalContext.current)
                             .data(photoUrl)
                             .memoryCachePolicy(CachePolicy.DISABLED)
                             .diskCachePolicy(CachePolicy.DISABLED)

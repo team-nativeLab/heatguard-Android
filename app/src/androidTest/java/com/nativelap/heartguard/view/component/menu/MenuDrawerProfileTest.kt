@@ -8,9 +8,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import coil3.annotation.DelicateCoilApi
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
 import coil3.asImage
 import coil3.decode.DataSource
 import coil3.fetch.Fetcher
@@ -18,13 +18,13 @@ import coil3.fetch.ImageFetchResult
 import coil3.request.Options
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerProfileUiModel
-import java.io.IOException
-import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 @OptIn(DelicateCoilApi::class)
@@ -117,7 +117,7 @@ class MenuDrawerProfileTest {
                         userName = "현장 작업자",
                         photoUrl = "http://images.example.test/profile",
                     )
-                }
+            }
             composeRule.waitForIdle()
             composeRule.onNodeWithText("현", substring = false).assertIsDisplayed()
             composeRule.onNodeWithContentDescription("사용자 프로필 사진").assertDoesNotExist()
@@ -134,7 +134,8 @@ class MenuDrawerProfileTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val previousImageLoader = SingletonImageLoader.get(context)
         SingletonImageLoader.setUnsafe(
-            ImageLoader.Builder(context)
+            ImageLoader
+                .Builder(context)
                 .components {
                     add(fetcherFactory)
                 }.build(),
