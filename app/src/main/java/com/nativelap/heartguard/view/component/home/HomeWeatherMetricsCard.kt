@@ -68,7 +68,7 @@ fun HomeWeatherMetricsCard(
             val minimumMetricContentWidth =
                 HeartGuardIconSize.HomeMetric * 3 +
                     HeartGuardSpacing.Compact * 3 +
-                    HeartGuardSpacing.Item * 4 +
+                    HeartGuardSpacing.Compact * 4 +
                     HeartGuardBorderWidth.Divider * 2 +
                     humidityValueColumnWidth +
                     feelsLikeValueColumnWidth +
@@ -117,7 +117,7 @@ fun HomeWeatherMetricsCard(
                                 vertical = HeartGuardSpacing.Section,
                             ),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
                 ) {
                     HomeWeatherMetric(
                         iconPainter = painterResource(R.drawable.home_humidity),
@@ -271,7 +271,7 @@ private val HOME_METRIC_FIGMA_LABEL_COLOR = Color(0xFF6B7280)
 private val HOME_METRIC_FIGMA_VALUE_COLOR = Color(0xFF30333D)
 private val HOME_METRIC_FIGMA_DIVIDER_COLOR = Color(0xFFE8EBF5)
 private val HOME_METRIC_FIGMA_SHADOW_ELEVATION = 4.dp
-private val HomeHumidityValueColumnMinWidth = 30.dp
+private val HomeHumidityValueColumnMinWidth = 36.dp
 private val HomeFeelsLikeValueColumnMinWidth = 46.dp
 private val HomeWeatherValueColumnMinWidth = 26.dp
 
