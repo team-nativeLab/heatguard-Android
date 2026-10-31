@@ -15,6 +15,7 @@ import com.nativelap.heartguard.domain.checklist.usecase.GetTeamChecklistRoundsU
 import com.nativelap.heartguard.domain.checklist.usecase.SetTeamChecklistRoundItemCheckedUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -262,66 +263,80 @@ internal class ChecklistRoundsViewModel
             if (!isCurrentSession(sessionGeneration)) return
 
             val detailRequest = detailRequestGeneration.begin()
-            mutableUiState.value =
-                mutableUiState.value.copy(
-                    isLoadingDetail = true,
-                    hasDetailLoadError = false,
-                )
-
-            when (val detailResult = getTeamChecklistRoundUseCase(roundId, date)) {
-                is ApiResult.Success -> {
-                    if (detailRequestGeneration.isCurrent(detailRequest) && isCurrentSession(sessionGeneration) &&
-                        requestedRoundId == roundId && requestedRoundDate == date
-                    ) {
-                        mutableUiState.value =
-                            mutableUiState.value.copy(
-                                roundDetail = detailResult.value.toUiModel(),
-                                isLoadingDetail = false,
-                                hasDetailLoadError = false,
-                            )
-                    }
-                }
-
-                is ApiResult.Failure -> {
-                    if (detailRequestGeneration.isCurrent(detailRequest) && isCurrentSession(sessionGeneration)) {
-                        mutableUiState.value =
-                            mutableUiState.value.copy(
-                                isLoadingDetail = false,
-                                hasDetailLoadError = detailResult.error != ApiError.SessionChanged,
-                            )
-                    }
-                }
-            }
-
-            if (!isCurrentSession(sessionGeneration)) return
             val roundsDate = LocalDate.now(clock)
             val roundsRequest = roundsRequestGeneration.begin()
             mutableUiState.value =
                 mutableUiState.value.copy(
                     date = roundsDate,
+                    isLoadingDetail = true,
+                    hasDetailLoadError = false,
                     isLoadingRounds = true,
                     hasRoundsLoadError = false,
                 )
-            when (val roundsResult = getTeamChecklistRoundsUseCase(roundsDate)) {
-                is ApiResult.Success -> {
-                    if (roundsRequestGeneration.isCurrent(roundsRequest) && isCurrentSession(sessionGeneration)) {
-                        mutableUiState.value =
-                            mutableUiState.value.copy(
-                                date = roundsResult.value.date,
-                                rounds = roundsResult.value.toUiModel(),
-                                isLoadingRounds = false,
-                                hasRoundsLoadError = false,
-                            )
+
+            coroutineScope {
+                launch {
+                    when (val detailResult = getTeamChecklistRoundUseCase(roundId, date)) {
+                        is ApiResult.Success -> {
+                            if (
+                                detailRequestGeneration.isCurrent(detailRequest) &&
+                                    isCurrentSession(sessionGeneration) &&
+                                    requestedRoundId == roundId &&
+                                    requestedRoundDate == date
+                            ) {
+                                mutableUiState.value =
+                                    mutableUiState.value.copy(
+                                        roundDetail = detailResult.value.toUiModel(),
+                                        isLoadingDetail = false,
+                                        hasDetailLoadError = false,
+                                    )
+                            }
+                        }
+
+                        is ApiResult.Failure -> {
+                            if (
+                                detailRequestGeneration.isCurrent(detailRequest) &&
+                                    isCurrentSession(sessionGeneration)
+                            ) {
+                                mutableUiState.value =
+                                    mutableUiState.value.copy(
+                                        isLoadingDetail = false,
+                                        hasDetailLoadError = detailResult.error != ApiError.SessionChanged,
+                                    )
+                            }
+                        }
                     }
                 }
 
-                is ApiResult.Failure -> {
-                    if (roundsRequestGeneration.isCurrent(roundsRequest) && isCurrentSession(sessionGeneration)) {
-                        mutableUiState.value =
-                            mutableUiState.value.copy(
-                                isLoadingRounds = false,
-                                hasRoundsLoadError = roundsResult.error != ApiError.SessionChanged,
-                            )
+                launch {
+                    when (val roundsResult = getTeamChecklistRoundsUseCase(roundsDate)) {
+                        is ApiResult.Success -> {
+                            if (
+                                roundsRequestGeneration.isCurrent(roundsRequest) &&
+                                    isCurrentSession(sessionGeneration)
+                            ) {
+                                mutableUiState.value =
+                                    mutableUiState.value.copy(
+                                        date = roundsResult.value.date,
+                                        rounds = roundsResult.value.toUiModel(),
+                                        isLoadingRounds = false,
+                                        hasRoundsLoadError = false,
+                                    )
+                            }
+                        }
+
+                        is ApiResult.Failure -> {
+                            if (
+                                roundsRequestGeneration.isCurrent(roundsRequest) &&
+                                    isCurrentSession(sessionGeneration)
+                            ) {
+                                mutableUiState.value =
+                                    mutableUiState.value.copy(
+                                        isLoadingRounds = false,
+                                        hasRoundsLoadError = roundsResult.error != ApiError.SessionChanged,
+                                    )
+                            }
+                        }
                     }
                 }
             }
