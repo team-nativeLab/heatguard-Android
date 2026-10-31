@@ -47,7 +47,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -58,29 +60,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.domain.checklist.model.ChecklistRoundStatus
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.heartGuardResponsivePage
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundCardUiModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsOverviewUiModel
+import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsUiState
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 private enum class PeriodStatus {
     COMPLETED,
     WARNING,
     CURRENT,
     UPCOMING,
+    UNKNOWN,
 }
 
 private data class OverviewPeriod(
     val time: LocalTime,
     val status: PeriodStatus,
+    val description: String? = null,
+    val serverRound: ChecklistRoundCardUiModel? = null,
+    val roundDate: LocalDate? = null,
 )
 
 @Composable
@@ -98,10 +111,23 @@ internal fun ChecklistOverviewScreen(
     hasChecklistLoadError: Boolean = false,
     onChecklistRetryClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    periodDescriptions: Map<LocalTime, String> = emptyMap(),
+    roundsUiState: ChecklistRoundsUiState? = null,
+    onRoundClick: (LocalDate, String) -> Unit = { _, _ -> },
 ) {
     var overviewDate by remember { mutableStateOf(LocalDate.now(KOREA_ZONE)) }
-    val periods = schedule.toOverviewPeriods()
-    val completedCount = periods.count { period -> period.status == PeriodStatus.COMPLETED }
+    val serverOverview = roundsUiState?.rounds
+    val periods =
+        if (roundsUiState != null) {
+            serverOverview?.toOverviewPeriods().orEmpty()
+        } else {
+            schedule.toOverviewPeriods(periodDescriptions)
+        }
+    val completedCount =
+        serverOverview?.completedRounds ?: periods.count { period -> period.status == PeriodStatus.COMPLETED }
+    val warningCount = serverOverview?.missedRounds ?: periods.count { period -> period.status == PeriodStatus.WARNING }
+    val totalCount = serverOverview?.totalRounds ?: periods.size
+    val summaryDate = serverOverview?.date ?: overviewDate
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -151,40 +177,48 @@ internal fun ChecklistOverviewScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
         ) {
-            if (schedule != null) {
+            if (schedule != null || serverOverview != null) {
                 item(key = "overview-summary") {
                     ChecklistOverviewSummary(
                         completedCount = completedCount,
-                        warningCount = periods.count { period -> period.status == PeriodStatus.WARNING },
-                        totalCount = periods.size,
-                        hasChecklistLoaded = hasChecklistLoaded,
-                        hasChecklistLoadError = hasChecklistLoadError,
+                        warningCount = warningCount,
+                        totalCount = totalCount,
+                        remainingCountOverride = serverOverview?.remainingRounds,
+                        hasChecklistLoaded = roundsUiState != null || hasChecklistLoaded,
+                        hasChecklistLoadError = roundsUiState == null && hasChecklistLoadError,
                         siteLabel = siteLabel,
-                        date = overviewDate,
-                        onChecklistRetryClick = onChecklistRetryClick,
+                        date = summaryDate,
+                        onChecklistRetryClick =
+                            if (roundsUiState != null) {
+                                onRetryClick
+                            } else {
+                                onChecklistRetryClick
+                            },
                     )
+                }
+            }
+            if (roundsUiState?.rounds != null && roundsUiState.hasRoundsLoadError) {
+                item(key = "overview-refresh-error") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = stringResource(R.string.checklist_overview_load_failure),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        TextButton(onClick = onRetryClick) {
+                            Text(text = stringResource(R.string.common_retry))
+                        }
+                    }
                 }
             }
 
             when {
-                isLoading && schedule == null -> {
-                    item(key = "overview-loading") {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                        ) {
-                            CircularProgressIndicator()
-                            Text(
-                                text = stringResource(R.string.checklist_overview_loading),
-                                color = MaterialTheme.extraColors.secondaryText,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-
-                hasLoadError && schedule == null -> {
+                roundsUiState != null && serverOverview == null && roundsUiState.hasRoundsLoadError -> {
                     item(key = "overview-error") {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
@@ -203,7 +237,49 @@ internal fun ChecklistOverviewScreen(
                     }
                 }
 
-                schedule == null || periods.isEmpty() -> {
+                roundsUiState != null && serverOverview == null -> {
+                    item(key = "overview-loading") {
+                        ChecklistOverviewLoading()
+                    }
+                }
+
+                roundsUiState != null && periods.isEmpty() -> {
+                    item(key = "overview-empty") {
+                        Text(
+                            text = stringResource(R.string.checklist_overview_empty),
+                            modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+                            color = MaterialTheme.extraColors.secondaryText,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+
+                roundsUiState == null && isLoading && schedule == null -> {
+                    item(key = "overview-loading") {
+                        ChecklistOverviewLoading()
+                    }
+                }
+
+                roundsUiState == null && hasLoadError && schedule == null -> {
+                    item(key = "overview-error") {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.checklist_overview_load_failure),
+                                color = MaterialTheme.extraColors.secondaryText,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Button(onClick = onRetryClick) {
+                                Text(text = stringResource(R.string.common_retry))
+                            }
+                        }
+                    }
+                }
+
+                roundsUiState == null && (schedule == null || periods.isEmpty()) -> {
                     item(key = "overview-empty") {
                         Text(
                             text = stringResource(R.string.checklist_overview_empty),
@@ -238,10 +314,20 @@ internal fun ChecklistOverviewScreen(
                             Spacer(modifier = Modifier.height(CHECKLIST_OVERVIEW_HEADING_ROW_GAP))
                         }
                     }
-                    items(periods, key = { period -> period.time.toString() }) { period ->
+                    items(periods, key = { period ->
+                        period.serverRound?.roundId ?: period.time.toString()
+                    }) { period ->
                         OverviewPeriodCard(
                             period = period,
-                            onClick = { onPeriodClick(period.time) },
+                            onClick = {
+                                val round = period.serverRound
+                                val roundDate = period.roundDate
+                                if (round != null && roundDate != null) {
+                                    onRoundClick(roundDate, round.roundId)
+                                } else {
+                                    onPeriodClick(period.time)
+                                }
+                            },
                         )
                     }
                 }
@@ -255,6 +341,7 @@ private fun OverviewPeriodCard(
     period: OverviewPeriod,
     onClick: () -> Unit,
 ) {
+    val description = period.description ?: period.serverRound?.toDescription()
     val (statusLabel, labelColor, badgeColor) =
         when (period.status) {
             PeriodStatus.COMPLETED -> {
@@ -286,6 +373,14 @@ private fun OverviewPeriodCard(
                     stringResource(R.string.checklist_overview_badge_upcoming),
                     MaterialTheme.extraColors.strongText,
                     Color(0xFFF1F3F6),
+                )
+            }
+
+            PeriodStatus.UNKNOWN -> {
+                Triple(
+                    stringResource(R.string.checklist_round_status_unknown),
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    MaterialTheme.colorScheme.surfaceVariant,
                 )
             }
         }
@@ -353,6 +448,14 @@ private fun OverviewPeriodCard(
                     PeriodStatus.UPCOMING -> {
                         Unit
                     }
+
+                    PeriodStatus.UNKNOWN -> {
+                        Text(
+                            text = stringResource(R.string.checklist_overview_timeline_warning),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        )
+                    }
                 }
             }
         }
@@ -370,7 +473,7 @@ private fun OverviewPeriodCard(
                             },
                         shape = RoundedCornerShape(CHECKLIST_ROUND_CARD_RADIUS),
                     ).clickable(
-                        enabled = period.status == PeriodStatus.CURRENT,
+                        enabled = period.serverRound != null || period.status == PeriodStatus.CURRENT,
                         onClickLabel = stringResource(R.string.checklist_overview_open_detail),
                         role = Role.Button,
                         onClick = onClick,
@@ -415,6 +518,18 @@ private fun OverviewPeriodCard(
                         color =
                             MaterialTheme.extraColors.strongText,
                     )
+                    description?.let { roundDescription ->
+                        Text(
+                            text = roundDescription,
+                            style = MaterialTheme.typography.bodySmall,
+                            color =
+                                if (period.status == PeriodStatus.WARNING) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.extraColors.secondaryText
+                                },
+                        )
+                    }
                 }
                 Surface(
                     shape = RoundedCornerShape(HeartGuardRadius.Pill),
@@ -435,7 +550,7 @@ private fun OverviewPeriodCard(
                         color = labelColor,
                     )
                 }
-                if (period.status == PeriodStatus.CURRENT) {
+                if (period.serverRound != null || period.status == PeriodStatus.CURRENT) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
@@ -454,6 +569,77 @@ private fun statusColor(status: PeriodStatus): Color =
         PeriodStatus.WARNING -> MaterialTheme.colorScheme.error
         PeriodStatus.CURRENT -> MaterialTheme.colorScheme.primary
         PeriodStatus.UPCOMING -> MaterialTheme.extraColors.secondaryText
+        PeriodStatus.UNKNOWN -> MaterialTheme.extraColors.secondaryText
+    }
+
+@Composable
+private fun ChecklistOverviewLoading() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(HeartGuardSpacing.Section),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+    ) {
+        CircularProgressIndicator()
+        Text(
+            text = stringResource(R.string.checklist_overview_loading),
+            color = MaterialTheme.extraColors.secondaryText,
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+@Composable
+private fun ChecklistRoundCardUiModel.toDescription(): String =
+    when (status) {
+        ChecklistRoundStatus.COMPLETED -> {
+            val completedTime = completedAt?.atZoneSameInstant(KOREA_ZONE)?.format(ROUND_TIME_FORMATTER)
+            if (completedTime == null) {
+                stringResource(R.string.checklist_round_completed_without_time_format, totalItems)
+            } else {
+                stringResource(R.string.checklist_round_completed_with_time_format, totalItems, completedTime)
+            }
+        }
+
+        ChecklistRoundStatus.MISSED -> {
+            stringResource(R.string.checklist_round_missed_description_format, checkedItems, totalItems)
+        }
+
+        ChecklistRoundStatus.IN_PROGRESS -> {
+            val endsAtTime = endsAt.atZoneSameInstant(KOREA_ZONE).format(ROUND_TIME_FORMATTER)
+            stringResource(
+                R.string.checklist_round_in_progress_description_format,
+                checkedItems,
+                totalItems,
+                endsAtTime,
+            )
+        }
+
+        ChecklistRoundStatus.SCHEDULED -> {
+            val startsAtTime = startsAt.atZoneSameInstant(KOREA_ZONE).format(ROUND_TIME_FORMATTER)
+            stringResource(R.string.checklist_round_scheduled_description_format, startsAtTime)
+        }
+
+        ChecklistRoundStatus.UNKNOWN -> {
+            stringResource(R.string.checklist_round_unknown_description_format, checkedItems, totalItems)
+        }
+    }
+
+private fun ChecklistRoundsOverviewUiModel.toOverviewPeriods(): List<OverviewPeriod> =
+    rounds.map { round ->
+        val status =
+            when (round.status) {
+                ChecklistRoundStatus.COMPLETED -> PeriodStatus.COMPLETED
+                ChecklistRoundStatus.MISSED -> PeriodStatus.WARNING
+                ChecklistRoundStatus.IN_PROGRESS -> PeriodStatus.CURRENT
+                ChecklistRoundStatus.SCHEDULED -> PeriodStatus.UPCOMING
+                ChecklistRoundStatus.UNKNOWN -> PeriodStatus.UNKNOWN
+            }
+        OverviewPeriod(
+            time = round.startsAt.atZoneSameInstant(KOREA_ZONE).toLocalTime(),
+            status = status,
+            serverRound = round,
+            roundDate = date,
+        )
     }
 
 @Composable
@@ -461,13 +647,15 @@ private fun ChecklistOverviewSummary(
     completedCount: Int,
     warningCount: Int,
     totalCount: Int,
+    remainingCountOverride: Int? = null,
     hasChecklistLoaded: Boolean,
     hasChecklistLoadError: Boolean,
     siteLabel: String?,
     date: LocalDate,
     onChecklistRetryClick: () -> Unit,
 ) {
-    val remainingCount = (totalCount - completedCount - warningCount).coerceAtLeast(0)
+    val remainingCount =
+        remainingCountOverride ?: (totalCount - completedCount - warningCount).coerceAtLeast(0)
     val progress =
         if (totalCount == 0) {
             0f
@@ -485,7 +673,36 @@ private fun ChecklistOverviewSummary(
                 .heightIn(min = CHECKLIST_OVERVIEW_CARD_HEIGHT)
                 .shadow(CHECKLIST_OVERVIEW_CARD_ELEVATION, RoundedCornerShape(CHECKLIST_OVERVIEW_RADIUS))
                 .clip(RoundedCornerShape(CHECKLIST_OVERVIEW_RADIUS))
-                .background(Brush.linearGradient(CHECKLIST_OVERVIEW_GRADIENT)),
+                .drawBehind {
+                    val angleRadians = Math.toRadians(CHECKLIST_OVERVIEW_GRADIENT_ANGLE_DEGREES)
+                    val directionX = sin(angleRadians).toFloat()
+                    val directionY = -cos(angleRadians).toFloat()
+                    val halfGradientLength =
+                        (
+                            abs(size.width * directionX) +
+                                abs(size.height * directionY)
+                        ) / 2f
+                    val center = Offset(size.width / 2f, size.height / 2f)
+                    val gradientStart =
+                        Offset(
+                            x = center.x - directionX * halfGradientLength,
+                            y = center.y - directionY * halfGradientLength,
+                        )
+                    val gradientEnd =
+                        Offset(
+                            x = center.x + directionX * halfGradientLength,
+                            y = center.y + directionY * halfGradientLength,
+                        )
+
+                    drawRect(
+                        brush =
+                            Brush.linearGradient(
+                                colorStops = CHECKLIST_OVERVIEW_GRADIENT,
+                                start = gradientStart,
+                                end = gradientEnd,
+                            ),
+                    )
+                },
     ) {
         Box(
             modifier = Modifier.matchParentSize(),
@@ -513,11 +730,8 @@ private fun ChecklistOverviewSummary(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(
-                        min =
-                            CHECKLIST_OVERVIEW_CARD_HEIGHT - CHECKLIST_OVERVIEW_CONTENT_TOP_INSET -
-                                CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET,
-                    ).padding(
+                    .heightIn(min = CHECKLIST_OVERVIEW_CARD_HEIGHT)
+                    .padding(
                         start = CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING,
                         top = CHECKLIST_OVERVIEW_CONTENT_TOP_INSET,
                         end = CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING,
@@ -743,7 +957,7 @@ private fun OverviewStatDivider() {
     )
 }
 
-private fun CheckSchedule?.toOverviewPeriods(): List<OverviewPeriod> {
+private fun CheckSchedule?.toOverviewPeriods(periodDescriptions: Map<LocalTime, String>): List<OverviewPeriod> {
     val schedule = this ?: return emptyList()
     return schedule.checkTimes.map { checkTime ->
         val status =
@@ -753,7 +967,11 @@ private fun CheckSchedule?.toOverviewPeriods(): List<OverviewPeriod> {
                 schedule.nextCheckTime == null || checkTime.isBefore(schedule.nextCheckTime) -> PeriodStatus.WARNING
                 else -> PeriodStatus.UPCOMING
             }
-        OverviewPeriod(time = checkTime, status = status)
+        OverviewPeriod(
+            time = checkTime,
+            status = status,
+            description = periodDescriptions[checkTime],
+        )
     }
 }
 
@@ -816,14 +1034,19 @@ private val CHECKLIST_OVERVIEW_RADIUS = 22.dp
 private val CHECKLIST_OVERVIEW_CARD_HEIGHT = 168.dp
 private val CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING = 22.dp
 private val CHECKLIST_OVERVIEW_CONTENT_TOP_INSET = 12.dp
-private val CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET = 8.dp
+private val CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET = 10.dp
 private val CHECKLIST_OVERVIEW_STATS_HEIGHT = 54.dp
 private const val CHECKLIST_OVERVIEW_LARGE_FONT_SCALE = 1.3f
 private val CHECKLIST_OVERVIEW_STATS_RADIUS = 14.dp
 private val CHECKLIST_OVERVIEW_STATS_DIVIDER_HEIGHT = 28.dp
 private val CHECKLIST_OVERVIEW_STATS_DIVIDER_WIDTH = 1.dp
 private const val CHECKLIST_OVERVIEW_STATS_DIVIDER_ALPHA = 0.20f
-private val CHECKLIST_OVERVIEW_GRADIENT = listOf(Color(0xFF3F93F7), Color(0xFF1C62D6))
+private val CHECKLIST_OVERVIEW_GRADIENT =
+    arrayOf(
+        (1f / 7f) to Color(0xFF3F93F7),
+        (6f / 7f) to Color(0xFF1C62D6),
+    )
+private const val CHECKLIST_OVERVIEW_GRADIENT_ANGLE_DEGREES = 147.67566649135807
 private val CHECKLIST_DECORATION_LARGE_SIZE = 180.dp
 private val CHECKLIST_DECORATION_LARGE_OFFSET_X = 56.dp
 private val CHECKLIST_DECORATION_LARGE_OFFSET_Y = (-60).dp
@@ -839,3 +1062,4 @@ private val CHECKLIST_OVERVIEW_CONTENT_TOP_PADDING = 15.dp
 private const val CHECKLIST_OVERVIEW_DATE_POLL_MILLIS = 30_000L
 private val KOREA_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
 private val CHECKLIST_OVERVIEW_DATE_FORMATTER = DateTimeFormatter.ofPattern("M월 d일 (E)", Locale.KOREAN)
+private val ROUND_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)

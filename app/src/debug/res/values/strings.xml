@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checklist_mock_period_08_description">6개 항목 · 08:12 완료</string>
+    <string name="checklist_mock_period_10_description">6개 항목 · 10:05 완료</string>
+    <string name="checklist_mock_period_12_description">3 / 6 체크 · 기한 지남</string>
+    <string name="checklist_mock_period_14_description">6개 항목 · 14:20 완료</string>
+    <string name="checklist_mock_period_16_description">0 / 6 체크 · 기한 지남</string>
+    <string name="checklist_mock_period_18_description">6개 항목 · 18:09 완료</string>
+    <string name="checklist_mock_period_20_description">3 / 6 체크 · 20:59까지</string>
+    <string name="checklist_mock_period_22_description">22:00부터 체크할 수 있어요</string>
+</resources>
