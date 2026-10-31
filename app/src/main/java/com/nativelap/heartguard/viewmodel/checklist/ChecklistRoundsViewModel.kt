@@ -488,8 +488,7 @@ internal fun shouldApplyChecklistRoundsResponse(
     stateDate: LocalDate?,
     isLatestRequest: Boolean,
     isCurrentSession: Boolean,
-): Boolean =
-    requestDate == stateDate && isLatestRequest && isCurrentSession
+): Boolean = requestDate == stateDate && isLatestRequest && isCurrentSession
 
 internal fun isChecklistRoundEditable(
     date: LocalDate,

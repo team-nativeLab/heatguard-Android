@@ -122,7 +122,9 @@ class ChecklistRoundsRefreshTest {
             val repository =
                 FakeTeamChecklistRepository(
                     getRound = { roundId, requestDate -> ApiResult.Success(roundDetail(requestDate, roundId)) },
-                    getRounds = { requestDate -> ApiResult.Success(roundsOverview(requestDate, progressPercent = 100)) },
+                    getRounds = { requestDate ->
+                        ApiResult.Success(roundsOverview(requestDate, progressPercent = 100))
+                    },
                 )
             val (viewModel, _) = createLoadedViewModel(repository, dispatcher, currentDate)
 
@@ -131,8 +133,16 @@ class ChecklistRoundsRefreshTest {
                 runCurrent()
 
                 assertEquals(historicalDate, viewModel.uiState.value.date)
-                assertEquals(historicalDate, viewModel.uiState.value.rounds?.date)
-                assertEquals(100, viewModel.uiState.value.rounds?.progressPercent)
+                assertEquals(
+                    historicalDate,
+                    viewModel.uiState.value.rounds
+                        ?.date,
+                )
+                assertEquals(
+                    100,
+                    viewModel.uiState.value.rounds
+                        ?.progressPercent,
+                )
                 assertFalse(viewModel.uiState.value.isLoadingRounds)
             } finally {
                 viewModel.viewModelScope.cancel()
