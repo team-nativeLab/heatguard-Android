@@ -10,8 +10,18 @@ data class MenuDrawerProfileUiModel(
     val userName: String? = null,
     val email: String? = null,
     val companyName: String? = null,
+    val photoUrl: String? = null,
 ) {
     // 아바타 원 안에 보여줄 이름 첫 글자이며, 이름이 없으면 빈 문자열이다.
     val avatarInitial: String
         get() = userName?.take(1).orEmpty()
+}
+
+internal fun isHttpsProfilePhotoUrl(photoUrl: String?): Boolean {
+    if (photoUrl.isNullOrBlank()) {
+        return false
+    }
+
+    val parsedUrl = runCatching { java.net.URI(photoUrl) }.getOrNull() ?: return false
+    return parsedUrl.scheme.equals("https", ignoreCase = true) && !parsedUrl.host.isNullOrBlank()
 }

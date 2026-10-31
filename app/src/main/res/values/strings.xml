@@ -293,6 +293,7 @@
     <string name="team_site_selection_add_link">새로운 현장 연동하기</string>
     <string name="menu_close_description">메뉴 닫기</string>
     <string name="menu_profile_affiliation_format">%1$s · %2$s</string>
+    <string name="menu_profile_photo_description">사용자 프로필 사진</string>
     <!-- 회원탈퇴 -->
     <string name="withdraw_title">회원탈퇴</string>
     <string name="withdraw_back_description">뒤로 가기</string>

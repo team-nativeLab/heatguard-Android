@@ -6,10 +6,13 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
+import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,12 +20,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-/** 메뉴 드로어의 작업자 이름·이메일 표시와 로그아웃을 담당한다. 팀명·작업 위치는 홈 조회 값을 Route가 합친다. */
+/** 메뉴 드로어의 작업자 프로필 표시와 로그아웃을 담당한다. 팀명·작업 위치는 홈 조회 값을 Route가 합친다. */
 @HiltViewModel
 class MenuDrawerViewModel
     @Inject
     constructor(
         private val getWorkerProfileUseCase: GetWorkerProfileUseCase,
+        private val getWorkerProfilePhotoUseCase: GetWorkerProfilePhotoUseCase,
         private val teamLogoutUseCase: TeamLogoutUseCase,
         private val sessionManager: SessionManager,
     ) : ViewModel() {
@@ -31,6 +35,7 @@ class MenuDrawerViewModel
 
         private var isLoggingOut = false
         private var loadProfileJob: Job? = null
+        private var profileSessionGeneration = sessionManager.getSnapshot().generation
 
         init {
             clearStateWhenSessionEnds(sessionManager) {
@@ -38,25 +43,62 @@ class MenuDrawerViewModel
             }
         }
 
-        /** 드로어를 열 때 호출해 최신 작업자 정보를 가져온다. 내 정보 수정 직후에도 바뀐 이름이 반영된다.
-         * 조회에 실패하면 이미 표시 중인 값을 유지하고, 한 번도 받지 못했다면 "--"로 남는다. */
+        /** 드로어를 열 때 최신 작업자 정보와 프로필 사진 URL을 함께 조회한다. */
         fun loadProfile() {
+            val expectedSessionGeneration = sessionManager.getSnapshot().generation
+            if (profileSessionGeneration != expectedSessionGeneration) {
+                _profile.value = MenuDrawerProfileUiModel()
+                profileSessionGeneration = expectedSessionGeneration
+            }
             loadProfileJob?.cancel()
             loadProfileJob =
                 viewModelScope.launch {
-                    when (val profileResult = getWorkerProfileUseCase()) {
-                        is ApiResult.Success -> {
-                            _profile.value =
-                                _profile.value.copy(
-                                    userName = profileResult.value.name,
-                                    email = profileResult.value.email,
-                                    companyName = profileResult.value.companyName,
-                                )
+                    val (profileResult, photoResult) =
+                        coroutineScope {
+                            val profileRequest =
+                                async {
+                                    getWorkerProfileUseCase(expectedSessionGeneration)
+                                }
+                            val photoRequest =
+                                async {
+                                    getWorkerProfilePhotoUseCase(expectedSessionGeneration)
+                                }
+                            profileRequest.await() to photoRequest.await()
                         }
-
-                        is ApiResult.Failure -> {
-                            Unit
+                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                        clearProfileIfSessionChanged(expectedSessionGeneration)
+                        return@launch
+                    }
+                    if (profileResult is ApiResult.Success) {
+                        _profile.value =
+                            _profile.value.copy(
+                                userName = profileResult.value.name,
+                                email = profileResult.value.email,
+                                companyName = profileResult.value.companyName,
+                            )
+                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                            clearProfileIfSessionChanged(expectedSessionGeneration)
+                            return@launch
                         }
+                    }
+                    if (photoResult is ApiResult.Success) {
+                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                            clearProfileIfSessionChanged(expectedSessionGeneration)
+                            return@launch
+                        }
+                        _profile.value =
+                            _profile.value.copy(
+                                photoUrl = photoResult.value?.photoUrl,
+                            )
+                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                            clearProfileIfSessionChanged(expectedSessionGeneration)
+                        }
+                    } else {
+                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                            clearProfileIfSessionChanged(expectedSessionGeneration)
+                            return@launch
+                        }
+                        _profile.value = _profile.value.copy(photoUrl = null)
                     }
                 }
         }
@@ -89,5 +131,29 @@ class MenuDrawerViewModel
             loadProfileJob?.cancel()
             loadProfileJob = null
             _profile.value = MenuDrawerProfileUiModel()
+            profileSessionGeneration = sessionManager.getSnapshot().generation
+        }
+
+        private fun isCurrentProfileSession(expectedSessionGeneration: Long): Boolean =
+            isProfileSessionCurrent(
+                expectedSessionGeneration = expectedSessionGeneration,
+                ownedSessionGeneration = profileSessionGeneration,
+                currentSessionGeneration = sessionManager.getSnapshot().generation,
+            )
+
+        private fun clearProfileIfSessionChanged(expectedSessionGeneration: Long) {
+            if (profileSessionGeneration == expectedSessionGeneration &&
+                sessionManager.getSnapshot().generation != expectedSessionGeneration
+            ) {
+                clearProfile()
+            }
         }
     }
+
+internal fun isProfileSessionCurrent(
+    expectedSessionGeneration: Long,
+    ownedSessionGeneration: Long,
+    currentSessionGeneration: Long,
+): Boolean =
+    expectedSessionGeneration == ownedSessionGeneration &&
+        expectedSessionGeneration == currentSessionGeneration
