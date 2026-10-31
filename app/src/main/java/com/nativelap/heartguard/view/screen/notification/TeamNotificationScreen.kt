@@ -107,35 +107,37 @@ fun TeamNotificationScreen(
                     .fillMaxSize()
                     .padding(innerPadding),
         ) {
-            WithdrawTopBar(
-                title = stringResource(R.string.notification_title),
-                backContentDescription = stringResource(R.string.common_back_description),
-                onBackClick = { onEvent(TeamNotificationScreenEvent.BackClicked) },
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                WithdrawTopBar(
+                    title = stringResource(R.string.notification_title),
+                    backContentDescription = stringResource(R.string.common_back_description),
+                    onBackClick = { onEvent(TeamNotificationScreenEvent.BackClicked) },
+                )
+
+                TextButton(
+                    onClick = { onEvent(TeamNotificationScreenEvent.MarkAllReadClicked) },
+                    enabled =
+                        uiState.hasLoaded && !uiState.hasInitialError &&
+                            uiState.unreadCount > 0 && !uiState.isMarkingAllRead &&
+                            !uiState.isRefreshing && !uiState.hasRefreshError,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = HeartGuardSpacing.AccountContentHorizontal),
+                ) {
+                    if (uiState.isMarkingAllRead || uiState.isRefreshing) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(text = stringResource(R.string.notification_read_all))
+                    }
+                }
+            }
 
             NotificationCategoryFilters(
                 selectedCategory = uiState.selectedCategory,
                 isEnabled = !uiState.isMarkingAllRead,
                 onCategoryClick = { category -> onEvent(TeamNotificationScreenEvent.CategorySelected(category)) },
             )
-
-            TextButton(
-                onClick = { onEvent(TeamNotificationScreenEvent.MarkAllReadClicked) },
-                enabled =
-                    uiState.hasLoaded && !uiState.hasInitialError &&
-                        uiState.unreadCount > 0 && !uiState.isMarkingAllRead &&
-                        !uiState.isRefreshing && !uiState.hasRefreshError,
-                modifier =
-                    Modifier
-                        .align(Alignment.End)
-                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal),
-            ) {
-                if (uiState.isMarkingAllRead || uiState.isRefreshing) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                } else {
-                    Text(text = stringResource(R.string.notification_read_all))
-                }
-            }
 
             if (uiState.hasRefreshError) {
                 Column(

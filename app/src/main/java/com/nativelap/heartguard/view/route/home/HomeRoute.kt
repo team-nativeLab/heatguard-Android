@@ -34,6 +34,7 @@ import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
+import com.nativelap.heartguard.viewmodel.notification.TeamNotificationUnreadViewModel
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -60,17 +61,20 @@ internal fun HeartGuardHomeRoute(
     onHomeClick: () -> Unit,
     onSiteSelectionClick: () -> Unit,
     menuDrawerViewModel: MenuDrawerViewModel = hiltViewModel(),
+    unreadViewModel: TeamNotificationUnreadViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
+    val unreadUiState by unreadViewModel.uiState.collectAsStateWithLifecycle()
     val loadFailureMessage = stringResource(R.string.home_load_failure)
 
     // 기록 저장 뒤나 앱을 다시 열었을 때 날씨·체크 완료가 갱신되도록 홈이 다시 보일 때마다 새로 조회한다.
     LifecycleResumeEffect(homeViewModel) {
         homeViewModel.refresh()
+        unreadViewModel.refresh()
         onPauseOrDispose {}
     }
 
@@ -107,6 +111,7 @@ internal fun HeartGuardHomeRoute(
                 menuDrawerViewModel.loadProfile()
             },
             onNotificationClick = onNotificationsClick,
+            hasUnreadNotifications = unreadUiState.hasUnread,
             onManagerCallClick = onManagerCallClick,
             onEmergencyClick = onEmergencyClick,
             onFieldPhotoClick = onFieldPhotoClick,
