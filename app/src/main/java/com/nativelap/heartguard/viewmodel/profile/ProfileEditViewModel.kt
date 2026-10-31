@@ -15,7 +15,9 @@ import com.nativelap.heartguard.domain.profile.usecase.UpdateWorkerNameUseCase
 import com.nativelap.heartguard.domain.profile.usecase.UploadWorkerProfilePhotoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,12 +68,24 @@ class ProfileEditViewModel
             val expectedSessionGeneration = profileSessionGeneration
             loadProfileJob =
                 viewModelScope.launch {
-                    when (val profileResult = getWorkerProfileUseCase(expectedSessionGeneration)) {
+                    val (profileResult, photoResult) =
+                        coroutineScope {
+                            val profile =
+                                async {
+                                    getWorkerProfileUseCase(expectedSessionGeneration)
+                                }
+                            val photo =
+                                async {
+                                    getWorkerProfilePhotoUseCase(expectedSessionGeneration)
+                                }
+                            profile.await() to photo.await()
+                        }
+                    when (profileResult) {
                         is ApiResult.Success -> {
                             if (!applyLoadedProfile(profileResult.value, expectedSessionGeneration)) {
                                 return@launch
                             }
-                            when (val photoResult = getWorkerProfilePhotoUseCase(expectedSessionGeneration)) {
+                            when (photoResult) {
                                 is ApiResult.Success -> {
                                     if (!isCurrentProfileSession(expectedSessionGeneration)) {
                                         clearStateIfSessionChanged(expectedSessionGeneration)

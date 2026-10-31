@@ -12,6 +12,8 @@ import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -121,9 +123,13 @@ class HomeViewModel
             val owningGeneration = sessionManager.getSnapshot().generation
             loadJob =
                 viewModelScope.launch {
-                    val fetchedRecordTimes = fetchTodayRecordTimes()
-                    val overviewResult = getTeamSiteOverviewUseCase()
-                    // 두 조회 사이에 계정이 바뀌었으면 이전 계정 응답을 새 계정 홈에 반영하지 않는다.
+                    val (fetchedRecordTimes, overviewResult) =
+                        coroutineScope {
+                            val recordTimes = async { fetchTodayRecordTimes() }
+                            val overview = async { getTeamSiteOverviewUseCase() }
+                            recordTimes.await() to overview.await()
+                        }
+                    // 조회가 진행되는 동안 계정이 바뀌었으면 이전 계정 응답을 새 계정 홈에 반영하지 않는다.
                     if (owningGeneration != sessionManager.getSnapshot().generation) {
                         return@launch
                     }
