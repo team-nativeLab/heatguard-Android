@@ -49,7 +49,6 @@ import com.nativelap.heartguard.view.route.menu.MenuDrawerHost
 import com.nativelap.heartguard.view.route.notification.HeartGuardTeamNotificationsRoute
 import com.nativelap.heartguard.view.route.password.HeartGuardPasswordChangeRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
-import com.nativelap.heartguard.view.route.photo.HeartGuardPhotoCameraRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardRestPhotoRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardWorkPhotoRoute
 import com.nativelap.heartguard.view.route.profile.HeartGuardProfileEditRoute
@@ -157,7 +156,6 @@ private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
         HeartGuardDestination.FieldPhoto,
         HeartGuardDestination.WorkPhoto,
         HeartGuardDestination.RestPhoto,
-        is HeartGuardDestination.PhotoCamera,
         -> true
 
         else -> false
@@ -896,9 +894,6 @@ private fun HeartGuardMainNavDisplay(
                             onMenuClick = onMenuClick,
                             onNotificationClick = onNotificationClick,
                             recordDraftViewModel = recordDraftViewModel,
-                            onCameraClick = { recordType ->
-                                backStack.add(HeartGuardDestination.PhotoCamera(recordType))
-                            },
                             onSaveSuccess = ::goToSaveSuccess,
                             onSaveFailure = ::goToSaveFailure,
                         )
@@ -919,9 +914,6 @@ private fun HeartGuardMainNavDisplay(
                             onMenuClick = onMenuClick,
                             onNotificationClick = onNotificationClick,
                             recordDraftViewModel = recordDraftViewModel,
-                            onCameraClick = { recordType ->
-                                backStack.add(HeartGuardDestination.PhotoCamera(recordType))
-                            },
                             onSaveSuccess = ::goToSaveSuccess,
                             onSaveFailure = ::goToSaveFailure,
                         )
@@ -942,20 +934,10 @@ private fun HeartGuardMainNavDisplay(
                             onMenuClick = onMenuClick,
                             onNotificationClick = onNotificationClick,
                             recordDraftViewModel = recordDraftViewModel,
-                            onCameraClick = { recordType ->
-                                backStack.add(HeartGuardDestination.PhotoCamera(recordType))
-                            },
                             onSaveSuccess = ::goToSaveSuccess,
                             onSaveFailure = ::goToSaveFailure,
                         )
                     }
-                }
-                entry<HeartGuardDestination.PhotoCamera> { key ->
-                    HeartGuardPhotoCameraRoute(
-                        recordDraftViewModel = recordDraftViewModel,
-                        recordType = key.recordType,
-                        onBackClick = ::goBack,
-                    )
                 }
                 // 저장 성공 시트는 스와이프로 닫혀 입력 화면으로 돌아가 같은 기록을 다시 저장하지 않도록 버튼으로만 닫는다.
                 entry<HeartGuardDestination.SaveSuccess>(

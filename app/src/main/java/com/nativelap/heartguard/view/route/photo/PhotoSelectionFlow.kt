@@ -1,11 +1,16 @@
 package com.nativelap.heartguard.view.route.photo
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -13,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.core.util.createPhotoCaptureTarget
+import com.nativelap.heartguard.core.util.deleteCaptureFile
 import com.nativelap.heartguard.core.util.releasePhoto
 import com.nativelap.heartguard.domain.record.model.MAX_RECORD_PHOTO_COUNT
 import com.nativelap.heartguard.view.component.photo.PhotoSourceBottomSheet
@@ -24,7 +31,6 @@ internal fun PhotoSelectionFlow(
     onPhotoAdded: (Uri) -> Boolean,
     onRemovePhoto: (Uri) -> Unit,
     onClearPhotos: () -> Unit,
-    onCameraClick: () -> Unit,
     content: @Composable (
         selectedPhotoUris: List<Uri>,
         onAddPhotoClick: () -> Unit,
@@ -36,6 +42,52 @@ internal fun PhotoSelectionFlow(
     var isSourceSheetVisible by rememberSaveable {
         mutableStateOf(false)
     }
+    val pendingCaptureUriState =
+        rememberSaveable {
+            mutableStateOf<String?>(null)
+        }
+    var pendingCaptureUriString by pendingCaptureUriState
+    var shouldLaunchCamera by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var errorMessageResourceId by rememberSaveable {
+        mutableStateOf<Int?>(null)
+    }
+
+    val captureLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.TakePicture(),
+        ) { wasCaptureSuccessful ->
+            val captureUri = pendingCaptureUriString?.let(Uri::parse)
+            pendingCaptureUriString = null
+
+            if (captureUri == null) {
+                return@rememberLauncherForActivityResult
+            }
+
+            if (!wasCaptureSuccessful) {
+                deleteCaptureFile(context, captureUri)
+                return@rememberLauncherForActivityResult
+            }
+
+            if (!context.hasNonEmptyCapture(captureUri)) {
+                deleteCaptureFile(context, captureUri)
+                errorMessageResourceId = R.string.photo_camera_capture_failed
+                isSourceSheetVisible = true
+                return@rememberLauncherForActivityResult
+            }
+
+            if (selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT &&
+                captureUri !in selectedPhotoUris &&
+                onPhotoAdded(captureUri)
+            ) {
+                errorMessageResourceId = null
+            } else {
+                deleteCaptureFile(context, captureUri)
+                errorMessageResourceId = R.string.photo_camera_limit_reached
+                isSourceSheetVisible = true
+            }
+        }
 
     val pickPhotoLauncher =
         rememberLauncherForActivityResult(
@@ -60,6 +112,33 @@ internal fun PhotoSelectionFlow(
             }
         }
 
+    LaunchedEffect(isSourceSheetVisible, shouldLaunchCamera) {
+        if (!isSourceSheetVisible && shouldLaunchCamera) {
+            shouldLaunchCamera = false
+            val captureUri = pendingCaptureUriString?.let(Uri::parse)
+            if (captureUri != null) {
+                try {
+                    captureLauncher.launch(captureUri)
+                } catch (_: Exception) {
+                    deleteCaptureFile(context, captureUri)
+                    pendingCaptureUriString = null
+                    errorMessageResourceId = R.string.photo_camera_unavailable
+                    isSourceSheetVisible = true
+                }
+            }
+        }
+    }
+
+    DisposableEffect(context) {
+        onDispose {
+            if (context.findActivity()?.isChangingConfigurations != true) {
+                pendingCaptureUriState.value
+                    ?.let(Uri::parse)
+                    ?.let { captureUri -> deleteCaptureFile(context, captureUri) }
+            }
+        }
+    }
+
     content(
         selectedPhotoUris,
         {
@@ -75,8 +154,20 @@ internal fun PhotoSelectionFlow(
         PhotoSourceBottomSheet(
             onDismissRequest = { isSourceSheetVisible = false },
             onCameraClick = {
+                if (pendingCaptureUriString != null) {
+                    return@PhotoSourceBottomSheet
+                }
+
                 isSourceSheetVisible = false
-                onCameraClick()
+                val captureTarget = createPhotoCaptureTarget(context)
+                if (captureTarget == null) {
+                    errorMessageResourceId = R.string.photo_camera_file_unavailable
+                    isSourceSheetVisible = true
+                } else {
+                    pendingCaptureUriString = captureTarget.uri.toString()
+                    errorMessageResourceId = null
+                    shouldLaunchCamera = true
+                }
             },
             onGalleryClick = {
                 isSourceSheetVisible = false
@@ -84,7 +175,24 @@ internal fun PhotoSelectionFlow(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                 )
             },
-            errorMessage = null,
+            errorMessage = errorMessageResourceId?.let { stringResource(it) },
         )
     }
+}
+
+private fun Context.hasNonEmptyCapture(uri: Uri): Boolean =
+    try {
+        contentResolver.openInputStream(uri)?.use { inputStream ->
+            inputStream.read() != -1
+        } ?: false
+    } catch (_: Exception) {
+        false
+    }
+
+private fun Context.findActivity(): Activity? {
+    var currentContext: Context? = this
+    while (currentContext !is Activity && currentContext is ContextWrapper) {
+        currentContext = currentContext.baseContext
+    }
+    return currentContext as? Activity
 }

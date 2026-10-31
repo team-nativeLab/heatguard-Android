@@ -27,7 +27,6 @@ import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 @Composable
 internal fun HeartGuardFieldPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
-    onCameraClick: (RecordType) -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
     onMenuClick: () -> Unit,
@@ -60,7 +59,6 @@ internal fun HeartGuardFieldPhotoRoute(
             recordDraftViewModel.removePhoto(RecordType.TEMPERATURE, photoUri)
         },
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.TEMPERATURE) },
-        onCameraClick = { onCameraClick(RecordType.TEMPERATURE) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
         FieldPhotoScreen(
             onMenuClick = onMenuClick,
@@ -95,7 +93,6 @@ internal fun HeartGuardFieldPhotoRoute(
 @Composable
 internal fun HeartGuardWorkPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
-    onCameraClick: (RecordType) -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
     onMenuClick: () -> Unit,
@@ -119,7 +116,6 @@ internal fun HeartGuardWorkPhotoRoute(
             recordDraftViewModel.removePhoto(RecordType.WORK, photoUri)
         },
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.WORK) },
-        onCameraClick = { onCameraClick(RecordType.WORK) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         WorkPhotoScreen(
             onMenuClick = onMenuClick,
@@ -144,7 +140,6 @@ internal fun HeartGuardWorkPhotoRoute(
 @Composable
 internal fun HeartGuardRestPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
-    onCameraClick: (RecordType) -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
     onMenuClick: () -> Unit,
@@ -197,7 +192,6 @@ internal fun HeartGuardRestPhotoRoute(
             recordDraftViewModel.removePhoto(RecordType.REST, photoUri)
         },
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.REST) },
-        onCameraClick = { onCameraClick(RecordType.REST) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         RestPhotoScreen(
             onMenuClick = onMenuClick,
