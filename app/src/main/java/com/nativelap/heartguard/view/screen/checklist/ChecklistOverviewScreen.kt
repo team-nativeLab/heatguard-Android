@@ -184,6 +184,7 @@ internal fun ChecklistOverviewScreen(
                         warningCount = warningCount,
                         totalCount = totalCount,
                         remainingCountOverride = serverOverview?.remainingRounds,
+                        progressPercentOverride = serverOverview?.progressPercent,
                         hasChecklistLoaded = roundsUiState != null || hasChecklistLoaded,
                         hasChecklistLoadError = roundsUiState == null && hasChecklistLoadError,
                         siteLabel = siteLabel,
@@ -648,6 +649,7 @@ private fun ChecklistOverviewSummary(
     warningCount: Int,
     totalCount: Int,
     remainingCountOverride: Int? = null,
+    progressPercentOverride: Int? = null,
     hasChecklistLoaded: Boolean,
     hasChecklistLoadError: Boolean,
     siteLabel: String?,
@@ -656,13 +658,14 @@ private fun ChecklistOverviewSummary(
 ) {
     val remainingCount =
         remainingCountOverride ?: (totalCount - completedCount - warningCount).coerceAtLeast(0)
-    val progress =
-        if (totalCount == 0) {
-            0f
-        } else {
-            (completedCount.toFloat() / totalCount).coerceIn(0f, 1f)
-        }
-    val progressPercent = (progress * PERCENT_SCALE).toInt()
+    val progressPercent =
+        progressPercentOverride?.coerceIn(0, PERCENT_SCALE)
+            ?: if (totalCount == 0) {
+                0
+            } else {
+                (completedCount.toFloat() / totalCount * PERCENT_SCALE).toInt()
+            }
+    val progress = progressPercent.toFloat() / PERCENT_SCALE
     val fontScale = LocalDensity.current.fontScale
     val largeText = fontScale > CHECKLIST_OVERVIEW_LARGE_FONT_SCALE
 
@@ -735,9 +738,8 @@ private fun ChecklistOverviewSummary(
                         start = CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING,
                         top = CHECKLIST_OVERVIEW_CONTENT_TOP_INSET,
                         end = CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING,
-                        bottom = CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET,
+                        bottom = CHECKLIST_OVERVIEW_STATS_BOTTOM_PADDING,
                     ),
-            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             if (largeText) {
                 Column(verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight)) {
@@ -769,7 +771,11 @@ private fun ChecklistOverviewSummary(
                                     ),
                             )
                             Text(
-                                text = stringResource(R.string.checklist_overview_completed_of_format, totalCount),
+                                text =
+                                    stringResource(
+                                        R.string.checklist_overview_completed_of_format,
+                                        totalCount,
+                                    ),
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
@@ -802,7 +808,10 @@ private fun ChecklistOverviewSummary(
                                     siteLabel?.takeIf(String::isNotBlank),
                                 ).joinToString(CHECKLIST_SUMMARY_SEPARATOR),
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = MUTED_TEXT_ALPHA),
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = CHECKLIST_SUMMARY_DATE_SIZE),
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = CHECKLIST_SUMMARY_DATE_SIZE,
+                                ),
                         )
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
@@ -815,7 +824,11 @@ private fun ChecklistOverviewSummary(
                                     ),
                             )
                             Text(
-                                text = stringResource(R.string.checklist_overview_completed_of_format, totalCount),
+                                text =
+                                    stringResource(
+                                        R.string.checklist_overview_completed_of_format,
+                                        totalCount,
+                                    ),
                                 modifier =
                                     Modifier.padding(
                                         start = HeartGuardSpacing.Tight,
@@ -837,6 +850,7 @@ private fun ChecklistOverviewSummary(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(CHECKLIST_OVERVIEW_STATS_TOP_GAP))
             Surface(
                 modifier = Modifier.fillMaxWidth().heightIn(min = CHECKLIST_OVERVIEW_STATS_HEIGHT),
                 shape = RoundedCornerShape(CHECKLIST_OVERVIEW_STATS_RADIUS),
@@ -1034,7 +1048,8 @@ private val CHECKLIST_OVERVIEW_RADIUS = 22.dp
 private val CHECKLIST_OVERVIEW_CARD_HEIGHT = 168.dp
 private val CHECKLIST_OVERVIEW_CONTENT_HORIZONTAL_PADDING = 22.dp
 private val CHECKLIST_OVERVIEW_CONTENT_TOP_INSET = 12.dp
-private val CHECKLIST_OVERVIEW_CONTENT_BOTTOM_INSET = 10.dp
+private val CHECKLIST_OVERVIEW_STATS_TOP_GAP = 24.dp
+private val CHECKLIST_OVERVIEW_STATS_BOTTOM_PADDING = 14.dp
 private val CHECKLIST_OVERVIEW_STATS_HEIGHT = 54.dp
 private const val CHECKLIST_OVERVIEW_LARGE_FONT_SCALE = 1.3f
 private val CHECKLIST_OVERVIEW_STATS_RADIUS = 14.dp
