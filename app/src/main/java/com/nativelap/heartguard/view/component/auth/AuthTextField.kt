@@ -59,6 +59,7 @@ fun AuthTextField(
     minimumHeight: Dp = HeartGuardComponentSize.AuthTextFieldHeight,
     isError: Boolean = false,
     supportingText: String? = null,
+    errorSemanticsMessage: String? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     // 비밀번호 보기 토글처럼 입력칸 오른쪽에 두는 아이콘이다. 없으면 표시하지 않는다.
@@ -139,8 +140,9 @@ fun AuthTextField(
                     .keyboardInputBounds()
                     .bringIntoViewRequester(inputViewportRequester)
                     .semantics {
-                        if (isError && supportingText != null) {
-                            error(supportingText)
+                        val semanticsErrorMessage = errorSemanticsMessage ?: supportingText
+                        if (isError && semanticsErrorMessage != null) {
+                            error(semanticsErrorMessage)
                         }
                     }
                     // 포커스를 얻은 직후 IME를 명시적으로 열어 에뮬레이터에서도 입력을 보장한다.

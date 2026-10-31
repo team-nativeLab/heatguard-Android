@@ -60,6 +60,7 @@ internal fun HeartGuardLoginRoute(
             )
         },
         statusMessage = statusMessage,
+        isEmailError = uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS,
         isPasswordError = uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS,
         passwordErrorMessage =
             if (uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS) {

@@ -74,6 +74,7 @@ fun AuthLoginScreen(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isEmailError: Boolean = false,
     isPasswordError: Boolean = false,
     passwordErrorMessage: String? = null,
     statusMessage: String? = null,
@@ -191,6 +192,8 @@ fun AuthLoginScreen(
                             text = email,
                             onTextChange = onEmailChange,
                             placeholder = stringResource(R.string.auth_email_hint),
+                            isError = isEmailError,
+                            errorSemanticsMessage = passwordErrorMessage.takeIf { isEmailError },
                             style = AuthTextFieldStyle.SoftFilled,
                         )
 
@@ -324,6 +327,7 @@ private fun AuthLoginScreenErrorPreview() {
             onEmailChange = {},
             onPasswordChange = {},
             onLoginClick = {},
+            isEmailError = true,
             isPasswordError = true,
             passwordErrorMessage = stringResource(R.string.auth_password_error),
         )
