@@ -72,11 +72,15 @@ class NotificationUnreadIndicatorUiTest {
 
     @Test
     fun homeWeatherUnitsStayBesideTheirValuesWithinNarrowCardWidth() {
-        setWeatherMetricsCard(cardWidth = 278.dp)
+        setWeatherMetricsCard(
+            cardWidth = 278.dp,
+            humidityValue = "100%",
+            weatherValue = "--",
+        )
 
-        assertSameLineAndUnitFollows("41", "%", cardWidth = 278.dp)
+        assertSameLineAndUnitFollows("100", "%", cardWidth = 278.dp)
         assertSameLineAndUnitFollows("24.8", "°C", cardWidth = 278.dp)
-        assertMetricLabelsAreStacked()
+        assertMetricGroupsShareRow(cardWidth = 278.dp)
     }
 
     @Test
@@ -100,7 +104,7 @@ class NotificationUnreadIndicatorUiTest {
             columnStart = 159.dp,
             columnEnd = 205.dp,
         )
-        assertMetricGroupsShareRow()
+        assertMetricGroupsShareRow(cardWidth = 311.dp)
     }
 
     @Test
@@ -109,7 +113,35 @@ class NotificationUnreadIndicatorUiTest {
 
         assertSameLineAndUnitFollows("41", "%", cardWidth = 320.dp)
         assertSameLineAndUnitFollows("24.8", "°C", cardWidth = 320.dp)
-        assertMetricLabelsAreStacked()
+        assertMetricGroupsShareRow(cardWidth = 320.dp)
+    }
+
+    @Test
+    fun homeWeatherMetricsStayHorizontalWithLargeFontAtNarrowCardWidth() {
+        setWeatherMetricsCard(
+            cardWidth = 278.dp,
+            fontScale = 1.25f,
+            humidityValue = "100%",
+            weatherValue = "--",
+        )
+
+        assertSameLineAndUnitFollows("100", "%", cardWidth = 278.dp)
+        assertSameLineAndUnitFollows("24.8", "°C", cardWidth = 278.dp)
+        assertMetricGroupsShareRow(cardWidth = 278.dp)
+    }
+
+    @Test
+    fun homeWeatherMetricsStayHorizontalAtFontScaleOnePointFive() {
+        setWeatherMetricsCard(
+            cardWidth = 278.dp,
+            fontScale = 1.5f,
+            humidityValue = "100%",
+            weatherValue = "--",
+        )
+
+        assertSameLineAndUnitFollows("100", "%", cardWidth = 278.dp)
+        assertSameLineAndUnitFollows("24.8", "°C", cardWidth = 278.dp)
+        assertMetricGroupsShareRow(cardWidth = 278.dp)
     }
 
     @Test
@@ -236,6 +268,7 @@ class NotificationUnreadIndicatorUiTest {
         cardWidth: Dp,
         fontScale: Float = 1f,
         humidityValue: String = "41%",
+        weatherValue: String = "맑음",
     ) {
         composeRule.setContent {
             val currentDensity = LocalDensity.current
@@ -251,7 +284,7 @@ class NotificationUnreadIndicatorUiTest {
                                 feelsLikeTemperatureLabel = "체감온도",
                                 feelsLikeTemperature = "24.8°C",
                                 weatherLabel = "날씨",
-                                weatherValue = "맑음",
+                                weatherValue = weatherValue,
                             )
                         }
                     }
@@ -316,7 +349,7 @@ class NotificationUnreadIndicatorUiTest {
         assertNear(metricBounds[2].width, with(composeRule.density) { 76.5.dp.toPx() })
     }
 
-    private fun assertMetricGroupsShareRow() {
+    private fun assertMetricGroupsShareRow(cardWidth: Dp) {
         val metricBounds =
             listOf(
                 "home-weather-metric-humidity",
@@ -331,6 +364,12 @@ class NotificationUnreadIndicatorUiTest {
         assertTrue(abs(metricBounds[1].center.y - metricBounds[2].center.y) <= centerTolerance)
         assertTrue(metricBounds[0].right < metricBounds[1].left)
         assertTrue(metricBounds[1].right < metricBounds[2].left)
+        assertTrue(metricBounds.all { bounds -> bounds.left >= 0f })
+        assertTrue(
+            metricBounds.all { bounds ->
+                bounds.right <= with(composeRule.density) { cardWidth.toPx() }
+            },
+        )
     }
 
     private fun containsColor(
@@ -435,16 +474,6 @@ class NotificationUnreadIndicatorUiTest {
         val density = composeRule.density
         assertNear(bounds.left, with(density) { left.toPx() })
         assertNear(bounds.width, with(density) { width.toPx() })
-    }
-
-    private fun assertMetricLabelsAreStacked() {
-        val labelBounds =
-            listOf("습도", "체감온도", "날씨").map { label ->
-                composeRule.onNodeWithText(label).fetchSemanticsNode().boundsInRoot
-            }
-
-        assertTrue(labelBounds[0].center.y < labelBounds[1].center.y)
-        assertTrue(labelBounds[1].center.y < labelBounds[2].center.y)
     }
 
     private fun assertTextHeight(

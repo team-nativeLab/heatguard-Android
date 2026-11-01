@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.component.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,7 +40,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 홈 날씨 지표를 Figma의 아이콘 배지, 세로 구분선, 값 구조로 보여주는 흰 카드다. */
+/** 홈 날씨 지표를 Figma의 아이콘 배지, 가로 그룹, 값 구조로 보여주는 흰 카드다. */
 @Composable
 fun HomeWeatherMetricsCard(
     humidityLabel: String,
@@ -58,113 +60,158 @@ fun HomeWeatherMetricsCard(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = HOME_METRIC_FIGMA_SHADOW_ELEVATION,
     ) {
-        // 가용 콘텐츠 폭이 부족하면 지표를 세로로 쌓아 값과 단위가 잘리지 않게 한다.
+        // 폭이 좁거나 글자가 커지면 여백과 아이콘을 줄이고, 필요한 경우 가로 스크롤을 허용한다.
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val fontScale = LocalDensity.current.fontScale
-            val availableMetricContentWidth = maxWidth - HeartGuardSpacing.HomeMetricHorizontal * 2
+            val regularHorizontalPadding = HeartGuardSpacing.HomeMetricHorizontal
+            val compactHorizontalPadding = HeartGuardSpacing.Compact
+            val regularIconValueSpacing = HeartGuardSpacing.Compact
+            val compactIconValueSpacing = HeartGuardSpacing.Tight
+            val regularGroupSpacing = HeartGuardSpacing.Compact
+            val compactGroupSpacing = HeartGuardSpacing.Tight
+            val regularIconSize = HeartGuardIconSize.HomeMetric
             val humidityValueColumnWidth = HomeHumidityValueColumnMinWidth * fontScale
             val feelsLikeValueColumnWidth = HomeFeelsLikeValueColumnMinWidth * fontScale
             val weatherValueColumnWidth = HomeWeatherValueColumnMinWidth * fontScale
-            val minimumMetricContentWidth =
-                HeartGuardIconSize.HomeMetric * 3 +
-                    HeartGuardSpacing.Compact * 3 +
-                    HeartGuardSpacing.Compact * 4 +
+            val regularMinimumGroupSpacing = HeartGuardSpacing.Compact
+            val regularMinimumContentWidth =
+                metricRowMinimumWidth(
+                    iconSize = regularIconSize,
+                    iconValueSpacing = regularIconValueSpacing,
+                    groupSpacing = regularMinimumGroupSpacing,
+                    humidityValueColumnWidth = humidityValueColumnWidth,
+                    feelsLikeValueColumnWidth = feelsLikeValueColumnWidth,
+                    weatherValueColumnWidth = weatherValueColumnWidth,
+                )
+            val regularContentWidth = maxWidth - regularHorizontalPadding * 2
+            val widthDeficit = (regularMinimumContentWidth - regularContentWidth).coerceAtLeast(0.dp)
+            val horizontalPadding =
+                if (widthDeficit > 0.dp) {
+                    (regularHorizontalPadding - widthDeficit / 2)
+                        .coerceAtLeast(compactHorizontalPadding)
+                } else {
+                    regularHorizontalPadding
+                }
+            val availableContentWidth = maxWidth - horizontalPadding * 2
+            val remainingWidthDeficit =
+                (regularMinimumContentWidth - availableContentWidth).coerceAtLeast(0.dp)
+            val iconValueSpacing =
+                if (remainingWidthDeficit > 0.dp) {
+                    compactIconValueSpacing
+                } else {
+                    regularIconValueSpacing
+                }
+            val compactIconMinimumContentWidth =
+                metricRowMinimumWidth(
+                    iconSize = regularIconSize,
+                    iconValueSpacing = iconValueSpacing,
+                    groupSpacing = regularGroupSpacing,
+                    humidityValueColumnWidth = humidityValueColumnWidth,
+                    feelsLikeValueColumnWidth = feelsLikeValueColumnWidth,
+                    weatherValueColumnWidth = weatherValueColumnWidth,
+                )
+            val useCompactGroupSpacing = availableContentWidth < compactIconMinimumContentWidth
+            val groupSpacing =
+                if (useCompactGroupSpacing) {
+                    compactGroupSpacing
+                } else {
+                    regularGroupSpacing
+                }
+            val nonIconContentWidth =
+                iconValueSpacing * 3 +
+                    groupSpacing * 4 +
                     HeartGuardBorderWidth.Divider * 2 +
                     humidityValueColumnWidth +
                     feelsLikeValueColumnWidth +
                     weatherValueColumnWidth
-            val isStacked = availableMetricContentWidth < minimumMetricContentWidth
-            if (isStacked) {
-                Column(
+            val iconSize =
+                if (remainingWidthDeficit > 0.dp) {
+                    ((availableContentWidth - nonIconContentWidth) / 3)
+                        .coerceAtMost(regularIconSize)
+                        .coerceAtLeast(MIN_COMPACT_HOME_METRIC_ICON_SIZE)
+                } else {
+                    regularIconSize
+                }
+            val scrollState = rememberScrollState()
+
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState)
+                        .padding(
+                            horizontal = horizontalPadding,
+                            vertical = HeartGuardSpacing.Section,
+                        ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(groupSpacing),
+            ) {
+                HomeWeatherMetric(
+                    iconPainter = painterResource(R.drawable.home_humidity),
+                    metricLabel = humidityLabel,
+                    metricValue = humidity,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                                vertical = HeartGuardSpacing.Section,
-                            ),
-                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
-                ) {
-                    HomeWeatherMetric(
-                        iconPainter = painterResource(R.drawable.home_humidity),
-                        metricLabel = humidityLabel,
-                        metricValue = humidity,
-                        labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
-                        valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
-                    )
-                    HomeWeatherMetric(
-                        iconPainter = painterResource(R.drawable.home_feels_like),
-                        metricLabel = feelsLikeTemperatureLabel,
-                        metricValue = feelsLikeTemperature,
-                        labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
-                        valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
-                    )
-                    HomeWeatherMetric(
-                        iconPainter = painterResource(R.drawable.home_weather),
-                        metricLabel = weatherLabel,
-                        metricValue = weatherValue,
-                        labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
-                        valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
-                    )
-                }
-            } else {
-                Row(
+                            .width(
+                                metricWrapperWidth(
+                                    iconSize = iconSize,
+                                    iconValueSpacing = iconValueSpacing,
+                                    valueColumnWidth = humidityValueColumnWidth,
+                                ),
+                            ).testTag("home-weather-metric-humidity"),
+                    iconTestTag = "home-weather-icon-humidity",
+                    iconSize = iconSize,
+                    iconValueSpacing = iconValueSpacing,
+                    valueColumnWidth = humidityValueColumnWidth,
+                    valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
+                    labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
+                )
+
+                HomeWeatherMetricDivider(testTag = "home-weather-divider-first")
+
+                HomeWeatherMetric(
+                    iconPainter = painterResource(R.drawable.home_feels_like),
+                    metricLabel = feelsLikeTemperatureLabel,
+                    metricValue = feelsLikeTemperature,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = HeartGuardSpacing.HomeMetricHorizontal,
-                                vertical = HeartGuardSpacing.Section,
-                            ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
-                ) {
-                    HomeWeatherMetric(
-                        iconPainter = painterResource(R.drawable.home_humidity),
-                        metricLabel = humidityLabel,
-                        metricValue = humidity,
-                        modifier =
-                            Modifier
-                                .width(humidityMetricWrapperWidth(humidityValueColumnWidth))
-                                .testTag("home-weather-metric-humidity"),
-                        iconTestTag = "home-weather-icon-humidity",
-                        valueColumnWidth = humidityValueColumnWidth,
-                        valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
-                        labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
-                    )
+                            .width(
+                                metricWrapperWidth(
+                                    iconSize = iconSize,
+                                    iconValueSpacing = iconValueSpacing,
+                                    valueColumnWidth = feelsLikeValueColumnWidth,
+                                ),
+                            ).testTag("home-weather-metric-feels-like"),
+                    iconTestTag = "home-weather-icon-feels-like",
+                    iconSize = iconSize,
+                    iconValueSpacing = iconValueSpacing,
+                    valueColumnWidth = feelsLikeValueColumnWidth,
+                    valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
+                    labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
+                )
 
-                    HomeWeatherMetricDivider(testTag = "home-weather-divider-first")
+                HomeWeatherMetricDivider(testTag = "home-weather-divider-second")
 
-                    HomeWeatherMetric(
-                        iconPainter = painterResource(R.drawable.home_feels_like),
-                        metricLabel = feelsLikeTemperatureLabel,
-                        metricValue = feelsLikeTemperature,
-                        modifier =
-                            Modifier
-                                .width(feelsLikeMetricWrapperWidth(feelsLikeValueColumnWidth))
-                                .testTag("home-weather-metric-feels-like"),
-                        iconTestTag = "home-weather-icon-feels-like",
-                        valueColumnWidth = feelsLikeValueColumnWidth,
-                        valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
-                        labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
-                    )
-
-                    HomeWeatherMetricDivider(testTag = "home-weather-divider-second")
-
-                    HomeWeatherMetric(
-                        iconPainter = painterResource(R.drawable.home_weather),
-                        metricLabel = weatherLabel,
-                        metricValue = weatherValue,
-                        modifier =
-                            Modifier
-                                .width(weatherMetricWrapperWidth(weatherValueColumnWidth))
-                                .testTag("home-weather-metric-weather"),
-                        iconTestTag = "home-weather-icon-weather",
-                        valueColumnWidth = weatherValueColumnWidth,
-                        valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
-                        labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
-                    )
-                }
+                HomeWeatherMetric(
+                    iconPainter = painterResource(R.drawable.home_weather),
+                    metricLabel = weatherLabel,
+                    metricValue = weatherValue,
+                    modifier =
+                        Modifier
+                            .width(
+                                metricWrapperWidth(
+                                    iconSize = iconSize,
+                                    iconValueSpacing = iconValueSpacing,
+                                    valueColumnWidth = weatherValueColumnWidth,
+                                ),
+                            ).testTag("home-weather-metric-weather"),
+                    iconTestTag = "home-weather-icon-weather",
+                    iconSize = iconSize,
+                    iconValueSpacing = iconValueSpacing,
+                    valueColumnWidth = weatherValueColumnWidth,
+                    valueColor = HOME_METRIC_FIGMA_VALUE_COLOR,
+                    labelColor = HOME_METRIC_FIGMA_LABEL_COLOR,
+                )
             }
         }
     }
@@ -177,19 +224,24 @@ private fun HomeWeatherMetric(
     metricValue: String,
     modifier: Modifier = Modifier,
     iconTestTag: String? = null,
+    iconSize: Dp,
+    iconValueSpacing: Dp,
     valueColumnWidth: Dp? = null,
     labelColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
+    val iconInnerPadding =
+        HeartGuardSpacing.Compact *
+            (iconSize.value / HeartGuardIconSize.HomeMetric.value)
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+        horizontalArrangement = Arrangement.spacedBy(iconValueSpacing),
     ) {
         Surface(
             modifier =
                 Modifier
-                    .size(HeartGuardIconSize.HomeMetric)
+                    .size(iconSize)
                     .then(iconTestTag?.let { tag -> Modifier.testTag(tag) } ?: Modifier),
             shape = RoundedCornerShape(HeartGuardRadius.Pill),
             color = MaterialTheme.extraColors.homeMetricContainer,
@@ -197,7 +249,7 @@ private fun HomeWeatherMetric(
             Image(
                 painter = iconPainter,
                 contentDescription = null,
-                modifier = Modifier.padding(HeartGuardSpacing.Compact),
+                modifier = Modifier.padding(iconInnerPadding),
             )
         }
 
@@ -274,15 +326,32 @@ private val HOME_METRIC_FIGMA_SHADOW_ELEVATION = 4.dp
 private val HomeHumidityValueColumnMinWidth = 36.dp
 private val HomeFeelsLikeValueColumnMinWidth = 46.dp
 private val HomeWeatherValueColumnMinWidth = 26.dp
+private val MIN_COMPACT_HOME_METRIC_ICON_SIZE = 20.dp
 
-private fun humidityMetricWrapperWidth(valueColumnWidth: Dp): Dp =
-    HeartGuardIconSize.HomeMetric + HeartGuardSpacing.Compact + valueColumnWidth
+private fun metricRowMinimumWidth(
+    iconSize: Dp,
+    iconValueSpacing: Dp,
+    groupSpacing: Dp,
+    humidityValueColumnWidth: Dp,
+    feelsLikeValueColumnWidth: Dp,
+    weatherValueColumnWidth: Dp,
+): Dp =
+    iconSize * 3 +
+        iconValueSpacing * 3 +
+        groupSpacing * 4 +
+        HeartGuardBorderWidth.Divider * 2 +
+        humidityValueColumnWidth +
+        feelsLikeValueColumnWidth +
+        weatherValueColumnWidth
 
-private fun feelsLikeMetricWrapperWidth(valueColumnWidth: Dp): Dp =
-    HeartGuardIconSize.HomeMetric + HeartGuardSpacing.Compact + valueColumnWidth
-
-private fun weatherMetricWrapperWidth(valueColumnWidth: Dp): Dp =
-    HeartGuardIconSize.HomeMetric + HeartGuardSpacing.Compact + valueColumnWidth
+private fun metricWrapperWidth(
+    iconSize: Dp,
+    iconValueSpacing: Dp,
+    valueColumnWidth: Dp,
+): Dp =
+    iconSize +
+        iconValueSpacing +
+        valueColumnWidth
 
 @Composable
 private fun HomeWeatherMetricDivider(testTag: String) {
