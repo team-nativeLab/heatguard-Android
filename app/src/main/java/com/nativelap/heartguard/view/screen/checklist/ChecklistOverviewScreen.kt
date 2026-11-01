@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -315,21 +314,42 @@ internal fun ChecklistOverviewScreen(
                             Spacer(modifier = Modifier.height(CHECKLIST_OVERVIEW_HEADING_ROW_GAP))
                         }
                     }
-                    items(periods, key = { period ->
-                        period.serverRound?.roundId ?: period.time.toString()
-                    }) { period ->
-                        OverviewPeriodCard(
-                            period = period,
-                            onClick = {
-                                val round = period.serverRound
-                                val roundDate = period.roundDate
-                                if (round != null && roundDate != null) {
-                                    onRoundClick(roundDate, round.roundId)
-                                } else {
-                                    onPeriodClick(period.time)
+                    item(key = "checklist-overview-timeline") {
+                        Column(Modifier.fillMaxWidth()) {
+                            periods.forEachIndexed { index, period ->
+                                val isFirst = index == 0
+                                val isLast = index == periods.lastIndex
+                                OverviewPeriodCard(
+                                    period = period,
+                                    isFirst = isFirst,
+                                    isLast = isLast,
+                                    onClick = {
+                                        val round = period.serverRound
+                                        val roundDate = period.roundDate
+                                        if (round != null && roundDate != null) {
+                                            onRoundClick(roundDate, round.roundId)
+                                        } else {
+                                            onPeriodClick(period.time)
+                                        }
+                                    },
+                                )
+                                if (!isLast) {
+                                    Spacer(
+                                        Modifier
+                                            .width(CHECKLIST_TIMELINE_COLUMN_WIDTH)
+                                            .height(HeartGuardSpacing.Compact)
+                                            .drawBehind {
+                                                drawLine(
+                                                    color = CHECKLIST_TIMELINE_COLOR,
+                                                    start = Offset(x = size.width / 2f, y = 0f),
+                                                    end = Offset(x = size.width / 2f, y = size.height),
+                                                    strokeWidth = CHECKLIST_TIMELINE_LINE_WIDTH.toPx(),
+                                                )
+                                            },
+                                    )
                                 }
-                            },
-                        )
+                            }
+                        }
                     }
                 }
             }
@@ -340,6 +360,8 @@ internal fun ChecklistOverviewScreen(
 @Composable
 private fun OverviewPeriodCard(
     period: OverviewPeriod,
+    isFirst: Boolean,
+    isLast: Boolean,
     onClick: () -> Unit,
 ) {
     val description = period.description ?: period.serverRound?.toDescription()
@@ -401,61 +423,79 @@ private fun OverviewPeriodCard(
             Box(
                 modifier =
                     Modifier
-                        .width(CHECKLIST_TIMELINE_LINE_WIDTH)
-                        .fillMaxHeight()
-                        .background(CHECKLIST_TIMELINE_COLOR),
-            )
-            Box(
-                modifier =
-                    Modifier
-                        .size(CHECKLIST_TIMELINE_DOT_SIZE)
-                        .shadow(CHECKLIST_TIMELINE_DOT_ELEVATION, RoundedCornerShape(50))
-                        .clip(RoundedCornerShape(50))
-                        .background(statusColor(period.status)),
+                        .matchParentSize()
+                        .drawBehind {
+                            val nodeCenterY = size.height / 2f
+                            if (!isFirst) {
+                                drawLine(
+                                    color = CHECKLIST_TIMELINE_COLOR,
+                                    start = Offset(x = size.width / 2f, y = 0f),
+                                    end = Offset(x = size.width / 2f, y = nodeCenterY),
+                                    strokeWidth = CHECKLIST_TIMELINE_LINE_WIDTH.toPx(),
+                                )
+                            }
+                            if (!isLast) {
+                                drawLine(
+                                    color = CHECKLIST_TIMELINE_COLOR,
+                                    start = Offset(x = size.width / 2f, y = nodeCenterY),
+                                    end = Offset(x = size.width / 2f, y = size.height),
+                                    strokeWidth = CHECKLIST_TIMELINE_LINE_WIDTH.toPx(),
+                                )
+                            }
+                        },
                 contentAlignment = Alignment.Center,
             ) {
-                when (period.status) {
-                    PeriodStatus.COMPLETED -> {
-                        Icon(
-                            Icons.Default.Check,
-                            null,
-                            modifier = Modifier.size(CHECKLIST_TIMELINE_ICON_SIZE),
-                            tint = Color.White,
-                        )
-                    }
+                Box(
+                    modifier =
+                        Modifier
+                            .size(CHECKLIST_TIMELINE_DOT_SIZE)
+                            .shadow(CHECKLIST_TIMELINE_DOT_ELEVATION, RoundedCornerShape(50))
+                            .clip(RoundedCornerShape(50))
+                            .background(statusColor(period.status)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when (period.status) {
+                        PeriodStatus.COMPLETED -> {
+                            Icon(
+                                Icons.Default.Check,
+                                null,
+                                modifier = Modifier.size(CHECKLIST_TIMELINE_ICON_SIZE),
+                                tint = Color.White,
+                            )
+                        }
 
-                    PeriodStatus.WARNING -> {
-                        Text(
-                            text = stringResource(R.string.checklist_overview_timeline_warning),
-                            color = Color.White,
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = CHECKLIST_TIMELINE_WARNING_SIZE,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                        )
-                    }
+                        PeriodStatus.WARNING -> {
+                            Text(
+                                text = stringResource(R.string.checklist_overview_timeline_warning),
+                                color = Color.White,
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = CHECKLIST_TIMELINE_WARNING_SIZE,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                            )
+                        }
 
-                    PeriodStatus.CURRENT -> {
-                        Box(
-                            Modifier
-                                .size(
-                                    CHECKLIST_TIMELINE_CENTER_SIZE,
-                                ).clip(RoundedCornerShape(50))
-                                .background(Color.White),
-                        )
-                    }
+                        PeriodStatus.CURRENT -> {
+                            Box(
+                                Modifier
+                                    .size(CHECKLIST_TIMELINE_CENTER_SIZE)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.White),
+                            )
+                        }
 
-                    PeriodStatus.UPCOMING -> {
-                        Unit
-                    }
+                        PeriodStatus.UPCOMING -> {
+                            Unit
+                        }
 
-                    PeriodStatus.UNKNOWN -> {
-                        Text(
-                            text = stringResource(R.string.checklist_overview_timeline_warning),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        )
+                        PeriodStatus.UNKNOWN -> {
+                            Text(
+                                text = stringResource(R.string.checklist_overview_timeline_warning),
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            )
+                        }
                     }
                 }
             }
