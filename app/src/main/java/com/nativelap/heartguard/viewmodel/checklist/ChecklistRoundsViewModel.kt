@@ -192,9 +192,25 @@ internal class ChecklistRoundsViewModel
         ) {
             val state = mutableUiState.value
             val detail = state.roundDetail ?: return
-            if (!detail.canEdit || detail.roundId != roundId || detail.date != date ||
+            if (detail.roundId != roundId || detail.date != date ||
                 state.savingItemIds.isNotEmpty()
             ) {
+                return
+            }
+            val canEditNow =
+                isChecklistRoundEditable(
+                    date = detail.date,
+                    status = detail.status,
+                    startsAt = detail.startsAt,
+                    endsAt = detail.endsAt,
+                    clock = clock,
+                )
+            if (!detail.canEdit || !canEditNow) {
+                if (detail.canEdit && !canEditNow) {
+                    mutableUiState.value = state.copy(roundDetail = detail.copy(canEdit = false))
+                    loadRound(roundId, date)
+                    loadRounds(date)
+                }
                 return
             }
             val item = detail.items.firstOrNull { it.itemId == itemId } ?: return
@@ -499,7 +515,7 @@ internal fun isChecklistRoundEditable(
 ): Boolean {
     val now = clock.instant()
     return date == LocalDate.now(clock) &&
-        status == ChecklistRoundStatus.IN_PROGRESS &&
+        (status == ChecklistRoundStatus.IN_PROGRESS || status == ChecklistRoundStatus.COMPLETED) &&
         !now.isBefore(startsAt.toInstant()) &&
         now.isBefore(endsAt.toInstant())
 }

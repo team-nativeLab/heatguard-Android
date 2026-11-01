@@ -1,5 +1,8 @@
 package com.nativelap.heartguard.view.screen.checklist
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,6 +49,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -119,13 +123,35 @@ internal fun ChecklistRoundsScreen(
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
-                items(overview.rounds, key = { round -> round.roundId }) { round ->
-                    val isLast = round == overview.rounds.lastOrNull()
-                    ChecklistRoundCard(
-                        round = round,
-                        onClick = { onRoundClick(overview.date, round.roundId) },
-                        isLast = isLast,
-                    )
+                item(key = "checklist-round-timeline") {
+                    Column(Modifier.fillMaxWidth()) {
+                        overview.rounds.forEachIndexed { index, round ->
+                            val isFirst = index == 0
+                            val isLast = index == overview.rounds.lastIndex
+                            ChecklistRoundCard(
+                                round = round,
+                                onClick = { onRoundClick(overview.date, round.roundId) },
+                                isFirst = isFirst,
+                                isLast = isLast,
+                            )
+                            if (!isLast) {
+                                val timelineColor = MaterialTheme.extraColors.checklistDivider
+                                Spacer(
+                                    Modifier
+                                        .height(ITEM_VERTICAL_GAP)
+                                        .width(TIMELINE_RAIL_WIDTH)
+                                        .drawBehind {
+                                            drawLine(
+                                                color = timelineColor,
+                                                start = Offset(x = size.width / 2f, y = 0f),
+                                                end = Offset(x = size.width / 2f, y = size.height),
+                                                strokeWidth = TIMELINE_LINE_WIDTH.toPx(),
+                                            )
+                                        },
+                                )
+                            }
+                        }
+                    }
                 }
             }
             if (uiState.isLoadingRounds) item { CircularProgressIndicator() }
@@ -277,21 +303,12 @@ internal fun ChecklistRoundDetailScreen(
                                     }
                                     ChecklistRoundItemRow(
                                         item = row,
-                                        enabled = detail.canEdit && uiState.savingItemIds.isEmpty() && !isComplete,
+                                        enabled = detail.canEdit && uiState.savingItemIds.isEmpty(),
                                         showDivider = false,
                                         onCheckedChange = { checked -> onItemCheckedChange(row.itemId, checked) },
                                     )
                                 }
                             }
-                        }
-                    }
-                    if (!detail.canEdit) {
-                        item {
-                            Text(
-                                stringResource(R.string.checklist_round_read_only),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.extraColors.secondaryText,
-                            )
                         }
                     }
                     if (uiState.hasDetailLoadError) {
@@ -319,6 +336,15 @@ private fun ChecklistRoundDetailSummary(
     hasSaveError: Boolean,
 ) {
     val allItemsChecked = detail.totalItems > 0 && detail.checkedItems >= detail.totalItems
+    val animatedProgress by animateFloatAsState(
+        targetValue = detail.progressPercent.coerceIn(0, 100) / 100f,
+        animationSpec =
+            tween(
+                durationMillis = CHECKLIST_DETAIL_PROGRESS_ANIMATION_MILLIS,
+                easing = FastOutSlowInEasing,
+            ),
+        label = "checklist_round_progress",
+    )
     val statusLabelResource =
         when (detail.status) {
             ChecklistRoundStatus.COMPLETED -> {
@@ -399,10 +425,12 @@ private fun ChecklistRoundDetailSummary(
                 Text(it, color = MaterialTheme.extraColors.secondaryText, style = MaterialTheme.typography.bodySmall)
             }
             LinearProgressIndicator(
-                progress = { detail.progressPercent.coerceIn(0, 100) / 100f },
+                progress = { animatedProgress },
                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)),
                 color = statusColor,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                strokeCap = StrokeCap.Round,
+                drawStopIndicator = {},
             )
             Text(
                 stringResource(R.string.checklist_progress_format, detail.checkedItems, detail.totalItems),
@@ -680,6 +708,7 @@ private fun RoundSummaryStat(
 internal fun ChecklistRoundCard(
     round: ChecklistRoundCardUiModel,
     onClick: () -> Unit,
+    isFirst: Boolean = false,
     isLast: Boolean = false,
 ) {
     val statusLabel =
@@ -709,7 +738,7 @@ internal fun ChecklistRoundCard(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        ChecklistTimelineRail(status = round.status, isLast = isLast)
+        ChecklistTimelineRail(status = round.status, isFirst = isFirst, isLast = isLast)
         Card(
             modifier =
                 Modifier
@@ -784,6 +813,7 @@ internal fun ChecklistRoundCard(
 @Composable
 private fun ChecklistTimelineRail(
     status: ChecklistRoundStatus,
+    isFirst: Boolean,
     isLast: Boolean,
 ) {
     val dotColor =
@@ -793,33 +823,34 @@ private fun ChecklistTimelineRail(
             ChecklistRoundStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
             else -> MaterialTheme.colorScheme.outlineVariant
         }
-    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    val trackColor = MaterialTheme.extraColors.checklistDivider
     Box(
         modifier =
             Modifier
                 .width(TIMELINE_RAIL_WIDTH)
                 .fillMaxHeight()
                 .drawBehind {
-                    if (!isLast) {
-                        val lineStartY = TIMELINE_DOT_TOP.toPx() + TIMELINE_DOT_SIZE.toPx()
-                        val lineEndY = size.height + ITEM_VERTICAL_GAP.toPx() + TIMELINE_DOT_TOP.toPx()
+                    val dotCenterY = size.height / 2f
+                    if (!isFirst) {
                         drawLine(
                             color = trackColor,
-                            start = Offset(x = size.width / 2f, y = lineStartY),
-                            end = Offset(x = size.width / 2f, y = lineEndY),
+                            start = Offset(x = size.width / 2f, y = 0f),
+                            end = Offset(x = size.width / 2f, y = dotCenterY),
                             strokeWidth = TIMELINE_LINE_WIDTH.toPx(),
-                            cap = StrokeCap.Round,
+                        )
+                    }
+                    if (!isLast) {
+                        drawLine(
+                            color = trackColor,
+                            start = Offset(x = size.width / 2f, y = dotCenterY),
+                            end = Offset(x = size.width / 2f, y = size.height),
+                            strokeWidth = TIMELINE_LINE_WIDTH.toPx(),
                         )
                     }
                 },
-        contentAlignment = Alignment.TopCenter,
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier
-                .padding(top = TIMELINE_DOT_TOP)
-                .size(TIMELINE_DOT_SIZE)
-                .background(dotColor, RoundedCornerShape(50)),
-        )
+        Box(Modifier.size(TIMELINE_DOT_SIZE).background(dotColor, RoundedCornerShape(50)))
     }
 }
 
@@ -861,7 +892,7 @@ internal fun ChecklistRoundItemRow(
             isChecked = item.isChecked,
             onCheckedChange = {},
             contentDescription = item.title,
-            isEnabled = enabled,
+            isEnabled = enabled || item.isChecked,
             isInteractive = false,
             isCircular = true,
         )
@@ -884,8 +915,8 @@ private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale.KO
 private const val CHECKLIST_ROUND_PERIOD_COMPLETED_ICON = "✓"
 private const val CHECKLIST_ROUND_PERIOD_WARNING_ICON = "!"
 private const val CHECKLIST_ROUND_PERIOD_CURRENT_ICON = "●"
+private const val CHECKLIST_DETAIL_PROGRESS_ANIMATION_MILLIS = 450
 private val TIMELINE_RAIL_WIDTH = 20.dp
 private val TIMELINE_DOT_SIZE = 12.dp
-private val TIMELINE_DOT_TOP = 18.dp
 private val TIMELINE_LINE_WIDTH = 2.dp
 private val ITEM_VERTICAL_GAP = 12.dp

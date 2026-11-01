@@ -161,12 +161,51 @@ class ChecklistRoundsRefreshTest {
         val nextSeoulDay = Clock.fixed(Instant.parse("2026-10-30T15:00:00Z"), seoulZone)
 
         assertTrue(isChecklistRoundEditable(roundDate, ChecklistRoundStatus.IN_PROGRESS, startsAt, endsAt, atStart))
+        assertTrue(isChecklistRoundEditable(roundDate, ChecklistRoundStatus.COMPLETED, startsAt, endsAt, atStart))
         assertTrue(!isChecklistRoundEditable(roundDate, ChecklistRoundStatus.IN_PROGRESS, startsAt, endsAt, atEnd))
+        assertTrue(!isChecklistRoundEditable(roundDate, ChecklistRoundStatus.COMPLETED, startsAt, endsAt, atEnd))
         assertTrue(
             !isChecklistRoundEditable(roundDate, ChecklistRoundStatus.IN_PROGRESS, startsAt, endsAt, nextSeoulDay),
         )
         assertTrue(!isChecklistRoundEditable(roundDate, ChecklistRoundStatus.SCHEDULED, startsAt, endsAt, atStart))
     }
+
+    @Test
+    fun `toggle after round end refreshes read-only state without saving`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val date = LocalDate.parse("2026-10-30")
+            val clock = MutableClock(Instant.parse("2026-10-30T00:30:00Z"), ZoneId.of("Asia/Seoul"))
+            val repository =
+                FakeTeamChecklistRepository(
+                    getRound = { roundId, requestedDate -> ApiResult.Success(roundDetail(requestedDate, roundId)) },
+                    getRounds = { requestedDate -> ApiResult.Success(roundsOverview(requestedDate)) },
+                )
+            val (viewModel) = createLoadedViewModel(repository, dispatcher, date, clock)
+
+            try {
+                assertTrue(
+                    viewModel.uiState.value.roundDetail
+                        ?.canEdit == true,
+                )
+
+                clock.setInstant(Instant.parse("2026-10-30T01:00:00Z"))
+                viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = true)
+                runCurrent()
+
+                assertTrue(repository.checkedValues.isEmpty())
+                assertTrue(
+                    viewModel.uiState.value.roundDetail
+                        ?.canEdit == false,
+                )
+                assertFalse(viewModel.uiState.value.isLoadingDetail)
+                assertFalse(viewModel.uiState.value.isLoadingRounds)
+            } finally {
+                viewModel.viewModelScope.cancel()
+                Dispatchers.resetMain()
+            }
+        }
 
     @Test
     fun `refresh wakes at round boundary and otherwise stays under sixty seconds`() {
@@ -289,6 +328,7 @@ class ChecklistRoundsRefreshTest {
             try {
                 viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = true)
                 runCurrent()
+                assertEquals(listOf(true), repository.checkedValues)
 
                 assertTrue(firstDetailStarted.isCompleted)
                 assertTrue(firstRoundsStarted.isCompleted)
@@ -313,6 +353,7 @@ class ChecklistRoundsRefreshTest {
 
                 viewModel.setRoundItemChecked(ROUND_ID, date, ITEM_ID, isChecked = false)
                 runCurrent()
+                assertEquals(listOf(true, false), repository.checkedValues)
 
                 assertTrue(secondDetailStarted.isCompleted)
                 assertTrue(secondRoundsStarted.isCompleted)
@@ -404,14 +445,14 @@ class ChecklistRoundsRefreshTest {
         repository: FakeTeamChecklistRepository,
         dispatcher: kotlinx.coroutines.CoroutineDispatcher,
         date: LocalDate,
-    ): Pair<ChecklistRoundsViewModel, SessionManager> {
-        val sessionManager = SessionManager(TestTokenStorage(), dispatcher)
-        sessionManager.onLoginSucceeded(SessionToken("initial-session-token"))
-        val clock =
+        clock: Clock =
             Clock.fixed(
                 Instant.parse("2026-10-30T00:30:00Z"),
                 ZoneId.of("Asia/Seoul"),
-            )
+            ),
+    ): Pair<ChecklistRoundsViewModel, SessionManager> {
+        val sessionManager = SessionManager(TestTokenStorage(), dispatcher)
+        sessionManager.onLoginSucceeded(SessionToken("initial-session-token"))
         val viewModel =
             ChecklistRoundsViewModel(
                 getTeamChecklistRoundsUseCase = GetTeamChecklistRoundsUseCase(repository),
@@ -493,6 +534,8 @@ class ChecklistRoundsRefreshTest {
         private val getRound: suspend (String, LocalDate) -> ApiResult<TeamChecklistRoundDetail>,
         private val getRounds: suspend (LocalDate) -> ApiResult<TeamChecklistRounds>,
     ) : TeamChecklistRepository {
+        val checkedValues = mutableListOf<Boolean>()
+
         override suspend fun getChecklist() = error("Checklist is not used in this test")
 
         override suspend fun setItemChecked(
@@ -511,15 +554,18 @@ class ChecklistRoundsRefreshTest {
             roundId: String,
             itemId: String,
             checked: Boolean,
-        ) = ApiResult.Success(
-            ChecklistRoundItemCheckUpdate(
-                date = LocalDate.parse("2026-10-30"),
-                roundId = roundId,
-                itemId = itemId,
-                checked = checked,
-                checkedAt = null,
-            ),
-        )
+        ): ApiResult<ChecklistRoundItemCheckUpdate> {
+            checkedValues += checked
+            return ApiResult.Success(
+                ChecklistRoundItemCheckUpdate(
+                    date = LocalDate.parse("2026-10-30"),
+                    roundId = roundId,
+                    itemId = itemId,
+                    checked = checked,
+                    checkedAt = null,
+                ),
+            )
+        }
     }
 
     private class TestTokenStorage : TokenStorage {
@@ -528,6 +574,21 @@ class ChecklistRoundsRefreshTest {
         override fun saveAccessToken(accessToken: String) = Unit
 
         override fun clear() = Unit
+    }
+
+    private class MutableClock(
+        private var currentInstant: Instant,
+        private val currentZone: ZoneId,
+    ) : Clock() {
+        override fun getZone(): ZoneId = currentZone
+
+        override fun withZone(zone: ZoneId): Clock = MutableClock(currentInstant, zone)
+
+        override fun instant(): Instant = currentInstant
+
+        fun setInstant(instant: Instant) {
+            currentInstant = instant
+        }
     }
 
     private companion object {
