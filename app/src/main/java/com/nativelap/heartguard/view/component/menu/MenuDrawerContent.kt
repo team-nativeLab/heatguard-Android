@@ -32,6 +32,7 @@ fun MenuDrawerContent(
     profile: MenuDrawerProfileUiModel,
     onEvent: (MenuDrawerEvent) -> Unit,
     modifier: Modifier = Modifier,
+    isLoggingOut: Boolean = false,
 ) {
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
@@ -86,6 +87,9 @@ fun MenuDrawerContent(
                     title = stringResource(R.string.menu_logout),
                     onClick = { onEvent(MenuDrawerEvent.LogoutClicked) },
                     showsChevron = false,
+                    enabled = !isLoggingOut,
+                    isLoading = isLoggingOut,
+                    progressDescription = stringResource(R.string.menu_logout_in_progress),
                 )
                 MenuDrawerWithdrawLink(
                     title = stringResource(R.string.menu_withdraw),

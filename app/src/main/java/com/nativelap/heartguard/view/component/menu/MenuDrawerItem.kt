@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.nativelap.heartguard.R
@@ -29,6 +33,9 @@ fun MenuDrawerItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     showsChevron: Boolean = true,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    progressDescription: String? = null,
 ) {
     Row(
         modifier =
@@ -36,9 +43,15 @@ fun MenuDrawerItem(
                 .fillMaxWidth()
                 .heightIn(min = HeartGuardComponentSize.TouchTarget)
                 .clickable(
+                    enabled = enabled,
                     role = Role.Button,
                     onClick = onClick,
-                ).padding(vertical = HeartGuardSpacing.MenuItemVertical),
+                ).semantics {
+                    // 진행 중인 항목은 스크린 리더에 진행 상태를 알려 준다.
+                    if (isLoading && progressDescription != null) {
+                        stateDescription = progressDescription
+                    }
+                }.padding(vertical = HeartGuardSpacing.MenuItemVertical),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -51,6 +64,13 @@ fun MenuDrawerItem(
                     fontWeight = FontWeight.Medium,
                 ),
         )
+
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(HeartGuardComponentSize.ButtonLoadingIndicator),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
 
         if (showsChevron) {
             Text(

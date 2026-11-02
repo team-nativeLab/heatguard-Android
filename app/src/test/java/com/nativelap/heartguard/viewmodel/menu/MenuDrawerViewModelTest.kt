@@ -10,6 +10,13 @@ import com.nativelap.heartguard.core.session.TokenStorage
 import com.nativelap.heartguard.domain.auth.model.TeamLoginResult
 import com.nativelap.heartguard.domain.auth.repository.TeamAuthRepository
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
+import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
+import com.nativelap.heartguard.domain.emergency.model.OwnedEmergencyCall
+import com.nativelap.heartguard.domain.emergency.repository.EmergencyCallRepository
+import com.nativelap.heartguard.domain.emergency.usecase.EndActiveEmergencyCallUseCase
 import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
 import com.nativelap.heartguard.domain.profile.model.ProfilePhoto
 import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
@@ -21,13 +28,16 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -141,6 +151,40 @@ class MenuDrawerViewModelTest {
             }
         }
 
+    @Test
+    fun `a logout blocked by an unconfirmed emergency call keeps the session and reports it`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val owned = OwnedEmergencyCall().apply { own("my-call") }
+            val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
+            val generationBeforeLogout = sessionManager.getSnapshot().generation
+            val viewModelStore = ViewModelStore()
+            val viewModel =
+                createViewModel(
+                    repository = FakeWorkerProfileRepository(),
+                    sessionManager = sessionManager,
+                    viewModelStore = viewModelStore,
+                    emergencyCallRepository = FailingUpdateEmergencyCallRepository(),
+                    ownedEmergencyCall = owned,
+                )
+
+            try {
+                val blockedReports = mutableListOf<Unit>()
+                backgroundScope.launch { viewModel.logoutBlocked.collect { blockedReports.add(it) } }
+
+                viewModel.logout()
+                runCurrent()
+
+                assertEquals(1, blockedReports.size)
+                assertEquals(generationBeforeLogout, sessionManager.getSnapshot().generation)
+                assertFalse(viewModel.isLoggingOut.value)
+                assertEquals("my-call", owned.current())
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
+        }
+
     private suspend fun createAuthenticatedSession(dispatcher: CoroutineDispatcher): SessionManager {
         val sessionManager = SessionManager(FakeTokenStorage(), dispatcher)
         sessionManager.initialize()
@@ -157,12 +201,18 @@ class MenuDrawerViewModelTest {
         repository: FakeWorkerProfileRepository,
         sessionManager: SessionManager,
         viewModelStore: ViewModelStore,
+        emergencyCallRepository: EmergencyCallRepository = NoCallEmergencyCallRepository(),
+        ownedEmergencyCall: OwnedEmergencyCall = OwnedEmergencyCall(),
     ): MenuDrawerViewModel {
         val viewModel =
             MenuDrawerViewModel(
                 getWorkerProfileUseCase = GetWorkerProfileUseCase(repository),
                 getWorkerProfilePhotoUseCase = GetWorkerProfilePhotoUseCase(repository),
-                teamLogoutUseCase = TeamLogoutUseCase(FakeTeamAuthRepository()),
+                teamLogoutUseCase =
+                    TeamLogoutUseCase(
+                        FakeTeamAuthRepository(),
+                        EndActiveEmergencyCallUseCase(emergencyCallRepository, ownedEmergencyCall),
+                    ),
                 sessionManager = sessionManager,
             )
         viewModelStore.put("menu-drawer", viewModel)
@@ -218,6 +268,40 @@ class MenuDrawerViewModelTest {
         ): TeamLoginResult = error("login is unused in this test")
 
         override suspend fun logout() = Unit
+    }
+
+    private class FailingUpdateEmergencyCallRepository : EmergencyCallRepository {
+        override suspend fun registerEmergencyCall(
+            idempotencyKey: String,
+            clientOccurredAt: Instant,
+            message: String?,
+        ): ApiResult<EmergencyCallStatus> = error("register is unused in this test")
+
+        override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
+            error("lookup is unused in this test")
+
+        override suspend fun updateEmergencyCallStatus(
+            callId: String,
+            status: EmergencyCallUpdateStatus,
+        ): EmergencyCallUpdateResult = EmergencyCallUpdateResult.Failure
+    }
+
+    private class NoCallEmergencyCallRepository : EmergencyCallRepository {
+        override suspend fun registerEmergencyCall(
+            idempotencyKey: String,
+            clientOccurredAt: Instant,
+            message: String?,
+        ): ApiResult<EmergencyCallStatus> = error("register is unused in this test")
+
+        override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
+            ApiResult.Success(
+                EmergencyCallStatus(callId = null, state = EmergencyCallState.NONE, acknowledgedAt = null),
+            )
+
+        override suspend fun updateEmergencyCallStatus(
+            callId: String,
+            status: EmergencyCallUpdateStatus,
+        ): EmergencyCallUpdateResult = error("update is unused in this test")
     }
 
     private class FakeTokenStorage : TokenStorage {

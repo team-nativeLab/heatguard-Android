@@ -29,6 +29,7 @@ import com.nativelap.heartguard.view.component.humidityValueText
 import com.nativelap.heartguard.view.component.menu.MenuDrawerContent
 import com.nativelap.heartguard.view.component.menu.MenuDrawerOverlay
 import com.nativelap.heartguard.view.component.temperatureValueText
+import com.nativelap.heartguard.view.route.menu.CollectMenuDrawerLogoutBlocked
 import com.nativelap.heartguard.view.screen.home.HomeScreen
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
@@ -68,6 +69,8 @@ internal fun HeartGuardHomeRoute(
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
+    val isMenuDrawerLoggingOut by menuDrawerViewModel.isLoggingOut.collectAsStateWithLifecycle()
+    CollectMenuDrawerLogoutBlocked(menuDrawerViewModel)
     val unreadUiState by unreadViewModel.uiState.collectAsStateWithLifecycle()
     val loadFailureMessage = stringResource(R.string.home_load_failure)
 
@@ -128,6 +131,7 @@ internal fun HeartGuardHomeRoute(
         ) {
             MenuDrawerContent(
                 profile = menuDrawerProfile,
+                isLoggingOut = isMenuDrawerLoggingOut,
                 onEvent = { event ->
                     when (event) {
                         MenuDrawerEvent.HomeClicked -> {
@@ -150,8 +154,8 @@ internal fun HeartGuardHomeRoute(
                             onSiteSelectionClick()
                         }
 
+                        // 로그아웃은 긴급 호출 종료가 확인될 때까지 드로어를 열어 둬 진행 표시와 차단 안내를 보이게 한다.
                         MenuDrawerEvent.LogoutClicked -> {
-                            isMenuDrawerOpen = false
                             menuDrawerViewModel.logout()
                         }
 

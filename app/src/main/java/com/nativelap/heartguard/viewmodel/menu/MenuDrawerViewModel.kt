@@ -12,10 +12,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -33,7 +36,15 @@ class MenuDrawerViewModel
         private val _profile = MutableStateFlow(MenuDrawerProfileUiModel())
         val profile: StateFlow<MenuDrawerProfileUiModel> = _profile.asStateFlow()
 
-        private var isLoggingOut = false
+        private val logoutBlockedChannel = Channel<Unit>(Channel.BUFFERED)
+
+        /** 진행 중 긴급 호출 종료가 확인되지 않아 로그아웃이 막혔을 때 한 번 보낸다. */
+        val logoutBlocked: Flow<Unit> = logoutBlockedChannel.receiveAsFlow()
+
+        private val _isLoggingOut = MutableStateFlow(false)
+
+        /** 로그아웃(긴급 호출 종료 포함)이 진행 중인지 드로어가 보여 준다. */
+        val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
         private var loadProfileJob: Job? = null
         private var profileSessionGeneration = sessionManager.getSnapshot().generation
 
@@ -103,24 +114,35 @@ class MenuDrawerViewModel
                 }
         }
 
-        /** 로그아웃 시 서버 세션을 먼저 폐기하고, 요청이 실패하거나 취소돼도 로컬 세션을 종료한다. */
+        /** 로그아웃 시 진행 중 긴급 호출을 먼저 끝내고 서버 세션을 폐기한다. 요청이 실패해도 로컬 세션은 종료한다.
+         * 긴급 호출 종료가 확인되지 않으면 로그아웃을 막고 [logoutBlocked]를 보낸다. */
         fun logout() {
-            if (isLoggingOut) {
+            if (_isLoggingOut.value) {
                 return
             }
 
-            isLoggingOut = true
+            _isLoggingOut.value = true
             val logoutGeneration = sessionManager.getSnapshot().generation
             viewModelScope.launch {
+                var shouldExpireSession = true
                 try {
-                    teamLogoutUseCase()
+                    val loggedOut = teamLogoutUseCase()
+                    if (!loggedOut) {
+                        shouldExpireSession = false
+                        // 요청 중 세션이 이미 만료됐다면(401 등) 로그아웃은 끝난 것이므로 차단 안내를 띄우지 않는다.
+                        if (sessionManager.getSnapshot().generation == logoutGeneration) {
+                            logoutBlockedChannel.trySend(Unit)
+                        }
+                    }
                 } finally {
                     try {
-                        withContext(NonCancellable) {
-                            sessionManager.expireSession(logoutGeneration)
+                        if (shouldExpireSession) {
+                            withContext(NonCancellable) {
+                                sessionManager.expireSession(logoutGeneration)
+                            }
                         }
                     } finally {
-                        isLoggingOut = false
+                        _isLoggingOut.value = false
                     }
                 }
             }
