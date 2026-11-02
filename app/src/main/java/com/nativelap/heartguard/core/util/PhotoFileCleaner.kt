@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.core.util
 
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -11,6 +12,16 @@ import java.io.File
 
 internal const val PHOTO_CAPTURE_FILE_PREFIX = "heartguard_capture_"
 internal const val PHOTO_CACHE_DIRECTORY = "photos"
+
+// file_paths.xml의 cache-path name과 같아야 FileProvider URI의 첫 경로 세그먼트가 맞는다.
+private const val PHOTO_CAPTURE_PROVIDER_ROOT = "photo-captures"
+
+// FileProvider URI는 `<루트>/<파일 이름>` 두 세그먼트로만 이루어진다.
+private const val PHOTO_CAPTURE_PATH_SEGMENT_COUNT = 2
+
+// PhotoCaptureTarget이 만드는 이름(prefix + UUID.randomUUID() + .jpg)과 같은 형식이다. UUID 문자열은 소문자다.
+private val PHOTO_CAPTURE_FILE_NAME_PATTERN =
+    Regex("${PHOTO_CAPTURE_FILE_PREFIX}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.jpg")
 
 internal fun isCameraCaptureUri(
     context: Context,
@@ -37,6 +48,30 @@ internal fun releasePhoto(
     }
 }
 
+/** 촬영 파일 이름이 앱이 만든 형식과 정확히 같은지 확인한다. */
+internal fun isCaptureFileName(fileName: String): Boolean = PHOTO_CAPTURE_FILE_NAME_PATTERN.matches(fileName)
+
+/** FileProvider URI의 경로 세그먼트가 `photo-captures/<촬영 파일 이름>` 구조일 때만 촬영 파일 이름을 돌려준다. */
+internal fun captureFileNameFrom(pathSegments: List<String>): String? {
+    if (pathSegments.size != PHOTO_CAPTURE_PATH_SEGMENT_COUNT ||
+        pathSegments.first() != PHOTO_CAPTURE_PROVIDER_ROOT
+    ) {
+        return null
+    }
+
+    return pathSegments.last().takeIf(::isCaptureFileName)
+}
+
+/** 후보 파일의 실제 경로(심볼릭 링크를 해석한 뒤)가 디렉터리 바로 아래에 있을 때만 true를 반환한다. */
+internal fun isDirectChildOf(
+    directory: File,
+    candidate: File,
+): Boolean {
+    val canonicalDirectory = directory.canonicalFile
+    return candidate.canonicalFile.parentFile == canonicalDirectory
+}
+
+/** 앱이 만든 촬영 파일만 캐시 사진 디렉터리에서 삭제한다. 형식이나 위치가 맞지 않으면 아무것도 지우지 않는다. */
 internal fun deleteCaptureFile(
     context: Context,
     uri: Uri,
@@ -44,11 +79,16 @@ internal fun deleteCaptureFile(
     if (!isCameraCaptureUri(context, uri)) {
         return
     }
-
-    val fileName = uri.lastPathSegment ?: return
-    if (!fileName.startsWith(PHOTO_CAPTURE_FILE_PREFIX)) {
+    if (uri.scheme != ContentResolver.SCHEME_CONTENT) {
         return
     }
 
-    File(File(context.cacheDir, PHOTO_CACHE_DIRECTORY), fileName).delete()
+    val fileName = captureFileNameFrom(uri.pathSegments) ?: return
+    val photoDirectory = File(context.cacheDir, PHOTO_CACHE_DIRECTORY)
+    val captureFile = File(photoDirectory, fileName)
+    if (!isDirectChildOf(photoDirectory, captureFile)) {
+        return
+    }
+
+    captureFile.delete()
 }

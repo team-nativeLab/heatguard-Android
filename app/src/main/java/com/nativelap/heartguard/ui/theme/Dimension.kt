@@ -76,6 +76,11 @@ object HeartGuardSpacing {
     val Compact = 8.dp
     val Tight = 4.dp
     val Hairline = 1.dp
+
+    // Figma 날짜 선택 시트의 하단 여백과 그랩버 위 여백이다. 시트 공용 래퍼가 쓴다.
+    val SheetBottom = 34.dp
+    val SheetGrabHandleTop = 12.dp
+    val DateStripVertical = 14.dp
 }
 
 object HeartGuardRadius {
@@ -93,6 +98,7 @@ object HeartGuardRadius {
     val NoticeCard = 20.dp
     val InputBox = 10.dp
     val Dialog = 20.dp
+    val DateCell = 12.dp
 }
 
 object HeartGuardIconSize {
@@ -130,6 +136,7 @@ object HeartGuardIconSize {
     val PhotoError = 68.dp
     val RecordHistoryType = 44.dp
     val EmptyStateIllustration = 72.dp
+    val ProfilePhotoSheetOption = 22.dp
 }
 
 object HeartGuardComponentSize {
@@ -201,6 +208,23 @@ object HeartGuardComponentSize {
 
     // Figma 22 기록 상세 정보 카드의 행 높이다.
     val DetailInfoRowHeight = 45.dp
+
+    // Figma 날짜 선택 시트의 그랩버 크기다.
+    val SheetGrabHandleWidth = 36.dp
+    val SheetGrabHandleHeight = 5.dp
+
+    // Figma 날짜 선택 시트 달력의 칸 높이·선택 원 지름·기록 점 크기다. 칸 폭은 가용 폭을 7등분한다.
+    val CalendarDayHeight = 48.dp
+    val CalendarWeekdayHeight = 20.dp
+    val CalendarDaySelection = 34.dp
+    val RecordDateDot = 4.dp
+
+    // Figma 기록 내역 주간 스트립 칸의 높이다. 칸 폭은 가용 폭을 7등분한다.
+    val RecordDateStripCellHeight = 62.dp
+
+    // Figma 프로필 사진 변경 시트의 옵션 행 높이와 취소 버튼 높이다.
+    val SheetOptionHeight = 56.dp
+    val SheetCancelHeight = 48.dp
 }
 
 object HeartGuardOverlayBlur {
@@ -259,4 +283,20 @@ object HeartGuardFontSize {
     val BodyLineHeight = 20.sp
     val EmergencyDescription = 15.sp
     val EmergencyContactTitle = 15.sp
+
+    // Figma 날짜 선택 시트와 기록 내역 날짜 카드의 글자 크기다.
+    val RecordDateSheetMonth = 17.sp
+    val RecordDateCalendarDay = 15.sp
+    val RecordDateCalendarWeekday = 12.sp
+    val RecordDateLegend = 12.sp
+    val RecordDateCta = 16.sp
+    val RecordDateStripTitle = 16.sp
+    val RecordDateStripWeekday = 11.sp
+    val RecordDateStripDay = 16.sp
+    val RecordDateChip = 12.sp
+
+    // Figma 프로필 사진 변경 시트의 글자 크기다.
+    val ProfilePhotoSheetTitle = 20.sp
+    val ProfilePhotoSheetOption = 15.sp
+    val ProfilePhotoSheetCancel = 16.sp
 }

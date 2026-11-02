@@ -187,7 +187,7 @@ fun HomeScreen(
                     HomeAdditionalRecordCard(
                         title = stringResource(R.string.home_field_photo),
                         description = stringResource(R.string.home_field_photo_description),
-                        iconPainter = painterResource(R.drawable.home_photo),
+                        iconPainter = painterResource(R.drawable.ic_home_photo),
                         onClick = onFieldPhotoClick,
                         modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
                     )
@@ -197,7 +197,7 @@ fun HomeScreen(
                     HomeAdditionalRecordCard(
                         title = stringResource(R.string.home_record_history),
                         description = stringResource(R.string.home_record_history_description),
-                        iconPainter = painterResource(R.drawable.home_history),
+                        iconPainter = painterResource(R.drawable.ic_home_history),
                         onClick = onRecordHistoryClick,
                         modifier =
                             Modifier

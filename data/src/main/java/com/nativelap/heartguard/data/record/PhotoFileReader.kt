@@ -29,7 +29,7 @@ class PhotoFileReader
             var totalBytes = 0L
             val inputStream =
                 context.contentResolver.openInputStream(uri)
-                    ?: throw FileNotFoundException("사진 파일을 열 수 없습니다: $uri")
+                    ?: throw FileNotFoundException("사진 파일을 열 수 없습니다")
             inputStream.use { photoStream ->
                 val readBuffer = ByteArray(READ_BUFFER_SIZE)
                 while (true) {
@@ -85,7 +85,7 @@ class PhotoFileReader
                 override fun writeTo(sink: BufferedSink) {
                     val inputStream =
                         contentResolver.openInputStream(payload.photoUri)
-                            ?: throw FileNotFoundException("사진 파일을 열 수 없습니다: ${payload.photoUri}")
+                            ?: throw FileNotFoundException("사진 파일을 열 수 없습니다")
                     inputStream.use { photoStream ->
                         ExactLengthPhotoBodyWriter.write(
                             inputStream = photoStream,

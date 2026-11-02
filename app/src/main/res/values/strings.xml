@@ -375,8 +375,6 @@
     <string name="inquiry_done">완료</string>
     <string name="profile_photo_select">사진을 눌러 프로필 사진을 바꿀 수 있어요</string>
     <string name="profile_photo_preview">선택한 프로필 사진 미리보기</string>
-    <string name="profile_photo_change">사진 변경</string>
-    <string name="profile_photo_delete">사진 삭제</string>
     <string name="profile_photo_delete_title">프로필 사진을 삭제할까요?</string>
     <string name="profile_photo_delete_message">삭제한 사진은 프로필에서 제거됩니다.</string>
     <string name="profile_photo_delete_confirm">삭제</string>
@@ -384,6 +382,10 @@
     <string name="profile_photo_upload_failure">프로필 사진을 저장하지 못했어요. 파일 형식과 크기를 확인하고 다시 시도해주세요.</string>
     <string name="profile_photo_delete_failure">프로필 사진을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.</string>
     <string name="profile_photo_load_failure">프로필 사진을 불러오지 못했어요.</string>
+    <string name="profile_photo_sheet_title">프로필 사진 변경</string>
+    <string name="profile_photo_sheet_capture">사진 찍기</string>
+    <string name="profile_photo_sheet_album">앨범에서 선택</string>
+    <string name="profile_photo_sheet_default">기본 이미지로 변경</string>
     <string name="inquiry_submitting">문의를 등록하고 있습니다.</string>
     <string name="inquiry_submit_success">문의가 접수되었습니다.</string>
     <string name="inquiry_submit_receipt">접수 번호: %1$s</string>
@@ -402,11 +404,24 @@
     <string name="history_filter_temperature">온도계</string>
     <string name="history_filter_work_photo">작업 사진</string>
     <string name="history_filter_rest_photo">휴식 사진</string>
-    <string name="history_date_range_description">조회 기간 선택</string>
-    <string name="history_date_format">yyyy. MM. dd.</string>
-    <string name="history_date_range_separator" translatable="false">~</string>
-    <string name="history_date_picker_title">조회 기간</string>
-    <string name="history_date_picker_hint">최대 31일까지 조회할 수 있어요</string>
+    <string name="history_date_picker_title">날짜 선택</string>
+    <string name="history_date_picker_legend">기록이 있는 날 · 오늘 이후 날짜는 선택할 수 없어요</string>
+    <string name="history_date_picker_confirm_format">%1$d월 %2$d일 기록 보기</string>
+    <string name="history_date_picker_previous_month">이전 달</string>
+    <string name="history_date_picker_next_month">다음 달</string>
+    <string name="history_year_month_format">%1$d년 %2$d월</string>
+    <string name="history_today">오늘</string>
+    <string name="history_date_cell_format">%1$d월 %2$d일</string>
+    <string name="history_date_cell_with_record_format">%1$d월 %2$d일, 기록 있음</string>
+    <string-array name="history_weekday_labels">
+        <item>월</item>
+        <item>화</item>
+        <item>수</item>
+        <item>목</item>
+        <item>금</item>
+        <item>토</item>
+        <item>일</item>
+    </string-array>
     <string name="history_count_format">%1$d건</string>
     <string name="history_day_today_format">오늘 · %1$s</string>
     <string name="history_day_yesterday_format">어제 · %1$s</string>
@@ -421,9 +436,9 @@
     <string name="history_subtitle_separator" translatable="false">" · "</string>
     <string name="history_humidity_format">습도 %1$s%%</string>
     <string name="history_rest_minutes_format">%1$s분 휴식</string>
-    <string name="history_empty_title_format">해당 기간에 %1$s 기록이 없어요</string>
-    <string name="history_empty_title_all">해당 기간에 기록이 없어요</string>
-    <string name="history_empty_description">기간이나 유형을 바꾸거나 새 기록을 남겨보세요</string>
+    <string name="history_empty_title_format">해당 날짜에 %1$s 기록이 없어요</string>
+    <string name="history_empty_title_all">해당 날짜에 기록이 없어요</string>
+    <string name="history_empty_description">날짜나 유형을 바꾸거나 새 기록을 남겨보세요</string>
     <string name="history_create_record">기록하기</string>
     <string name="history_load_failure_title">기록을 불러오지 못했어요</string>
     <string name="history_load_failure_description">네트워크 연결을 확인한 뒤 다시 시도해주세요.</string>

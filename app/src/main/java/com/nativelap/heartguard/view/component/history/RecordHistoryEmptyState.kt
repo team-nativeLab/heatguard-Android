@@ -27,7 +27,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryFilter
 
-/** 조회 기간·필터에 맞는 기록이 없을 때의 안내다(Figma 23). 선택한 필터 이름을 문구에 넣는다. */
+/** 선택한 날짜에 조회된 기록이 없을 때의 안내다(Figma 23). 유형 필터가 전체가 아니면 선택한 유형 이름을 문구에 넣는다. */
 @Composable
 fun RecordHistoryEmptyState(
     selectedFilter: RecordHistoryFilter,

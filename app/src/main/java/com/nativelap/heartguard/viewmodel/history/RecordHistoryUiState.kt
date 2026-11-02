@@ -4,18 +4,23 @@ import androidx.compose.runtime.Immutable
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.domain.record.model.RecordHistoryPosition
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
+import java.time.temporal.TemporalAdjusters
 
-/** 기록 내역 화면 상태다. 기간·필터 선택과 서버 조회 결과를 함께 가진다. */
+/** 기록 내역 화면 상태다. 선택한 날짜와 서버 조회 결과, 날짜 선택 시트 표시 상태를 가진다. */
 @Immutable
 data class RecordHistoryUiState(
-    // 기간 기본값과 "오늘·어제" 표시의 기준 날짜(Asia/Seoul)다.
+    // 날짜 기본값과 "오늘·어제" 표시, 선택 가능 범위의 기준 날짜(Asia/Seoul)다.
     val today: LocalDate,
-    val startDate: LocalDate,
-    val endDate: LocalDate,
+    val selectedDate: LocalDate,
+    val visibleMonth: YearMonth,
     val selectedFilter: RecordHistoryFilter = RecordHistoryFilter.ALL,
     val loadState: RecordHistoryLoadState = RecordHistoryLoadState.Loading,
-    val isDateRangePickerVisible: Boolean = false,
+    val isDatePickerVisible: Boolean = false,
+    // 날짜별 기록 유무다. 조회에 실패한 날짜는 키가 없어 '기록 없음'과 구분한다.
+    val recordDayMarkers: Map<LocalDate, Boolean> = emptyMap(),
 ) {
     private val loadedEntries: List<RecordHistoryEntry>
         get() = (loadState as? RecordHistoryLoadState.Loaded)?.entries.orEmpty()
@@ -23,7 +28,7 @@ data class RecordHistoryUiState(
     private val loadedState: RecordHistoryLoadState.Loaded?
         get() = loadState as? RecordHistoryLoadState.Loaded
 
-    /** 기간 안에 아직 받지 않은 기록이 남았는지다. 스크롤 끝에서 이어 받을지 판단한다. */
+    /** 선택한 날짜에 아직 받지 않은 기록이 남았는지다. 스크롤 끝에서 이어 받을지 판단한다. */
     val hasMore: Boolean
         get() = loadedState?.nextPosition != null
 
@@ -60,13 +65,38 @@ data class RecordHistoryUiState(
                     compareByDescending<RecordHistoryDayGroup> { dayGroup -> dayGroup.date != null }
                         .thenByDescending { dayGroup -> dayGroup.date },
                 )
+
+    /** 달력 시트에 보이는 달의 모든 날짜다. */
+    val visibleMonthDates: List<LocalDate>
+        get() = (1..visibleMonth.lengthOfMonth()).map { day -> visibleMonth.atDay(day) }
+
+    /** 선택한 날짜가 속한 주(월요일~일요일) 날짜다. 주간 스트립에 쓴다. */
+    val selectedWeekDates: List<LocalDate>
+        get() {
+            val monday = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            return (0L..6L).map { offset -> monday.plusDays(offset) }
+        }
+
+    /** 기록 유무를 조회할 날짜다. 날짜 시트가 열려 있으면 보이는 달과 선택한 주의 합집합을, 닫혀 있으면 선택한 주만 담는다. 오늘 이후 날짜는 뺀다. */
+    val recordMarkerDates: Set<LocalDate>
+        get() {
+            val candidateDates =
+                if (isDatePickerVisible) {
+                    visibleMonthDates + selectedWeekDates
+                } else {
+                    selectedWeekDates
+                }
+            return candidateDates
+                .filterNot { date -> date.isAfter(today) }
+                .toSet()
+        }
 }
 
 /** 기록 조회 결과다. */
 sealed interface RecordHistoryLoadState {
     data object Loading : RecordHistoryLoadState
 
-    /** [nextPosition]이 null이면 기간 끝까지 받았다. 이어 받기 실패는 받은 목록을 유지한 채 [hasLoadMoreError]로 알린다. */
+    /** [nextPosition]이 null이면 선택한 날짜의 기록을 끝까지 받았다. 이어 받기 실패는 받은 목록을 유지한 채 [hasLoadMoreError]로 알린다. */
     data class Loaded(
         val entries: List<RecordHistoryEntry>,
         val nextPosition: RecordHistoryPosition? = null,

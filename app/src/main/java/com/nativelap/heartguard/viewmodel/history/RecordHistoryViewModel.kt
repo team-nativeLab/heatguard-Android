@@ -7,8 +7,8 @@ import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.domain.record.model.RecordHistoryPosition
+import com.nativelap.heartguard.domain.record.usecase.GetRecordDayMarkersUseCase
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistorySliceUseCase
-import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,14 +17,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
+import java.time.YearMonth
 import javax.inject.Inject
 
-/** 기록 내역 화면의 기간 선택·유형 필터·서버 조회를 담당한다. */
+/** 기록 내역 화면의 날짜 선택·유형 필터·서버 조회와 날짜별 기록 점 조회를 담당한다. */
 @HiltViewModel
 class RecordHistoryViewModel
     @Inject
     constructor(
         private val getRecordHistorySliceUseCase: GetRecordHistorySliceUseCase,
+        private val getRecordDayMarkersUseCase: GetRecordDayMarkersUseCase,
         private val clock: Clock,
         private val sessionManager: SessionManager,
     ) : ViewModel() {
@@ -36,23 +38,36 @@ class RecordHistoryViewModel
         // 같은 조회 조건에서 이미 받은 위치다. 서버 커서가 되돌아오면 무한 반복 대신 목록을 끝내고 실패를 알린다.
         private val loadedPositions = mutableSetOf<RecordHistoryPosition>()
 
+        // 날짜별 기록 유무 캐시다. 조회에 실패한 날짜는 넣지 않아 다음에 보일 때 다시 조회한다.
+        private val recordDayMarkers = mutableMapOf<LocalDate, Boolean>()
+        private var markerJob: Job? = null
+        private var requestingMarkerDates: Set<LocalDate> = emptySet()
+
         init {
             clearStateWhenSessionEnds(sessionManager) {
                 loadRecordsJob?.cancel()
                 loadRecordsJob = null
                 loadedPositions.clear()
+                clearRecordDayMarkers()
                 _uiState.value = createDefaultUiState()
             }
         }
 
-        /** 화면에 들어올 때 호출한다. 기간·필터는 기본값(오늘까지 최근 7일, 전체)으로 되돌리고 새로 조회한다.
-         * Activity 수명 ViewModel이라 재진입 시 이전 조회 결과와 새로 저장한 기록이 어긋나지 않도록 매번 다시 받는다. */
+        /** 기록 조회를 한 번이라도 시작했는지다. 프로세스 복원으로 새로 만들어진 ViewModel을 구분하는 데 쓴다. */
+        val hasStartedHistory: Boolean
+            get() = loadRecordsJob != null
+
+        /** 기록 내역 화면을 처음 여는 진입에서 호출한다. 날짜·필터는 기본값(오늘, 전체)으로 되돌리고, 기록과 선택한 주의 날짜별 점을 새로 조회한다.
+         * 점 캐시와 진행 중인 점 요청은 비운다. 보이는 달의 점은 날짜 시트를 열 때 요청한다.
+         * 상세 화면에서 돌아오는 복귀는 Route가 이 함수를 다시 부르지 않아 날짜·필터·받은 목록을 그대로 둔다(Route 가드 참고). */
         fun openHistory() {
+            clearRecordDayMarkers()
             _uiState.value = createDefaultUiState()
             loadRecords()
+            requestRecordDayMarkers()
         }
 
-        /** 현재 기간의 첫 기록을 다시 조회한다. 오류 화면의 재시도와 기간 변경에서도 쓴다. */
+        /** 선택한 날짜의 첫 기록을 다시 조회한다. 오류 화면의 재시도와 날짜 변경에서도 쓴다. */
         fun loadRecords() {
             val currentState = _uiState.value
             loadRecordsJob?.cancel()
@@ -62,10 +77,10 @@ class RecordHistoryViewModel
                     loadState = RecordHistoryLoadState.Loading,
                 )
             requestSlice(
-                startDate = currentState.startDate,
+                selectedDate = currentState.selectedDate,
                 position =
                     RecordHistoryPosition(
-                        date = currentState.endDate,
+                        date = currentState.selectedDate,
                         cursor = null,
                     ),
                 previousEntries = null,
@@ -88,14 +103,14 @@ class RecordHistoryViewModel
                         ),
                 )
             requestSlice(
-                startDate = _uiState.value.startDate,
+                selectedDate = _uiState.value.selectedDate,
                 position = nextPosition,
                 previousEntries = loadedState.entries,
             )
         }
 
         private fun requestSlice(
-            startDate: LocalDate,
+            selectedDate: LocalDate,
             position: RecordHistoryPosition,
             previousEntries: List<RecordHistoryEntry>?,
         ) {
@@ -104,10 +119,10 @@ class RecordHistoryViewModel
                 viewModelScope.launch {
                     val sliceResult =
                         getRecordHistorySliceUseCase(
-                            startDate = startDate,
+                            startDate = selectedDate,
                             position = position,
                         )
-                    // 여러 날짜를 이어 받는 동안 계정이 바뀌었으면 이전 계정 기록을 섞지 않는다.
+                    // 여러 페이지를 이어 받는 동안 계정이 바뀌었으면 이전 계정 기록을 섞지 않는다.
                     if (owningGeneration != sessionManager.getSnapshot().generation) {
                         return@launch
                     }
@@ -154,32 +169,50 @@ class RecordHistoryViewModel
                 )
         }
 
-        fun showDateRangePicker() {
-            _uiState.value = _uiState.value.copy(isDateRangePickerVisible = true)
-        }
-
-        fun hideDateRangePicker() {
-            _uiState.value = _uiState.value.copy(isDateRangePickerVisible = false)
-        }
-
-        /** 기간을 바꾸고 다시 조회한다. 서버가 하루 단위 조회만 지원해 기간이 길면 요청이 많아지므로
-         * [GetRecordHistoryUseCase.MAX_RANGE_DAYS]일을 넘으면 종료일 기준으로 잘라 조회한다. 오늘 이후 날짜도 오늘로 맞춘다. */
-        fun selectDateRange(
-            startDate: LocalDate,
-            endDate: LocalDate,
-        ) {
-            val today = _uiState.value.today
-            val adjustedEndDate = minOf(maxOf(startDate, endDate), today)
-            val earliestStartDate = adjustedEndDate.minusDays(GetRecordHistoryUseCase.MAX_RANGE_DAYS - 1L)
-            val adjustedStartDate = maxOf(minOf(startDate, adjustedEndDate), earliestStartDate)
-
+        /** 날짜를 골라 그 날의 기록을 다시 조회하고 날짜 시트를 닫는다. 오늘 이후 날짜는 고를 수 없어 무시한다. */
+        fun selectDate(date: LocalDate) {
+            val currentState = _uiState.value
+            if (date.isAfter(currentState.today)) {
+                return
+            }
             _uiState.value =
-                _uiState.value.copy(
-                    startDate = adjustedStartDate,
-                    endDate = adjustedEndDate,
-                    isDateRangePickerVisible = false,
+                currentState.copy(
+                    selectedDate = date,
+                    visibleMonth = YearMonth.from(date),
+                    isDatePickerVisible = false,
                 )
             loadRecords()
+            requestRecordDayMarkers()
+        }
+
+        fun selectToday() {
+            selectDate(_uiState.value.today)
+        }
+
+        /** 날짜 선택 시트를 연다. 달력은 선택한 날짜가 속한 달을 보여주며, 그 달의 기록 점은 시트가 열릴 때 요청한다. */
+        fun showDatePicker() {
+            val currentState = _uiState.value
+            _uiState.value =
+                currentState.copy(
+                    visibleMonth = YearMonth.from(currentState.selectedDate),
+                    isDatePickerVisible = true,
+                )
+            requestRecordDayMarkers()
+        }
+
+        fun hideDatePicker() {
+            _uiState.value = _uiState.value.copy(isDatePickerVisible = false)
+        }
+
+        /** 달력이 보이는 달을 [monthDelta]만큼 옮긴다. 오늘이 속한 달보다 미래로는 가지 않는다. */
+        fun moveVisibleMonth(monthDelta: Int) {
+            val currentState = _uiState.value
+            val movedMonth = currentState.visibleMonth.plusMonths(monthDelta.toLong())
+            if (movedMonth.isAfter(YearMonth.from(currentState.today))) {
+                return
+            }
+            _uiState.value = currentState.copy(visibleMonth = movedMonth)
+            requestRecordDayMarkers()
         }
 
         /** 유형 필터만 바꾼다. 이미 받은 목록을 화면에서 거르므로 서버를 다시 호출하지 않는다. */
@@ -187,17 +220,46 @@ class RecordHistoryViewModel
             _uiState.value = _uiState.value.copy(selectedFilter = filter)
         }
 
+        private fun requestRecordDayMarkers() {
+            val requestDates =
+                _uiState.value.recordMarkerDates
+                    .filterNot { date -> date in recordDayMarkers }
+            if (requestDates.isEmpty()) {
+                return
+            }
+            // 필요한 날짜가 이미 받는 중인 날짜의 부분 집합이면 진행 중인 조회를 그대로 둔다.
+            if (markerJob?.isActive == true && requestingMarkerDates.containsAll(requestDates)) {
+                return
+            }
+            markerJob?.cancel()
+            requestingMarkerDates = requestDates.toSet()
+            val owningGeneration = sessionManager.getSnapshot().generation
+            markerJob =
+                viewModelScope.launch {
+                    val markers = getRecordDayMarkersUseCase(requestDates)
+                    requestingMarkerDates = emptySet()
+                    // 조회 중 계정이 바뀌었으면 이전 계정의 기록 유무를 반영하지 않는다.
+                    if (owningGeneration != sessionManager.getSnapshot().generation) {
+                        return@launch
+                    }
+                    recordDayMarkers += markers
+                    _uiState.value = _uiState.value.copy(recordDayMarkers = recordDayMarkers.toMap())
+                }
+        }
+
+        private fun clearRecordDayMarkers() {
+            markerJob?.cancel()
+            markerJob = null
+            requestingMarkerDates = emptySet()
+            recordDayMarkers.clear()
+        }
+
         private fun createDefaultUiState(): RecordHistoryUiState {
             val today = LocalDate.now(clock)
             return RecordHistoryUiState(
                 today = today,
-                startDate = today.minusDays(DEFAULT_RANGE_DAYS - 1L),
-                endDate = today,
+                selectedDate = today,
+                visibleMonth = YearMonth.from(today),
             )
-        }
-
-        private companion object {
-            // Figma 20_기록내역_목록 기본 기간(최근 7일)이다.
-            const val DEFAULT_RANGE_DAYS = 7
         }
     }

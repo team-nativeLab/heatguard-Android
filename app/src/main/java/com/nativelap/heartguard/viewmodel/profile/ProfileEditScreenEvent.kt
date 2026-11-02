@@ -14,15 +14,14 @@ sealed interface ProfileEditScreenEvent {
 
     data object PasswordChangeClicked : ProfileEditScreenEvent
 
+    // 아바타 또는 "사진을 눌러..." 문구를 눌러 프로필 사진 변경 시트를 연다.
     data object ProfilePhotoClicked : ProfileEditScreenEvent
 
-    data object ProfilePhotoMenuDismissed : ProfileEditScreenEvent
+    data object ProfilePhotoSheetDismissed : ProfileEditScreenEvent
+
+    data object ProfilePhotoCaptureSelected : ProfileEditScreenEvent
 
     data object ProfilePhotoChangeSelected : ProfileEditScreenEvent
 
     data object ProfilePhotoDeleteSelected : ProfileEditScreenEvent
-
-    data object ProfilePhotoDeleteConfirmed : ProfileEditScreenEvent
-
-    data object ProfilePhotoDeleteCancelled : ProfileEditScreenEvent
 }
