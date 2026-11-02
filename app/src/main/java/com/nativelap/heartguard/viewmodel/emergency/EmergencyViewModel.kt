@@ -61,6 +61,10 @@ class EmergencyViewModel
         private var consecutivePollingFailureCount = 0
         private var dismissAfterRegistration = false
 
+        // 취소·종료를 요청했지만 서버가 아직 확인하지 않은 상태다. 폴링이 호출이 아직 진행 중이라고 알리면 다시 보낸다.
+        private var pendingStatusUpdate: PendingStatusUpdate? = null
+        private var automaticStatusUpdateAttempts = 0
+
         init {
             // 백그라운드에서 세션이 끝나도 3초 폴링이 이전 계정 호출을 계속 조회하지 않도록 함께 정리한다.
             clearStateWhenSessionEnds(sessionManager) {
@@ -124,7 +128,8 @@ class EmergencyViewModel
                             } else if (registerResult.error.isActiveCallAlreadyExists() || dismissAfterRegistration) {
                                 resumeCurrentCall(
                                     shouldOpenCallScreen = true,
-                                    onNoActiveCall = ::showRegistrationFailure,
+                                    onNoActiveCall = ::onRegistrationConfirmedNoCall,
+                                    onLookupFailed = { showRegistrationFailure(registrationMayExist = true) },
                                     owningFlow = owningFlow,
                                 )
                             } else {
@@ -147,7 +152,8 @@ class EmergencyViewModel
                     viewModelScope.launch {
                         resumeCurrentCall(
                             shouldOpenCallScreen = true,
-                            onNoActiveCall = ::showRegistrationFailure,
+                            onNoActiveCall = ::onRegistrationConfirmedNoCall,
+                            onLookupFailed = { showRegistrationFailure(registrationMayExist = true) },
                             owningFlow = owningFlow,
                         )
                     }
@@ -169,18 +175,31 @@ class EmergencyViewModel
                     resumeCurrentCall(
                         shouldOpenCallScreen = false,
                         onNoActiveCall = {},
+                        onLookupFailed = {},
                         owningFlow = owningFlow,
                     )
                 }
         }
 
-        /** 취소 또는 종료 버튼에서 호출한다. 서버가 승인한 뒤에만 흐름을 끝낸다. 관리자가 확인한 호출은 취소할 수 없어 종료만 보낸다. */
+        /** 취소 또는 종료 버튼에서 호출한다. 서버가 승인한 뒤에만 흐름을 끝낸다. 관리자가 확인한 호출은 취소할 수 없어 종료만 보낸다.
+         * 요청이 실패하면 의도를 보류로 남기고, 폴링이 호출이 아직 진행 중이라고 알릴 때 자동으로 다시 보낸다. */
         fun updateCallStatus(requestedStatus: EmergencyCallUpdateStatus) {
             val currentState = mutableUiState.value
-            val currentCallId = currentState.callId ?: return
-            if (currentState.isUpdatingStatus) {
+            if (currentState.callId == null || currentState.isUpdatingStatus) {
                 return
             }
+            pendingStatusUpdate =
+                PendingStatusUpdate(
+                    requestedStatus = requestedStatus,
+                    callState = currentState.callState,
+                )
+            automaticStatusUpdateAttempts = 0
+            sendStatusUpdate(requestedStatus)
+        }
+
+        private fun sendStatusUpdate(requestedStatus: EmergencyCallUpdateStatus) {
+            val currentState = mutableUiState.value
+            val currentCallId = currentState.callId ?: return
 
             val owningFlow = currentFlow()
             val allowedStatus =
@@ -205,25 +224,58 @@ class EmergencyViewModel
                         return@launch
                     }
                     when (updateResult) {
-                        is EmergencyCallUpdateResult.Updated,
-                        EmergencyCallUpdateResult.AlreadyClosed,
-                        -> {
+                        is EmergencyCallUpdateResult.Updated -> {
+                            // 응답이 종료 상태가 아니면 서버가 아직 취소를 반영하지 않은 것이다. 보류를 남겨 두고 다음 폴링이 상태를 맞춘다.
+                            if (updateResult.callStatus.state.isClosed()) {
+                                closeCallFlow()
+                            } else {
+                                mutableUiState.value = mutableUiState.value.copy(isUpdatingStatus = false)
+                            }
+                        }
+
+                        EmergencyCallUpdateResult.AlreadyClosed -> {
                             closeCallFlow()
                         }
 
                         EmergencyCallUpdateResult.InvalidTransition -> {
+                            // 요청 당시 상태와 달라졌으므로 보류를 버리고, 사용자가 최신 상태를 보고 다시 누르게 한다.
+                            pendingStatusUpdate = null
                             refreshCallAfterInvalidTransition(currentCallId, owningFlow)
                         }
 
                         EmergencyCallUpdateResult.Failure -> {
-                            mutableUiState.value =
-                                mutableUiState.value.copy(
-                                    isUpdatingStatus = false,
-                                    statusUpdateFailed = true,
-                                )
+                            markStatusUpdateFailed()
                         }
                     }
                 }
+        }
+
+        private fun markStatusUpdateFailed() {
+            mutableUiState.value =
+                mutableUiState.value.copy(
+                    isUpdatingStatus = false,
+                    statusUpdateFailed = true,
+                )
+        }
+
+        // 폴링으로 호출이 아직 진행 중인 것을 확인했을 때만 보류된 요청을 다시 보낸다.
+        // 네트워크가 끊겨 폴링도 실패하는 동안에는 보내지 않고, 자동 재시도는 횟수를 제한한다(이후에는 사용자가 누른다).
+        // 요청 당시 상태에서 바뀌었다면(예: 관리자가 확인함) 보류를 버린다. 확인된 호출을 보류된 취소 의도로 종료하지 않기 위해서다.
+        private fun retryPendingStatusUpdateIfNeeded() {
+            val pending = pendingStatusUpdate ?: return
+            val currentState = mutableUiState.value
+            if (currentState.callId == null || currentState.isUpdatingStatus) {
+                return
+            }
+            if (currentState.callState != pending.callState) {
+                pendingStatusUpdate = null
+                return
+            }
+            if (automaticStatusUpdateAttempts >= MAX_AUTOMATIC_STATUS_UPDATE_ATTEMPTS) {
+                return
+            }
+            automaticStatusUpdateAttempts += 1
+            sendStatusUpdate(pending.requestedStatus)
         }
 
         // 요청 사이 관리자가 호출을 확인하는 등 상태가 바뀐 경우다. 최신 상태로 화면을 맞춰 사용자가 다시 누를 수 있게 한다.
@@ -286,6 +338,8 @@ class EmergencyViewModel
             statusUpdateJob = null
             pendingIdempotencyKey = null
             dismissAfterRegistration = false
+            pendingStatusUpdate = null
+            automaticStatusUpdateAttempts = 0
             consecutivePollingFailureCount = 0
             mutableUiState.value = EmergencyUiState()
             while (effectChannel.tryReceive().isSuccess) {
@@ -298,6 +352,7 @@ class EmergencyViewModel
         private suspend fun resumeCurrentCall(
             shouldOpenCallScreen: Boolean,
             onNoActiveCall: () -> Unit,
+            onLookupFailed: () -> Unit,
             owningFlow: CallFlow,
         ) {
             val currentCallResult = getCurrentEmergencyCallUseCase()
@@ -311,7 +366,7 @@ class EmergencyViewModel
                     )
             ) {
                 EmergencyCallResumeDecision.LookupFailed -> {
-                    onNoActiveCall()
+                    onLookupFailed()
                 }
 
                 is EmergencyCallResumeDecision.ActiveCall -> {
@@ -333,11 +388,17 @@ class EmergencyViewModel
         ) {
             if (callStatus.state.isClosed() && !callStatus.callId.isNullOrBlank()) {
                 pendingIdempotencyKey = null
-                showRegistrationFailure()
+                onRegistrationConfirmedNoCall()
                 return
             }
             if (callStatus.callId.isNullOrBlank() || !callStatus.state.isInProgress()) {
-                showRegistrationFailure()
+                // 알 수 없는 상태이거나 진행 중인데 식별자가 없으면 호출이 남았을 수 있어 확인되지 않은 실패로 둔다.
+                // 호출 없음은 상태가 NONE이거나 식별자 없이 종료된 경우로만 확정한다.
+                if (callStatus.state == EmergencyCallState.UNKNOWN || callStatus.state.isInProgress()) {
+                    showRegistrationFailure()
+                } else {
+                    onRegistrationConfirmedNoCall()
+                }
                 return
             }
             pendingIdempotencyKey = null
@@ -355,6 +416,16 @@ class EmergencyViewModel
             if (dismissAfterRegistration) {
                 dismissAfterRegistration = false
                 updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+            }
+        }
+
+        // 서버가 진행 중인 호출이 없다고 확인한 경우다. 나가기 요청이 있었다면 홈으로 보내고, 없다면 다시 시도할 수 있게 연다.
+        // 확인하지 못한 실패(조회 실패)와 달리 호출이 남아 있지 않으므로 registrationMayExist를 내려 화면이 막히지 않게 한다.
+        private fun onRegistrationConfirmedNoCall() {
+            if (dismissAfterRegistration) {
+                dismissRejectedRegistration()
+            } else {
+                showRegistrationFailure(registrationMayExist = false)
             }
         }
 
@@ -421,6 +492,7 @@ class EmergencyViewModel
                     callState = polledStatus.state,
                     isConnectionUnstable = false,
                 )
+            retryPendingStatusUpdateIfNeeded()
         }
 
         private fun countPollingFailure() {
@@ -492,6 +564,12 @@ class EmergencyViewModel
                 owningFlow.sessionGeneration == sessionManager.getSnapshot().generation &&
                 (callId == null || callId == mutableUiState.value.callId)
 
+        // 사용자가 요청한 취소·종료 의도와, 요청할 때 화면이 보고 있던 호출 상태다.
+        private data class PendingStatusUpdate(
+            val requestedStatus: EmergencyCallUpdateStatus,
+            val callState: EmergencyCallState,
+        )
+
         private data class CallFlow(
             val generation: Long,
             val sessionGeneration: Long,
@@ -516,5 +594,8 @@ class EmergencyViewModel
 
             // 3초 폴링이 세 번(약 9초) 연속 실패하면 연결이 불안정하다고 알린다.
             const val UNSTABLE_FAILURE_COUNT = 3
+
+            // 보류된 취소·종료의 자동 재시도 상한이다. 3초 폴링 기준 약 30초이며, 그 뒤에는 사용자가 다시 누른다.
+            const val MAX_AUTOMATIC_STATUS_UPDATE_ATTEMPTS = 10
         }
     }
