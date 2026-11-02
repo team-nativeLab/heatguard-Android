@@ -312,6 +312,17 @@ private fun HeartGuardMainNavDisplay(
     // 없이 인자 없는 hiltViewModel()을 쓴다. 흐름 종료 시 정리는 emergencyViewModel.reset()으로 한다.
     val emergencyViewModel: EmergencyViewModel = hiltViewModel()
 
+    // 프로세스가 복원되면 호출 상태가 비어 있으므로, 복원된 긴급 호출 시트(03·04)는 되살리지 않고 닫는다.
+    // 진행 중인 호출은 홈 조회에서 서버 상태를 확인해 이어받는다.
+    LaunchedEffect(emergencyViewModel) {
+        if (emergencyViewModel.consumeRestoredSheetClose()) {
+            backStack.removeAll { it is HeartGuardDestination.Emergency || it is HeartGuardDestination.Calling }
+            if (backStack.isEmpty()) {
+                backStack.add(HeartGuardDestination.Home)
+            }
+        }
+    }
+
     // emergencyViewModel도 같은 이유로, 로그아웃·세션 만료 시 3초 폴링이 남지 않도록 정리한다.
     DisposableEffect(Unit) {
         onDispose {

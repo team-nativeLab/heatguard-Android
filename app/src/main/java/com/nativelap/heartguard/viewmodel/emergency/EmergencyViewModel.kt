@@ -10,6 +10,7 @@ import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
+import com.nativelap.heartguard.domain.emergency.model.OwnedEmergencyCall
 import com.nativelap.heartguard.domain.emergency.usecase.GetCurrentEmergencyCallUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.ObserveEmergencyCallStatusUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.RegisterEmergencyCallUseCase
@@ -44,6 +45,7 @@ class EmergencyViewModel
         private val getCurrentEmergencyCallUseCase: GetCurrentEmergencyCallUseCase,
         private val sessionManager: SessionManager,
         private val clock: Clock,
+        private val ownedEmergencyCall: OwnedEmergencyCall,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(EmergencyUiState())
         val uiState: StateFlow<EmergencyUiState> = mutableUiState.asStateFlow()
@@ -65,6 +67,9 @@ class EmergencyViewModel
         // 취소·종료를 요청했지만 서버가 아직 확인하지 않은 상태다. 폴링이 호출이 아직 진행 중이라고 알리면 다시 보낸다.
         private var pendingStatusUpdate: PendingStatusUpdate? = null
         private var automaticStatusUpdateAttempts = 0
+
+        // 프로세스 복원으로 새로 만들어진 ViewModel인지 한 번만 확인하기 위한 값이다.
+        private var restoredSheetCheckPending = true
 
         init {
             // 백그라운드에서 세션이 끝나도 3초 폴링이 이전 계정 호출을 계속 조회하지 않도록 함께 정리한다.
@@ -109,6 +114,7 @@ class EmergencyViewModel
                             adoptCall(
                                 callStatus = registerResult.value,
                                 shouldOpenCallScreen = true,
+                                isRegisteredByThisDevice = true,
                             )
                         }
 
@@ -182,6 +188,30 @@ class EmergencyViewModel
                         owningFlow = owningFlow,
                     )
                 }
+        }
+
+        /** 앱이 백그라운드로 가면 접수 전(ACTIVE) 호출만 취소한다. 관리자가 확인한(ACKNOWLEDGED) 호출은 유지한다.
+         * 취소가 실패하면 상태를 보류로 남겨 폴링이 다시 보낸다. */
+        fun cancelCallWhenBackgrounded() {
+            val currentState = mutableUiState.value
+            if (currentState.callId == null || currentState.callState != EmergencyCallState.ACTIVE) {
+                return
+            }
+            updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        }
+
+        /** 호출 중 화면이 사라질 때 아직 수집되지 않은 종료 이벤트를 버린다. 나중에 다른 화면이 오래된 이벤트로 닫히지 않게 한다. */
+        fun discardPendingEffects() {
+            while (effectChannel.tryReceive().isSuccess) {
+                // 수집되지 않은 이벤트를 버린다.
+            }
+        }
+
+        /** 프로세스가 복원돼 이 ViewModel이 새로 만들어졌는지 NavHost가 한 번만 확인할 때 쓴다. 처음 한 번만 true를 돌려준다. */
+        fun consumeRestoredSheetClose(): Boolean {
+            val isFirstCheck = restoredSheetCheckPending
+            restoredSheetCheckPending = false
+            return isFirstCheck
         }
 
         /** 취소 또는 종료 버튼에서 호출한다. 서버가 승인한 뒤에만 흐름을 끝낸다. 관리자가 확인한 호출은 취소할 수 없어 종료만 보낸다.
@@ -334,6 +364,7 @@ class EmergencyViewModel
 
         /** 세션이 끝나 메인 흐름을 벗어날 때 폴링과 진행 중인 요청을 멈추고 상태를 비운다. 서버 호출 상태는 바꾸지 않는다. */
         fun reset() {
+            mutableUiState.value.callId?.let(ownedEmergencyCall::release)
             flowGeneration += 1
             pollingJob?.cancel()
             pollingJob = null
@@ -393,9 +424,11 @@ class EmergencyViewModel
                 getCurrentEmergencyCallUseCase()
             } ?: ApiResult.Failure(ApiError.Network)
 
+        // [isRegisteredByThisDevice]는 이 기기가 등록 요청으로 만든 호출일 때만 true다. 홈 조회로 이어받은 호출은 팀의 다른 작업자 것일 수 있어 소유로 보지 않는다.
         private fun adoptCall(
             callStatus: EmergencyCallStatus,
             shouldOpenCallScreen: Boolean,
+            isRegisteredByThisDevice: Boolean = false,
         ) {
             if (callStatus.state.isClosed() && !callStatus.callId.isNullOrBlank()) {
                 pendingIdempotencyKey = null
@@ -413,6 +446,9 @@ class EmergencyViewModel
                 return
             }
             pendingIdempotencyKey = null
+            if (isRegisteredByThisDevice) {
+                callStatus.callId?.let(ownedEmergencyCall::own)
+            }
             mutableUiState.value =
                 mutableUiState.value.copy(
                     callId = callStatus.callId,

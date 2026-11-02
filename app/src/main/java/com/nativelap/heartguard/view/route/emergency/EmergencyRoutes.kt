@@ -1,12 +1,15 @@
 package com.nativelap.heartguard.view.route.emergency
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -89,8 +92,34 @@ internal fun HeartGuardCallingRoute(
         onCallClosed = { currentOnCallClosed() },
     )
 
+    // 앱이 백그라운드로 가면 진행 중인 호출을 취소해 서버에 호출이 남지 않게 한다.
+    // 회전·다크모드 같은 구성 변경으로 Activity가 다시 만들어질 때는 ON_STOP이 와도 취소하지 않는다.
+    val hostActivity = LocalActivity.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, emergencyViewModel) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP && hostActivity?.isChangingConfigurations != true) {
+                    emergencyViewModel.cancelCallWhenBackgrounded()
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            // 화면이 실제로 사라질 때만(회전 제외) 아직 수집되지 않은 종료 이벤트를 버린다.
+            if (hostActivity?.isChangingConfigurations != true) {
+                emergencyViewModel.discardPendingEffects()
+            }
+        }
+    }
+
     BackHandler {
-        emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        if (uiState.callId == null) {
+            // 호출 식별자가 없으면 취소할 수 없으므로(버튼 비활성) 뒤로가기로 호출 중 화면을 나간다.
+            currentOnCallClosed()
+        } else {
+            emergencyViewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+        }
     }
 
     CallingScreen(

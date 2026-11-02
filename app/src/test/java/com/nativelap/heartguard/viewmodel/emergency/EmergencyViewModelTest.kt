@@ -9,6 +9,7 @@ import com.nativelap.heartguard.domain.emergency.model.EmergencyCallState
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallStatus
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateResult
 import com.nativelap.heartguard.domain.emergency.model.EmergencyCallUpdateStatus
+import com.nativelap.heartguard.domain.emergency.model.OwnedEmergencyCall
 import com.nativelap.heartguard.domain.emergency.repository.EmergencyCallRepository
 import com.nativelap.heartguard.domain.emergency.usecase.GetCurrentEmergencyCallUseCase
 import com.nativelap.heartguard.domain.emergency.usecase.ObserveEmergencyCallStatusUseCase
@@ -348,9 +349,178 @@ class EmergencyViewModelTest {
             }
         }
 
+    @Test
+    fun `a cancel started in the background ends the active call`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.registerResults.add(
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACTIVE, null)),
+            )
+            repository.currentDefault =
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACTIVE, null))
+            repository.updateResults.add(
+                EmergencyCallUpdateResult.Updated(EmergencyCallStatus("call-1", EmergencyCallState.CANCELLED, null)),
+            )
+            val viewModel = createViewModel(repository, dispatcher)
+            try {
+                val effects = mutableListOf<EmergencyEffect>()
+                backgroundScope.launch { viewModel.effects.collect { effects.add(it) } }
+
+                viewModel.startEmergencyCall()
+                runCurrent()
+                viewModel.cancelCallWhenBackgrounded()
+                runCurrent()
+
+                assertEquals(listOf(EmergencyCallUpdateStatus.CANCELLED), repository.updateRequests)
+                assertEquals(1, effects.count { it is EmergencyEffect.CallClosed })
+                assertNull(viewModel.uiState.value.callId)
+            } finally {
+                viewModel.reset()
+            }
+        }
+
+    @Test
+    fun `a background cancel keeps a call the admin already acknowledged`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.registerResults.add(
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACKNOWLEDGED, null)),
+            )
+            repository.currentDefault =
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACKNOWLEDGED, null))
+            val viewModel = createViewModel(repository, dispatcher)
+            try {
+                viewModel.startEmergencyCall()
+                runCurrent()
+                viewModel.cancelCallWhenBackgrounded()
+                runCurrent()
+
+                assertTrue(repository.updateRequests.isEmpty())
+                assertEquals("call-1", viewModel.uiState.value.callId)
+            } finally {
+                viewModel.reset()
+            }
+        }
+
+    @Test
+    fun `a close that was never collected is discarded when the call screen leaves`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.registerResults.add(
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACTIVE, null)),
+            )
+            repository.currentDefault =
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACTIVE, null))
+            repository.updateResults.add(
+                EmergencyCallUpdateResult.Updated(EmergencyCallStatus("call-1", EmergencyCallState.CANCELLED, null)),
+            )
+            val viewModel = createViewModel(repository, dispatcher)
+            try {
+                viewModel.startEmergencyCall()
+                runCurrent()
+                viewModel.cancelCallWhenBackgrounded()
+                runCurrent()
+
+                // 수집기가 없을 때 종료 이벤트가 채널에 남는다. 화면이 사라지면 버린다.
+                viewModel.discardPendingEffects()
+
+                val effects = mutableListOf<EmergencyEffect>()
+                backgroundScope.launch { viewModel.effects.collect { effects.add(it) } }
+                runCurrent()
+
+                assertTrue(effects.isEmpty())
+            } finally {
+                viewModel.reset()
+            }
+        }
+
+    @Test
+    fun `a call resumed from the home lookup is not owned by this device`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.currentDefault =
+                ApiResult.Success(EmergencyCallStatus("colleague-call", EmergencyCallState.ACTIVE, null))
+            val owned = OwnedEmergencyCall()
+            val viewModel = createViewModel(repository, dispatcher, owned)
+            try {
+                viewModel.resumeActiveCall()
+                runCurrent()
+
+                assertEquals("colleague-call", viewModel.uiState.value.callId)
+                assertNull(owned.current())
+            } finally {
+                viewModel.reset()
+            }
+        }
+
+    @Test
+    fun `a call registered by this device is owned until it closes`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.registerResults.add(
+                ApiResult.Success(EmergencyCallStatus("my-call", EmergencyCallState.ACTIVE, null)),
+            )
+            // 폴링이 같은 호출을 확인해 주어야 등록 직후 호출이 닫히지 않는다.
+            repository.currentDefault =
+                ApiResult.Success(EmergencyCallStatus("my-call", EmergencyCallState.ACTIVE, null))
+            val owned = OwnedEmergencyCall()
+            val viewModel = createViewModel(repository, dispatcher, owned)
+            try {
+                viewModel.startEmergencyCall()
+                runCurrent()
+
+                assertEquals("my-call", owned.current())
+            } finally {
+                viewModel.reset()
+            }
+            assertNull(owned.current())
+        }
+
+    @Test
+    fun `a background cancel does nothing when no call is in progress`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            val viewModel = createViewModel(repository, dispatcher)
+            try {
+                viewModel.cancelCallWhenBackgrounded()
+                runCurrent()
+
+                assertTrue(repository.updateRequests.isEmpty())
+            } finally {
+                viewModel.reset()
+            }
+        }
+
+    @Test
+    fun `the restored sheet check runs only once per view model`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val viewModel = createViewModel(FakeEmergencyCallRepository(), dispatcher)
+            try {
+                assertTrue(viewModel.consumeRestoredSheetClose())
+                assertFalse(viewModel.consumeRestoredSheetClose())
+            } finally {
+                viewModel.reset()
+            }
+        }
+
     private suspend fun createViewModel(
         repository: EmergencyCallRepository,
         dispatcher: CoroutineDispatcher,
+        ownedEmergencyCall: OwnedEmergencyCall = OwnedEmergencyCall(),
     ): EmergencyViewModel {
         val sessionManager = SessionManager(TestTokenStorage(), dispatcher)
         sessionManager.onLoginSucceeded(SessionToken("session-token"))
@@ -361,6 +531,7 @@ class EmergencyViewModelTest {
             getCurrentEmergencyCallUseCase = GetCurrentEmergencyCallUseCase(repository),
             sessionManager = sessionManager,
             clock = Clock.fixed(Instant.parse("2026-11-02T00:00:00Z"), ZoneId.of("Asia/Seoul")),
+            ownedEmergencyCall = ownedEmergencyCall,
         )
     }
 

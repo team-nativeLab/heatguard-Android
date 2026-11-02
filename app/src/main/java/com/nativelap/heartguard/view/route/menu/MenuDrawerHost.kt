@@ -30,6 +30,8 @@ internal fun MenuDrawerHost(
     content: @Composable (onMenuClick: () -> Unit, onNotificationClick: () -> Unit) -> Unit,
 ) {
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
+    val isMenuDrawerLoggingOut by menuDrawerViewModel.isLoggingOut.collectAsStateWithLifecycle()
+    CollectMenuDrawerLogoutBlocked(menuDrawerViewModel)
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
@@ -55,8 +57,12 @@ internal fun MenuDrawerHost(
         ) {
             MenuDrawerContent(
                 profile = menuDrawerProfile,
+                isLoggingOut = isMenuDrawerLoggingOut,
                 onEvent = { event ->
-                    isMenuDrawerOpen = false
+                    // 로그아웃은 드로어를 열어 둬 진행 표시와 차단 안내를 보이게 한다.
+                    if (event != MenuDrawerEvent.LogoutClicked) {
+                        isMenuDrawerOpen = false
+                    }
                     when (event) {
                         MenuDrawerEvent.HomeClicked -> onHomeClick()
                         MenuDrawerEvent.EditProfileClicked -> onProfileEditClick()
