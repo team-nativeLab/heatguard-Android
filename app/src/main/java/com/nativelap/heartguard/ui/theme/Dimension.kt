@@ -135,6 +135,7 @@ object HeartGuardIconSize {
 object HeartGuardComponentSize {
     // 목록 끝에서 다음 페이지를 받는 동안 보이는 작은 진행 표시다.
     val ListLoadingIndicator = 24.dp
+    val ButtonLoadingIndicator = 18.dp
 
     // 스크롤 Column에서 끝까지 이만큼 남았을 때 다음 페이지를 미리 요청한다.
     val ListLoadMorePrefetchDistance = 200.dp

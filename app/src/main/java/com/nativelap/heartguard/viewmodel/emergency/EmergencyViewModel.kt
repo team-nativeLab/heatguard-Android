@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Clock
 import java.util.UUID
 import javax.inject.Inject
@@ -94,10 +95,12 @@ class EmergencyViewModel
             requestJob =
                 viewModelScope.launch {
                     val registerResult =
-                        registerEmergencyCallUseCase(
-                            idempotencyKey = idempotencyKey,
-                            clientOccurredAt = clock.instant(),
-                        )
+                        withTimeoutOrNull(EMERGENCY_REQUEST_TIMEOUT_MS) {
+                            registerEmergencyCallUseCase(
+                                idempotencyKey = idempotencyKey,
+                                clientOccurredAt = clock.instant(),
+                            )
+                        } ?: ApiResult.Failure(ApiError.Network)
                     if (!isCurrentFlow(owningFlow)) {
                         return@launch
                     }
@@ -216,10 +219,12 @@ class EmergencyViewModel
             statusUpdateJob =
                 viewModelScope.launch {
                     val updateResult =
-                        updateEmergencyCallStatusUseCase(
-                            callId = currentCallId,
-                            status = allowedStatus,
-                        )
+                        withTimeoutOrNull(EMERGENCY_REQUEST_TIMEOUT_MS) {
+                            updateEmergencyCallStatusUseCase(
+                                callId = currentCallId,
+                                status = allowedStatus,
+                            )
+                        } ?: EmergencyCallUpdateResult.Failure
                     if (!isCurrentFlow(owningFlow, currentCallId)) {
                         return@launch
                     }
@@ -283,7 +288,7 @@ class EmergencyViewModel
             callId: String,
             owningFlow: CallFlow,
         ) {
-            val currentCallResult = getCurrentEmergencyCallUseCase()
+            val currentCallResult = currentCallWithTimeout()
             if (!isCurrentFlow(owningFlow, callId)) {
                 return
             }
@@ -355,7 +360,7 @@ class EmergencyViewModel
             onLookupFailed: () -> Unit,
             owningFlow: CallFlow,
         ) {
-            val currentCallResult = getCurrentEmergencyCallUseCase()
+            val currentCallResult = currentCallWithTimeout()
             if (!isCurrentFlow(owningFlow)) {
                 return
             }
@@ -381,6 +386,12 @@ class EmergencyViewModel
                 }
             }
         }
+
+        // 현재 호출 조회도 같은 시간 제한을 둔다. 응답이 없으면 확인할 수 없는 실패로 돌려보내 호출한 쪽이 기다리지 않게 한다.
+        private suspend fun currentCallWithTimeout(): ApiResult<EmergencyCallStatus> =
+            withTimeoutOrNull(EMERGENCY_REQUEST_TIMEOUT_MS) {
+                getCurrentEmergencyCallUseCase()
+            } ?: ApiResult.Failure(ApiError.Network)
 
         private fun adoptCall(
             callStatus: EmergencyCallStatus,
@@ -594,6 +605,9 @@ class EmergencyViewModel
 
             // 3초 폴링이 세 번(약 9초) 연속 실패하면 연결이 불안정하다고 알린다.
             const val UNSTABLE_FAILURE_COUNT = 3
+
+            // 등록·취소·조회 요청이 이 시간 안에 응답하지 않으면 실패로 바꾼다. OkHttp 기본 타임아웃(약 10초 이상)을 기다리며 화면이 멈춘 것처럼 보이지 않게 한다.
+            const val EMERGENCY_REQUEST_TIMEOUT_MS = 8_000L
 
             // 보류된 취소·종료의 자동 재시도 상한이다. 3초 폴링 기준 약 30초이며, 그 뒤에는 사용자가 다시 누른다.
             const val MAX_AUTOMATIC_STATUS_UPDATE_ATTEMPTS = 10

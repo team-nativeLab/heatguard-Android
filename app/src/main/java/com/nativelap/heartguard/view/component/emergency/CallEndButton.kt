@@ -1,10 +1,14 @@
 package com.nativelap.heartguard.view.component.emergency
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardRadius
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 
 /** 연결된 긴급 통화를 종료하는 파괴적 동작 버튼이다. */
 @Composable
@@ -20,6 +25,7 @@ fun CallEndButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    isLoading: Boolean = false,
 ) {
     Button(
         onClick = onClick,
@@ -35,6 +41,13 @@ fun CallEndButton(
                 contentColor = MaterialTheme.colorScheme.onError,
             ),
     ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(HeartGuardComponentSize.ButtonLoadingIndicator),
+                color = MaterialTheme.colorScheme.onError,
+            )
+            Spacer(modifier = Modifier.width(HeartGuardSpacing.Tight))
+        }
         Text(
             text = title,
             style =

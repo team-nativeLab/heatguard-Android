@@ -17,6 +17,7 @@ import com.nativelap.heartguard.domain.emergency.usecase.UpdateEmergencyCallStat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -283,6 +284,70 @@ class EmergencyViewModelTest {
             }
         }
 
+    @Test
+    fun `a cancel without a response fails after the timeout and is resent once polling confirms the call`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.registerResults.add(
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACTIVE, null)),
+            )
+            repository.currentDefault =
+                ApiResult.Success(EmergencyCallStatus("call-1", EmergencyCallState.ACTIVE, null))
+            repository.updateResults.add(
+                EmergencyCallUpdateResult.Updated(EmergencyCallStatus("call-1", EmergencyCallState.CANCELLED, null)),
+            )
+            repository.updateBlocker = { awaitCancellation() }
+            val viewModel = createViewModel(repository, dispatcher)
+            try {
+                viewModel.startEmergencyCall()
+                runCurrent()
+                viewModel.updateCallStatus(EmergencyCallUpdateStatus.CANCELLED)
+                runCurrent()
+                assertTrue(viewModel.uiState.value.isUpdatingStatus)
+
+                advanceTimeBy(REQUEST_TIMEOUT_MS + 1)
+                runCurrent()
+                assertFalse(viewModel.uiState.value.isUpdatingStatus)
+                assertTrue(viewModel.uiState.value.statusUpdateFailed)
+                assertEquals("call-1", viewModel.uiState.value.callId)
+
+                repository.updateBlocker = null
+                advanceTimeBy(POLL_INTERVAL_MS + 1)
+                runCurrent()
+
+                assertNull(viewModel.uiState.value.callId)
+                assertEquals(2, repository.updateRequests.size)
+            } finally {
+                viewModel.reset()
+            }
+        }
+
+    @Test
+    fun `a registration without a response fails after the timeout`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val repository = FakeEmergencyCallRepository()
+            repository.registerBlocker = { awaitCancellation() }
+            val viewModel = createViewModel(repository, dispatcher)
+            try {
+                viewModel.startEmergencyCall()
+                runCurrent()
+                assertTrue(viewModel.uiState.value.isRegistering)
+
+                advanceTimeBy(REQUEST_TIMEOUT_MS + 1)
+                runCurrent()
+
+                assertFalse(viewModel.uiState.value.isRegistering)
+                assertTrue(viewModel.uiState.value.hasRegistrationFailed)
+                assertTrue(viewModel.uiState.value.registrationMayExist)
+            } finally {
+                viewModel.reset()
+            }
+        }
+
     private suspend fun createViewModel(
         repository: EmergencyCallRepository,
         dispatcher: CoroutineDispatcher,
@@ -309,11 +374,18 @@ class EmergencyViewModelTest {
         val updateResults = ArrayDeque<EmergencyCallUpdateResult>()
         val updateRequests = mutableListOf<EmergencyCallUpdateStatus>()
 
+        // 값이 있으면 응답 대신 이 블록을 실행한다. 서버가 응답하지 않는 상황을 흉내 낸다.
+        var registerBlocker: (suspend () -> Unit)? = null
+        var updateBlocker: (suspend () -> Unit)? = null
+
         override suspend fun registerEmergencyCall(
             idempotencyKey: String,
             clientOccurredAt: Instant,
             message: String?,
-        ): ApiResult<EmergencyCallStatus> = registerResults.removeFirst()
+        ): ApiResult<EmergencyCallStatus> {
+            registerBlocker?.invoke()
+            return registerResults.removeFirst()
+        }
 
         override suspend fun getCurrentEmergencyCallStatus(): ApiResult<EmergencyCallStatus> =
             currentResults.removeFirstOrNull() ?: currentDefault
@@ -323,6 +395,7 @@ class EmergencyViewModelTest {
             status: EmergencyCallUpdateStatus,
         ): EmergencyCallUpdateResult {
             updateRequests.add(status)
+            updateBlocker?.invoke()
             return updateResults.removeFirst()
         }
     }
@@ -337,6 +410,9 @@ class EmergencyViewModelTest {
 
     private companion object {
         const val POLL_INTERVAL_MS = 3_000L
+
+        // EmergencyViewModel의 EMERGENCY_REQUEST_TIMEOUT_MS와 같은 값이다.
+        const val REQUEST_TIMEOUT_MS = 8_000L
 
         // 최초 요청 1회와 자동 재시도 상한(EmergencyViewModel의 MAX_AUTOMATIC_STATUS_UPDATE_ATTEMPTS = 10)을 합한 값이다.
         const val MAX_TOTAL_REQUESTS = 11
