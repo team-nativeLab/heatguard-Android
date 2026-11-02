@@ -52,7 +52,7 @@ fun HomeContactCard(
             HomeContactRow(
                 title = managerTitle,
                 description = managerDescription,
-                iconPainter = painterResource(R.drawable.home_manager_phone),
+                iconPainter = painterResource(R.drawable.ic_home_manager_phone),
                 iconContainerColor = MaterialTheme.extraColors.homeMetricContainer,
                 onClick = onManagerClick,
             )
@@ -63,7 +63,7 @@ fun HomeContactCard(
             HomeContactRow(
                 title = emergencyTitle,
                 description = emergencyDescription,
-                iconPainter = painterResource(R.drawable.home_emergency_phone),
+                iconPainter = painterResource(R.drawable.ic_home_emergency_phone),
                 iconContainerColor = MaterialTheme.extraColors.homeContactAlertContainer,
                 onClick = onEmergencyClick,
             )

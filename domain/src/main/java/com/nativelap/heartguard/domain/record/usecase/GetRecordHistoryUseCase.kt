@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 /** 기록 내역 화면의 기간([startDate]~[endDate], 양 끝 포함) 기록을 최신 측정 시각 순으로 모아 준다.
  * 서버가 하루 단위 조회만 지원하므로 날짜별로 동시에 요청하고, 하나라도 실패하면 첫 실패를 돌려준다.
- * 요청 수가 과도해지지 않도록 기간은 [MAX_RANGE_DAYS]일로 제한하며, 화면도 같은 한도로 기간 선택을 막는다. */
+ * 요청 수가 과도해지지 않도록 기간은 [MAX_RANGE_DAYS]일로 제한한다. */
 class GetRecordHistoryUseCase
     @Inject
     constructor(

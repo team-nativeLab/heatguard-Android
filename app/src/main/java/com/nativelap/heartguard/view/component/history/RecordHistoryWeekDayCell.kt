@@ -1,0 +1,115 @@
+package com.nativelap.heartguard.view.component.history
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
+import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
+import com.nativelap.heartguard.ui.theme.HeartGuardRadius
+import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
+import com.nativelap.heartguard.ui.theme.extraColors
+import java.time.LocalDate
+
+@Composable
+internal fun RecordHistoryWeekDayCell(
+    date: LocalDate,
+    weekdayLabel: String,
+    isSelected: Boolean,
+    isEnabled: Boolean,
+    hasRecord: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dateLabel =
+        stringResource(
+            if (hasRecord) {
+                R.string.history_date_cell_with_record_format
+            } else {
+                R.string.history_date_cell_format
+            },
+            date.monthValue,
+            date.dayOfMonth,
+        )
+    val dateColor =
+        when {
+            isSelected -> MaterialTheme.colorScheme.onPrimary
+            isEnabled -> MaterialTheme.extraColors.strongText
+            else -> MaterialTheme.extraColors.calendarDisabledText
+        }
+    val selectionBackground =
+        if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            Color.Transparent
+        }
+
+    Column(
+        modifier =
+            modifier
+                .height(HeartGuardComponentSize.RecordDateStripCellHeight)
+                .clip(RoundedCornerShape(HeartGuardRadius.DateCell))
+                .background(selectionBackground)
+                .clickable(
+                    enabled = isEnabled,
+                    role = Role.Button,
+                    onClick = onClick,
+                ).semantics(mergeDescendants = true) {
+                    contentDescription = dateLabel
+                    selected = isSelected
+                },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = weekdayLabel,
+            color = MaterialTheme.extraColors.calendarWeekdayText,
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontSize = HeartGuardFontSize.RecordDateStripWeekday,
+                    fontWeight = FontWeight.Normal,
+                ),
+        )
+
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.Tight))
+
+        Text(
+            text = date.dayOfMonth.toString(),
+            color = dateColor,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = HeartGuardFontSize.RecordDateStripDay,
+                    fontWeight =
+                        if (isSelected) {
+                            FontWeight.Bold
+                        } else {
+                            FontWeight.Medium
+                        },
+                ),
+        )
+
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.Tight))
+
+        RecordHistoryRecordDot(
+            hasRecord = hasRecord,
+            isSelected = isSelected,
+        )
+    }
+}

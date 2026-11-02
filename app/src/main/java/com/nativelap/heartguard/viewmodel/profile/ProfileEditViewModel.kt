@@ -16,13 +16,13 @@ import com.nativelap.heartguard.domain.profile.usecase.UploadWorkerProfilePhotoU
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -41,8 +41,9 @@ class ProfileEditViewModel
         private val _uiState = MutableStateFlow(ProfileEditUiState())
         val uiState: StateFlow<ProfileEditUiState> = _uiState.asStateFlow()
 
-        private val effectChannel = Channel<ProfileEditEffect>(Channel.BUFFERED)
-        val effects: Flow<ProfileEditEffect> = effectChannel.receiveAsFlow()
+        // 수집 중인 화면이 없을 때 끝난 저장 완료는 버린다. 나중에 들어온 화면이 이전 저장 때문에 바로 뒤로가기를 하지 않게 한다.
+        private val effectFlow = MutableSharedFlow<ProfileEditEffect>(extraBufferCapacity = 1)
+        val effects: Flow<ProfileEditEffect> = effectFlow.asSharedFlow()
 
         private var loadProfileJob: Job? = null
         private var saveProfileJob: Job? = null
@@ -143,6 +144,9 @@ class ProfileEditViewModel
         }
 
         fun updateProfilePhoto(uri: Uri) {
+            if (!_uiState.value.canChangeProfilePhoto) {
+                return
+            }
             _uiState.value =
                 _uiState.value.copy(
                     profilePhotoUri = uri,
@@ -152,6 +156,9 @@ class ProfileEditViewModel
         }
 
         fun clearProfilePhoto() {
+            if (!_uiState.value.canChangeProfilePhoto) {
+                return
+            }
             _uiState.value =
                 _uiState.value.copy(
                     profilePhotoUri = null,
@@ -159,12 +166,19 @@ class ProfileEditViewModel
                 )
         }
 
-        fun setPhotoActionsMenuExpanded(isExpanded: Boolean) {
-            _uiState.value = _uiState.value.copy(isPhotoActionsMenuExpanded = isExpanded)
+        /** 카메라 촬영을 시작하지 못했거나 촬영 결과를 쓸 수 없을 때 사진 오류 안내를 보인다. */
+        fun reportPhotoCaptureFailed() {
+            _uiState.value =
+                _uiState.value.copy(
+                    profilePhotoSaveError = ProfilePhotoSaveError.CAPTURE_FAILED,
+                )
         }
 
         fun requestProfilePhotoDeletion() {
             val currentState = _uiState.value
+            if (!currentState.canChangeProfilePhoto) {
+                return
+            }
             if (currentState.profilePhotoUrl.isNullOrBlank()) {
                 return
             }
@@ -172,12 +186,11 @@ class ProfileEditViewModel
                 currentState.copy(
                     profilePhotoUri = null,
                     shouldDeleteProfilePhoto = true,
-                    isPhotoActionsMenuExpanded = false,
                     profilePhotoSaveError = null,
                 )
         }
 
-        /** 입력한 이름을 저장한다. 성공하면 서버가 돌려준 값으로 화면을 갱신하고 [ProfileEditEffect.Saved]를 한 번 보낸다. */
+        /** 입력한 이름을 저장한다. 성공하면 서버가 돌려준 값으로 화면을 갱신하고, 수집 중인 화면에 [ProfileEditEffect.Saved]를 보낸다. */
         fun saveProfile() {
             if (profileSessionGeneration != sessionManager.getSnapshot().generation) {
                 clearState()
@@ -254,10 +267,18 @@ class ProfileEditViewModel
                                         clearStateIfSessionChanged(expectedSessionGeneration)
                                         return@launch
                                     }
+                                    val latestState = _uiState.value
+                                    // 업로드 중 새로 고른 사진은 남기고, 이번에 올린 사진일 때만 비운다.
+                                    val remainingPhotoUri =
+                                        if (latestState.profilePhotoUri == currentState.profilePhotoUri) {
+                                            null
+                                        } else {
+                                            latestState.profilePhotoUri
+                                        }
                                     _uiState.value =
-                                        _uiState.value.copy(
+                                        latestState.copy(
                                             profilePhotoUrl = photoResult.value.photoUrl,
-                                            profilePhotoUri = null,
+                                            profilePhotoUri = remainingPhotoUri,
                                             shouldDeleteProfilePhoto = false,
                                             profilePhotoSaveError = null,
                                         )
@@ -292,11 +313,20 @@ class ProfileEditViewModel
                                         clearStateIfSessionChanged(expectedSessionGeneration)
                                         return@launch
                                     }
+                                    val latestState = _uiState.value
+                                    val isRequestedDeletionStillCurrent =
+                                        latestState.shouldDeleteProfilePhoto == currentState.shouldDeleteProfilePhoto
+                                    // 요청한 삭제 플래그만 내린다. 삭제 중 새로 고른 사진은 copy가 그대로 남긴다.
+                                    val remainingDeletionRequest =
+                                        if (isRequestedDeletionStillCurrent) {
+                                            false
+                                        } else {
+                                            latestState.shouldDeleteProfilePhoto
+                                        }
                                     _uiState.value =
-                                        _uiState.value.copy(
+                                        latestState.copy(
                                             profilePhotoUrl = null,
-                                            profilePhotoUri = null,
-                                            shouldDeleteProfilePhoto = false,
+                                            shouldDeleteProfilePhoto = remainingDeletionRequest,
                                             profilePhotoSaveError = null,
                                         )
                                     if (!isCurrentProfileSession(expectedSessionGeneration)) {
@@ -333,7 +363,7 @@ class ProfileEditViewModel
                         clearStateIfSessionChanged(expectedSessionGeneration)
                         return@launch
                     }
-                    effectChannel.send(ProfileEditEffect.Saved)
+                    effectFlow.tryEmit(ProfileEditEffect.Saved)
                 }
         }
 

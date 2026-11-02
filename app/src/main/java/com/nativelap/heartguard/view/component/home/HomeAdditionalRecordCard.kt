@@ -97,7 +97,7 @@ private fun HomeAdditionalRecordCardPreview() {
         HomeAdditionalRecordCard(
             title = "현장 사진",
             description = "사진 촬영 또는 앨범에서 선택",
-            iconPainter = painterResource(R.drawable.home_photo),
+            iconPainter = painterResource(R.drawable.ic_home_photo),
             onClick = {},
         )
     }

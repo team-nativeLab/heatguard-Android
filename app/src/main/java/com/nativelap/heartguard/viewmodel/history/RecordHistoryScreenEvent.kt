@@ -6,14 +6,21 @@ import java.time.LocalDate
 sealed interface RecordHistoryScreenEvent {
     data object BackClicked : RecordHistoryScreenEvent
 
-    data object DateRangeClicked : RecordHistoryScreenEvent
+    // 날짜 카드의 "2026년 9월" 영역을 눌러 날짜 선택 시트를 연다.
+    data object DatePickerClicked : RecordHistoryScreenEvent
 
-    data class DateRangeSelected(
-        val startDate: LocalDate,
-        val endDate: LocalDate,
+    // 주간 스트립의 날짜를 누르거나 날짜 시트에서 "기록 보기"를 눌러 날짜를 확정한다.
+    data class DateSelected(
+        val date: LocalDate,
     ) : RecordHistoryScreenEvent
 
-    data object DateRangeDismissed : RecordHistoryScreenEvent
+    data object DatePickerDismissed : RecordHistoryScreenEvent
+
+    data class MonthMoved(
+        val monthDelta: Int,
+    ) : RecordHistoryScreenEvent
+
+    data object TodayClicked : RecordHistoryScreenEvent
 
     data class FilterSelected(
         val filter: RecordHistoryFilter,

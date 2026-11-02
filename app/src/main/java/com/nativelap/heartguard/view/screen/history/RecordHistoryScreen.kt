@@ -30,7 +30,7 @@ import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.history.PendingRecordSubmissionCard
 import com.nativelap.heartguard.view.component.history.RecordHistoryCountSummaryCard
-import com.nativelap.heartguard.view.component.history.RecordHistoryDateRangeSelector
+import com.nativelap.heartguard.view.component.history.RecordHistoryDateStripCard
 import com.nativelap.heartguard.view.component.history.RecordHistoryDayCard
 import com.nativelap.heartguard.view.component.history.RecordHistoryDayHeader
 import com.nativelap.heartguard.view.component.history.RecordHistoryEmptyState
@@ -44,8 +44,9 @@ import com.nativelap.heartguard.viewmodel.history.RecordHistoryScreenEvent
 import com.nativelap.heartguard.viewmodel.history.RecordHistoryUiState
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.YearMonth
 
-/** Figma 20_기록내역_목록·23_기록내역_빈상태 화면이다. 기간·유형 필터·유형별 건수·날짜별 기록 목록을 보여준다.
+/** Figma 20_기록내역_목록·23_기록내역_빈상태 화면이다. 날짜 카드·유형 필터·유형별 건수·선택한 날짜의 기록 목록을 보여준다.
  * 빈 결과일 때만 하단에 "기록하기" 버튼을 둔다. */
 @Composable
 fun RecordHistoryScreen(
@@ -61,13 +62,13 @@ fun RecordHistoryScreen(
     val loadState = uiState.loadState
     val dayGroups = uiState.dayGroups
     val temporaryDraftDate = temporaryDraftSavedAt?.toLocalDate() ?: uiState.today
+    // 임시 저장 행은 선택한 날짜에 저장한 기록일 때만 그 날 목록 맨 위에 보여준다.
     val visibleTemporaryDraftType =
         temporaryDraftType?.takeIf { draftType ->
             draftType.matches(uiState.selectedFilter) &&
-                !temporaryDraftDate.isBefore(uiState.startDate) &&
-                !temporaryDraftDate.isAfter(uiState.endDate)
+                temporaryDraftDate == uiState.selectedDate
         }
-    // 기간에 남은 기록이 있으면 빈 상태 대신 계속 이어 받는다(필터로 걸러진 경우 포함).
+    // 선택한 날짜에 남은 기록이 있으면 빈 상태 대신 계속 이어 받는다(필터로 걸러진 경우 포함).
     val isEmptyResult =
         loadState is RecordHistoryLoadState.Loaded &&
             dayGroups.isEmpty() &&
@@ -122,11 +123,17 @@ fun RecordHistoryScreen(
                     ),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
-                item(key = "dateRange") {
-                    RecordHistoryDateRangeSelector(
-                        startDate = uiState.startDate,
-                        endDate = uiState.endDate,
-                        onClick = { onEvent(RecordHistoryScreenEvent.DateRangeClicked) },
+                item(key = "dateStrip") {
+                    RecordHistoryDateStripCard(
+                        selectedDate = uiState.selectedDate,
+                        today = uiState.today,
+                        weekDates = uiState.selectedWeekDates,
+                        recordDayMarkers = uiState.recordDayMarkers,
+                        onMonthClick = { onEvent(RecordHistoryScreenEvent.DatePickerClicked) },
+                        onTodayClick = { onEvent(RecordHistoryScreenEvent.TodayClicked) },
+                        onDateClick = { date ->
+                            onEvent(RecordHistoryScreenEvent.DateSelected(date))
+                        },
                     )
                 }
                 item(key = "filters") {
@@ -199,20 +206,20 @@ fun RecordHistoryScreen(
                                     hasMoreRecords = uiState.hasMore,
                                 )
                             }
-                            val todayGroup =
+                            val selectedDayGroup =
                                 dayGroups.firstOrNull { dayGroup ->
-                                    dayGroup.date == uiState.today
+                                    dayGroup.date == uiState.selectedDate
                                 }
                             if (visibleTemporaryDraftType != null) {
-                                item(key = "header-${uiState.today}") {
+                                item(key = "header-${uiState.selectedDate}") {
                                     RecordHistoryDayHeader(
-                                        date = uiState.today,
+                                        date = uiState.selectedDate,
                                         today = uiState.today,
                                     )
                                 }
-                                item(key = "day-${uiState.today}") {
+                                item(key = "day-${uiState.selectedDate}") {
                                     RecordHistoryDayCard(
-                                        recordEntries = todayGroup?.entries.orEmpty(),
+                                        recordEntries = selectedDayGroup?.entries.orEmpty(),
                                         temporaryDraftType = visibleTemporaryDraftType,
                                         temporaryDraftSavedAt = temporaryDraftSavedAt,
                                         onTemporaryDraftClick = {
@@ -226,7 +233,7 @@ fun RecordHistoryScreen(
                             }
                             dayGroups
                                 .filterNot { dayGroup ->
-                                    visibleTemporaryDraftType != null && dayGroup.date == uiState.today
+                                    visibleTemporaryDraftType != null && dayGroup.date == uiState.selectedDate
                                 }.forEach { dayGroup ->
                                     item(key = "header-${dayGroup.date}") {
                                         RecordHistoryDayHeader(
@@ -274,8 +281,8 @@ private fun RecordHistoryScreenLoadedPreview() {
             uiState =
                 RecordHistoryUiState(
                     today = LocalDate.of(2026, 9, 27),
-                    startDate = LocalDate.of(2026, 9, 21),
-                    endDate = LocalDate.of(2026, 9, 27),
+                    selectedDate = LocalDate.of(2026, 9, 27),
+                    visibleMonth = YearMonth.of(2026, 9),
                     loadState =
                         RecordHistoryLoadState.Loaded(
                             entries =
@@ -320,8 +327,8 @@ private fun RecordHistoryScreenEmptyPreview() {
             uiState =
                 RecordHistoryUiState(
                     today = LocalDate.of(2026, 9, 27),
-                    startDate = LocalDate.of(2026, 9, 21),
-                    endDate = LocalDate.of(2026, 9, 27),
+                    selectedDate = LocalDate.of(2026, 9, 27),
+                    visibleMonth = YearMonth.of(2026, 9),
                     loadState = RecordHistoryLoadState.Loaded(entries = emptyList()),
                 ),
             onEvent = {},

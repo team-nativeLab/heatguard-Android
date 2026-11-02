@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +41,7 @@ fun ProfileAvatarHeader(
     photoUrl: String? = null,
     onPhotoClick: (() -> Unit)? = null,
     onAvatarClick: (() -> Unit)? = null,
-    photoActionsMenuContent: (@Composable BoxScope.() -> Unit)? = null,
+    isPhotoChangeEnabled: Boolean = true,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -52,8 +51,13 @@ fun ProfileAvatarHeader(
             modifier =
                 Modifier
                     .size(HeartGuardComponentSize.ProfileAvatar)
-                    .then(if (onAvatarClick != null) Modifier.clickable(onClick = onAvatarClick) else Modifier)
-                    .background(
+                    .then(
+                        if (onAvatarClick != null) {
+                            Modifier.clickable(enabled = isPhotoChangeEnabled, onClick = onAvatarClick)
+                        } else {
+                            Modifier
+                        },
+                    ).background(
                         color = MaterialTheme.extraColors.photoContainer,
                         shape = CircleShape,
                     ),
@@ -84,14 +88,12 @@ fun ProfileAvatarHeader(
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.foundation.Image(
-                        painter = painterResource(R.drawable.record_camera),
+                        painter = painterResource(R.drawable.ic_profile_camera),
                         contentDescription = null,
                         modifier = Modifier.size(HeartGuardComponentSize.ProfilePhotoCameraIcon),
                     )
                 }
             }
-
-            photoActionsMenuContent?.invoke(this)
         }
 
         Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
@@ -107,7 +109,12 @@ fun ProfileAvatarHeader(
                         R.string.profile_worker_role
                     },
                 ),
-            modifier = if (onPhotoClick != null) Modifier.clickable(onClick = onPhotoClick) else Modifier,
+            modifier =
+                if (onPhotoClick != null) {
+                    Modifier.clickable(enabled = isPhotoChangeEnabled, onClick = onPhotoClick)
+                } else {
+                    Modifier
+                },
             color = MaterialTheme.extraColors.secondaryText,
             style = MaterialTheme.typography.bodySmall,
         )

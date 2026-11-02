@@ -76,6 +76,15 @@ data class HeartGuardExtraColors(
     val notificationMeta: Color,
     val notificationRecordIcon: Color,
     val notificationNeutralIcon: Color,
+    val bottomSheetSurface: Color,
+    val bottomSheetGrabHandle: Color,
+    val calendarWeekdayText: Color,
+    val calendarSundayText: Color,
+    val calendarDisabledText: Color,
+    val captionText: Color,
+    val sheetOptionDivider: Color,
+    val sheetCancelContainer: Color,
+    val sheetDestructiveText: Color,
 )
 
 val LocalHeartGuardExtraColors =
@@ -194,6 +203,19 @@ private val notificationMetaColor = Color(0xFF6B7280)
 private val notificationRecordIconColor = Color(0xFF20A15D)
 private val notificationNeutralIconColor = Color(0xFF373B45)
 
+// 기록 날짜 선택 시트와 주간 스트립(Figma 1867:1035, 1864:1038)에서 쓰는 시트 배경·그랩버·달력 요일·비활성 날짜 색이다.
+private val bottomSheetSurfaceColor = Color(0xFFF9FBFC)
+private val bottomSheetGrabHandleColor = Color(0xFFD5DAE3)
+private val calendarWeekdayTextColor = Color(0xFF8A93A3)
+private val calendarSundayTextColor = Color(0xFFE5484D)
+private val calendarDisabledTextColor = Color(0xFFC0C6D0)
+private val captionTextColor = Color(0xFF6B7280)
+
+// 프로필 사진 변경 시트(Figma 1867:1329)의 옵션 구분선, 취소 버튼 배경, 삭제 옵션 글자 색이다.
+private val sheetOptionDividerColor = Color(0xFFEEF1F5)
+private val sheetCancelContainerColor = Color(0xFFEEF1F5)
+private val sheetDestructiveTextColor = Color(0xFFE5484D)
+
 private val HeartGuardColorScheme =
     lightColorScheme(
         primary = primaryBlueColor,
@@ -289,6 +311,15 @@ private val heartGuardExtraColors =
         notificationMeta = notificationMetaColor,
         notificationRecordIcon = notificationRecordIconColor,
         notificationNeutralIcon = notificationNeutralIconColor,
+        bottomSheetSurface = bottomSheetSurfaceColor,
+        bottomSheetGrabHandle = bottomSheetGrabHandleColor,
+        calendarWeekdayText = calendarWeekdayTextColor,
+        calendarSundayText = calendarSundayTextColor,
+        calendarDisabledText = calendarDisabledTextColor,
+        captionText = captionTextColor,
+        sheetOptionDivider = sheetOptionDividerColor,
+        sheetCancelContainer = sheetCancelContainerColor,
+        sheetDestructiveText = sheetDestructiveTextColor,
     )
 
 /**
