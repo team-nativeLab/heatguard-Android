@@ -121,6 +121,7 @@ fun CallingScreen(
                     title = stringResource(R.string.emergency_call_end),
                     onClick = onEndClick,
                     enabled = !isUpdatingStatus,
+                    isLoading = isUpdatingStatus,
                     modifier = Modifier.padding(horizontal = HeartGuardSpacing.RecordContentHorizontal),
                 )
             } else {
@@ -128,6 +129,7 @@ fun CallingScreen(
                     title = stringResource(R.string.emergency_call_cancel),
                     onClick = onCancelClick,
                     enabled = !isUpdatingStatus,
+                    isLoading = isUpdatingStatus,
                     modifier =
                         Modifier
                             .padding(horizontal = HeartGuardSpacing.RecordContentHorizontal)
