@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -21,12 +22,16 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
 import com.nativelap.heartguard.ui.theme.extraColors
 import java.time.DayOfWeek
 import java.time.LocalDate
+
+// 숫자 원 아래부터 기록 점까지의 간격이다. Figma 날짜 격자 기준 3dp이며 이 칸에서만 쓴다.
+private val numberToDotGap = 3.dp
 
 @Composable
 internal fun RecordHistoryCalendarDayCell(
@@ -98,12 +103,14 @@ internal fun RecordHistoryCalendarDayCell(
                             },
                     ),
             )
-
-            RecordHistoryRecordDot(
-                hasRecord = hasRecord,
-                isSelected = isSelected,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
         }
+
+        Spacer(modifier = Modifier.height(numberToDotGap))
+
+        // 점은 선택 원 밖 아래에 그려져 선택 배경과 겹치지 않으므로 항상 primary 색을 쓴다.
+        RecordHistoryRecordDot(
+            hasRecord = hasRecord,
+            isSelected = false,
+        )
     }
 }

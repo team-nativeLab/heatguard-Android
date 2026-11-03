@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -45,9 +46,13 @@ fun RecordHistoryDatePickerSheet(
     HeartGuardFigmaBottomSheet(
         onDismissRequest = onDismissRequest,
     ) {
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.Card))
+
         Text(
             text = stringResource(R.string.history_date_picker_title),
+            modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
             style =
                 MaterialTheme.typography.titleLarge.copy(
                     fontSize = HeartGuardFontSize.DialogTitle,
@@ -64,9 +69,12 @@ fun RecordHistoryDatePickerSheet(
             onNextClick = { onMonthMoved(1) },
         )
 
-        Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.Card))
 
         RecordHistoryCalendarWeekdayRow()
+
+        // 요일 행과 날짜 격자 사이만 Figma 기준 4dp로 좁힌다.
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.Tight))
 
         RecordHistoryCalendarGrid(
             visibleMonth = visibleMonth,
@@ -80,7 +88,7 @@ fun RecordHistoryDatePickerSheet(
 
         RecordHistoryDateLegend()
 
-        Spacer(modifier = Modifier.height(HeartGuardSpacing.Section))
+        Spacer(modifier = Modifier.height(HeartGuardSpacing.Card))
 
         Button(
             onClick = { onDateConfirmed(draftDate) },

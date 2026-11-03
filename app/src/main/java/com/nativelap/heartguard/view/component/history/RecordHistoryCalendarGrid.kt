@@ -49,15 +49,20 @@ internal fun RecordHistoryCalendarGrid(
     }
 }
 
-/** 달력 칸을 월요일 시작 기준으로 만든다. 첫 날 앞과 마지막 주 뒤는 null(빈 칸)로 채워 7칸씩 끊어 쓸 수 있게 한다. */
+/**
+ * 달력 칸을 월요일 시작 기준으로 만든다. 달의 주 수와 관계없이 6주(42칸)로 채워 시트 높이가 달마다 바뀌지 않게 한다.
+ * 첫 날 앞과 뒤쪽 빈 칸은 null로 두고, 호출부가 7칸씩 끊어 쓴다.
+ */
 private fun calendarDayCells(visibleMonth: YearMonth): List<LocalDate?> {
     val leadingBlankCount = visibleMonth.atDay(1).dayOfWeek.value - 1
     val leadingCells: List<LocalDate?> = List(leadingBlankCount) { null }
     val monthCells: List<LocalDate?> = (1..visibleMonth.lengthOfMonth()).map { day -> visibleMonth.atDay(day) }
     val cells = leadingCells + monthCells
-    val trailingBlankCount = (DAYS_PER_WEEK - cells.size % DAYS_PER_WEEK) % DAYS_PER_WEEK
+    val trailingBlankCount = GRID_CELL_COUNT - cells.size
     val trailingCells: List<LocalDate?> = List(trailingBlankCount) { null }
     return cells + trailingCells
 }
 
 private const val DAYS_PER_WEEK = 7
+private const val GRID_WEEK_COUNT = 6
+private const val GRID_CELL_COUNT = DAYS_PER_WEEK * GRID_WEEK_COUNT
