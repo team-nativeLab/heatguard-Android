@@ -51,6 +51,10 @@ object HeartGuardSpacing {
     val HomeHeroIllustrationEnd = 15.dp
     val BadgeHorizontal = 10.dp
     val BadgeVertical = 5.dp
+
+    // 기록 내역 날짜 카드 '오늘' 칩의 글자 주변 여백이다. 가로 12dp·세로 2dp로 Figma 비율(약 2:1)에 맞춘다.
+    val TodayChipHorizontal = 12.dp
+    val TodayChipVertical = 2.dp
     val MenuDrawerHorizontal = 24.dp
     val MenuDrawerVertical = 24.dp
     val MenuItemVertical = 15.dp
@@ -222,9 +226,6 @@ object HeartGuardComponentSize {
 
     // Figma 기록 내역 주간 스트립 칸의 높이다. 칸 폭은 가용 폭을 7등분한다.
     val RecordDateStripCellHeight = 62.dp
-
-    // 기록 내역 날짜 카드의 '오늘' 칩 높이다. 누르는 영역은 TouchTarget(48dp)을 유지한다.
-    val RecordDateTodayChipHeight = 45.dp
 
     // Figma 프로필 사진 변경 시트의 옵션 행 높이와 취소 버튼 높이다.
     val SheetOptionHeight = 56.dp
