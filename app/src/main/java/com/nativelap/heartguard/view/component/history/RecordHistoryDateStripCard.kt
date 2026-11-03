@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -32,6 +33,9 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import java.time.LocalDate
+
+// '오늘' 칩 글자의 줄 높이다. Figma 1864:1391에서 칩 높이 22dp가 여백 4dp와 이 줄 높이로 나온다.
+private val TodayChipLineHeight = 14.sp
 
 /** 기록 내역 상단의 날짜 카드다. 첫 줄은 "2026년 9월"(누르면 날짜 선택 시트)과 "오늘" 칩이고, 아래는 선택한 날짜가 속한 주의 7칸 스트립이다. */
 @Composable
@@ -124,6 +128,7 @@ fun RecordHistoryDateStripCard(
                         style =
                             MaterialTheme.typography.labelLarge.copy(
                                 fontSize = HeartGuardFontSize.RecordDateChip,
+                                lineHeight = TodayChipLineHeight,
                                 fontWeight = FontWeight.Medium,
                             ),
                     )

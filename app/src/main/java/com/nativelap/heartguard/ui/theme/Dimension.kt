@@ -52,9 +52,9 @@ object HeartGuardSpacing {
     val BadgeHorizontal = 10.dp
     val BadgeVertical = 5.dp
 
-    // 기록 내역 날짜 카드 '오늘' 칩의 글자 주변 여백이다. 가로 12dp·세로 2dp로 Figma 비율(약 2:1)에 맞춘다.
-    val TodayChipHorizontal = 12.dp
-    val TodayChipVertical = 2.dp
+    // 기록 내역 날짜 카드 '오늘' 칩의 글자 주변 여백이다. Figma 1864:1391 기준 가로 10dp·세로 4dp다.
+    val TodayChipHorizontal = 10.dp
+    val TodayChipVertical = 4.dp
     val MenuDrawerHorizontal = 24.dp
     val MenuDrawerVertical = 24.dp
     val MenuItemVertical = 15.dp
