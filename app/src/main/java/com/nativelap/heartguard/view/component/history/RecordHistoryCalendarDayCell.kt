@@ -111,6 +111,7 @@ internal fun RecordHistoryCalendarDayCell(
         RecordHistoryRecordDot(
             hasRecord = hasRecord,
             isSelected = false,
+            dotSize = HeartGuardComponentSize.CalendarRecordDot,
         )
     }
 }
