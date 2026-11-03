@@ -98,7 +98,7 @@ fun RecordHistoryDateStripCard(
                     )
                 }
 
-                // 칩은 글자 높이만큼만 그리고, 누를 수 있는 영역은 48dp 높이를 유지한다.
+                // 칩은 45dp 높이로 그리고, 누를 수 있는 영역은 48dp 높이를 유지한다.
                 Box(
                     modifier =
                         Modifier
@@ -109,24 +109,27 @@ fun RecordHistoryDateStripCard(
                             ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = stringResource(R.string.history_today),
+                    Box(
                         modifier =
                             Modifier
-                                .padding(
-                                    horizontal = HeartGuardSpacing.BadgeHorizontal,
-                                    vertical = HeartGuardSpacing.Tight,
-                                ).background(
+                                .height(HeartGuardComponentSize.RecordDateTodayChipHeight)
+                                .padding(horizontal = HeartGuardSpacing.BadgeHorizontal)
+                                .background(
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     shape = RoundedCornerShape(HeartGuardRadius.Pill),
                                 ),
-                        color = MaterialTheme.colorScheme.primary,
-                        style =
-                            MaterialTheme.typography.labelLarge.copy(
-                                fontSize = HeartGuardFontSize.RecordDateChip,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.history_today),
+                            color = MaterialTheme.colorScheme.primary,
+                            style =
+                                MaterialTheme.typography.labelLarge.copy(
+                                    fontSize = HeartGuardFontSize.RecordDateChip,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                        )
+                    }
                 }
             }
 
