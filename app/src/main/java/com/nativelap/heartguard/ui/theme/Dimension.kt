@@ -217,6 +217,7 @@ object HeartGuardComponentSize {
     val CalendarDayHeight = 48.dp
     val CalendarWeekdayHeight = 20.dp
     val CalendarDaySelection = 34.dp
+    val CalendarRecordDot = 6.dp
     val RecordDateDot = 4.dp
 
     // Figma 기록 내역 주간 스트립 칸의 높이다. 칸 폭은 가용 폭을 7등분한다.
