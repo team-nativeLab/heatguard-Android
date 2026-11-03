@@ -48,6 +48,12 @@ internal fun RecordHistoryWeekDayCell(
             date.monthValue,
             date.dayOfMonth,
         )
+    val weekdayColor =
+        if (isSelected) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.extraColors.calendarWeekdayText
+        }
     val dateColor =
         when {
             isSelected -> MaterialTheme.colorScheme.onPrimary
@@ -80,7 +86,7 @@ internal fun RecordHistoryWeekDayCell(
     ) {
         Text(
             text = weekdayLabel,
-            color = MaterialTheme.extraColors.calendarWeekdayText,
+            color = weekdayColor,
             style =
                 MaterialTheme.typography.bodySmall.copy(
                     fontSize = HeartGuardFontSize.RecordDateStripWeekday,
