@@ -34,6 +34,10 @@ class SessionManager
         @Volatile
         private var restoredGeneration: Long? = null
 
+        // 복원 세션의 서버 확인을 끝낸 세대다. 프로세스 안에서만 기억해 Activity를 다시 열 때 확인을 반복하지 않는다.
+        @Volatile
+        private var startupCheckedGeneration: Long? = null
+
         // 로그인·로그아웃마다 세대가 바뀌므로, 상태가 빠르게 왕복해도 수집자가 계정 전환을 놓치지 않는다.
         private val mutableSessionSnapshot =
             MutableStateFlow(
@@ -95,6 +99,12 @@ class SessionManager
         fun isRestoredSession(): Boolean =
             mutableSessionState.value == SessionState.Authenticated &&
                 restoredGeneration == getSnapshot().generation
+
+        fun isStartupCheckDone(generation: Long): Boolean = startupCheckedGeneration == generation
+
+        fun markStartupCheckDone(generation: Long) {
+            startupCheckedGeneration = generation
+        }
 
         /** 저장된 토큰을 읽어 최초 세션을 정한다. 읽기·복호화가 실패하면 로그아웃 상태로 시작한다. */
         suspend fun initialize() {
