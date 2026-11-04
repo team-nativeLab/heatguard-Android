@@ -90,6 +90,9 @@ class HomeViewModel
 
         private var loadJob: Job? = null
 
+        // 진행 중인 조회를 시작한 세션 세대다. 계정이 바뀐 뒤 남은 이전 조회 때문에 새 조회를 건너뛰지 않게 한다.
+        private var loadJobGeneration: Long? = null
+
         // 홈 조회가 끝날 때마다 늘어난다. 응답 내용이 같아도 진행 중 긴급호출 이어받기를 다시 시도하는 기준으로 쓴다.
         private val mutableRefreshCompletionCount = MutableStateFlow(0)
         val refreshCompletionCount: StateFlow<Int> = mutableRefreshCompletionCount.asStateFlow()
@@ -107,7 +110,16 @@ class HomeViewModel
         /** 홈 정보와 오늘 기록을 조회한다. 로그인 직후처럼 이전 값이 없을 때 쓰며, 응답 전에는 모든 값을 "--"로 둔다. */
         fun loadTeamSiteOverview() {
             mutableUiState.value = HomeUiState.Loading
-            refresh()
+            startLoad(shouldRestartRunningLoad = true)
+        }
+
+        /** 메인 흐름이 처음 구성되거나 회전으로 다시 구성될 때 호출한다. 받은 값이 있거나 같은 세션의 조회가 진행 중이면 그대로 둔다. */
+        fun loadTeamSiteOverviewIfNeeded() {
+            if (mutableUiState.value is HomeUiState.Success || isLoadRunningForCurrentSession()) {
+                return
+            }
+            mutableUiState.value = HomeUiState.Loading
+            startLoad(shouldRestartRunningLoad = false)
         }
 
         /** 자정 이후에는 전날 완료 기록을 제거한 뒤 오늘 일정과 기록을 다시 불러온다. */
@@ -117,10 +129,23 @@ class HomeViewModel
         }
 
         /** 홈으로 돌아올 때(화면 재개·기록 저장 후) 호출한다. 이미 받은 값은 새 응답이 올 때까지 그대로 보여 깜빡이지 않게 하고,
-         * 새로 받은 결과로 바꾼다. 이전 값이 있는데 새 조회만 실패하면 이전 값을 유지하고 [HomeUiState.Error]로 바꾸지 않는다. */
+         * 새로 받은 결과로 바꾼다. 이전 값이 있는데 새 조회만 실패하면 이전 값을 유지하고 [HomeUiState.Error]로 바꾸지 않는다.
+         * 같은 세션의 조회가 이미 진행 중이면 취소하지 않고 그 결과를 기다린다. */
         fun refresh() {
+            startLoad(shouldRestartRunningLoad = false)
+        }
+
+        private fun isLoadRunningForCurrentSession(): Boolean =
+            loadJob?.isActive == true &&
+                loadJobGeneration == sessionManager.getSnapshot().generation
+
+        private fun startLoad(shouldRestartRunningLoad: Boolean) {
+            if (!shouldRestartRunningLoad && isLoadRunningForCurrentSession()) {
+                return
+            }
             loadJob?.cancel()
             val owningGeneration = sessionManager.getSnapshot().generation
+            loadJobGeneration = owningGeneration
             loadJob =
                 viewModelScope.launch {
                     val (fetchedRecordTimes, overviewResult) =
@@ -157,6 +182,7 @@ class HomeViewModel
         fun reset() {
             loadJob?.cancel()
             loadJob = null
+            loadJobGeneration = null
             mutableUiState.value = HomeUiState.Loading
             todayRecordTimes.value = emptyList()
         }

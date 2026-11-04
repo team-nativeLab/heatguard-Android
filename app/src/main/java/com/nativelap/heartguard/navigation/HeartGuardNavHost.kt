@@ -285,9 +285,8 @@ private fun HeartGuardMainNavDisplay(
     fun isLeavingMainFlow(): Boolean = hostActivity?.isChangingConfigurations != true
 
     DisposableEffect(homeViewModel) {
-        if (homeViewModel.uiState.value !is HomeUiState.Success) {
-            homeViewModel.loadTeamSiteOverview()
-        }
+        // 회전으로 다시 구성될 때 진행 중인 첫 조회를 취소·재시작하지 않는다.
+        homeViewModel.loadTeamSiteOverviewIfNeeded()
         onDispose {
             if (isLeavingMainFlow()) {
                 homeViewModel.reset()
