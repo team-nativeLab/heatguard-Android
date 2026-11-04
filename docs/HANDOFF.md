@@ -1,5 +1,16 @@
 # 작업 인계: Figma 미구현 화면
 
+## 2026-11-04: 앱 첫 실행 시 복원 세션 확인·홈 조회 중복 제거 (#260, Draft PR #261)
+
+- 작업 브랜치: `fix/#260-startup-session-check` (base `dev` cd9663e), 커밋 `bb24250`·`9929a17`·`14e9d61`. Draft PR #261은 CI 4개 통과, `mergeStateStatus=CLEAN`, 병합 전. 본문에 `Closes #260`, `Refs #253`.
+- 원인: (1) `SessionManager.initialize()`가 저장 토큰을 서버 확인 없이 Authenticated로 복원 → 홈 요청들이 401을 받을 때야 로그인으로 이동 (2) OkHttp 요청 전체 시간 제한(callTimeout) 없음 (3) NavHost DisposableEffect의 `loadTeamSiteOverview()`와 HomeRoute 재개 `refresh()`가 겹쳐 진행 중 조회를 취소·재시작.
+- 변경: `HeartGuardSessionViewModel`이 복원 세션을 프로세스당 세대별 1회 `GET /api/v1/auth/team/me`로 5초 제한 확인(`SessionManager.isStartupCheckDone/markStartupCheckDone`, 메모리만). 확인 전엔 TEAM_MEMBER 분기에서 `pendingAppLink`보다 먼저 IntroScreen. 401은 기존 Authenticator, errorCode가 있는 403은 `expireSession(복원 세대)`로 로그인. 그 외 실패·시간 초과는 홈 진행. `NetworkModule` 인증·비인증 클라이언트에 connect/read/write 10초 + call 20초. `HomeViewModel`은 같은 세대의 active job이 있으면 `refresh()`를 무시하고, NavHost는 `loadTeamSiteOverviewIfNeeded()`를 호출(회전 재시작 제거).
+- 검증: `:app:assembleDebug :app:lintDebug :app:testDebugUnitTest spotlessCheck` 성공, 단위 테스트 134개 실패 0. reviewer 사후 검토 CLEAN 2회, security-reviewer Critical/High/Medium 없음. 에뮬레이터에서는 로그아웃 상태 콜드 스타트만 확인.
+- 미확인(사용자가 직접 확인 예정): 로그인 상태 콜드 스타트, 만료 토큰 → 로그인, 오프라인 시작 5초 후 홈, 홈 로딩 중 회전, 재진입, 앱 링크 콜드 스타트 지연(최대 5초).
+- 서버 확인 필요: `/me` 403에 errorCode가 오는지(없으면 403도 홈 진행), 앱 링크 claim POST 멱등성(callTimeout 20초가 single-attempt 클라이언트에도 적용).
+- 열린 결정: Issue #260 본문 브랜치 자리표시자 수정(Issue 수정 승인 필요), PR #261 Ready 전환·병합(별도 승인), PR #254(진단 로그 Draft) 정리, 기록 제출 Idempotency-Key 후속 Issue.
+- 정리 대기: 로컬 브랜치 `claude/app-initial-load-data-issue-a2b103`는 사용하지 않음(삭제는 별도 승인).
+
 ## 2026-11-02: 긴급 호출 취소 후 멈춤 수정 (#244, PR #245)
 
 - 작업 브랜치: `fix/#244-emergency-cancel-feedback`, 커밋 `24ce8ac`. PR #245는 Merge Queue를 통해 `dev`에 병합됐고(병합 커밋 `7145781`), 이슈 #244는 자동으로 닫혔다.

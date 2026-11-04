@@ -83,6 +83,7 @@ internal fun HeartGuardNavHost(
     val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
     val sessionRole by sessionViewModel.sessionRole.collectAsStateWithLifecycle()
     val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
+    val isStartupCheckComplete by sessionViewModel.isStartupCheckComplete.collectAsStateWithLifecycle()
     val pendingAppLink by appLinkTokenViewModel.pendingLink.collectAsStateWithLifecycle()
 
     when (sessionState) {
@@ -102,7 +103,10 @@ internal fun HeartGuardNavHost(
 
                 SessionRole.TEAM_MEMBER,
                 -> {
-                    if (pendingAppLink == null) {
+                    if (!isStartupCheckComplete) {
+                        // 복원한 세션을 서버에 확인하는 동안(최대 5초) 홈 요청이 먼저 나가지 않게 인트로를 유지한다.
+                        IntroScreen()
+                    } else if (pendingAppLink == null) {
                         HeartGuardMainNavDisplay(
                             sessionGeneration = sessionGeneration,
                             appLinkTokenViewModel = appLinkTokenViewModel,
@@ -281,9 +285,8 @@ private fun HeartGuardMainNavDisplay(
     fun isLeavingMainFlow(): Boolean = hostActivity?.isChangingConfigurations != true
 
     DisposableEffect(homeViewModel) {
-        if (homeViewModel.uiState.value !is HomeUiState.Success) {
-            homeViewModel.loadTeamSiteOverview()
-        }
+        // 회전으로 다시 구성될 때 진행 중인 첫 조회를 취소·재시작하지 않는다.
+        homeViewModel.loadTeamSiteOverviewIfNeeded()
         onDispose {
             if (isLeavingMainFlow()) {
                 homeViewModel.reset()
