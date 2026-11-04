@@ -25,7 +25,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
-import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.HeartGuardBackHeader
 import com.nativelap.heartguard.view.component.photo.PhotoMemoField
 import com.nativelap.heartguard.view.component.photo.PhotoRetakeButton
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
@@ -49,8 +49,8 @@ fun RestPhotoScreen(
     hasRestTimeError: Boolean,
     onUploadClick: () -> Unit,
     isSaveEnabled: Boolean,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
 ) {
     Scaffold(
@@ -83,11 +83,10 @@ fun RestPhotoScreen(
                         .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
-                HeartGuardHeader(
+                HeartGuardBackHeader(
                     title = stringResource(R.string.brand_name),
-                    menuPainter = painterResource(R.drawable.menu_hamburger),
                     notificationPainter = painterResource(R.drawable.notification_bell),
-                    onMenuClick = onMenuClick,
+                    onBackClick = onBackClick,
                     onNotificationClick = onNotificationClick,
                 )
 
@@ -166,6 +165,7 @@ fun RestPhotoScreen(
 private fun RestPhotoScreenPreview() {
     HeartGuardTheme {
         RestPhotoScreen(
+            onBackClick = {},
             memo = "",
             selectedPhotoCount = 0,
             selectedPhotoUris = emptyList(),
