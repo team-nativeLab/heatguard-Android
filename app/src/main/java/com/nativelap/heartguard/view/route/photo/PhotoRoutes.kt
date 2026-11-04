@@ -29,7 +29,7 @@ internal fun HeartGuardFieldPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
-    onMenuClick: () -> Unit,
+    onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
@@ -61,7 +61,7 @@ internal fun HeartGuardFieldPhotoRoute(
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.TEMPERATURE) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
         FieldPhotoScreen(
-            onMenuClick = onMenuClick,
+            onBackClick = onBackClick,
             onNotificationClick = onNotificationClick,
             manualTemperature =
                 valueOrEmptyText(
@@ -95,7 +95,7 @@ internal fun HeartGuardWorkPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
-    onMenuClick: () -> Unit,
+    onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
@@ -118,7 +118,7 @@ internal fun HeartGuardWorkPhotoRoute(
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.WORK) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         WorkPhotoScreen(
-            onMenuClick = onMenuClick,
+            onBackClick = onBackClick,
             onNotificationClick = onNotificationClick,
             memo = draftState.workMemo,
             selectedPhotoCount = selectedPhotoUris.size,
@@ -142,7 +142,7 @@ internal fun HeartGuardRestPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
-    onMenuClick: () -> Unit,
+    onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
@@ -194,7 +194,7 @@ internal fun HeartGuardRestPhotoRoute(
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.REST) },
     ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         RestPhotoScreen(
-            onMenuClick = onMenuClick,
+            onBackClick = onBackClick,
             onNotificationClick = onNotificationClick,
             memo = draftState.restMemo,
             selectedPhotoCount = selectedPhotoUris.size,

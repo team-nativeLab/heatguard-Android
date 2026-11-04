@@ -24,7 +24,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
-import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.HeartGuardBackHeader
 import com.nativelap.heartguard.view.component.photo.PhotoCaptureRow
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 import com.nativelap.heartguard.view.component.temperature.TemperatureRecordCard
@@ -49,8 +49,8 @@ fun TemperatureRecordScreen(
     onManualInputChange: (Boolean) -> Unit,
     onFieldPhotoClick: () -> Unit,
     onSaveClick: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
 ) {
     Scaffold(
@@ -83,11 +83,10 @@ fun TemperatureRecordScreen(
                         .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
-                HeartGuardHeader(
+                HeartGuardBackHeader(
                     title = stringResource(R.string.brand_name),
-                    menuPainter = painterResource(R.drawable.menu_hamburger),
                     notificationPainter = painterResource(R.drawable.notification_bell),
-                    onMenuClick = onMenuClick,
+                    onBackClick = onBackClick,
                     onNotificationClick = onNotificationClick,
                 )
 
@@ -160,6 +159,7 @@ fun TemperatureRecordScreen(
 private fun TemperatureRecordScreenPreview() {
     HeartGuardTheme {
         TemperatureRecordScreen(
+            onBackClick = {},
             currentTemperature = "47.5°C",
             humidity = "55%",
             feelsLikeTemperature = "40.5°C",
@@ -182,6 +182,7 @@ private fun TemperatureRecordScreenPreview() {
 private fun TemperatureRecordScreenCheckedPreview() {
     HeartGuardTheme {
         TemperatureRecordScreen(
+            onBackClick = {},
             currentTemperature = "--",
             humidity = "--",
             feelsLikeTemperature = "--",
@@ -204,6 +205,7 @@ private fun TemperatureRecordScreenCheckedPreview() {
 private fun TemperatureRecordScreenCompactPreview() {
     HeartGuardTheme {
         TemperatureRecordScreen(
+            onBackClick = {},
             currentTemperature = "47.5°C",
             humidity = "55%",
             feelsLikeTemperature = "40.5°C",
@@ -226,6 +228,7 @@ private fun TemperatureRecordScreenCompactPreview() {
 private fun TemperatureRecordScreenMediumPreview() {
     HeartGuardTheme {
         TemperatureRecordScreen(
+            onBackClick = {},
             currentTemperature = "47.5°C",
             humidity = "55%",
             feelsLikeTemperature = "40.5°C",

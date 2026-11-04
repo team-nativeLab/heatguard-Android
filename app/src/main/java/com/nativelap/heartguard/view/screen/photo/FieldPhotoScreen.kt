@@ -24,7 +24,7 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 import com.nativelap.heartguard.view.component.BottomActionBar
-import com.nativelap.heartguard.view.component.HeartGuardHeader
+import com.nativelap.heartguard.view.component.HeartGuardBackHeader
 import com.nativelap.heartguard.view.component.photo.PhotoCaptureRow
 import com.nativelap.heartguard.view.component.photo.PhotoPreviewPlaceholder
 import com.nativelap.heartguard.view.component.photo.PhotoScreenIntro
@@ -47,8 +47,8 @@ fun FieldPhotoScreen(
     onCaptureClick: () -> Unit,
     onRemovePhoto: (Uri) -> Unit,
     onSaveClick: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onMenuClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
 ) {
     Scaffold(
@@ -81,11 +81,10 @@ fun FieldPhotoScreen(
                         .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Section),
             ) {
-                HeartGuardHeader(
+                HeartGuardBackHeader(
                     title = stringResource(R.string.brand_name),
-                    menuPainter = painterResource(R.drawable.menu_hamburger),
                     notificationPainter = painterResource(R.drawable.notification_bell),
-                    onMenuClick = onMenuClick,
+                    onBackClick = onBackClick,
                     onNotificationClick = onNotificationClick,
                 )
 
@@ -169,6 +168,7 @@ fun FieldPhotoScreen(
 private fun FieldPhotoScreenPreview() {
     HeartGuardTheme {
         FieldPhotoScreen(
+            onBackClick = {},
             manualTemperature = "47.5",
             manualHumidity = "55",
             selectedPhotoUris = emptyList(),
@@ -186,6 +186,7 @@ private fun FieldPhotoScreenPreview() {
 private fun FieldPhotoScreenSaveErrorPreview() {
     HeartGuardTheme {
         FieldPhotoScreen(
+            onBackClick = {},
             manualTemperature = "--",
             manualHumidity = "--",
             selectedPhotoUris = emptyList(),

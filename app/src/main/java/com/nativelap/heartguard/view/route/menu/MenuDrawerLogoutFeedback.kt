@@ -11,7 +11,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
 
-/** 진행 중 긴급 호출이 끝나지 않아 로그아웃이 막히면 안내한다. 드로어를 띄우는 Route마다 한 번 호출한다. */
+/** 진행 중 긴급 호출이 끝나지 않아 로그아웃이 막히면 안내한다. 메뉴 드로어를 띄우는 Route(현재 홈)마다 한 번 호출한다. */
 @Composable
 internal fun CollectMenuDrawerLogoutBlocked(menuDrawerViewModel: MenuDrawerViewModel) {
     val context = LocalContext.current

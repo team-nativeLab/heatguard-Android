@@ -62,7 +62,7 @@ internal fun HeartGuardTemperatureRecordRoute(
     onFieldPhotoClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
-    onMenuClick: () -> Unit,
+    onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
@@ -76,7 +76,7 @@ internal fun HeartGuardTemperatureRecordRoute(
         )
 
     TemperatureRecordScreen(
-        onMenuClick = onMenuClick,
+        onBackClick = onBackClick,
         onNotificationClick = onNotificationClick,
         currentTemperature = temperatureValueText(siteStatus.temperature),
         humidity = humidityValueText(siteStatus.humidity),

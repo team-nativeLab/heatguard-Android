@@ -47,7 +47,6 @@ import com.nativelap.heartguard.view.route.home.HomeHeadquartersCallConfirmation
 import com.nativelap.heartguard.view.route.home.HomeHeadquartersContactRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRegistrationRoute
 import com.nativelap.heartguard.view.route.inquiry.HeartGuardInquiryRoute
-import com.nativelap.heartguard.view.route.menu.MenuDrawerHost
 import com.nativelap.heartguard.view.route.notification.HeartGuardTeamNotificationsRoute
 import com.nativelap.heartguard.view.route.password.HeartGuardPasswordChangeRoute
 import com.nativelap.heartguard.view.route.photo.HeartGuardFieldPhotoRoute
@@ -138,7 +137,7 @@ internal fun HeartGuardNavHost(
     }
 }
 
-private fun shouldConfirmRecordExit(backStack: List<NavKey>): Boolean {
+internal fun shouldConfirmRecordExit(backStack: List<NavKey>): Boolean {
     val currentDestination = backStack.lastOrNull() as? HeartGuardDestination
     val previousDestination = backStack.getOrNull(backStack.lastIndex - 1) as? HeartGuardDestination
 
@@ -880,88 +879,44 @@ private fun HeartGuardMainNavDisplay(
                     )
                 }
                 entry<HeartGuardDestination.TemperatureRecord> {
-                    MenuDrawerHost(
-                        onHomeClick = ::leaveRecordFlow,
-                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                        onSiteSelectionClick = {
-                            backStack.add(HeartGuardDestination.TeamSiteSelection)
+                    HeartGuardTemperatureRecordRoute(
+                        onBackClick = ::goBack,
+                        onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                        recordDraftViewModel = recordDraftViewModel,
+                        homeViewModel = homeViewModel,
+                        onFieldPhotoClick = {
+                            backStack.add(HeartGuardDestination.FieldPhoto)
                         },
-                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                    ) { onMenuClick, onNotificationClick ->
-                        HeartGuardTemperatureRecordRoute(
-                            onMenuClick = onMenuClick,
-                            onNotificationClick = onNotificationClick,
-                            recordDraftViewModel = recordDraftViewModel,
-                            homeViewModel = homeViewModel,
-                            onFieldPhotoClick = {
-                                backStack.add(HeartGuardDestination.FieldPhoto)
-                            },
-                            onSaveSuccess = ::goToSaveSuccess,
-                            onSaveFailure = ::goToSaveFailure,
-                        )
-                    }
+                        onSaveSuccess = ::goToSaveSuccess,
+                        onSaveFailure = ::goToSaveFailure,
+                    )
                 }
                 entry<HeartGuardDestination.FieldPhoto> {
-                    MenuDrawerHost(
-                        onHomeClick = ::leaveRecordFlow,
-                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                        onSiteSelectionClick = {
-                            backStack.add(HeartGuardDestination.TeamSiteSelection)
-                        },
-                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                    ) { onMenuClick, onNotificationClick ->
-                        HeartGuardFieldPhotoRoute(
-                            onMenuClick = onMenuClick,
-                            onNotificationClick = onNotificationClick,
-                            recordDraftViewModel = recordDraftViewModel,
-                            onSaveSuccess = ::goToSaveSuccess,
-                            onSaveFailure = ::goToSaveFailure,
-                        )
-                    }
+                    HeartGuardFieldPhotoRoute(
+                        onBackClick = ::goBack,
+                        onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                        recordDraftViewModel = recordDraftViewModel,
+                        onSaveSuccess = ::goToSaveSuccess,
+                        onSaveFailure = ::goToSaveFailure,
+                    )
                 }
                 entry<HeartGuardDestination.WorkPhoto> {
-                    MenuDrawerHost(
-                        onHomeClick = ::leaveRecordFlow,
-                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                        onSiteSelectionClick = {
-                            backStack.add(HeartGuardDestination.TeamSiteSelection)
-                        },
-                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                    ) { onMenuClick, onNotificationClick ->
-                        HeartGuardWorkPhotoRoute(
-                            onMenuClick = onMenuClick,
-                            onNotificationClick = onNotificationClick,
-                            recordDraftViewModel = recordDraftViewModel,
-                            onSaveSuccess = ::goToSaveSuccess,
-                            onSaveFailure = ::goToSaveFailure,
-                        )
-                    }
+                    HeartGuardWorkPhotoRoute(
+                        onBackClick = ::goBack,
+                        onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                        recordDraftViewModel = recordDraftViewModel,
+                        onSaveSuccess = ::goToSaveSuccess,
+                        onSaveFailure = ::goToSaveFailure,
+                    )
                 }
                 entry<HeartGuardDestination.RestPhoto> {
-                    MenuDrawerHost(
-                        onHomeClick = ::leaveRecordFlow,
-                        onProfileEditClick = { backStack.add(HeartGuardDestination.ProfileEdit) },
-                        onInquiryClick = { backStack.add(HeartGuardDestination.Inquiry) },
-                        onSiteSelectionClick = {
-                            backStack.add(HeartGuardDestination.TeamSiteSelection)
-                        },
-                        onWithdrawClick = { backStack.add(HeartGuardDestination.WithdrawNotice) },
-                        onNotificationsClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
-                    ) { onMenuClick, onNotificationClick ->
-                        HeartGuardRestPhotoRoute(
-                            onMenuClick = onMenuClick,
-                            onNotificationClick = onNotificationClick,
-                            recordDraftViewModel = recordDraftViewModel,
-                            onSaveSuccess = ::goToSaveSuccess,
-                            onSaveFailure = ::goToSaveFailure,
-                        )
-                    }
+                    HeartGuardRestPhotoRoute(
+                        onBackClick = ::goBack,
+                        onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
+                        recordDraftViewModel = recordDraftViewModel,
+                        onSaveSuccess = ::goToSaveSuccess,
+                        onSaveFailure = ::goToSaveFailure,
+                    )
                 }
                 // 저장 성공 시트는 스와이프로 닫혀 입력 화면으로 돌아가 같은 기록을 다시 저장하지 않도록 버튼으로만 닫는다.
                 entry<HeartGuardDestination.SaveSuccess>(
