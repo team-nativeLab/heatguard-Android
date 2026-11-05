@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.nativelap.heartguard.core.session.AppLinkTokenStore
 import com.nativelap.heartguard.navigation.HeartGuardNavHost
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
@@ -19,11 +20,15 @@ import javax.inject.Inject
  * 만들려는 모든 곳에서 런타임에 크래시한다. */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private var isStartupContentReady = false
+
     @Inject
     lateinit var appLinkTokenStore: AppLinkTokenStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition { !isStartupContentReady }
         acceptIncomingLink(intent)
         enableEdgeToEdge(
             statusBarStyle =
@@ -40,7 +45,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             HeartGuardTheme {
                 KeyboardDismissContainer {
-                    HeartGuardNavHost()
+                    HeartGuardNavHost(
+                        onStartupContentReady = {
+                            isStartupContentReady = true
+                        },
+                    )
                 }
             }
         }
