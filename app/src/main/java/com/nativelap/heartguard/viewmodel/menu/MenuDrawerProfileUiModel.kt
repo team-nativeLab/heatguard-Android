@@ -11,6 +11,7 @@ data class MenuDrawerProfileUiModel(
     val email: String? = null,
     val companyName: String? = null,
     val photoUrl: String? = null,
+    val photoMemoryCacheKey: String? = null,
 ) {
     // 아바타 원 안에 보여줄 이름 첫 글자이며, 이름이 없으면 빈 문자열이다.
     val avatarInitial: String

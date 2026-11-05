@@ -33,6 +33,7 @@ class WorkerProfileRepositoryImpl
         private val profilePhotoFileReader: ProfilePhotoFileReader,
         private val externalUploadService: ExternalUploadService,
         private val sessionManager: SessionManager,
+        private val workerProfilePhotoUrlCache: WorkerProfilePhotoUrlCache,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : WorkerProfileRepository {
         override suspend fun getWorkerProfile(expectedSessionGeneration: Long?): ApiResult<WorkerProfile> =
@@ -74,12 +75,25 @@ class WorkerProfileRepositoryImpl
             }
         }
 
-        override suspend fun getProfilePhoto(expectedSessionGeneration: Long): ApiResult<ProfilePhoto?> =
-            workerProfileRemoteDataSource
-                .getProfilePhoto(expectedSessionGeneration)
-                .map { photoResponse ->
-                    photoResponse.profilePhotoToDomain().takeIf { photo -> !photo.photoUrl.isNullOrBlank() }
-                }
+        override suspend fun getProfilePhoto(expectedSessionGeneration: Long): ApiResult<ProfilePhoto?> {
+            if (!isCurrentTeamSession(expectedSessionGeneration)) {
+                return ApiResult.Failure(ApiError.SessionChanged)
+            }
+            return workerProfilePhotoUrlCache.getOrFetch(
+                sessionGeneration = expectedSessionGeneration,
+                isSessionCurrent = { isCurrentTeamSession(expectedSessionGeneration) },
+            ) {
+                workerProfileRemoteDataSource
+                    .getProfilePhoto(expectedSessionGeneration)
+                    .map { photoResponse ->
+                        photoResponse.profilePhotoToDomain().takeIf { photo -> !photo.photoUrl.isNullOrBlank() }
+                    }
+            }
+        }
+
+        override fun clearCachedProfilePhoto(sessionGeneration: Long) {
+            workerProfilePhotoUrlCache.clearSession(sessionGeneration)
+        }
 
         override suspend fun uploadProfilePhoto(
             photoUri: String,
@@ -150,14 +164,26 @@ class WorkerProfileRepositoryImpl
                 .confirmProfilePhotoUpload(
                     uploadId = uploadLink.uploadId,
                     expectedSessionGeneration = expectedSessionGeneration,
-                ).map { photoResponse -> photoResponse.profilePhotoToDomain() }
+                ).map { photoResponse ->
+                    val confirmedPhoto = photoResponse.profilePhotoToDomain()
+                    workerProfilePhotoUrlCache.updateAfterPhotoChange(
+                        sessionGeneration = expectedSessionGeneration,
+                        photo = confirmedPhoto,
+                        isSessionCurrent = { isCurrentTeamSession(expectedSessionGeneration) },
+                    )
+                    confirmedPhoto
+                }
         }
 
         override suspend fun deleteProfilePhoto(expectedSessionGeneration: Long): ApiResult<Unit> {
             if (!isCurrentTeamSession(expectedSessionGeneration)) {
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
-            return workerProfileRemoteDataSource.deleteProfilePhoto(expectedSessionGeneration)
+            val deleteResult = workerProfileRemoteDataSource.deleteProfilePhoto(expectedSessionGeneration)
+            if (deleteResult is ApiResult.Success && isCurrentTeamSession(expectedSessionGeneration)) {
+                workerProfilePhotoUrlCache.invalidate(expectedSessionGeneration)
+            }
+            return deleteResult
         }
 
         private fun isCurrentTeamSession(expectedSessionGeneration: Long): Boolean {

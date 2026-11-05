@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
+import com.nativelap.heartguard.core.util.ProfilePhotoMemoryCache
 import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
+import com.nativelap.heartguard.domain.profile.usecase.ClearWorkerProfilePhotoCacheUseCase
 import com.nativelap.heartguard.domain.profile.usecase.DeleteWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
@@ -15,7 +17,6 @@ import com.nativelap.heartguard.domain.profile.usecase.UpdateWorkerNameUseCase
 import com.nativelap.heartguard.domain.profile.usecase.UploadWorkerProfilePhotoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -37,6 +38,8 @@ class ProfileEditViewModel
         private val uploadWorkerProfilePhotoUseCase: UploadWorkerProfilePhotoUseCase,
         private val deleteWorkerProfilePhotoUseCase: DeleteWorkerProfilePhotoUseCase,
         private val sessionManager: SessionManager,
+        private val profilePhotoMemoryCache: ProfilePhotoMemoryCache,
+        private val clearWorkerProfilePhotoCacheUseCase: ClearWorkerProfilePhotoCacheUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ProfileEditUiState())
         val uiState: StateFlow<ProfileEditUiState> = _uiState.asStateFlow()
@@ -60,6 +63,8 @@ class ProfileEditViewModel
         fun loadProfile() {
             val currentSessionGeneration = sessionManager.getSnapshot().generation
             if (profileSessionGeneration != currentSessionGeneration) {
+                profilePhotoMemoryCache.clearSession(profileSessionGeneration)
+                clearWorkerProfilePhotoCacheUseCase(profileSessionGeneration)
                 _uiState.value = ProfileEditUiState()
                 profileSessionGeneration = currentSessionGeneration
             }
@@ -67,37 +72,30 @@ class ProfileEditViewModel
             saveProfileJob?.cancel()
             _uiState.value = ProfileEditUiState(profilePhotoUri = _uiState.value.profilePhotoUri)
             val expectedSessionGeneration = profileSessionGeneration
+            val expectedPhotoRevision =
+                profilePhotoMemoryCache.revisionFor(expectedSessionGeneration)
             loadProfileJob =
                 viewModelScope.launch {
-                    val (profileResult, photoResult) =
-                        coroutineScope {
-                            val profile =
-                                async {
-                                    getWorkerProfileUseCase(expectedSessionGeneration)
-                                }
-                            val photo =
-                                async {
-                                    getWorkerProfilePhotoUseCase(expectedSessionGeneration)
-                                }
-                            profile.await() to photo.await()
-                        }
-                    when (profileResult) {
-                        is ApiResult.Success -> {
-                            if (!applyLoadedProfile(profileResult.value, expectedSessionGeneration)) {
-                                return@launch
-                            }
-                            when (photoResult) {
+                    var didProfileLoadFail = false
+                    var didPhotoLookupFail = false
+                    coroutineScope {
+                        launch {
+                            when (val profileResult = getWorkerProfileUseCase(expectedSessionGeneration)) {
                                 is ApiResult.Success -> {
-                                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                                        clearStateIfSessionChanged(expectedSessionGeneration)
+                                    if (!applyLoadedProfile(profileResult.value, expectedSessionGeneration)) {
                                         return@launch
                                     }
-                                    _uiState.value =
-                                        _uiState.value.copy(
-                                            profilePhotoUrl = photoResult.value?.photoUrl,
+                                    if (didPhotoLookupFail &&
+                                        isCurrentProfileSession(expectedSessionGeneration) &&
+                                        profilePhotoMemoryCache.isCurrentRevision(
+                                            expectedRevision = expectedPhotoRevision,
+                                            sessionGeneration = expectedSessionGeneration,
                                         )
-                                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                                        clearStateIfSessionChanged(expectedSessionGeneration)
+                                    ) {
+                                        _uiState.value =
+                                            _uiState.value.copy(
+                                                profilePhotoSaveError = ProfilePhotoSaveError.LOAD_FAILED,
+                                            )
                                     }
                                 }
 
@@ -106,28 +104,57 @@ class ProfileEditViewModel
                                         clearStateIfSessionChanged(expectedSessionGeneration)
                                         return@launch
                                     }
+                                    didProfileLoadFail = true
                                     _uiState.value =
-                                        _uiState.value.copy(
-                                            profilePhotoSaveError = ProfilePhotoSaveError.LOAD_FAILED,
-                                        )
-                                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                                        clearStateIfSessionChanged(expectedSessionGeneration)
-                                    }
+                                        _uiState.value.copy(loadState = ProfileLoadState.Failed)
                                 }
                             }
                         }
+                        launch {
+                            when (val photoResult = getWorkerProfilePhotoUseCase(expectedSessionGeneration)) {
+                                is ApiResult.Success -> {
+                                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                                        clearStateIfSessionChanged(expectedSessionGeneration)
+                                        return@launch
+                                    }
+                                    if (profilePhotoMemoryCache.isCurrentRevision(
+                                            expectedRevision = expectedPhotoRevision,
+                                            sessionGeneration = expectedSessionGeneration,
+                                        )
+                                    ) {
+                                        _uiState.value =
+                                            _uiState.value.copy(
+                                                profilePhotoUrl = photoResult.value?.photoUrl,
+                                                profilePhotoMemoryCacheKey =
+                                                    profilePhotoMemoryCache.keyFor(
+                                                        photoUrl = photoResult.value?.photoUrl,
+                                                        sessionGeneration = expectedSessionGeneration,
+                                                        imageVariant = PROFILE_EDIT_IMAGE_VARIANT,
+                                                    ),
+                                            )
+                                    }
+                                }
 
-                        is ApiResult.Failure -> {
-                            if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                                clearStateIfSessionChanged(expectedSessionGeneration)
-                                return@launch
-                            }
-                            _uiState.value =
-                                _uiState.value.copy(
-                                    loadState = ProfileLoadState.Failed,
-                                )
-                            if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                                clearStateIfSessionChanged(expectedSessionGeneration)
+                                is ApiResult.Failure -> {
+                                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                                        clearStateIfSessionChanged(expectedSessionGeneration)
+                                        return@launch
+                                    }
+                                    if (!profilePhotoMemoryCache.isCurrentRevision(
+                                            expectedRevision = expectedPhotoRevision,
+                                            sessionGeneration = expectedSessionGeneration,
+                                        )
+                                    ) {
+                                        return@launch
+                                    }
+                                    didPhotoLookupFail = true
+                                    if (!didProfileLoadFail && _uiState.value.loadState is ProfileLoadState.Loaded) {
+                                        _uiState.value =
+                                            _uiState.value.copy(
+                                                profilePhotoSaveError = ProfilePhotoSaveError.LOAD_FAILED,
+                                            )
+                                    }
+                                }
                             }
                         }
                     }
@@ -275,9 +302,16 @@ class ProfileEditViewModel
                                         } else {
                                             latestState.profilePhotoUri
                                         }
+                                    profilePhotoMemoryCache.invalidateSessionPhoto(expectedSessionGeneration)
                                     _uiState.value =
                                         latestState.copy(
                                             profilePhotoUrl = photoResult.value.photoUrl,
+                                            profilePhotoMemoryCacheKey =
+                                                profilePhotoMemoryCache.keyFor(
+                                                    photoUrl = photoResult.value.photoUrl,
+                                                    sessionGeneration = expectedSessionGeneration,
+                                                    imageVariant = PROFILE_EDIT_IMAGE_VARIANT,
+                                                ),
                                             profilePhotoUri = remainingPhotoUri,
                                             shouldDeleteProfilePhoto = false,
                                             profilePhotoSaveError = null,
@@ -323,9 +357,11 @@ class ProfileEditViewModel
                                         } else {
                                             latestState.shouldDeleteProfilePhoto
                                         }
+                                    profilePhotoMemoryCache.invalidateSessionPhoto(expectedSessionGeneration)
                                     _uiState.value =
                                         latestState.copy(
                                             profilePhotoUrl = null,
+                                            profilePhotoMemoryCacheKey = null,
                                             shouldDeleteProfilePhoto = remainingDeletionRequest,
                                             profilePhotoSaveError = null,
                                         )
@@ -405,6 +441,7 @@ class ProfileEditViewModel
                     nameInput = workerProfile.name.orEmpty(),
                     profilePhotoUri = _uiState.value.profilePhotoUri,
                     profilePhotoUrl = _uiState.value.profilePhotoUrl,
+                    profilePhotoMemoryCacheKey = _uiState.value.profilePhotoMemoryCacheKey,
                     shouldDeleteProfilePhoto = _uiState.value.shouldDeleteProfilePhoto,
                     profilePhotoSaveError = _uiState.value.profilePhotoSaveError,
                     isSaving = _uiState.value.isSaving,
@@ -442,7 +479,13 @@ class ProfileEditViewModel
             saveProfileJob?.cancel()
             loadProfileJob = null
             saveProfileJob = null
+            profilePhotoMemoryCache.clearSession(profileSessionGeneration)
+            clearWorkerProfilePhotoCacheUseCase(profileSessionGeneration)
             _uiState.value = ProfileEditUiState()
             profileSessionGeneration = sessionManager.getSnapshot().generation
+        }
+
+        private companion object {
+            const val PROFILE_EDIT_IMAGE_VARIANT = "profile-edit"
         }
     }

@@ -2,7 +2,6 @@ package com.nativelap.heartguard.view.screen.profile
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -76,13 +75,24 @@ fun ProfileEditScreen(
 
             val loadedProfile = loadState as? ProfileLoadState.Loaded
             if (loadState == ProfileLoadState.Loading) {
-                Box(
+                Column(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
+                            .fillMaxWidth()
+                            .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
                 ) {
+                    ProfileAvatarHeader(
+                        userName = null,
+                        photoUri = profilePhotoUri,
+                        photoUrl = uiState.profilePhotoUrl,
+                        photoMemoryCacheKey = uiState.profilePhotoMemoryCacheKey,
+                        onPhotoClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
+                        onAvatarClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
+                        isPhotoChangeEnabled = false,
+                    )
                     CircularProgressIndicator()
                 }
             } else {
@@ -100,6 +110,7 @@ fun ProfileEditScreen(
                         userName = loadedProfile?.userName,
                         photoUri = profilePhotoUri,
                         photoUrl = uiState.profilePhotoUrl,
+                        photoMemoryCacheKey = uiState.profilePhotoMemoryCacheKey,
                         onPhotoClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
                         onAvatarClick = { onEvent(ProfileEditScreenEvent.ProfilePhotoClicked) },
                         isPhotoChangeEnabled = uiState.canChangeProfilePhoto,
