@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -102,7 +103,7 @@ fun RecordHistoryDateStripCard(
                     )
                 }
 
-                // 칩 배경은 글자 줄 높이에 위아래 여백을 더한 크기이고, 누를 수 있는 영역은 48dp 높이를 유지한다.
+                // 배경 크기와 터치 영역을 분리해 디자인 크기와 접근성 타깃을 모두 유지한다.
                 Box(
                     modifier =
                         Modifier
@@ -113,25 +114,30 @@ fun RecordHistoryDateStripCard(
                             ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = stringResource(R.string.history_today),
+                    Box(
                         modifier =
                             Modifier
-                                .padding(
-                                    horizontal = HeartGuardSpacing.TodayChipHorizontal,
-                                    vertical = HeartGuardSpacing.TodayChipVertical,
-                                ).background(
+                                .sizeIn(
+                                    minWidth = HeartGuardComponentSize.TodayChipMinWidth,
+                                    minHeight = HeartGuardComponentSize.TodayChipMinHeight,
+                                )
+                                .background(
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     shape = RoundedCornerShape(HeartGuardRadius.Pill),
                                 ),
-                        color = MaterialTheme.colorScheme.primary,
-                        style =
-                            MaterialTheme.typography.labelLarge.copy(
-                                fontSize = HeartGuardFontSize.RecordDateChip,
-                                lineHeight = TodayChipLineHeight,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.history_today),
+                            color = MaterialTheme.colorScheme.primary,
+                            style =
+                                MaterialTheme.typography.labelLarge.copy(
+                                    fontSize = HeartGuardFontSize.RecordDateChip,
+                                    lineHeight = TodayChipLineHeight,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                        )
+                    }
                 }
             }
 
