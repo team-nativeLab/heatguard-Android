@@ -10,6 +10,7 @@ data class ProfileEditUiState(
     val nameInput: String = "",
     val profilePhotoUri: Uri? = null,
     val profilePhotoUrl: String? = null,
+    val profilePhotoMemoryCacheKey: String? = null,
     val shouldDeleteProfilePhoto: Boolean = false,
     val profilePhotoSaveError: ProfilePhotoSaveError? = null,
     val isSaving: Boolean = false,
@@ -29,7 +30,7 @@ data class ProfileEditUiState(
 
     // 저장 중에는 사진을 고르거나 지우지 않는다. 업로드가 촬영 파일을 읽는 중일 수 있다.
     val canChangeProfilePhoto: Boolean
-        get() = !isSaving
+        get() = !isSaving && loadState is ProfileLoadState.Loaded
 
     // "기본 이미지로 변경"을 눌렀을 때 할 동작이다. 서버 사진 여부와 미저장 선택 사진 여부로 정한다.
     val defaultPhotoAction: ProfileDefaultPhotoAction

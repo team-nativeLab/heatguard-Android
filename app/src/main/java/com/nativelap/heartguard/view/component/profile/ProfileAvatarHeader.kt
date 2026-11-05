@@ -14,10 +14,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardFontSize
@@ -39,6 +43,7 @@ fun ProfileAvatarHeader(
     modifier: Modifier = Modifier,
     photoUri: Uri? = null,
     photoUrl: String? = null,
+    photoMemoryCacheKey: String? = null,
     onPhotoClick: (() -> Unit)? = null,
     onAvatarClick: (() -> Unit)? = null,
     isPhotoChangeEnabled: Boolean = true,
@@ -47,6 +52,7 @@ fun ProfileAvatarHeader(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val context = LocalContext.current
         Box(
             modifier =
                 Modifier
@@ -65,7 +71,21 @@ fun ProfileAvatarHeader(
         ) {
             if (photoUri != null || !photoUrl.isNullOrBlank()) {
                 SubcomposeAsyncImage(
-                    model = photoUri ?: photoUrl,
+                    model =
+                        remember(context, photoUri, photoUrl, photoMemoryCacheKey) {
+                            ImageRequest
+                                .Builder(context)
+                                .data(photoUri ?: photoUrl)
+                                .memoryCacheKey(photoMemoryCacheKey.takeIf { photoUri == null })
+                                .memoryCachePolicy(
+                                    if (shouldCacheProfilePhotoInMemory(photoUri != null)) {
+                                        CachePolicy.ENABLED
+                                    } else {
+                                        CachePolicy.DISABLED
+                                    },
+                                ).diskCachePolicy(CachePolicy.DISABLED)
+                                .build()
+                        },
                     contentDescription = stringResource(R.string.profile_photo_preview),
                     modifier = Modifier.size(HeartGuardComponentSize.ProfileAvatar).clip(CircleShape),
                     contentScale = ContentScale.Crop,
@@ -133,6 +153,8 @@ private fun AvatarInitial(userName: String?) {
             ),
     )
 }
+
+internal fun shouldCacheProfilePhotoInMemory(hasLocalPhotoUri: Boolean): Boolean = !hasLocalPhotoUri
 
 @Preview(showBackground = true, widthDp = 360)
 @Composable

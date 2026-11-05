@@ -62,7 +62,8 @@ fun MenuDrawerProfile(
                         ImageRequest
                             .Builder(LocalContext.current)
                             .data(photoUrl)
-                            .memoryCachePolicy(CachePolicy.DISABLED)
+                            .memoryCacheKey(profile.photoMemoryCacheKey)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
                             .diskCachePolicy(CachePolicy.DISABLED)
                             .build(),
                     contentDescription = stringResource(R.string.menu_profile_photo_description),

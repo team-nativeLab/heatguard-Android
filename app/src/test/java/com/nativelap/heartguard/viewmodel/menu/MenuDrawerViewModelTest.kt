@@ -7,6 +7,9 @@ import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionToken
 import com.nativelap.heartguard.core.session.TokenStorage
+import com.nativelap.heartguard.core.util.NoOpProfilePhotoMemoryCache
+import com.nativelap.heartguard.core.util.ProfilePhotoMemoryCache
+import com.nativelap.heartguard.core.util.RevisionedProfilePhotoMemoryCache
 import com.nativelap.heartguard.domain.auth.model.TeamLoginResult
 import com.nativelap.heartguard.domain.auth.repository.TeamAuthRepository
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
@@ -22,6 +25,7 @@ import com.nativelap.heartguard.domain.profile.model.ProfilePhoto
 import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
+import com.nativelap.heartguard.domain.profile.usecase.ClearWorkerProfilePhotoCacheUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
 import kotlinx.coroutines.CompletableDeferred
@@ -116,6 +120,87 @@ class MenuDrawerViewModelTest {
         }
 
     @Test
+    fun `photo response is applied before worker profile lookup completes`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val profileStarted = CompletableDeferred<Unit>()
+            val profileResult = CompletableDeferred<ApiResult<WorkerProfile>>()
+            val repository = FakeWorkerProfileRepository()
+            repository.profileRequest = {
+                profileStarted.complete(Unit)
+                profileResult.await()
+            }
+            repository.photoRequest = {
+                ApiResult.Success(ProfilePhoto("https://images.example.test/current-photo", null))
+            }
+            val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
+            val viewModelStore = ViewModelStore()
+
+            try {
+                val viewModel = createViewModel(repository, sessionManager, viewModelStore)
+                runCurrent()
+                viewModel.loadProfile()
+                runCurrent()
+
+                assertTrue(profileStarted.isCompleted)
+                assertEquals("https://images.example.test/current-photo", viewModel.profile.value.photoUrl)
+                assertNull(viewModel.profile.value.userName)
+
+                profileResult.complete(ApiResult.Success(testProfile))
+                runCurrent()
+
+                assertEquals(testProfile.name, viewModel.profile.value.userName)
+                assertEquals("https://images.example.test/current-photo", viewModel.profile.value.photoUrl)
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `late photo response after photo revision changes is ignored`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val photoStarted = CompletableDeferred<Unit>()
+            val photoResult = CompletableDeferred<ApiResult<ProfilePhoto?>>()
+            val repository = FakeWorkerProfileRepository()
+            repository.photoRequest = {
+                photoStarted.complete(Unit)
+                photoResult.await()
+            }
+            val sessionManager = createAuthenticatedSession(StandardTestDispatcher(testScheduler))
+            val profilePhotoMemoryCache = RevisionedProfilePhotoMemoryCache()
+            val viewModelStore = ViewModelStore()
+
+            try {
+                val viewModel =
+                    createViewModel(
+                        repository = repository,
+                        sessionManager = sessionManager,
+                        viewModelStore = viewModelStore,
+                        profilePhotoMemoryCache = profilePhotoMemoryCache,
+                    )
+                runCurrent()
+
+                viewModel.loadProfile()
+                runCurrent()
+                profilePhotoMemoryCache.invalidateSessionPhoto(sessionManager.getSnapshot().generation)
+                photoResult.complete(
+                    ApiResult.Success(ProfilePhoto("https://images.example.test/old-photo", null)),
+                )
+                runCurrent()
+
+                assertTrue(photoStarted.isCompleted)
+                assertEquals(testProfile.name, viewModel.profile.value.userName)
+                assertNull(viewModel.profile.value.photoUrl)
+                assertNull(viewModel.profile.value.photoMemoryCacheKey)
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
     fun `response from previous session is not applied after account changes`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -203,6 +288,7 @@ class MenuDrawerViewModelTest {
         viewModelStore: ViewModelStore,
         emergencyCallRepository: EmergencyCallRepository = NoCallEmergencyCallRepository(),
         ownedEmergencyCall: OwnedEmergencyCall = OwnedEmergencyCall(),
+        profilePhotoMemoryCache: ProfilePhotoMemoryCache = NoOpProfilePhotoMemoryCache,
     ): MenuDrawerViewModel {
         val viewModel =
             MenuDrawerViewModel(
@@ -214,6 +300,8 @@ class MenuDrawerViewModelTest {
                         EndActiveEmergencyCallUseCase(emergencyCallRepository, ownedEmergencyCall),
                     ),
                 sessionManager = sessionManager,
+                profilePhotoMemoryCache = profilePhotoMemoryCache,
+                clearWorkerProfilePhotoCacheUseCase = ClearWorkerProfilePhotoCacheUseCase(repository),
             )
         viewModelStore.put("menu-drawer", viewModel)
         return viewModel

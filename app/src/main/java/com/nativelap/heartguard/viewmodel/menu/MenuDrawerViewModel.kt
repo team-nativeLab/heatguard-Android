@@ -5,13 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
+import com.nativelap.heartguard.core.util.ProfilePhotoMemoryCache
 import com.nativelap.heartguard.domain.auth.usecase.TeamLogoutUseCase
+import com.nativelap.heartguard.domain.profile.usecase.ClearWorkerProfilePhotoCacheUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,8 @@ class MenuDrawerViewModel
         private val getWorkerProfilePhotoUseCase: GetWorkerProfilePhotoUseCase,
         private val teamLogoutUseCase: TeamLogoutUseCase,
         private val sessionManager: SessionManager,
+        private val profilePhotoMemoryCache: ProfilePhotoMemoryCache,
+        private val clearWorkerProfilePhotoCacheUseCase: ClearWorkerProfilePhotoCacheUseCase,
     ) : ViewModel() {
         private val _profile = MutableStateFlow(MenuDrawerProfileUiModel())
         val profile: StateFlow<MenuDrawerProfileUiModel> = _profile.asStateFlow()
@@ -58,58 +61,87 @@ class MenuDrawerViewModel
         fun loadProfile() {
             val expectedSessionGeneration = sessionManager.getSnapshot().generation
             if (profileSessionGeneration != expectedSessionGeneration) {
+                profilePhotoMemoryCache.clearSession(profileSessionGeneration)
+                clearWorkerProfilePhotoCacheUseCase(profileSessionGeneration)
                 _profile.value = MenuDrawerProfileUiModel()
                 profileSessionGeneration = expectedSessionGeneration
+            }
+            val expectedPhotoRevision =
+                profilePhotoMemoryCache.revisionFor(expectedSessionGeneration)
+            val currentPhotoUrl = _profile.value.photoUrl
+            if (currentPhotoUrl != null &&
+                !profilePhotoMemoryCache.isCurrentKey(
+                    cacheKey = _profile.value.photoMemoryCacheKey,
+                    sessionGeneration = expectedSessionGeneration,
+                )
+            ) {
+                _profile.value =
+                    _profile.value.copy(
+                        photoUrl = null,
+                        photoMemoryCacheKey = null,
+                    )
             }
             loadProfileJob?.cancel()
             loadProfileJob =
                 viewModelScope.launch {
-                    val (profileResult, photoResult) =
-                        coroutineScope {
-                            val profileRequest =
-                                async {
-                                    getWorkerProfileUseCase(expectedSessionGeneration)
+                    coroutineScope {
+                        launch {
+                            val profileResult = getWorkerProfileUseCase(expectedSessionGeneration)
+                            if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                                clearProfileIfSessionChanged(expectedSessionGeneration)
+                                return@launch
+                            }
+                            if (profileResult is ApiResult.Success) {
+                                _profile.value =
+                                    _profile.value.copy(
+                                        userName = profileResult.value.name,
+                                        email = profileResult.value.email,
+                                        companyName = profileResult.value.companyName,
+                                    )
+                                if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                                    clearProfileIfSessionChanged(expectedSessionGeneration)
                                 }
-                            val photoRequest =
-                                async {
-                                    getWorkerProfilePhotoUseCase(expectedSessionGeneration)
+                            }
+                        }
+                        launch {
+                            val photoResult = getWorkerProfilePhotoUseCase(expectedSessionGeneration)
+                            if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                                clearProfileIfSessionChanged(expectedSessionGeneration)
+                                return@launch
+                            }
+                            if (profilePhotoMemoryCache.isCurrentRevision(
+                                    expectedRevision = expectedPhotoRevision,
+                                    sessionGeneration = expectedSessionGeneration,
+                                )
+                            ) {
+                                when (photoResult) {
+                                    is ApiResult.Success -> {
+                                        val photoCacheKey =
+                                            profilePhotoMemoryCache.keyFor(
+                                                photoUrl = photoResult.value?.photoUrl,
+                                                sessionGeneration = expectedSessionGeneration,
+                                                imageVariant = MENU_PROFILE_IMAGE_VARIANT,
+                                            )
+                                        _profile.value =
+                                            _profile.value.copy(
+                                                photoUrl = photoResult.value?.photoUrl,
+                                                photoMemoryCacheKey = photoCacheKey,
+                                            )
+                                    }
+
+                                    is ApiResult.Failure -> {
+                                        _profile.value =
+                                            _profile.value.copy(
+                                                photoUrl = null,
+                                                photoMemoryCacheKey = null,
+                                            )
+                                    }
                                 }
-                            profileRequest.await() to photoRequest.await()
+                            }
+                            if (!isCurrentProfileSession(expectedSessionGeneration)) {
+                                clearProfileIfSessionChanged(expectedSessionGeneration)
+                            }
                         }
-                    if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                        clearProfileIfSessionChanged(expectedSessionGeneration)
-                        return@launch
-                    }
-                    if (profileResult is ApiResult.Success) {
-                        _profile.value =
-                            _profile.value.copy(
-                                userName = profileResult.value.name,
-                                email = profileResult.value.email,
-                                companyName = profileResult.value.companyName,
-                            )
-                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                            clearProfileIfSessionChanged(expectedSessionGeneration)
-                            return@launch
-                        }
-                    }
-                    if (photoResult is ApiResult.Success) {
-                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                            clearProfileIfSessionChanged(expectedSessionGeneration)
-                            return@launch
-                        }
-                        _profile.value =
-                            _profile.value.copy(
-                                photoUrl = photoResult.value?.photoUrl,
-                            )
-                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                            clearProfileIfSessionChanged(expectedSessionGeneration)
-                        }
-                    } else {
-                        if (!isCurrentProfileSession(expectedSessionGeneration)) {
-                            clearProfileIfSessionChanged(expectedSessionGeneration)
-                            return@launch
-                        }
-                        _profile.value = _profile.value.copy(photoUrl = null)
                     }
                 }
         }
@@ -152,6 +184,8 @@ class MenuDrawerViewModel
         private fun clearProfile() {
             loadProfileJob?.cancel()
             loadProfileJob = null
+            profilePhotoMemoryCache.clearSession(profileSessionGeneration)
+            clearWorkerProfilePhotoCacheUseCase(profileSessionGeneration)
             _profile.value = MenuDrawerProfileUiModel()
             profileSessionGeneration = sessionManager.getSnapshot().generation
         }
@@ -169,6 +203,10 @@ class MenuDrawerViewModel
             ) {
                 clearProfile()
             }
+        }
+
+        private companion object {
+            const val MENU_PROFILE_IMAGE_VARIANT = "menu"
         }
     }
 

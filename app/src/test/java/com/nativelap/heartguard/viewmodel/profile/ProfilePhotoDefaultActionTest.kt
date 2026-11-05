@@ -5,6 +5,16 @@ import kotlin.test.assertEquals
 
 class ProfilePhotoDefaultActionTest {
     @Test
+    fun `profile photo change is disabled before profile has loaded`() {
+        assertEquals(false, ProfileEditUiState().canChangeProfilePhoto)
+        assertEquals(
+            true,
+            ProfileEditUiState(loadState = ProfileLoadState.Loaded("작업자", "worker@example.test"))
+                .canChangeProfilePhoto,
+        )
+    }
+
+    @Test
     fun `server photo exists asks for deletion confirmation`() {
         val action =
             resolveProfilePhotoDefaultAction(

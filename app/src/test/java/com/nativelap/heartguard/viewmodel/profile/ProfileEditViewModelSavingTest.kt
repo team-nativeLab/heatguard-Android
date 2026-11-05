@@ -5,11 +5,13 @@ import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionToken
 import com.nativelap.heartguard.core.session.TokenStorage
+import com.nativelap.heartguard.core.util.NoOpProfilePhotoMemoryCache
 import com.nativelap.heartguard.domain.profile.model.PasswordChangeResult
 import com.nativelap.heartguard.domain.profile.model.ProfilePhoto
 import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
+import com.nativelap.heartguard.domain.profile.usecase.ClearWorkerProfilePhotoCacheUseCase
 import com.nativelap.heartguard.domain.profile.usecase.DeleteWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfilePhotoUseCase
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
@@ -194,6 +196,8 @@ class ProfileEditViewModelSavingTest {
             uploadWorkerProfilePhotoUseCase = UploadWorkerProfilePhotoUseCase(repository),
             deleteWorkerProfilePhotoUseCase = DeleteWorkerProfilePhotoUseCase(repository),
             sessionManager = sessionManager,
+            profilePhotoMemoryCache = NoOpProfilePhotoMemoryCache,
+            clearWorkerProfilePhotoCacheUseCase = ClearWorkerProfilePhotoCacheUseCase(repository),
         )
     }
 

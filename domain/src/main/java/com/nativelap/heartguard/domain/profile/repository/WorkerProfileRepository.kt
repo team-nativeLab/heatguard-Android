@@ -22,6 +22,9 @@ interface WorkerProfileRepository {
 
     suspend fun getProfilePhoto(expectedSessionGeneration: Long): ApiResult<ProfilePhoto?>
 
+    /** 세션 종료 시 보관 중인 프로필 사진 조회 URL을 동기적으로 제거한다. */
+    fun clearCachedProfilePhoto(sessionGeneration: Long) = Unit
+
     suspend fun uploadProfilePhoto(
         photoUri: String,
         expectedSessionGeneration: Long,
