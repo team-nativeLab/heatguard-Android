@@ -120,8 +120,7 @@ fun RecordHistoryDateStripCard(
                                 .sizeIn(
                                     minWidth = HeartGuardComponentSize.TodayChipMinWidth,
                                     minHeight = HeartGuardComponentSize.TodayChipMinHeight,
-                                )
-                                .background(
+                                ).background(
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     shape = RoundedCornerShape(HeartGuardRadius.Pill),
                                 ),
