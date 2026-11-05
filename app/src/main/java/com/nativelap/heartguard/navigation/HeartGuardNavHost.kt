@@ -7,6 +7,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,7 +59,6 @@ import com.nativelap.heartguard.view.route.record.HeartGuardTemperatureRecordRou
 import com.nativelap.heartguard.view.route.record.RecordCancelConfirmRoute
 import com.nativelap.heartguard.view.route.site.AppAccountSitesRoute
 import com.nativelap.heartguard.view.route.site.SiteUnlinkConfirmationRoute
-import com.nativelap.heartguard.view.screen.intro.IntroScreen
 import com.nativelap.heartguard.viewmodel.account.WithdrawViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistRoundsViewModel
 import com.nativelap.heartguard.viewmodel.checklist.ChecklistViewModel
@@ -76,6 +76,7 @@ import com.nativelap.heartguard.viewmodel.site.AppAccountSitesViewModel
  * (BearerTokenAuthenticator가 expireSession()을 호출한 경우 포함) 자동으로 로그인 화면으로 돌아간다. */
 @Composable
 internal fun HeartGuardNavHost(
+    onStartupContentReady: () -> Unit,
     sessionViewModel: HeartGuardSessionViewModel = hiltViewModel(),
     appLinkTokenViewModel: AppLinkTokenViewModel = hiltViewModel(),
 ) {
@@ -86,9 +87,8 @@ internal fun HeartGuardNavHost(
     val pendingAppLink by appLinkTokenViewModel.pendingLink.collectAsStateWithLifecycle()
 
     when (sessionState) {
-        // 앱 시작 직후 저장된 토큰 확인이 끝나기 전까지는 인트로 로고를 보여 준다.
         SessionState.Initializing -> {
-            IntroScreen()
+            // Android 시스템 스플래시를 유지한다.
         }
 
         SessionState.Authenticated -> {
@@ -97,19 +97,20 @@ internal fun HeartGuardNavHost(
                     LaunchedEffect(sessionGeneration) {
                         sessionViewModel.expireLegacyAppAccountSession()
                     }
-                    IntroScreen()
                 }
 
                 SessionRole.TEAM_MEMBER,
                 -> {
                     if (!isStartupCheckComplete) {
-                        // 복원한 세션을 서버에 확인하는 동안(최대 5초) 홈 요청이 먼저 나가지 않게 인트로를 유지한다.
-                        IntroScreen()
+                        // 복원 세션 확인이 끝날 때까지 Android 시스템 스플래시를 유지한다.
                     } else if (pendingAppLink == null) {
                         HeartGuardMainNavDisplay(
                             sessionGeneration = sessionGeneration,
                             appLinkTokenViewModel = appLinkTokenViewModel,
                         )
+                        SideEffect {
+                            onStartupContentReady()
+                        }
                     } else {
                         HeartGuardPhoneNumberRoute(
                             pendingAppLink = requireNotNull(pendingAppLink),
@@ -122,17 +123,20 @@ internal fun HeartGuardNavHost(
                             onSessionRequired = sessionViewModel::expireTeamMemberSession,
                             isAppAccountSession = false,
                         )
+                        SideEffect {
+                            onStartupContentReady()
+                        }
                     }
                 }
 
                 null -> {
-                    IntroScreen()
+                    // 세션 역할이 정해질 때까지 Android 시스템 스플래시를 유지한다.
                 }
             }
         }
 
         SessionState.Unauthenticated -> {
-            HeartGuardAuthNavDisplay()
+            HeartGuardAuthNavDisplay(onStartupContentReady)
         }
     }
 }
@@ -169,7 +173,7 @@ private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
 
 /** 사전 발급 계정 로그인과 인증 전 Navigation 3 back stack을 담당한다. */
 @Composable
-private fun HeartGuardAuthNavDisplay() {
+private fun HeartGuardAuthNavDisplay(onStartupContentReady: () -> Unit) {
     val backStack = rememberNavBackStack(HeartGuardDestination.Login)
     var isBackStackReady by remember { mutableStateOf(false) }
 
@@ -185,7 +189,6 @@ private fun HeartGuardAuthNavDisplay() {
     }
 
     if (!isBackStackReady) {
-        IntroScreen()
         return
     }
 
@@ -248,6 +251,10 @@ private fun HeartGuardAuthNavDisplay() {
                 }
             },
     )
+
+    SideEffect {
+        onStartupContentReady()
+    }
 }
 
 /** 로그인 이후의 홈·기록·긴급 호출 흐름을 단일 Navigation 3 back stack으로 연결한다. */
