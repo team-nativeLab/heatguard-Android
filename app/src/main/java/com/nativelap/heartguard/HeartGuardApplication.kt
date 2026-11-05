@@ -8,7 +8,9 @@ import coil3.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class HeartGuardApplication : Application(), SingletonImageLoader.Factory {
+class HeartGuardApplication :
+    Application(),
+    SingletonImageLoader.Factory {
     override fun newImageLoader(context: Context): ImageLoader =
         ImageLoader
             .Builder(context)

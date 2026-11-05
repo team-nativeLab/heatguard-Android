@@ -11,7 +11,5 @@ import javax.inject.Singleton
 abstract class ProfilePhotoMemoryCacheModule {
     @Binds
     @Singleton
-    abstract fun bindProfilePhotoMemoryCache(
-        implementation: CoilProfilePhotoMemoryCache,
-    ): ProfilePhotoMemoryCache
+    abstract fun bindProfilePhotoMemoryCache(implementation: CoilProfilePhotoMemoryCache): ProfilePhotoMemoryCache
 }

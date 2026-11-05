@@ -42,8 +42,7 @@ internal class RevisionedProfilePhotoMemoryCache : ProfilePhotoMemoryCache {
         keyRevisionsBySession[sessionGeneration] = keyRevisionFor(sessionGeneration) + 1L
     }
 
-    override fun revisionFor(sessionGeneration: Long): Long =
-        revisionsBySession[sessionGeneration] ?: 0L
+    override fun revisionFor(sessionGeneration: Long): Long = revisionsBySession[sessionGeneration] ?: 0L
 
     override fun isCurrentRevision(
         expectedRevision: Long,
@@ -60,6 +59,5 @@ internal class RevisionedProfilePhotoMemoryCache : ProfilePhotoMemoryCache {
         keyRevisionsBySession.remove(sessionGeneration)
     }
 
-    private fun keyRevisionFor(sessionGeneration: Long): Long =
-        keyRevisionsBySession[sessionGeneration] ?: 0L
+    private fun keyRevisionFor(sessionGeneration: Long): Long = keyRevisionsBySession[sessionGeneration] ?: 0L
 }

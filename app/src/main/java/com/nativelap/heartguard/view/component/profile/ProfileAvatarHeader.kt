@@ -83,8 +83,7 @@ fun ProfileAvatarHeader(
                                     } else {
                                         CachePolicy.DISABLED
                                     },
-                                )
-                                .diskCachePolicy(CachePolicy.DISABLED)
+                                ).diskCachePolicy(CachePolicy.DISABLED)
                                 .build()
                         },
                     contentDescription = stringResource(R.string.profile_photo_preview),

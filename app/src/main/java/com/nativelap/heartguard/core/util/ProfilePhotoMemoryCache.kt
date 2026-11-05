@@ -199,7 +199,11 @@ internal class ProfilePhotoBitmapKeyStore(
         if (scheme != HTTPS_SCHEME || host.isBlank()) {
             return null
         }
-        val port = uri.port.takeIf { it != NO_PORT }?.let { ":$it" }.orEmpty()
+        val port =
+            uri.port
+                .takeIf { it != NO_PORT }
+                ?.let { ":$it" }
+                .orEmpty()
         return "$scheme://$host$port${uri.rawPath.orEmpty()}"
     }
 

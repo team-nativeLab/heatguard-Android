@@ -2,8 +2,8 @@ package com.nativelap.heartguard.data.profile.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.profile.model.ProfilePhoto
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import java.net.URI
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -43,18 +43,28 @@ class WorkerProfilePhotoUrlCache
             return when (selection) {
                 is LookupSelection.Follow -> {
                     when (val outcome = selection.flight.awaitOutcome()) {
-                        is FlightOutcome.Completed -> outcome.apiResult
-                        is FlightOutcome.Failed -> throw outcome.exception
-                        FlightOutcome.RetryAfterOwnerCancellation ->
+                        is FlightOutcome.Completed -> {
+                            outcome.apiResult
+                        }
+
+                        is FlightOutcome.Failed -> {
+                            throw outcome.exception
+                        }
+
+                        FlightOutcome.RetryAfterOwnerCancellation -> {
                             getOrFetch(sessionGeneration, isSessionCurrent, fetch)
+                        }
                     }
                 }
-                is LookupSelection.Fetch -> fetchAndShare(
-                    sessionGeneration = sessionGeneration,
-                    isSessionCurrent = isSessionCurrent,
-                    fetch = fetch,
-                    flight = selection.flight,
-                )
+
+                is LookupSelection.Fetch -> {
+                    fetchAndShare(
+                        sessionGeneration = sessionGeneration,
+                        isSessionCurrent = isSessionCurrent,
+                        fetch = fetch,
+                        flight = selection.flight,
+                    )
+                }
             }
         }
 
@@ -212,15 +222,23 @@ class WorkerProfilePhotoUrlCache
         }
 
         private sealed interface LookupSelection {
-            data class Fetch(val flight: InFlightPhotoLookup) : LookupSelection
+            data class Fetch(
+                val flight: InFlightPhotoLookup,
+            ) : LookupSelection
 
-            data class Follow(val flight: InFlightPhotoLookup) : LookupSelection
+            data class Follow(
+                val flight: InFlightPhotoLookup,
+            ) : LookupSelection
         }
 
         private sealed interface FlightOutcome {
-            data class Completed(val apiResult: ApiResult<ProfilePhoto?>) : FlightOutcome
+            data class Completed(
+                val apiResult: ApiResult<ProfilePhoto?>,
+            ) : FlightOutcome
 
-            data class Failed(val exception: Throwable) : FlightOutcome
+            data class Failed(
+                val exception: Throwable,
+            ) : FlightOutcome
 
             data object RetryAfterOwnerCancellation : FlightOutcome
         }

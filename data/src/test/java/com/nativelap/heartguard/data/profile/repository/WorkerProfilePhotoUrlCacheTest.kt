@@ -1,7 +1,7 @@
 package com.nativelap.heartguard.data.profile.repository
 
-import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.ApiError
+import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.domain.profile.model.ProfilePhoto
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -47,7 +47,9 @@ class WorkerProfilePhotoUrlCacheTest {
             ),
         )
         assertFalse(cache.storeIfCurrentRevision(ProfilePhoto(" ", "invalid"), SESSION, 0L, now))
-        assertFalse(cache.storeIfCurrentRevision(ProfilePhoto("http://images.example/profile", "invalid"), SESSION, 0L, now))
+        assertFalse(
+            cache.storeIfCurrentRevision(ProfilePhoto("http://images.example/profile", "invalid"), SESSION, 0L, now),
+        )
         assertNull(cache.get(SESSION, now))
     }
 
@@ -63,24 +65,25 @@ class WorkerProfilePhotoUrlCacheTest {
     }
 
     @Test
-    fun `cached lookup skips remote fetch`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
-        var fetchCount = 0
-        cache.storeIfCurrentRevision(photo, SESSION, 0L)
+    fun `cached lookup skips remote fetch`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
+            var fetchCount = 0
+            cache.storeIfCurrentRevision(photo, SESSION, 0L)
 
-        val result =
-            cache.getOrFetch(
-                sessionGeneration = SESSION,
-                isSessionCurrent = { true },
-            ) {
-                fetchCount += 1
-                ApiResult.Success(null)
-            }
+            val result =
+                cache.getOrFetch(
+                    sessionGeneration = SESSION,
+                    isSessionCurrent = { true },
+                ) {
+                    fetchCount += 1
+                    ApiResult.Success(null)
+                }
 
-        assertEquals(ApiResult.Success(photo), result)
-        assertEquals(0, fetchCount)
-    }
+            assertEquals(ApiResult.Success(photo), result)
+            assertEquals(0, fetchCount)
+        }
 
     @Test
     fun `confirmed photo change refreshes and deletion invalidates cached URL`() {
@@ -104,20 +107,21 @@ class WorkerProfilePhotoUrlCacheTest {
     }
 
     @Test
-    fun `late response cannot restore URL after invalidation`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val oldPhoto = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
+    fun `late response cannot restore URL after invalidation`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val oldPhoto = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
 
-        cache.getOrFetch(
-            sessionGeneration = SESSION,
-            isSessionCurrent = { true },
-        ) {
-            cache.invalidate(SESSION)
-            ApiResult.Success(oldPhoto)
+            cache.getOrFetch(
+                sessionGeneration = SESSION,
+                isSessionCurrent = { true },
+            ) {
+                cache.invalidate(SESSION)
+                ApiResult.Success(oldPhoto)
+            }
+
+            assertNull(cache.get(SESSION))
         }
-
-        assertNull(cache.get(SESSION))
-    }
 
     @Test
     fun `session clear removes revision state and rejects stale response`() {
@@ -150,184 +154,193 @@ class WorkerProfilePhotoUrlCacheTest {
     }
 
     @Test
-    fun `invalidation detaches old flight and opens a new flight`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val oldFetchStarted = CompletableDeferred<Unit>()
-        val releaseOldFetch = CompletableDeferred<Unit>()
-        val oldPhoto = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
-        val newPhoto =
-            ProfilePhoto(
-                photoUrl = "https://images.example.test/replacement?signature=new",
-                expiresAt = Instant.now().plus(2, ChronoUnit.HOURS).toString(),
-            )
-        val oldFetch =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                cache.getOrFetch(SESSION, { true }) {
-                    oldFetchStarted.complete(Unit)
-                    releaseOldFetch.await()
-                    ApiResult.Success(oldPhoto)
+    fun `invalidation detaches old flight and opens a new flight`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val oldFetchStarted = CompletableDeferred<Unit>()
+            val releaseOldFetch = CompletableDeferred<Unit>()
+            val oldPhoto = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
+            val newPhoto =
+                ProfilePhoto(
+                    photoUrl = "https://images.example.test/replacement?signature=new",
+                    expiresAt = Instant.now().plus(2, ChronoUnit.HOURS).toString(),
+                )
+            val oldFetch =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    cache.getOrFetch(SESSION, { true }) {
+                        oldFetchStarted.complete(Unit)
+                        releaseOldFetch.await()
+                        ApiResult.Success(oldPhoto)
+                    }
                 }
-            }
-        oldFetchStarted.await()
+            oldFetchStarted.await()
 
-        cache.invalidate(SESSION)
-        var newFetchCount = 0
-        val newResult =
-            cache.getOrFetch(SESSION, { true }) {
-                newFetchCount += 1
-                ApiResult.Success(newPhoto)
-            }
-        releaseOldFetch.complete(Unit)
+            cache.invalidate(SESSION)
+            var newFetchCount = 0
+            val newResult =
+                cache.getOrFetch(SESSION, { true }) {
+                    newFetchCount += 1
+                    ApiResult.Success(newPhoto)
+                }
+            releaseOldFetch.complete(Unit)
 
-        assertEquals(ApiResult.Success(newPhoto), newResult)
-        assertEquals(ApiResult.Success(oldPhoto), oldFetch.await())
-        assertEquals(1, newFetchCount)
-        assertEquals(newPhoto, cache.get(SESSION))
-    }
-
-    @Test
-    fun `concurrent cache misses share one successful fetch`() = runBlocking {
-        val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
-
-        assertConcurrentLookupsShareResult(ApiResult.Success(photo), expectCached = true)
-    }
-
-    @Test
-    fun `concurrent null result is shared but not cached`() = runBlocking {
-        assertConcurrentLookupsShareResult(ApiResult.Success(null), expectCached = false)
-    }
-
-    @Test
-    fun `concurrent failure result is shared but not cached`() = runBlocking {
-        assertConcurrentLookupsShareResult(ApiResult.Failure(ApiError.Network), expectCached = false)
-    }
-
-    @Test
-    fun `concurrent near expiry result is shared but not cached`() = runBlocking {
-        val photo = profilePhoto(expiry = Instant.now().plusSeconds(30))
-
-        assertConcurrentLookupsShareResult(ApiResult.Success(photo), expectCached = false)
-    }
-
-    @Test
-    fun `concurrent fetch exception is shared and rethrown`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val fetchStarted = CompletableDeferred<Unit>()
-        val releaseFetch = CompletableDeferred<Unit>()
-        val expectedException = IllegalStateException("remote fetch failed")
-        var fetchCount = 0
-        val fetch: suspend () -> ApiResult<ProfilePhoto?> = {
-            fetchCount += 1
-            fetchStarted.complete(Unit)
-            releaseFetch.await()
-            throw expectedException
+            assertEquals(ApiResult.Success(newPhoto), newResult)
+            assertEquals(ApiResult.Success(oldPhoto), oldFetch.await())
+            assertEquals(1, newFetchCount)
+            assertEquals(newPhoto, cache.get(SESSION))
         }
 
-        val first =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                runCatching {
-                    cache.getOrFetch(SESSION, { true }, fetch)
-                }
-            }
-        fetchStarted.await()
-        val second =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                runCatching {
-                    cache.getOrFetch(SESSION, { true }, fetch)
-                }
-            }
-        releaseFetch.complete(Unit)
+    @Test
+    fun `concurrent cache misses share one successful fetch`() =
+        runBlocking {
+            val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
 
-        assertEquals(expectedException, first.await().exceptionOrNull())
-        assertEquals(expectedException, second.await().exceptionOrNull())
-        assertEquals(1, fetchCount)
-    }
+            assertConcurrentLookupsShareResult(ApiResult.Success(photo), expectCached = true)
+        }
 
     @Test
-    fun `cancelled flight owner does not cancel waiter and waiter retries`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val fetchStarted = CompletableDeferred<Unit>()
-        val expectedCancellation = CancellationException("flight owner cancelled")
-        var waiterFetchCount = 0
-        val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
-        val owner =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                cache.getOrFetch(SESSION, { true }) {
-                    fetchStarted.complete(Unit)
-                    awaitCancellation()
-                }
-            }
-        fetchStarted.await()
-        val waiter =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                cache.getOrFetch(SESSION, { true }) {
-                    waiterFetchCount += 1
-                    ApiResult.Success(photo)
-                }
-            }
-
-        owner.cancel(expectedCancellation)
-        owner.join()
-
-        assertEquals(ApiResult.Success(photo), waiter.await())
-        assertEquals(1, waiterFetchCount)
-        assertEquals(photo, cache.get(SESSION))
-    }
+    fun `concurrent null result is shared but not cached`() =
+        runBlocking {
+            assertConcurrentLookupsShareResult(ApiResult.Success(null), expectCached = false)
+        }
 
     @Test
-    fun `cancelled waiter does not cancel active owner fetch`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val fetchStarted = CompletableDeferred<Unit>()
-        val releaseFetch = CompletableDeferred<Unit>()
-        val expectedCancellation = CancellationException("waiter cancelled")
-        var fetchCount = 0
-        val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
-        val owner =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                cache.getOrFetch(SESSION, { true }) {
-                    fetchCount += 1
-                    fetchStarted.complete(Unit)
-                    releaseFetch.await()
-                    ApiResult.Success(photo)
-                }
-            }
-        fetchStarted.await()
-        val waiter =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                cache.getOrFetch(SESSION, { true }) {
-                    fetchCount += 1
-                    ApiResult.Success(null)
-                }
-            }
-
-        waiter.cancel(expectedCancellation)
-        waiter.join()
-        releaseFetch.complete(Unit)
-
-        assertTrue(waiter.isCancelled)
-        assertEquals(ApiResult.Success(photo), owner.await())
-        assertEquals(1, fetchCount)
-    }
+    fun `concurrent failure result is shared but not cached`() =
+        runBlocking {
+            assertConcurrentLookupsShareResult(ApiResult.Failure(ApiError.Network), expectCached = false)
+        }
 
     @Test
-    fun `owner cancellation is rethrown to owner`() = runBlocking {
-        val cache = WorkerProfilePhotoUrlCache()
-        val fetchStarted = CompletableDeferred<Unit>()
-        val expectedCancellation = CancellationException("owner cancelled")
-        val owner =
-            async(start = CoroutineStart.UNDISPATCHED) {
-                cache.getOrFetch(SESSION, { true }) {
-                    fetchStarted.complete(Unit)
-                    awaitCancellation()
-                }
+    fun `concurrent near expiry result is shared but not cached`() =
+        runBlocking {
+            val photo = profilePhoto(expiry = Instant.now().plusSeconds(30))
+
+            assertConcurrentLookupsShareResult(ApiResult.Success(photo), expectCached = false)
+        }
+
+    @Test
+    fun `concurrent fetch exception is shared and rethrown`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val fetchStarted = CompletableDeferred<Unit>()
+            val releaseFetch = CompletableDeferred<Unit>()
+            val expectedException = IllegalStateException("remote fetch failed")
+            var fetchCount = 0
+            val fetch: suspend () -> ApiResult<ProfilePhoto?> = {
+                fetchCount += 1
+                fetchStarted.complete(Unit)
+                releaseFetch.await()
+                throw expectedException
             }
 
-        fetchStarted.await()
-        owner.cancel(expectedCancellation)
-        owner.join()
+            val first =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    runCatching {
+                        cache.getOrFetch(SESSION, { true }, fetch)
+                    }
+                }
+            fetchStarted.await()
+            val second =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    runCatching {
+                        cache.getOrFetch(SESSION, { true }, fetch)
+                    }
+                }
+            releaseFetch.complete(Unit)
 
-        assertTrue(owner.isCancelled)
-    }
+            assertEquals(expectedException, first.await().exceptionOrNull())
+            assertEquals(expectedException, second.await().exceptionOrNull())
+            assertEquals(1, fetchCount)
+        }
+
+    @Test
+    fun `cancelled flight owner does not cancel waiter and waiter retries`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val fetchStarted = CompletableDeferred<Unit>()
+            val expectedCancellation = CancellationException("flight owner cancelled")
+            var waiterFetchCount = 0
+            val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
+            val owner =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    cache.getOrFetch(SESSION, { true }) {
+                        fetchStarted.complete(Unit)
+                        awaitCancellation()
+                    }
+                }
+            fetchStarted.await()
+            val waiter =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    cache.getOrFetch(SESSION, { true }) {
+                        waiterFetchCount += 1
+                        ApiResult.Success(photo)
+                    }
+                }
+
+            owner.cancel(expectedCancellation)
+            owner.join()
+
+            assertEquals(ApiResult.Success(photo), waiter.await())
+            assertEquals(1, waiterFetchCount)
+            assertEquals(photo, cache.get(SESSION))
+        }
+
+    @Test
+    fun `cancelled waiter does not cancel active owner fetch`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val fetchStarted = CompletableDeferred<Unit>()
+            val releaseFetch = CompletableDeferred<Unit>()
+            val expectedCancellation = CancellationException("waiter cancelled")
+            var fetchCount = 0
+            val photo = profilePhoto(expiry = Instant.now().plus(1, ChronoUnit.HOURS))
+            val owner =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    cache.getOrFetch(SESSION, { true }) {
+                        fetchCount += 1
+                        fetchStarted.complete(Unit)
+                        releaseFetch.await()
+                        ApiResult.Success(photo)
+                    }
+                }
+            fetchStarted.await()
+            val waiter =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    cache.getOrFetch(SESSION, { true }) {
+                        fetchCount += 1
+                        ApiResult.Success(null)
+                    }
+                }
+
+            waiter.cancel(expectedCancellation)
+            waiter.join()
+            releaseFetch.complete(Unit)
+
+            assertTrue(waiter.isCancelled)
+            assertEquals(ApiResult.Success(photo), owner.await())
+            assertEquals(1, fetchCount)
+        }
+
+    @Test
+    fun `owner cancellation is rethrown to owner`() =
+        runBlocking {
+            val cache = WorkerProfilePhotoUrlCache()
+            val fetchStarted = CompletableDeferred<Unit>()
+            val expectedCancellation = CancellationException("owner cancelled")
+            val owner =
+                async(start = CoroutineStart.UNDISPATCHED) {
+                    cache.getOrFetch(SESSION, { true }) {
+                        fetchStarted.complete(Unit)
+                        awaitCancellation()
+                    }
+                }
+
+            fetchStarted.await()
+            owner.cancel(expectedCancellation)
+            owner.join()
+
+            assertTrue(owner.isCancelled)
+        }
 
     private suspend fun CoroutineScope.assertConcurrentLookupsShareResult(
         expectedResult: ApiResult<ProfilePhoto?>,
