@@ -454,10 +454,10 @@ class RecordDraftViewModel
             return errorCode == UPLOAD_NOT_FOUND_CODE
         }
 
-        // 모든 기록 유형은 사진 1~2장이 필요하며, 온도계 수기 입력 시에도 사진을 함께 첨부한다.
+        // 작업·휴식은 사진을 요구하고, 온도계는 직접 입력한 값이 유효한지 확인한다.
         private fun RecordDraftUiState.canSubmit(recordType: RecordType): Boolean =
             when (recordType) {
-                RecordType.TEMPERATURE -> canSubmitTemperatureRecord && fieldPhotoUris.isNotEmpty()
+                RecordType.TEMPERATURE -> isValidTemperatureInput
                 RecordType.WORK -> workPhotoUris.isNotEmpty()
                 RecordType.REST -> restPhotoUris.isNotEmpty() && hasValidRestTimeRange
             }

@@ -191,7 +191,7 @@
     <string name="temperature_installation_status">온도계 데이터 입력</string>
     <string name="temperature_current_measurement">현재 측정값</string>
     <string name="temperature_screen_title">온도계 기록</string>
-    <string name="temperature_screen_description">온도계 데이터를 입력하고 현장 사진을 촬영해 주세요.</string>
+    <string name="temperature_screen_description">온도계 데이터를 입력하고 필요하면 현장 사진을 추가해 주세요.</string>
     <string name="temperature_checkbox_description">온도계 데이터 직접 입력</string>
     <string name="photo_capture">사진 촬영</string>
     <string name="photo_retake">다시 촬영</string>

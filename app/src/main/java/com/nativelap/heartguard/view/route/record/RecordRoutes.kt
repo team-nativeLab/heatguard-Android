@@ -54,7 +54,7 @@ internal fun HeartGuardRecordTypeSelectionRoute(
 
 /** 온도계 기록 화면이다. 상단 현재 온도는 작업자 홈 응답 값이며(없으면 "--"), 직접 입력 값은 [recordDraftViewModel]과 공유한다.
  * "기록 저장"은 확인 화면 없이 바로 기록을 등록하고 결과에 따라 [onSaveSuccess]/[onSaveFailure]로 이동한다.
- * 직접 입력 온도·습도와 함께 현장 사진을 첨부해 저장한다. */
+ * 직접 입력 온도·습도 또는 현장 기준값으로 저장하며, 현장 사진은 선택 사항이다. */
 @Composable
 internal fun HeartGuardTemperatureRecordRoute(
     recordDraftViewModel: RecordDraftViewModel,
@@ -68,6 +68,7 @@ internal fun HeartGuardTemperatureRecordRoute(
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
+    val hasSiteWeatherBaseline = siteStatus.temperature != null && siteStatus.humidity != null
     val submitRecord =
         rememberRecordSubmitter(
             recordDraftViewModel = recordDraftViewModel,
@@ -86,8 +87,7 @@ internal fun HeartGuardTemperatureRecordRoute(
         isManualInputEnabled = draftState.isManualInputEnabled,
         selectedFieldPhotoCount = draftState.fieldPhotoUris.size,
         isSaveEnabled =
-            draftState.canSubmitTemperatureRecord &&
-                draftState.fieldPhotoUris.isNotEmpty() &&
+            draftState.canSubmitTemperatureRecord(hasSiteWeatherBaseline) &&
                 submissionState.canAttemptSubmission,
         onTemperatureChange = recordDraftViewModel::updateTemperatureText,
         onHumidityChange = recordDraftViewModel::updateHumidityText,
