@@ -2,8 +2,10 @@ package com.nativelap.heartguard.data.site.repository
 
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.map
+import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherRequestDto
 import com.nativelap.heartguard.data.site.mapper.toDomain
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSource
+import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import javax.inject.Inject
@@ -15,4 +17,16 @@ class TeamSiteRepositoryImpl
     ) : TeamSiteRepository {
         override suspend fun getTeamSiteOverview(): ApiResult<TeamSiteOverview> =
             teamSiteRemoteDataSource.getTeamSite().map { it.toDomain() }
+
+        override suspend fun getCurrentLocationWeather(
+            latitude: Double,
+            longitude: Double,
+        ): ApiResult<CurrentLocationWeather> =
+            teamSiteRemoteDataSource
+                .getCurrentLocationWeather(
+                    CurrentLocationWeatherRequestDto(
+                        latitude = latitude,
+                        longitude = longitude,
+                    ),
+                ).map { response -> response.toDomain() }
     }

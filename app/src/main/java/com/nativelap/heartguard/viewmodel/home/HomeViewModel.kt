@@ -2,13 +2,17 @@ package com.nativelap.heartguard.viewmodel.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.location.CurrentLocationProvider
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
+import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
+import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
+import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -39,6 +43,8 @@ class HomeViewModel
         private val getRecordHistoryUseCase: GetRecordHistoryUseCase,
         private val sessionManager: SessionManager,
         private val clock: Clock,
+        private val currentLocationProvider: CurrentLocationProvider,
+        private val getCurrentLocationWeatherUseCase: GetCurrentLocationWeatherUseCase,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
         val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
@@ -46,10 +52,13 @@ class HomeViewModel
         // 오늘 저장한 기록의 측정 시각(현지 시각)이다. 체크 타임라인 완료 표시에 쓰며, 받지 못했으면 비어 있다.
         private val todayRecordTimes = MutableStateFlow<List<LocalTime>>(emptyList())
 
+        private val currentLocationWeather = MutableStateFlow<CurrentLocationWeather?>(null)
+
         /** 여러 화면이 공통으로 쓰는 현장 값. 응답이 없으면 모든 값이 null이다. */
         val siteStatus: StateFlow<SiteStatusUiModel> =
-            uiState
-                .map { homeUiState -> homeUiState.toSiteStatusUiModel() }
+            combine(uiState, currentLocationWeather) { homeUiState, weather ->
+                homeUiState.toSiteStatusUiModel(weather)
+            }
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -89,6 +98,9 @@ class HomeViewModel
             )
 
         private var loadJob: Job? = null
+        private var currentLocationWeatherJob: Job? = null
+        private var currentLocationWeatherGeneration: Long? = null
+        private var currentLocationWeatherRequestId = 0L
 
         // 진행 중인 조회를 시작한 세션 세대다. 계정이 바뀐 뒤 남은 이전 조회 때문에 새 조회를 건너뛰지 않게 한다.
         private var loadJobGeneration: Long? = null
@@ -120,6 +132,49 @@ class HomeViewModel
             }
             mutableUiState.value = HomeUiState.Loading
             startLoad(shouldRestartRunningLoad = false)
+        }
+
+        /** 권한을 승인한 경우에만 홈에서 호출해 현재 좌표 날씨를 한 번 조회한다. */
+        fun loadCurrentLocationWeather() {
+            val generation = sessionManager.getSnapshot().generation
+            if (currentLocationWeatherJob?.isActive == true &&
+                currentLocationWeatherGeneration == generation
+            ) {
+                return
+            }
+            currentLocationWeatherJob?.cancel()
+            currentLocationWeather.value = null
+            currentLocationWeatherGeneration = generation
+            val requestId = ++currentLocationWeatherRequestId
+            currentLocationWeatherJob = viewModelScope.launch {
+                val coordinates = currentLocationProvider.getCurrentLocation() ?: return@launch
+                if (requestId != currentLocationWeatherRequestId ||
+                    generation != sessionManager.getSnapshot().generation
+                ) {
+                    return@launch
+                }
+                val result = getCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
+                if (requestId != currentLocationWeatherRequestId ||
+                    generation != sessionManager.getSnapshot().generation
+                ) {
+                    return@launch
+                }
+                if (result is ApiResult.Success &&
+                    (result.value.availability == WeatherAvailability.AVAILABLE ||
+                        result.value.availability == WeatherAvailability.CACHED)
+                ) {
+                    currentLocationWeather.value = result.value
+                }
+            }
+        }
+
+        /** 위치 권한이 없거나 철회된 경우 진행 중 요청과 위치 날씨 override를 제거한다. */
+        fun clearCurrentLocationWeather() {
+            currentLocationWeatherRequestId += 1
+            currentLocationWeatherJob?.cancel()
+            currentLocationWeatherJob = null
+            currentLocationWeatherGeneration = null
+            currentLocationWeather.value = null
         }
 
         /** 자정 이후에는 전날 완료 기록을 제거한 뒤 오늘 일정과 기록을 다시 불러온다. */
@@ -181,6 +236,7 @@ class HomeViewModel
         /** 세션이 바뀌거나 메인 흐름을 벗어날 때 이전 팀의 응답과 진행 중인 요청을 제거한다. */
         fun reset() {
             loadJob?.cancel()
+            clearCurrentLocationWeather()
             loadJob = null
             loadJobGeneration = null
             mutableUiState.value = HomeUiState.Loading
