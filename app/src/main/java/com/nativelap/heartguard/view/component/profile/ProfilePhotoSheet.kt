@@ -41,6 +41,8 @@ fun ProfilePhotoSheet(
     HeartGuardFigmaBottomSheet(
         onDismissRequest = onDismissRequest,
     ) {
+        Spacer(modifier = Modifier.height(5.dp))
+
         Text(
             text = stringResource(R.string.profile_photo_sheet_title),
             modifier = Modifier.fillMaxWidth(),
