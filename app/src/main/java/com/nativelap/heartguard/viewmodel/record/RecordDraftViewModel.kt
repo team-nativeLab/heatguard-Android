@@ -270,7 +270,10 @@ class RecordDraftViewModel
          * [submissionEffects](저장 화면의 이동)로 알린다.
          * 저장은 화면이 아니라 viewModelScope에서 돌아, 화면을 벗어나거나 회전해도 요청이 끊기지 않는다.
          * 진행 중이면 연타를 무시하고(같은 프레임의 두 번 입력도 [submitJob]으로 막는다), 요청이 취소되면 저장 전 상태로 되돌린다. */
-        fun submit() {
+        fun submit(
+            defaultTemperature: Double? = null,
+            defaultHumidity: Double? = null,
+        ) {
             if (submitJob?.isActive == true ||
                 mutableSubmissionState.value is RecordSubmissionState.Unknown ||
                 mutableSubmissionState.value is RecordSubmissionState.Success
@@ -311,6 +314,8 @@ class RecordDraftViewModel
                                 owningGeneration = owningGeneration,
                                 owningDraft = owningDraft,
                                 hasPreviousAttempt = hasPreviousAttempt,
+                                defaultTemperature = defaultTemperature,
+                                defaultHumidity = defaultHumidity,
                             )
                         if (owningGeneration != sessionManager.getSnapshot().generation ||
                             owningDraft != draftGeneration
@@ -367,6 +372,8 @@ class RecordDraftViewModel
             owningGeneration: Long,
             owningDraft: Long,
             hasPreviousAttempt: Boolean,
+            defaultTemperature: Double?,
+            defaultHumidity: Double?,
         ): RecordSubmitResult {
             if (hasPreviousAttempt) {
                 when (val pending = getPendingRecordSubmissionsUseCase()) {
@@ -423,13 +430,13 @@ class RecordDraftViewModel
                         if (isManualTemperature) {
                             state.temperatureText.toDoubleOrNull()
                         } else {
-                            null
+                            defaultTemperature
                         },
                     humidity =
                         if (isManualTemperature) {
                             state.humidityText.toDoubleOrNull()
                         } else {
-                            null
+                            defaultHumidity
                         },
                     memo = state.memoFor(recordType),
                     restStartedAt = if (recordType == RecordType.REST) state.restStartedAt else null,

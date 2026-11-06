@@ -901,6 +901,7 @@ private fun HeartGuardMainNavDisplay(
                 entry<HeartGuardDestination.FieldPhoto> {
                     HeartGuardFieldPhotoRoute(
                         onBackClick = ::goBack,
+                        homeViewModel = homeViewModel,
                         onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                         recordDraftViewModel = recordDraftViewModel,
                         onSaveSuccess = ::goToSaveSuccess,
@@ -910,6 +911,7 @@ private fun HeartGuardMainNavDisplay(
                 entry<HeartGuardDestination.WorkPhoto> {
                     HeartGuardWorkPhotoRoute(
                         onBackClick = ::goBack,
+                        homeViewModel = homeViewModel,
                         onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                         recordDraftViewModel = recordDraftViewModel,
                         onSaveSuccess = ::goToSaveSuccess,
@@ -919,6 +921,7 @@ private fun HeartGuardMainNavDisplay(
                 entry<HeartGuardDestination.RestPhoto> {
                     HeartGuardRestPhotoRoute(
                         onBackClick = ::goBack,
+                        homeViewModel = homeViewModel,
                         onNotificationClick = { backStack.add(HeartGuardDestination.TeamNotifications) },
                         recordDraftViewModel = recordDraftViewModel,
                         onSaveSuccess = ::goToSaveSuccess,

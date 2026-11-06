@@ -1,7 +1,11 @@
 package com.nativelap.heartguard.view.route.home
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,6 +70,15 @@ internal fun HeartGuardHomeRoute(
     unreadViewModel: TeamNotificationUnreadViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    var hasRequestedLocationPermission by rememberSaveable { mutableStateOf(false) }
+    val locationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                homeViewModel.loadCurrentLocationWeather()
+            } else {
+                homeViewModel.clearCurrentLocationWeather()
+            }
+        }
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
@@ -74,10 +88,35 @@ internal fun HeartGuardHomeRoute(
     val unreadUiState by unreadViewModel.uiState.collectAsStateWithLifecycle()
     val loadFailureMessage = stringResource(R.string.home_load_failure)
 
+    LaunchedEffect(homeViewModel, locationPermissionLauncher) {
+        if (!hasRequestedLocationPermission) {
+            hasRequestedLocationPermission = true
+            val permissionGranted =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ) == PackageManager.PERMISSION_GRANTED
+            if (!permissionGranted) {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
+        }
+    }
+
     // 기록 저장 뒤나 앱을 다시 열었을 때 날씨·체크 완료가 갱신되도록 홈이 다시 보일 때마다 새로 조회한다.
     LifecycleResumeEffect(homeViewModel) {
         homeViewModel.refresh()
         unreadViewModel.refresh()
+        val isLocationPermissionGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (isLocationPermissionGranted) {
+            homeViewModel.loadCurrentLocationWeather()
+        } else {
+            homeViewModel.clearCurrentLocationWeather()
+        }
         onPauseOrDispose {}
     }
 

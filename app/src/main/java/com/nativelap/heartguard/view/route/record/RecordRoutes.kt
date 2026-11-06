@@ -74,6 +74,8 @@ internal fun HeartGuardTemperatureRecordRoute(
             recordDraftViewModel = recordDraftViewModel,
             onSaveSuccess = onSaveSuccess,
             onSaveFailure = onSaveFailure,
+            temperature = siteStatus.recordTemperature,
+            humidity = siteStatus.recordHumidity,
         )
 
     TemperatureRecordScreen(

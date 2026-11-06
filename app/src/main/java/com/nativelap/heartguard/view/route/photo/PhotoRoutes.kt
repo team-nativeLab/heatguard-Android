@@ -16,6 +16,7 @@ import com.nativelap.heartguard.view.route.record.rememberRecordSubmitter
 import com.nativelap.heartguard.view.screen.photo.FieldPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.RestPhotoScreen
 import com.nativelap.heartguard.view.screen.photo.WorkPhotoScreen
+import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordDraftViewModel
 import com.nativelap.heartguard.viewmodel.record.RecordSubmissionState
 import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
@@ -27,18 +28,22 @@ import com.nativelap.heartguard.viewmodel.record.canAttemptSubmission
 @Composable
 internal fun HeartGuardFieldPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
+    homeViewModel: HomeViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
     onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val submitRecord =
         rememberRecordSubmitter(
             recordDraftViewModel = recordDraftViewModel,
             onSaveSuccess = onSaveSuccess,
             onSaveFailure = onSaveFailure,
+            temperature = siteStatus.recordTemperature,
+            humidity = siteStatus.recordHumidity,
         )
     var showSaveError by rememberSaveable {
         mutableStateOf(false)
@@ -96,18 +101,22 @@ internal fun HeartGuardFieldPhotoRoute(
 @Composable
 internal fun HeartGuardWorkPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
+    homeViewModel: HomeViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
     onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val submitRecord =
         rememberRecordSubmitter(
             recordDraftViewModel = recordDraftViewModel,
             onSaveSuccess = onSaveSuccess,
             onSaveFailure = onSaveFailure,
+            temperature = siteStatus.recordTemperature,
+            humidity = siteStatus.recordHumidity,
         )
 
     PhotoSelectionFlow(
@@ -143,18 +152,22 @@ internal fun HeartGuardWorkPhotoRoute(
 @Composable
 internal fun HeartGuardRestPhotoRoute(
     recordDraftViewModel: RecordDraftViewModel,
+    homeViewModel: HomeViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
     onBackClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
+    val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val submitRecord =
         rememberRecordSubmitter(
             recordDraftViewModel = recordDraftViewModel,
             onSaveSuccess = onSaveSuccess,
             onSaveFailure = onSaveFailure,
+            temperature = siteStatus.recordTemperature,
+            humidity = siteStatus.recordHumidity,
         )
     var isSelectingRestStart by rememberSaveable { mutableStateOf(false) }
     var isSelectingRestEnd by rememberSaveable { mutableStateOf(false) }

@@ -18,10 +18,14 @@ internal fun rememberRecordSubmitter(
     recordDraftViewModel: RecordDraftViewModel,
     onSaveSuccess: () -> Unit,
     onSaveFailure: () -> Unit,
+    temperature: Double? = null,
+    humidity: Double? = null,
 ): () -> Unit {
     val lifecycleOwner = LocalLifecycleOwner.current
     val latestOnSaveSuccess by rememberUpdatedState(onSaveSuccess)
     val latestOnSaveFailure by rememberUpdatedState(onSaveFailure)
+    val latestTemperature by rememberUpdatedState(temperature)
+    val latestHumidity by rememberUpdatedState(humidity)
 
     LaunchedEffect(recordDraftViewModel, lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -34,5 +38,10 @@ internal fun rememberRecordSubmitter(
         }
     }
 
-    return recordDraftViewModel::submit
+    return {
+        recordDraftViewModel.submit(
+            defaultTemperature = latestTemperature,
+            defaultHumidity = latestHumidity,
+        )
+    }
 }
