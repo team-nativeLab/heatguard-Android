@@ -129,22 +129,21 @@ class SiteStatusUiModelTest {
         assertNull(siteStatus.recordHumidity)
     }
 
-    private fun siteOverview(
-        temperatureDelta: Double? = null,
-    ) = TeamSiteOverview(
-        teamName = null,
-        workplace = null,
-        siteName = null,
-        managerPhoneNumber = null,
-        currentTemperature = 22.0,
-        humidity = 40.0,
-        apparentTemperature = 22.5,
-        heatLevel = 1,
-        checkTimes = emptyList(),
-        hasActiveEmergencyCall = false,
-        skyStatus = SkyStatus.CLOUDY,
-        temperatureDelta = temperatureDelta,
-    )
+    private fun siteOverview(temperatureDelta: Double? = null) =
+        TeamSiteOverview(
+            teamName = null,
+            workplace = null,
+            siteName = null,
+            managerPhoneNumber = null,
+            currentTemperature = 22.0,
+            humidity = 40.0,
+            apparentTemperature = 22.5,
+            heatLevel = 1,
+            checkTimes = emptyList(),
+            hasActiveEmergencyCall = false,
+            skyStatus = SkyStatus.CLOUDY,
+            temperatureDelta = temperatureDelta,
+        )
 
     private fun locationWeather(
         availability: WeatherAvailability,

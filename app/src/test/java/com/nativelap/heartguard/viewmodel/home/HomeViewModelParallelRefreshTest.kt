@@ -1,10 +1,10 @@
 package com.nativelap.heartguard.viewmodel.home
 
 import androidx.lifecycle.viewModelScope
-import com.nativelap.heartguard.core.network.ApiError
-import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.location.CurrentCoordinates
 import com.nativelap.heartguard.core.location.CurrentLocationProvider
+import com.nativelap.heartguard.core.network.ApiError
+import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionToken
 import com.nativelap.heartguard.core.session.TokenStorage
@@ -24,14 +24,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.setMain
 import java.time.Clock
 import java.time.LocalDate
@@ -358,7 +358,6 @@ class HomeViewModelParallelRefreshTest {
             }
         }
 
-
     @Test
     fun `available location weather becomes the shared home and record value`() =
         runTest {
@@ -466,7 +465,7 @@ class HomeViewModelParallelRefreshTest {
         }
 
     @Test
-    fun `location weather refresh uses granted location path and keeps team values for unavailable and failed responses`() =
+    fun `granted location request keeps team values on unavailable and failed responses`() =
         runTest {
             val dispatcher = StandardTestDispatcher(testScheduler)
             Dispatchers.setMain(dispatcher)
@@ -614,7 +613,10 @@ class HomeViewModelParallelRefreshTest {
                 getRecordHistoryUseCase = GetRecordHistoryUseCase(recordRepository),
                 sessionManager = activeSessionManager,
                 clock = Clock.fixed(java.time.Instant.parse("2026-10-31T03:00:00Z"), ZoneId.of("Asia/Seoul")),
-                currentLocationProvider = object : CurrentLocationProvider { override suspend fun getCurrentLocation(): CurrentCoordinates? = currentLocationProvider() },
+                currentLocationProvider =
+                    object : CurrentLocationProvider {
+                        override suspend fun getCurrentLocation(): CurrentCoordinates? = currentLocationProvider()
+                    },
                 getCurrentLocationWeatherUseCase = GetCurrentLocationWeatherUseCase(siteRepository),
             )
         return TestHomeViewModel(viewModel, activeSessionManager)
@@ -657,7 +659,10 @@ class HomeViewModelParallelRefreshTest {
     ) : TeamSiteRepository {
         override suspend fun getTeamSiteOverview(): ApiResult<TeamSiteOverview> = getOverview()
 
-        override suspend fun getCurrentLocationWeather(latitude: Double, longitude: Double): ApiResult<CurrentLocationWeather> = getWeather(latitude, longitude)
+        override suspend fun getCurrentLocationWeather(
+            latitude: Double,
+            longitude: Double,
+        ): ApiResult<CurrentLocationWeather> = getWeather(latitude, longitude)
     }
 
     private fun locationWeather(availability: WeatherAvailability) =

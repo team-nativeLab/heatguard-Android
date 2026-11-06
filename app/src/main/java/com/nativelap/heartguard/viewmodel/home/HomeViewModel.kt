@@ -58,12 +58,11 @@ class HomeViewModel
         val siteStatus: StateFlow<SiteStatusUiModel> =
             combine(uiState, currentLocationWeather) { homeUiState, weather ->
                 homeUiState.toSiteStatusUiModel(weather)
-            }
-                .stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                    initialValue = SiteStatusUiModel(),
-                )
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = SiteStatusUiModel(),
+            )
 
         // 화면이 떠 있는 동안 1분마다 현재 시각을 흘려보내 "다음 체크까지 N분" 문구와 현재 체크 표시를 갱신한다.
         private val currentTime =
@@ -146,26 +145,33 @@ class HomeViewModel
             currentLocationWeather.value = null
             currentLocationWeatherGeneration = generation
             val requestId = ++currentLocationWeatherRequestId
-            currentLocationWeatherJob = viewModelScope.launch {
-                val coordinates = currentLocationProvider.getCurrentLocation() ?: return@launch
-                if (requestId != currentLocationWeatherRequestId ||
-                    generation != sessionManager.getSnapshot().generation
-                ) {
-                    return@launch
+            currentLocationWeatherJob =
+                viewModelScope.launch {
+                    val coordinates = currentLocationProvider.getCurrentLocation() ?: return@launch
+                    if (requestId != currentLocationWeatherRequestId ||
+                        generation != sessionManager.getSnapshot().generation
+                    ) {
+                        return@launch
+                    }
+                    val result =
+                        getCurrentLocationWeatherUseCase(
+                            coordinates.latitude,
+                            coordinates.longitude,
+                        )
+                    if (requestId != currentLocationWeatherRequestId ||
+                        generation != sessionManager.getSnapshot().generation
+                    ) {
+                        return@launch
+                    }
+                    if (result is ApiResult.Success &&
+                        (
+                            result.value.availability == WeatherAvailability.AVAILABLE ||
+                                result.value.availability == WeatherAvailability.CACHED
+                        )
+                    ) {
+                        currentLocationWeather.value = result.value
+                    }
                 }
-                val result = getCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
-                if (requestId != currentLocationWeatherRequestId ||
-                    generation != sessionManager.getSnapshot().generation
-                ) {
-                    return@launch
-                }
-                if (result is ApiResult.Success &&
-                    (result.value.availability == WeatherAvailability.AVAILABLE ||
-                        result.value.availability == WeatherAvailability.CACHED)
-                ) {
-                    currentLocationWeather.value = result.value
-                }
-            }
         }
 
         /** 위치 권한이 없거나 철회된 경우 진행 중 요청과 위치 날씨 override를 제거한다. */

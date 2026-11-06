@@ -11,7 +11,5 @@ import javax.inject.Singleton
 abstract class CurrentLocationModule {
     @Binds
     @Singleton
-    abstract fun bindCurrentLocationProvider(
-        implementation: AndroidCurrentLocationProvider,
-    ): CurrentLocationProvider
+    abstract fun bindCurrentLocationProvider(implementation: AndroidCurrentLocationProvider): CurrentLocationProvider
 }
