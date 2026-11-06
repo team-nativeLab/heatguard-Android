@@ -36,7 +36,8 @@
     <string name="auth_signup_resend_code_action">인증번호 다시 받기</string>
     <string name="auth_signup_resend_code">재요청</string>
     <string name="auth_signup_resend_wait">%1$d초</string>
-    <string name="auth_signup_code_remaining_time">남은 시간 %1$02d:%2$02d</string>
+    <string name="auth_signup_code_remaining_time_label">남은 시간</string>
+    <string name="auth_signup_code_remaining_time_value">%1$02d:%2$02d</string>
     <string name="auth_signup_code_accessibility">인증번호 입력</string>
     <string name="auth_signup_code_digit_count">%1$d자리 입력됨</string>
     <string name="auth_signup_email_verified">인증 완료</string>
@@ -53,7 +54,8 @@
     <string name="auth_signup_code_required">먼저 이메일 인증코드를 받아주세요.</string>
     <string name="auth_signup_form_error">입력한 정보를 확인해주세요.</string>
     <string name="auth_signup_registration_error">가입에 실패했습니다. 코드 만료·이메일 중복 여부를 확인해주세요.</string>
-    <string name="auth_signup_invalid_code_error">인증코드가 올바르지 않거나 만료되었습니다. 코드를 다시 확인해주세요.</string>
+    <string name="auth_signup_invalid_code_error">인증번호가 올바르지 않아요. 다시 확인해주세요.</string>
+    <string name="auth_signup_expired_code_error">인증번호가 만료되었어요. 새 인증번호를 받아주세요.</string>
     <string name="auth_signup_account_not_ready_error">회사 계정 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.</string>
     <string name="auth_signup_app_login">로그인</string>
     <string name="auth_signup_password_hint">8자 이상 입력해주세요</string>
