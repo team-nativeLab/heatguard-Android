@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.record
 
 import com.nativelap.heartguard.data.profile.dto.ProfilePhotoUploadResponseDto
 import com.nativelap.heartguard.data.profile.dto.hasMatchingContentLength
+import com.nativelap.heartguard.data.record.dto.RecordRequestDto
 import com.nativelap.heartguard.data.record.dto.UploadFileRequestDto
 import com.nativelap.heartguard.data.record.dto.UploadRequestDto
 import com.nativelap.heartguard.data.record.remote.ExternalUploadService
@@ -55,6 +56,21 @@ class FieldPhotoContractTest {
 
         assertEquals(
             """{"files":[{"contentType":"image/jpeg","size":1}]}""",
+            Json.encodeToString(request),
+        )
+    }
+
+    @Test
+    fun `thermometer record request serializes empty photo keys as an empty array`() {
+        val request =
+            RecordRequestDto(
+                type = "THERMOMETER",
+                photoKeys = emptyList(),
+                measuredAt = "2026-11-06T15:00:00+09:00",
+            )
+
+        assertEquals(
+            """{"type":"THERMOMETER","photoKeys":[],"measuredAt":"2026-11-06T15:00:00+09:00"}""",
             Json.encodeToString(request),
         )
     }

@@ -78,7 +78,10 @@ internal fun HeartGuardFieldPhotoRoute(
             onRemovePhoto = onRemovePhoto,
             // 사진이 없거나 직접 입력한 온도·습도가 올바르지 않으면 저장하지 않고 15 상태로 알린다(아무 반응 없이 끝나지 않게).
             onSaveClick = {
-                if (selectedPhotoUris.isEmpty() || !draftState.canSubmitTemperatureRecord) {
+                if (
+                    selectedPhotoUris.isEmpty() ||
+                    (draftState.isManualInputEnabled && !draftState.isManualTemperatureValid)
+                ) {
                     showSaveError = true
                 } else {
                     submitRecord()

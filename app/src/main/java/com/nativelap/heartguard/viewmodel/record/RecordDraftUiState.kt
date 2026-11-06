@@ -34,14 +34,11 @@ data class RecordDraftUiState(
             temperatureText.toDoubleOrNull() != null &&
                 humidityText.toDoubleOrNull() != null
 
-    // 직접 입력한 경우 온도·습도가 필요하다. 사진은 입력 방식과 관계없이 별도로 필수다.
-    val canSubmitTemperatureRecord: Boolean
-        get() =
-            if (isManualInputEnabled) {
-                isManualTemperatureValid
-            } else {
-                fieldPhotoUris.isNotEmpty()
-            }
+    val isValidTemperatureInput: Boolean
+        get() = !isManualInputEnabled || isManualTemperatureValid
+
+    fun canSubmitTemperatureRecord(hasSiteWeatherBaseline: Boolean): Boolean =
+        isValidTemperatureInput && (isManualInputEnabled || hasSiteWeatherBaseline)
 
     val restStartedAt: OffsetDateTime?
         get() =
