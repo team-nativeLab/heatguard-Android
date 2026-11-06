@@ -156,7 +156,7 @@ object HeartGuardComponentSize {
     val PageContentMaxWidth = 600.dp
     val PrimaryButtonHeight = 48.dp
     val AuthButtonHeight = 40.dp
-    val AuthActionMaxWidth = 318.dp
+    val AuthActionMaxWidth = PageContentMaxWidth
     val AuthTextFieldHeight = 45.dp
     val TextFieldHeight = 48.dp
     val CompactInputHeight = 40.dp
