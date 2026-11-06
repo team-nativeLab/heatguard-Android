@@ -1,7 +1,9 @@
 package com.nativelap.heartguard.viewmodel.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionState
@@ -167,6 +169,8 @@ class HomeViewModel
                             }
 
                             is ApiResult.Failure -> {
+                                // TEMP-DIAG: 재시작 후 홈 실패 원인 확인용. 원인 확정 후 반드시 제거한다. 토큰·개인정보는 기록하지 않는다.
+                                Log.w(DIAG_TAG, "home overview failed: ${diagnosticLabel(overviewResult.error)}")
                                 if (currentState is HomeUiState.Success) {
                                     currentState
                                 } else {
@@ -205,8 +209,17 @@ class HomeViewModel
             }
         }
 
+        // TEMP-DIAG: 진단 로그 전용. 상태 코드와 오류 코드만 남긴다.
+        private fun diagnosticLabel(error: ApiError): String =
+            when (error) {
+                is ApiError.Http -> "Http(status=${error.statusCode}, code=${error.errorCode})"
+                is ApiError.ServerRejected -> "ServerRejected(code=${error.errorCode})"
+                else -> error::class.simpleName.orEmpty()
+            }
+
         private companion object {
             const val STOP_TIMEOUT_MILLIS = 5_000L
             const val TIME_TICK_MILLIS = 60_000L
+            const val DIAG_TAG = "HomeDiag"
         }
     }
