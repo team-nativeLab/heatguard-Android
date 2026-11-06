@@ -26,6 +26,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +43,7 @@ internal fun AuthVerificationCodeInput(
     code: String,
     onCodeChange: (String) -> Unit,
     enabled: Boolean,
+    errorDescription: String? = null,
     modifier: Modifier = Modifier,
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -59,7 +61,10 @@ internal fun AuthVerificationCodeInput(
                 .fillMaxWidth()
                 .keyboardInputBounds()
                 .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-                .semantics { contentDescription = accessibilityDescription },
+                .semantics {
+                    contentDescription = accessibilityDescription
+                    errorDescription?.let { description -> error(description) }
+                },
         enabled = enabled,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -85,12 +90,12 @@ internal fun AuthVerificationCodeInput(
                                         color = MaterialTheme.colorScheme.surface,
                                         shape = RoundedCornerShape(CODE_CELL_CORNER_RADIUS),
                                     ).border(
-                                        width = if (isCurrentCell) 2.dp else 0.dp,
+                                        width = if (errorDescription != null || isCurrentCell) 2.dp else 0.dp,
                                         color =
-                                            if (isCurrentCell) {
-                                                MaterialTheme.extraColors.authPrimary
-                                            } else {
-                                                androidx.compose.ui.graphics.Color.Transparent
+                                            when {
+                                                errorDescription != null -> MaterialTheme.colorScheme.error
+                                                isCurrentCell -> MaterialTheme.extraColors.authPrimary
+                                                else -> androidx.compose.ui.graphics.Color.Transparent
                                             },
                                         shape = RoundedCornerShape(CODE_CELL_CORNER_RADIUS),
                                     ).padding(horizontal = 4.dp),
@@ -130,6 +135,7 @@ private fun AuthVerificationCodeInputPreview() {
             code = "123",
             onCodeChange = {},
             enabled = true,
+            errorDescription = stringResource(R.string.auth_signup_invalid_code_error),
         )
     }
 }

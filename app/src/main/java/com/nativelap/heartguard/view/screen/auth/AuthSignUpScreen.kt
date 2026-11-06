@@ -44,6 +44,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -76,6 +79,7 @@ internal fun AuthSignUpScreen(
     isSubmitting: Boolean,
     statusMessage: String?,
     isStatusError: Boolean,
+    isVerificationCodeError: Boolean,
     step: Int,
     onEvent: (AuthSignUpScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
@@ -251,8 +255,13 @@ internal fun AuthSignUpScreen(
                                         onEvent(AuthSignUpScreenEvent.VerificationCodeChanged(code))
                                     },
                                     enabled = !isSubmitting && !isSendingEmailCode && emailCodeRemainingSeconds > 0,
+                                    errorDescription = statusMessage.takeIf { isVerificationCodeError },
                                 )
-                                SignUpErrorMessage(isStatusError, statusMessage)
+                                SignUpErrorMessage(
+                                    isError = isStatusError,
+                                    message = statusMessage,
+                                    isLiveRegion = isVerificationCodeError,
+                                )
                             }
 
                             if (step == SIGN_UP_CODE_STEP) {
@@ -261,16 +270,26 @@ internal fun AuthSignUpScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text =
-                                            stringResource(
-                                                R.string.auth_signup_code_remaining_time,
-                                                emailCodeRemainingSeconds / SECONDS_PER_MINUTE,
-                                                emailCodeRemainingSeconds % SECONDS_PER_MINUTE,
-                                            ),
-                                        color = MaterialTheme.extraColors.secondaryText,
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.auth_signup_code_remaining_time_label),
+                                            color = MaterialTheme.extraColors.secondaryText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                        Text(
+                                            text =
+                                                stringResource(
+                                                    R.string.auth_signup_code_remaining_time_value,
+                                                    emailCodeRemainingSeconds / SECONDS_PER_MINUTE,
+                                                    emailCodeRemainingSeconds % SECONDS_PER_MINUTE,
+                                                ),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    }
                                     TextButton(
                                         onClick = { onEvent(AuthSignUpScreenEvent.RequestEmailCodeClicked) },
                                         enabled =
@@ -459,11 +478,23 @@ internal fun AuthSignUpScreen(
 private fun SignUpErrorMessage(
     isError: Boolean,
     message: String?,
+    isLiveRegion: Boolean = false,
 ) {
     if (isError && message != null) {
         Text(
             text = message,
-            modifier = Modifier.padding(top = HeartGuardSpacing.AuthErrorMessageGap),
+            modifier =
+                Modifier
+                    .padding(top = HeartGuardSpacing.AuthErrorMessageGap)
+                    .then(
+                        if (isLiveRegion) {
+                            Modifier.semantics {
+                                liveRegion = LiveRegionMode.Polite
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
         )
@@ -556,6 +587,7 @@ private fun AuthSignUpScreenPreview() {
             isSubmitting = false,
             statusMessage = null,
             isStatusError = false,
+            isVerificationCodeError = false,
             step = SIGN_UP_EMAIL_STEP,
             onEvent = {},
         )

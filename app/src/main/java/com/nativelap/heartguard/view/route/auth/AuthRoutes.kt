@@ -180,6 +180,7 @@ internal fun HeartGuardSignUpRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val normalizedEmail = email.trim().lowercase(Locale.ROOT)
     val isCodeSentForCurrentEmail = uiState.emailForRequestedCode == normalizedEmail
+    val emailCodeRemainingSeconds = uiState.emailCodeRemainingSecondsByEmail[normalizedEmail] ?: 0
 
     BackHandler(
         enabled = uiState.isSubmitting || uiState.isRequestingEmailCode || uiState.isVerifyingEmailCode || step > 0,
@@ -275,9 +276,24 @@ internal fun HeartGuardSignUpRoute(
                 stringResource(R.string.auth_signup_registration_error)
             }
         }
+    val isInvalidVerificationCode =
+        uiState.failure == AppAccountSignUpFailure.INVALID_VERIFICATION_CODE
+    val isExpiredVerificationCode = isInvalidVerificationCode && emailCodeRemainingSeconds <= 0
     val statusMessage =
-        uiState.failureMessage?.takeIf { serverMessage -> serverMessage.isNotBlank() }
-            ?: fallbackStatusMessage
+        when {
+            isInvalidVerificationCode && !isExpiredVerificationCode -> {
+                fallbackStatusMessage
+            }
+
+            isExpiredVerificationCode -> {
+                stringResource(R.string.auth_signup_expired_code_error)
+            }
+
+            else -> {
+                uiState.failureMessage?.takeIf { serverMessage -> serverMessage.isNotBlank() }
+                    ?: fallbackStatusMessage
+            }
+        }
 
     AuthSignUpScreen(
         name = name,
@@ -289,10 +305,11 @@ internal fun HeartGuardSignUpRoute(
         isEmailCodeSent = isCodeSentForCurrentEmail,
         isEmailCodeResendBlocked =
             (uiState.emailCodeCooldownSecondsByEmail[normalizedEmail] ?: 0) > 0,
-        emailCodeRemainingSeconds = uiState.emailCodeRemainingSecondsByEmail[normalizedEmail] ?: 0,
+        emailCodeRemainingSeconds = emailCodeRemainingSeconds,
         isSubmitting = uiState.isSubmitting || uiState.isVerifyingEmailCode,
         statusMessage = statusMessage,
         isStatusError = uiState.failure != null,
+        isVerificationCodeError = isInvalidVerificationCode,
         step = step,
         onEvent = { event ->
             when (event) {
@@ -311,6 +328,9 @@ internal fun HeartGuardSignUpRoute(
                 }
 
                 is AuthSignUpScreenEvent.VerificationCodeChanged -> {
+                    if (uiState.failure == AppAccountSignUpFailure.INVALID_VERIFICATION_CODE) {
+                        viewModel.clearEmailCodeVerification()
+                    }
                     verificationCode = event.verificationCode.filter { digit -> digit in '0'..'9' }.take(6)
                 }
 
