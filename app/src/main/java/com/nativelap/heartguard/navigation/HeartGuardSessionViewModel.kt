@@ -11,12 +11,15 @@ import com.nativelap.heartguard.core.session.SessionSnapshot
 import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
+import com.nativelap.heartguard.domain.site.usecase.GetAppLinkedSitesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,6 +33,7 @@ internal class HeartGuardSessionViewModel
     constructor(
         private val sessionManager: SessionManager,
         private val getWorkerProfileUseCase: GetWorkerProfileUseCase,
+        private val getAppLinkedSitesUseCase: GetAppLinkedSitesUseCase,
     ) : ViewModel() {
         val sessionState: StateFlow<SessionState> = sessionManager.sessionState
 
@@ -44,13 +48,18 @@ internal class HeartGuardSessionViewModel
 
         val sessionEvents: SharedFlow<SessionEvent> = sessionManager.sessionEvents
 
-        // 복원한 세션을 서버에 확인하는 동안 홈 요청이 먼저 나가지 않도록 메인 흐름 진입을 늦추는 기준이다.
-        private val mutableIsStartupCheckComplete = MutableStateFlow(false)
-        val isStartupCheckComplete: StateFlow<Boolean> = mutableIsStartupCheckComplete.asStateFlow()
+        val sessionSnapshot: StateFlow<SessionSnapshot> = sessionManager.sessionSnapshot
+
+        private val mutableReadyGeneration = MutableStateFlow<Long?>(null)
+        val readyGeneration: StateFlow<Long?> = mutableReadyGeneration.asStateFlow()
+
+        val isStartupCheckComplete: StateFlow<Boolean> =
+            combine(sessionSnapshot, readyGeneration) { snapshot, ready -> snapshot.generation == ready }
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
         // 토큰은 화면에 노출하지 않고, 계정 전환마다 메인 흐름을 새로 만들 기준인 세대만 공개한다.
         val sessionGeneration: StateFlow<Long> =
-            sessionManager.sessionSnapshot
+            sessionSnapshot
                 .map { sessionSnapshot -> sessionSnapshot.generation }
                 .stateIn(
                     scope = viewModelScope,
@@ -77,13 +86,23 @@ internal class HeartGuardSessionViewModel
         }
 
         init {
-            // 앱 시작 시 저장된 토큰으로 초기 인증 상태를 정한 뒤, 복원 세션이면 서버에 한 번 확인한다.
+            // 새 로그인과 복원 세션 모두 memberships를 확인한 뒤 홈을 연다. 오류는 오프라인 홈 사용을 막지 않는다.
             viewModelScope.launch {
-                try {
-                    sessionManager.initialize()
-                    checkRestoredSessionOnce()
-                } finally {
-                    mutableIsStartupCheckComplete.value = true
+                sessionManager.initialize()
+                sessionManager.sessionSnapshot.collectLatest { sessionSnapshot ->
+                    if (sessionSnapshot.role == SessionRole.TEAM_MEMBER &&
+                        !sessionSnapshot.accessToken.isNullOrBlank()
+                    ) {
+                        if (sessionManager.isRestoredSession()) checkRestoredSessionOnce()
+                        if (sessionManager.getSnapshot() == sessionSnapshot) {
+                            withTimeoutOrNull(STARTUP_SESSION_CHECK_TIMEOUT_MS) {
+                                getAppLinkedSitesUseCase(sessionSnapshot.generation)
+                            }
+                        }
+                    }
+                    if (sessionManager.getSnapshot() == sessionSnapshot) {
+                        mutableReadyGeneration.value = sessionSnapshot.generation
+                    }
                 }
             }
         }

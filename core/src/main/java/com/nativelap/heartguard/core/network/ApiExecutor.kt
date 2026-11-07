@@ -28,6 +28,8 @@ class ApiExecutor
                 ApiResult.Failure(ApiError.SessionChanged)
             } catch (_: SiteNotSelectedException) {
                 ApiResult.Failure(ApiError.SiteNotSelected)
+            } catch (_: TeamNotSelectedException) {
+                ApiResult.Failure(ApiError.TeamNotSelected)
             } catch (_: IOException) {
                 ApiResult.Failure(ApiError.Network)
             } catch (_: SerializationException) {

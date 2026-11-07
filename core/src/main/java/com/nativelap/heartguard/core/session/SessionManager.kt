@@ -28,6 +28,7 @@ class SessionManager
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         private val sessionMutex = Mutex()
+        private val selectedTeamLock = Any()
         private var isInitialized = false
 
         // 앱 시작 때 저장 토큰으로 복원한 세션의 세대다. 새로 로그인한 세션과 구분해 이전 프로세스의 입력 복원 여부를 정한다.
@@ -37,6 +38,12 @@ class SessionManager
         // 복원 세션의 서버 확인을 끝낸 세대다. 프로세스 안에서만 기억해 Activity를 다시 열 때 확인을 반복하지 않는다.
         @Volatile
         private var startupCheckedGeneration: Long? = null
+
+        @Volatile
+        private var selectedTeamValidatedGeneration: Long? = null
+
+        @Volatile
+        private var selectedTeamSelectionVersion: Long = 0L
 
         // 로그인·로그아웃마다 세대가 바뀌므로, 상태가 빠르게 왕복해도 수집자가 계정 전환을 놓치지 않는다.
         private val mutableSessionSnapshot =
@@ -63,6 +70,85 @@ class SessionManager
         fun getSnapshot(): SessionSnapshot = mutableSessionSnapshot.value
 
         fun getSelectedSiteId(): String? = tokenStorage.readSelectedSiteId()
+
+        fun getSelectedTeamId(): String? = tokenStorage.readSelectedTeamId()
+
+        fun getSelectedTeamIdForSession(expectedSnapshot: SessionSnapshot): String? =
+            synchronized(selectedTeamLock) {
+                if (getSnapshot() == expectedSnapshot &&
+                    expectedSnapshot.role == SessionRole.TEAM_MEMBER &&
+                    selectedTeamValidatedGeneration == expectedSnapshot.generation
+                ) {
+                    tokenStorage.readSelectedTeamId()
+                } else {
+                    null
+                }
+            }
+
+        fun getSelectedTeamRequestSnapshot(expectedSnapshot: SessionSnapshot): SelectedTeamRequestSnapshot? =
+            synchronized(selectedTeamLock) {
+                val teamId = getSelectedTeamIdForSession(expectedSnapshot)?.takeIf(String::isNotBlank) ?: return null
+                SelectedTeamRequestSnapshot(teamId, selectedTeamSelectionVersion)
+            }
+
+        fun isSelectedTeamRequestSnapshotCurrent(
+            expectedSnapshot: SessionSnapshot,
+            selectedTeamRequestSnapshot: SelectedTeamRequestSnapshot,
+        ): Boolean =
+            synchronized(selectedTeamLock) {
+                getSnapshot() == expectedSnapshot &&
+                    selectedTeamValidatedGeneration == expectedSnapshot.generation &&
+                    selectedTeamSelectionVersion == selectedTeamRequestSnapshot.selectionVersion &&
+                    tokenStorage.readSelectedTeamId() == selectedTeamRequestSnapshot.teamId
+            }
+
+        suspend fun saveSelectedTeamAndSiteIdsForSession(
+            teamId: String,
+            siteId: String,
+            expectedTeamId: String?,
+            expectedSiteId: String?,
+            expectedSnapshot: SessionSnapshot,
+        ): Boolean =
+            sessionMutex.withLock {
+                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER ||
+                    tokenStorage.readSelectedTeamId() != expectedTeamId ||
+                    tokenStorage.readSelectedSiteId() != expectedSiteId
+                ) {
+                    return@withLock false
+                }
+                currentCoroutineContext().ensureActive()
+                withContext(ioDispatcher) {
+                    synchronized(selectedTeamLock) {
+                        tokenStorage.saveSelectedTeamAndSiteIds(teamId, siteId)
+                        selectedTeamSelectionVersion += 1L
+                        selectedTeamValidatedGeneration = expectedSnapshot.generation
+                    }
+                }
+                true
+            }
+
+        suspend fun clearSelectedTeamAndSiteIdsForSession(
+            expectedTeamId: String?,
+            expectedSiteId: String?,
+            expectedSnapshot: SessionSnapshot,
+        ): Boolean =
+            sessionMutex.withLock {
+                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER ||
+                    tokenStorage.readSelectedTeamId() != expectedTeamId ||
+                    tokenStorage.readSelectedSiteId() != expectedSiteId
+                ) {
+                    return@withLock false
+                }
+                currentCoroutineContext().ensureActive()
+                withContext(ioDispatcher) {
+                    synchronized(selectedTeamLock) {
+                        tokenStorage.clearSelectedTeamAndSiteIds()
+                        selectedTeamSelectionVersion += 1L
+                        selectedTeamValidatedGeneration = expectedSnapshot.generation
+                    }
+                }
+                true
+            }
 
         /** 세션 전환과 경쟁하지 않도록 현재 Team 세션에서만 현장 선택을 저장한다. */
         suspend fun saveSelectedSiteIdForSession(
@@ -125,18 +211,22 @@ class SessionManager
                             clearStoredTokenSafely()
                         }
                         val initializedGeneration = getSnapshot().generation + 1L
-                        mutableSessionSnapshot.value =
-                            SessionSnapshot(
-                                generation = initializedGeneration,
-                                accessToken = validAccessToken,
-                                role =
-                                    if (validAccessToken == null) {
-                                        null
-                                    } else {
-                                        tokenStorage.readSessionRole() ?: SessionRole.TEAM_MEMBER
-                                    },
-                            )
-                        restoredGeneration = initializedGeneration.takeIf { validAccessToken != null }
+                        synchronized(selectedTeamLock) {
+                            mutableSessionSnapshot.value =
+                                SessionSnapshot(
+                                    generation = initializedGeneration,
+                                    accessToken = validAccessToken,
+                                    role =
+                                        if (validAccessToken == null) {
+                                            null
+                                        } else {
+                                            tokenStorage.readSessionRole() ?: SessionRole.TEAM_MEMBER
+                                        },
+                                )
+                            restoredGeneration = initializedGeneration.takeIf { validAccessToken != null }
+                            selectedTeamValidatedGeneration = null
+                            selectedTeamSelectionVersion += 1L
+                        }
                         mutableSessionState.value =
                             if (validAccessToken == null) {
                                 SessionState.Unauthenticated
@@ -153,14 +243,18 @@ class SessionManager
             sessionMutex.withLock {
                 currentCoroutineContext().ensureActive()
                 withContext(ioDispatcher + NonCancellable) {
-                    tokenStorage.saveSession(sessionToken.accessToken, sessionToken.role)
-                    mutableSessionSnapshot.value =
-                        SessionSnapshot(
-                            generation = getSnapshot().generation + 1L,
-                            accessToken = sessionToken.accessToken,
-                            role = sessionToken.role,
-                        )
-                    mutableSessionState.value = SessionState.Authenticated
+                    synchronized(selectedTeamLock) {
+                        tokenStorage.saveSession(sessionToken.accessToken, sessionToken.role)
+                        mutableSessionSnapshot.value =
+                            SessionSnapshot(
+                                generation = getSnapshot().generation + 1L,
+                                accessToken = sessionToken.accessToken,
+                                role = sessionToken.role,
+                            )
+                        mutableSessionState.value = SessionState.Authenticated
+                        selectedTeamValidatedGeneration = null
+                        selectedTeamSelectionVersion += 1L
+                    }
                     isInitialized = true
                 }
             }
@@ -177,11 +271,15 @@ class SessionManager
                 }
                 currentCoroutineContext().ensureActive()
                 withContext(ioDispatcher + NonCancellable) {
-                    mutableSessionSnapshot.value =
-                        getSnapshot().copy(
-                            accessToken = null,
-                        )
-                    clearStoredTokenSafely()
+                    synchronized(selectedTeamLock) {
+                        mutableSessionSnapshot.value =
+                            getSnapshot().copy(
+                                accessToken = null,
+                            )
+                        selectedTeamValidatedGeneration = null
+                        selectedTeamSelectionVersion += 1L
+                        clearStoredTokenSafely()
+                    }
                 }
                 true
             }
@@ -212,16 +310,20 @@ class SessionManager
             }
             currentCoroutineContext().ensureActive()
             withContext(ioDispatcher + NonCancellable) {
-                mutableSessionSnapshot.value =
-                    SessionSnapshot(
-                        generation = getSnapshot().generation + 1L,
-                        accessToken = null,
-                        role = null,
-                    )
-                mutableSessionState.value = SessionState.Unauthenticated
+                synchronized(selectedTeamLock) {
+                    mutableSessionSnapshot.value =
+                        SessionSnapshot(
+                            generation = getSnapshot().generation + 1L,
+                            accessToken = null,
+                            role = null,
+                        )
+                    mutableSessionState.value = SessionState.Unauthenticated
+                    selectedTeamValidatedGeneration = null
+                    selectedTeamSelectionVersion += 1L
+                    clearStoredTokenSafely()
+                }
                 isInitialized = true
                 mutableSessionEvents.tryEmit(SessionEvent.Expired)
-                clearStoredTokenSafely()
             }
             return true
         }

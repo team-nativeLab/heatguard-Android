@@ -77,6 +77,7 @@ class AndroidKeystoreTokenStorage
                     .edit()
                     .putString(KEY_ACCESS_TOKEN, encrypt(accessToken, SESSION_KEY_ALIAS))
                     .putString(KEY_SESSION_ROLE, role.name)
+                    .remove(KEY_SELECTED_TEAM_ID)
                     .remove(KEY_SELECTED_SITE_ID)
                     .commit()
 
@@ -88,6 +89,36 @@ class AndroidKeystoreTokenStorage
             preferences
                 .getString(KEY_SELECTED_SITE_ID, null)
                 ?.takeIf(String::isNotBlank)
+
+        @Synchronized
+        override fun readSelectedTeamId(): String? =
+            preferences.getString(KEY_SELECTED_TEAM_ID, null)?.takeIf(String::isNotBlank)
+
+        @Synchronized
+        override fun saveSelectedTeamAndSiteIds(
+            teamId: String,
+            siteId: String,
+        ) {
+            require(teamId.isNotBlank() && siteId.isNotBlank())
+            val saved =
+                preferences
+                    .edit()
+                    .putString(KEY_SELECTED_TEAM_ID, teamId)
+                    .putString(KEY_SELECTED_SITE_ID, siteId)
+                    .commit()
+            check(saved) { "Unable to persist the selected team and site" }
+        }
+
+        @Synchronized
+        override fun clearSelectedTeamAndSiteIds() {
+            val cleared =
+                preferences
+                    .edit()
+                    .remove(KEY_SELECTED_TEAM_ID)
+                    .remove(KEY_SELECTED_SITE_ID)
+                    .commit()
+            check(cleared) { "Unable to clear the selected team and site" }
+        }
 
         @Synchronized
         override fun saveSelectedSiteId(siteId: String) {
@@ -118,6 +149,7 @@ class AndroidKeystoreTokenStorage
                     .edit()
                     .remove(KEY_ACCESS_TOKEN)
                     .remove(KEY_SESSION_ROLE)
+                    .remove(KEY_SELECTED_TEAM_ID)
                     .remove(KEY_SELECTED_SITE_ID)
                     .commit()
 
@@ -280,6 +312,7 @@ class AndroidKeystoreTokenStorage
             const val KEY_PENDING_APP_LINK_TOKEN = "pending_app_link_token"
             const val KEY_SESSION_ROLE = "session_role"
             const val KEY_SELECTED_SITE_ID = "selected_site_id"
+            const val KEY_SELECTED_TEAM_ID = "selected_team_id"
             const val PREFERENCES_NAME = "heartguard_session"
             const val TRANSFORMATION = "AES/GCM/NoPadding"
         }

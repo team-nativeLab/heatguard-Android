@@ -210,6 +210,7 @@ private fun ApiError.toDisplayMessage(): String =
 
         ApiError.SessionChanged,
         ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
         ApiError.Unknown,
         -> {
             stringResource(R.string.save_error_unknown)

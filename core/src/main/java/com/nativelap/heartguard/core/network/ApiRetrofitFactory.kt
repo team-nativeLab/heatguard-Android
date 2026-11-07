@@ -115,6 +115,22 @@ class ApiRetrofitFactory
                             requiredRole = SessionRole.TEAM_MEMBER,
                         )
                     }
+
+                    ApiAuthentication.TEAM_CHECKLIST_BEARER -> {
+                        val authenticatedClient =
+                            if (allowRequestReplay) authenticatedApiClient else singleAttemptClient
+                        val teamScopedClient =
+                            authenticatedClient
+                                .newBuilder()
+                                .addInterceptor(SelectedTeamIdInterceptor(sessionManager))
+                                .build()
+                        SessionBoundCallFactory(
+                            delegateClient = teamScopedClient,
+                            sessionManager = sessionManager,
+                            requiredRole = SessionRole.TEAM_MEMBER,
+                            captureSelectedTeam = true,
+                        )
+                    }
                 }
             val contentType = JSON_MEDIA_TYPE.toMediaType()
 

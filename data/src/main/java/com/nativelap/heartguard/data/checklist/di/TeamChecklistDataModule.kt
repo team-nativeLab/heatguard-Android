@@ -35,7 +35,7 @@ abstract class TeamChecklistDataModule {
             apiRetrofitFactory.createService(
                 baseUrl = BuildConfig.BASE_URL,
                 serviceClass = TeamChecklistApiService::class.java,
-                authentication = ApiAuthentication.BEARER,
+                authentication = ApiAuthentication.TEAM_CHECKLIST_BEARER,
             )
     }
 }

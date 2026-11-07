@@ -136,6 +136,10 @@ internal class ClaimAppSiteLinkViewModel
                     ClaimAppSiteLinkFailure.GENERIC
                 }
 
+                ApiError.TeamNotSelected -> {
+                    ClaimAppSiteLinkFailure.GENERIC
+                }
+
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,

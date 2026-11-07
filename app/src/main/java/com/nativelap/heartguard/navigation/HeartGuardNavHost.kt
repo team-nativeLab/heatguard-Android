@@ -82,8 +82,9 @@ internal fun HeartGuardNavHost(
 ) {
     val sessionState by sessionViewModel.sessionState.collectAsStateWithLifecycle()
     val sessionRole by sessionViewModel.sessionRole.collectAsStateWithLifecycle()
-    val sessionGeneration by sessionViewModel.sessionGeneration.collectAsStateWithLifecycle()
-    val isStartupCheckComplete by sessionViewModel.isStartupCheckComplete.collectAsStateWithLifecycle()
+    val sessionSnapshot by sessionViewModel.sessionSnapshot.collectAsStateWithLifecycle()
+    val sessionGeneration = sessionSnapshot.generation
+    val readyGeneration by sessionViewModel.readyGeneration.collectAsStateWithLifecycle()
     val pendingAppLink by appLinkTokenViewModel.pendingLink.collectAsStateWithLifecycle()
 
     when (sessionState) {
@@ -101,7 +102,7 @@ internal fun HeartGuardNavHost(
 
                 SessionRole.TEAM_MEMBER,
                 -> {
-                    if (!isStartupCheckComplete) {
+                    if (readyGeneration != sessionGeneration) {
                         // 복원 세션 확인이 끝날 때까지 Android 시스템 스플래시를 유지한다.
                     } else if (pendingAppLink == null) {
                         HeartGuardMainNavDisplay(

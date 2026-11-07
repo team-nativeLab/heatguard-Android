@@ -9,6 +9,7 @@ internal fun ApiError.mayHaveCreatedCall(): Boolean =
         is ApiError.ServerRejected,
         ApiError.SessionChanged,
         ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
         -> false
 
         ApiError.Network,
