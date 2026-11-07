@@ -17,6 +17,19 @@ interface TokenStorage {
 
     fun readSelectedSiteId(): String? = null
 
+    fun readSelectedTeamId(): String? = null
+
+    fun saveSelectedTeamAndSiteIds(
+        teamId: String,
+        siteId: String,
+    ) {
+        saveSelectedSiteId(siteId)
+    }
+
+    fun clearSelectedTeamAndSiteIds() {
+        clearSelectedSiteId()
+    }
+
     fun saveSelectedSiteId(siteId: String) = Unit
 
     fun clearSelectedSiteId() = Unit

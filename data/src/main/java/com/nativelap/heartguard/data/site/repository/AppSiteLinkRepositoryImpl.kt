@@ -68,6 +68,7 @@ class AppSiteLinkRepositoryImpl
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
             val selectedSiteIdAtRequest = sessionManager.getSelectedSiteId()
+            val selectedTeamIdAtRequest = sessionManager.getSelectedTeamId()
             val result = appSiteLinkRemoteDataSource.getLinkedSites(expectedSessionGeneration)
             if (result is ApiResult.Failure) {
                 return result
@@ -80,14 +81,20 @@ class AppSiteLinkRepositoryImpl
                         site.teamId == linkedSites.selectedTeamId
                     }
                 val selectedSiteId = selectedTeam?.siteId
-                if (selectedSiteIdAtRequest != selectedSiteId) {
-                    if (selectedSiteId == null) {
-                        selectedSiteIdAtRequest?.let { previousSiteId ->
-                            sessionManager.clearSelectedSiteIdForSession(requestSession, previousSiteId)
-                        }
-                    } else {
-                        sessionManager.saveSelectedSiteIdForSession(selectedSiteId, requestSession)
-                    }
+                if (selectedTeam == null) {
+                    sessionManager.clearSelectedTeamAndSiteIdsForSession(
+                        expectedTeamId = selectedTeamIdAtRequest,
+                        expectedSiteId = selectedSiteIdAtRequest,
+                        expectedSnapshot = requestSession,
+                    )
+                } else {
+                    sessionManager.saveSelectedTeamAndSiteIdsForSession(
+                        teamId = selectedTeam.teamId,
+                        siteId = selectedTeam.siteId,
+                        expectedTeamId = selectedTeamIdAtRequest,
+                        expectedSiteId = selectedSiteIdAtRequest,
+                        expectedSnapshot = requestSession,
+                    )
                 }
                 ApiResult.Success(
                     linkedSites.copy(selectedTeamId = selectedTeam?.teamId),
@@ -114,11 +121,16 @@ class AppSiteLinkRepositoryImpl
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
             val selectedSiteIdAtRequest = sessionManager.getSelectedSiteId()
+            val selectedTeamIdAtRequest = sessionManager.getSelectedTeamId()
             val result = appSiteLinkRemoteDataSource.unlinkTeam(teamId, expectedSessionGeneration)
             if (result is ApiResult.Success) {
                 try {
-                    if (selectedSiteIdAtRequest == siteId) {
-                        sessionManager.clearSelectedSiteIdForSession(requestSession, siteId)
+                    if (selectedTeamIdAtRequest == teamId && selectedSiteIdAtRequest == siteId) {
+                        sessionManager.clearSelectedTeamAndSiteIdsForSession(
+                            expectedTeamId = teamId,
+                            expectedSiteId = siteId,
+                            expectedSnapshot = requestSession,
+                        )
                     }
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
@@ -143,6 +155,8 @@ class AppSiteLinkRepositoryImpl
             if (requestSession.generation != expectedSessionGeneration) {
                 return ApiResult.Failure(ApiError.SessionChanged)
             }
+            val selectedTeamIdAtRequest = sessionManager.getSelectedTeamId()
+            val selectedSiteIdAtRequest = sessionManager.getSelectedSiteId()
             return when (
                 val result =
                     appSiteLinkRemoteDataSource.selectTeam(
@@ -156,7 +170,16 @@ class AppSiteLinkRepositoryImpl
 
                 is ApiResult.Success -> {
                     try {
-                        if (sessionManager.saveSelectedSiteIdForSession(result.value.siteId, requestSession)) {
+                        if (result.value.teamId != teamId) {
+                            ApiResult.Failure(ApiError.SessionChanged)
+                        } else if (sessionManager.saveSelectedTeamAndSiteIdsForSession(
+                                teamId = result.value.teamId,
+                                siteId = result.value.siteId,
+                                expectedTeamId = selectedTeamIdAtRequest,
+                                expectedSiteId = selectedSiteIdAtRequest,
+                                expectedSnapshot = requestSession,
+                            )
+                        ) {
                             ApiResult.Success(result.value.toDomain())
                         } else {
                             ApiResult.Failure(ApiError.SessionChanged)

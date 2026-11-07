@@ -7,4 +7,5 @@ enum class ApiAuthentication {
     APP_ACCOUNT_BEARER,
     APP_ACCOUNT_SITE_BEARER,
     TEAM_SITE_BEARER,
+    TEAM_CHECKLIST_BEARER,
 }

@@ -36,14 +36,16 @@ class AppSiteLinkRepositoryImplTest {
             )
             assertEquals("team_01", remoteDataSource.selectedTeamId)
             assertEquals("site_01", tokenStorage.selectedSiteId)
+            assertEquals("team_01", tokenStorage.selectedTeamId)
         }
 
     @Test
     fun `unlink sends team id and clears only matching site id`() =
         runBlocking {
-            val tokenStorage = FakeTokenStorage(selectedSiteId = "site_01")
+            val tokenStorage = FakeTokenStorage(selectedTeamId = "team_01", selectedSiteId = "site_01")
             val sessionManager = SessionManager(tokenStorage, Dispatchers.Unconfined)
             sessionManager.onLoginSucceeded(SessionToken("access-token"))
+            tokenStorage.saveSelectedTeamAndSiteIds("team_01", "site_01")
             val remoteDataSource = FakeAppSiteLinkRemoteDataSource()
             val repository = AppSiteLinkRepositoryImpl(remoteDataSource, sessionManager)
             val generation = sessionManager.getSnapshot().generation
@@ -60,9 +62,10 @@ class AppSiteLinkRepositoryImplTest {
     @Test
     fun `get linked sites stores site id for selected team`() =
         runBlocking {
-            val tokenStorage = FakeTokenStorage(selectedSiteId = "site_old")
+            val tokenStorage = FakeTokenStorage(selectedTeamId = "team_old", selectedSiteId = "site_old")
             val sessionManager = SessionManager(tokenStorage, Dispatchers.Unconfined)
             sessionManager.onLoginSucceeded(SessionToken("access-token"))
+            tokenStorage.saveSelectedTeamAndSiteIds("team_old", "site_old")
             val remoteDataSource =
                 FakeAppSiteLinkRemoteDataSource(
                     linkedSitesResponse =
@@ -99,9 +102,10 @@ class AppSiteLinkRepositoryImplTest {
     @Test
     fun `get linked sites clears previous site when no team is selected`() =
         runBlocking {
-            val tokenStorage = FakeTokenStorage(selectedSiteId = "site_old")
+            val tokenStorage = FakeTokenStorage(selectedTeamId = "team_old", selectedSiteId = "site_old")
             val sessionManager = SessionManager(tokenStorage, Dispatchers.Unconfined)
             sessionManager.onLoginSucceeded(SessionToken("access-token"))
+            tokenStorage.saveSelectedTeamAndSiteIds("team_old", "site_old")
             val remoteDataSource =
                 FakeAppSiteLinkRemoteDataSource(
                     linkedSitesResponse = AppLinkedSitesResponseDto(items = emptyList(), selectedTeamId = null),
@@ -116,13 +120,30 @@ class AppSiteLinkRepositoryImplTest {
 }
 
 private class FakeTokenStorage(
+    var selectedTeamId: String? = null,
     var selectedSiteId: String? = null,
 ) : TokenStorage {
     override fun readAccessToken(): String? = "access-token"
 
     override fun saveAccessToken(accessToken: String) = Unit
 
+    override fun saveSession(accessToken: String, role: com.nativelap.heartguard.core.session.SessionRole) {
+        clearSelectedTeamAndSiteIds()
+    }
+
+    override fun readSelectedTeamId(): String? = selectedTeamId
+
     override fun readSelectedSiteId(): String? = selectedSiteId
+
+    override fun saveSelectedTeamAndSiteIds(teamId: String, siteId: String) {
+        selectedTeamId = teamId
+        selectedSiteId = siteId
+    }
+
+    override fun clearSelectedTeamAndSiteIds() {
+        selectedTeamId = null
+        selectedSiteId = null
+    }
 
     override fun saveSelectedSiteId(siteId: String) {
         selectedSiteId = siteId

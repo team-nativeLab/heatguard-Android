@@ -27,6 +27,8 @@ sealed interface ApiError {
 
     data object SiteNotSelected : ApiError
 
+    data object TeamNotSelected : ApiError
+
     data object Serialization : ApiError
 
     data class ServerRejected(

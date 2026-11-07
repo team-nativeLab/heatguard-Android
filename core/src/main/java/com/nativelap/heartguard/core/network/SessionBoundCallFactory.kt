@@ -3,6 +3,7 @@ package com.nativelap.heartguard.core.network
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionSnapshot
+import com.nativelap.heartguard.core.session.SelectedTeamRequestSnapshot
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -14,6 +15,7 @@ class SessionBoundCallFactory(
     private val delegateClient: OkHttpClient,
     private val sessionManager: SessionManager,
     private val requiredRole: SessionRole = SessionRole.TEAM_MEMBER,
+    private val captureSelectedTeam: Boolean = false,
 ) : Call.Factory {
     override fun newCall(request: Request): Call {
         val owningSnapshot = sessionManager.getSnapshot()
@@ -24,11 +26,13 @@ class SessionBoundCallFactory(
         if (owningSnapshot.role != requiredRole || owningSnapshot.accessToken.isNullOrBlank()) {
             throw SessionChangedException()
         }
-        val sessionBoundRequest =
-            request
-                .newBuilder()
-                .tag(SessionSnapshot::class.java, owningSnapshot)
-                .build()
+        val requestBuilder = request.newBuilder().tag(SessionSnapshot::class.java, owningSnapshot)
+        if (captureSelectedTeam) {
+            val selectedTeamSnapshot = sessionManager.getSelectedTeamRequestSnapshot(owningSnapshot)
+                ?: throw TeamNotSelectedException()
+            requestBuilder.tag(SelectedTeamRequestSnapshot::class.java, selectedTeamSnapshot)
+        }
+        val sessionBoundRequest = requestBuilder.build()
         return delegateClient.newCall(sessionBoundRequest)
     }
 }

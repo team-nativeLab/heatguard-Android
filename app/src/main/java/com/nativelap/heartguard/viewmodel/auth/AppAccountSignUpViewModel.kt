@@ -346,6 +346,7 @@ internal class AppAccountSignUpViewModel
 
                 ApiError.SessionChanged,
                 ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,
@@ -364,6 +365,7 @@ internal class AppAccountSignUpViewModel
                 ApiError.Network,
                 ApiError.SessionChanged,
                 ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
                 ApiError.Serialization,
                 ApiError.LocalStorage,
                 ApiError.Unknown,
@@ -402,6 +404,7 @@ internal class AppAccountSignUpViewModel
 
                 ApiError.SessionChanged,
                 ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,
@@ -435,6 +438,7 @@ internal class AppAccountSignUpViewModel
 
                 ApiError.SessionChanged,
                 ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,

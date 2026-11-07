@@ -44,6 +44,7 @@ class AccountRepositoryImpl
                 ApiError.Network,
                 ApiError.SessionChanged,
                 ApiError.SiteNotSelected,
+        ApiError.TeamNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,
