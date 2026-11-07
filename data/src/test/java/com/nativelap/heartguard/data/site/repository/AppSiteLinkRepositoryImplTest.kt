@@ -127,7 +127,10 @@ private class FakeTokenStorage(
 
     override fun saveAccessToken(accessToken: String) = Unit
 
-    override fun saveSession(accessToken: String, role: com.nativelap.heartguard.core.session.SessionRole) {
+    override fun saveSession(
+        accessToken: String,
+        role: com.nativelap.heartguard.core.session.SessionRole,
+    ) {
         clearSelectedTeamAndSiteIds()
     }
 
@@ -135,7 +138,10 @@ private class FakeTokenStorage(
 
     override fun readSelectedSiteId(): String? = selectedSiteId
 
-    override fun saveSelectedTeamAndSiteIds(teamId: String, siteId: String) {
+    override fun saveSelectedTeamAndSiteIds(
+        teamId: String,
+        siteId: String,
+    ) {
         selectedTeamId = teamId
         selectedSiteId = siteId
     }

@@ -2,18 +2,18 @@ package com.nativelap.heartguard.data.checklist.repository
 
 import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.data.checklist.dto.UpdateChecklistItemRequestDto
 import com.nativelap.heartguard.data.checklist.dto.UpdateChecklistRoundItemRequestDto
 import com.nativelap.heartguard.data.checklist.mapper.toDomain
 import com.nativelap.heartguard.data.checklist.remote.TeamChecklistRemoteDataSource
-import com.nativelap.heartguard.core.session.SessionManager
-import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import com.nativelap.heartguard.domain.checklist.model.ChecklistItemCheckUpdate
 import com.nativelap.heartguard.domain.checklist.model.ChecklistRoundItemCheckUpdate
 import com.nativelap.heartguard.domain.checklist.model.TeamChecklist
 import com.nativelap.heartguard.domain.checklist.model.TeamChecklistRoundDetail
 import com.nativelap.heartguard.domain.checklist.model.TeamChecklistRounds
 import com.nativelap.heartguard.domain.checklist.repository.TeamChecklistRepository
+import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import javax.inject.Inject
@@ -91,7 +91,6 @@ class TeamChecklistRepositoryImpl
                 ).mapChecklistResult { response ->
                     response.toDomain()
                 }
-
         }
 
         private suspend fun ensureSelectedTeam(): Boolean {

@@ -73,12 +73,17 @@ class SessionManager
 
         fun getSelectedTeamId(): String? = tokenStorage.readSelectedTeamId()
 
-        fun getSelectedTeamIdForSession(expectedSnapshot: SessionSnapshot): String? = synchronized(selectedTeamLock) {
-            if (getSnapshot() == expectedSnapshot &&
-                expectedSnapshot.role == SessionRole.TEAM_MEMBER &&
-                selectedTeamValidatedGeneration == expectedSnapshot.generation
-            ) tokenStorage.readSelectedTeamId() else null
-        }
+        fun getSelectedTeamIdForSession(expectedSnapshot: SessionSnapshot): String? =
+            synchronized(selectedTeamLock) {
+                if (getSnapshot() == expectedSnapshot &&
+                    expectedSnapshot.role == SessionRole.TEAM_MEMBER &&
+                    selectedTeamValidatedGeneration == expectedSnapshot.generation
+                ) {
+                    tokenStorage.readSelectedTeamId()
+                } else {
+                    null
+                }
+            }
 
         fun getSelectedTeamRequestSnapshot(expectedSnapshot: SessionSnapshot): SelectedTeamRequestSnapshot? =
             synchronized(selectedTeamLock) {
@@ -89,12 +94,13 @@ class SessionManager
         fun isSelectedTeamRequestSnapshotCurrent(
             expectedSnapshot: SessionSnapshot,
             selectedTeamRequestSnapshot: SelectedTeamRequestSnapshot,
-        ): Boolean = synchronized(selectedTeamLock) {
-            getSnapshot() == expectedSnapshot &&
-                selectedTeamValidatedGeneration == expectedSnapshot.generation &&
-                selectedTeamSelectionVersion == selectedTeamRequestSnapshot.selectionVersion &&
-                tokenStorage.readSelectedTeamId() == selectedTeamRequestSnapshot.teamId
-        }
+        ): Boolean =
+            synchronized(selectedTeamLock) {
+                getSnapshot() == expectedSnapshot &&
+                    selectedTeamValidatedGeneration == expectedSnapshot.generation &&
+                    selectedTeamSelectionVersion == selectedTeamRequestSnapshot.selectionVersion &&
+                    tokenStorage.readSelectedTeamId() == selectedTeamRequestSnapshot.teamId
+            }
 
         suspend fun saveSelectedTeamAndSiteIdsForSession(
             teamId: String,
@@ -102,39 +108,47 @@ class SessionManager
             expectedTeamId: String?,
             expectedSiteId: String?,
             expectedSnapshot: SessionSnapshot,
-        ): Boolean = sessionMutex.withLock {
-            if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER ||
-                tokenStorage.readSelectedTeamId() != expectedTeamId || tokenStorage.readSelectedSiteId() != expectedSiteId
-            ) return@withLock false
-            currentCoroutineContext().ensureActive()
-            withContext(ioDispatcher) {
-                synchronized(selectedTeamLock) {
-                    tokenStorage.saveSelectedTeamAndSiteIds(teamId, siteId)
-                    selectedTeamSelectionVersion += 1L
-                    selectedTeamValidatedGeneration = expectedSnapshot.generation
+        ): Boolean =
+            sessionMutex.withLock {
+                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER ||
+                    tokenStorage.readSelectedTeamId() != expectedTeamId ||
+                    tokenStorage.readSelectedSiteId() != expectedSiteId
+                ) {
+                    return@withLock false
                 }
+                currentCoroutineContext().ensureActive()
+                withContext(ioDispatcher) {
+                    synchronized(selectedTeamLock) {
+                        tokenStorage.saveSelectedTeamAndSiteIds(teamId, siteId)
+                        selectedTeamSelectionVersion += 1L
+                        selectedTeamValidatedGeneration = expectedSnapshot.generation
+                    }
+                }
+                true
             }
-            true
-        }
 
         suspend fun clearSelectedTeamAndSiteIdsForSession(
             expectedTeamId: String?,
             expectedSiteId: String?,
             expectedSnapshot: SessionSnapshot,
-        ): Boolean = sessionMutex.withLock {
-            if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER ||
-                tokenStorage.readSelectedTeamId() != expectedTeamId || tokenStorage.readSelectedSiteId() != expectedSiteId
-            ) return@withLock false
-            currentCoroutineContext().ensureActive()
-            withContext(ioDispatcher) {
-                synchronized(selectedTeamLock) {
-                    tokenStorage.clearSelectedTeamAndSiteIds()
-                    selectedTeamSelectionVersion += 1L
-                    selectedTeamValidatedGeneration = expectedSnapshot.generation
+        ): Boolean =
+            sessionMutex.withLock {
+                if (getSnapshot() != expectedSnapshot || expectedSnapshot.role != SessionRole.TEAM_MEMBER ||
+                    tokenStorage.readSelectedTeamId() != expectedTeamId ||
+                    tokenStorage.readSelectedSiteId() != expectedSiteId
+                ) {
+                    return@withLock false
                 }
+                currentCoroutineContext().ensureActive()
+                withContext(ioDispatcher) {
+                    synchronized(selectedTeamLock) {
+                        tokenStorage.clearSelectedTeamAndSiteIds()
+                        selectedTeamSelectionVersion += 1L
+                        selectedTeamValidatedGeneration = expectedSnapshot.generation
+                    }
+                }
+                true
             }
-            true
-        }
 
         /** 세션 전환과 경쟁하지 않도록 현재 Team 세션에서만 현장 선택을 저장한다. */
         suspend fun saveSelectedSiteIdForSession(

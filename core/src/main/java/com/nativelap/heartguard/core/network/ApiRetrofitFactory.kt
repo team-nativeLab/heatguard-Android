@@ -117,10 +117,13 @@ class ApiRetrofitFactory
                     }
 
                     ApiAuthentication.TEAM_CHECKLIST_BEARER -> {
-                        val authenticatedClient = if (allowRequestReplay) authenticatedApiClient else singleAttemptClient
-                        val teamScopedClient = authenticatedClient.newBuilder()
-                            .addInterceptor(SelectedTeamIdInterceptor(sessionManager))
-                            .build()
+                        val authenticatedClient =
+                            if (allowRequestReplay) authenticatedApiClient else singleAttemptClient
+                        val teamScopedClient =
+                            authenticatedClient
+                                .newBuilder()
+                                .addInterceptor(SelectedTeamIdInterceptor(sessionManager))
+                                .build()
                         SessionBoundCallFactory(
                             delegateClient = teamScopedClient,
                             sessionManager = sessionManager,

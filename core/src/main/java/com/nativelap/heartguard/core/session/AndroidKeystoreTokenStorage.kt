@@ -95,21 +95,28 @@ class AndroidKeystoreTokenStorage
             preferences.getString(KEY_SELECTED_TEAM_ID, null)?.takeIf(String::isNotBlank)
 
         @Synchronized
-        override fun saveSelectedTeamAndSiteIds(teamId: String, siteId: String) {
+        override fun saveSelectedTeamAndSiteIds(
+            teamId: String,
+            siteId: String,
+        ) {
             require(teamId.isNotBlank() && siteId.isNotBlank())
-            val saved = preferences.edit()
-                .putString(KEY_SELECTED_TEAM_ID, teamId)
-                .putString(KEY_SELECTED_SITE_ID, siteId)
-                .commit()
+            val saved =
+                preferences
+                    .edit()
+                    .putString(KEY_SELECTED_TEAM_ID, teamId)
+                    .putString(KEY_SELECTED_SITE_ID, siteId)
+                    .commit()
             check(saved) { "Unable to persist the selected team and site" }
         }
 
         @Synchronized
         override fun clearSelectedTeamAndSiteIds() {
-            val cleared = preferences.edit()
-                .remove(KEY_SELECTED_TEAM_ID)
-                .remove(KEY_SELECTED_SITE_ID)
-                .commit()
+            val cleared =
+                preferences
+                    .edit()
+                    .remove(KEY_SELECTED_TEAM_ID)
+                    .remove(KEY_SELECTED_SITE_ID)
+                    .commit()
             check(cleared) { "Unable to clear the selected team and site" }
         }
 

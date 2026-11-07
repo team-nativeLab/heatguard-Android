@@ -1,9 +1,9 @@
 package com.nativelap.heartguard.core.network
 
+import com.nativelap.heartguard.core.session.SelectedTeamRequestSnapshot
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import com.nativelap.heartguard.core.session.SessionSnapshot
-import com.nativelap.heartguard.core.session.SelectedTeamRequestSnapshot
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException
@@ -18,8 +18,9 @@ class SelectedTeamIdInterceptor(
         if (requestSnapshot.role != SessionRole.TEAM_MEMBER || requestSnapshot != sessionManager.getSnapshot()) {
             throw SessionChangedException()
         }
-        val selectedTeamSnapshot = request.tag(SelectedTeamRequestSnapshot::class.java)
-            ?: throw TeamNotSelectedException()
+        val selectedTeamSnapshot =
+            request.tag(SelectedTeamRequestSnapshot::class.java)
+                ?: throw TeamNotSelectedException()
         if (!sessionManager.isSelectedTeamRequestSnapshotCurrent(requestSnapshot, selectedTeamSnapshot)) {
             throw SessionChangedException()
         }

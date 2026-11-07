@@ -61,7 +61,7 @@ class TeamAuthRepositoryImpl
                 ApiError.Network,
                 ApiError.SessionChanged,
                 ApiError.SiteNotSelected,
-        ApiError.TeamNotSelected,
+                ApiError.TeamNotSelected,
                 ApiError.Serialization,
                 ApiError.Unknown,
                 ApiError.LocalStorage,

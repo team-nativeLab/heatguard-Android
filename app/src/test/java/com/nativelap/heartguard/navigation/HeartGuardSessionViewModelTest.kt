@@ -14,11 +14,11 @@ import com.nativelap.heartguard.domain.profile.model.ProfileUpdateResult
 import com.nativelap.heartguard.domain.profile.model.WorkerProfile
 import com.nativelap.heartguard.domain.profile.repository.WorkerProfileRepository
 import com.nativelap.heartguard.domain.profile.usecase.GetWorkerProfileUseCase
-import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import com.nativelap.heartguard.domain.site.model.AppLinkedSites
 import com.nativelap.heartguard.domain.site.model.AppSelectedSite
 import com.nativelap.heartguard.domain.site.model.AppSiteDashboard
 import com.nativelap.heartguard.domain.site.model.AppSiteLinkClaim
+import com.nativelap.heartguard.domain.site.repository.AppSiteLinkRepository
 import com.nativelap.heartguard.domain.site.usecase.GetAppLinkedSitesUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -61,40 +61,42 @@ class HeartGuardSessionViewModelTest {
         }
 
     @Test
-    fun `fresh team login is not ready until memberships preparation finishes`() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(dispatcher)
-        val sessionManager = SessionManager(TestTokenStorage(storedAccessToken = null), dispatcher)
-        val siteRepository = FakeAppSiteLinkRepository()
-        val membershipResult = CompletableDeferred<ApiResult<AppLinkedSites>>()
-        siteRepository.linkedSitesRequest = { membershipResult.await() }
-        val viewModelStore = ViewModelStore()
+    fun `fresh team login is not ready until memberships preparation finishes`() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            val sessionManager = SessionManager(TestTokenStorage(storedAccessToken = null), dispatcher)
+            val siteRepository = FakeAppSiteLinkRepository()
+            val membershipResult = CompletableDeferred<ApiResult<AppLinkedSites>>()
+            siteRepository.linkedSitesRequest = { membershipResult.await() }
+            val viewModelStore = ViewModelStore()
 
-        try {
-            val viewModel = createViewModel(
-                FakeWorkerProfileRepository(),
-                sessionManager,
-                viewModelStore,
-                siteRepository,
-            )
-            runCurrent()
-            assertEquals(sessionManager.getSnapshot().generation, viewModel.readyGeneration.value)
+            try {
+                val viewModel =
+                    createViewModel(
+                        FakeWorkerProfileRepository(),
+                        sessionManager,
+                        viewModelStore,
+                        siteRepository,
+                    )
+                runCurrent()
+                assertEquals(sessionManager.getSnapshot().generation, viewModel.readyGeneration.value)
 
-            sessionManager.onLoginSucceeded(SessionToken("fresh-login", SessionRole.TEAM_MEMBER))
-            runCurrent()
-            val loginGeneration = sessionManager.getSnapshot().generation
-            assertTrue(viewModel.readyGeneration.value != loginGeneration)
-            assertFalse(viewModel.isStartupCheckComplete.value)
+                sessionManager.onLoginSucceeded(SessionToken("fresh-login", SessionRole.TEAM_MEMBER))
+                runCurrent()
+                val loginGeneration = sessionManager.getSnapshot().generation
+                assertTrue(viewModel.readyGeneration.value != loginGeneration)
+                assertFalse(viewModel.isStartupCheckComplete.value)
 
-            membershipResult.complete(ApiResult.Failure(ApiError.Network))
-            runCurrent()
-            assertEquals(loginGeneration, viewModel.readyGeneration.value)
-            assertTrue(viewModel.isStartupCheckComplete.value)
-        } finally {
-            viewModelStore.clear()
-            Dispatchers.resetMain()
+                membershipResult.complete(ApiResult.Failure(ApiError.Network))
+                runCurrent()
+                assertEquals(loginGeneration, viewModel.readyGeneration.value)
+                assertTrue(viewModel.isStartupCheckComplete.value)
+            } finally {
+                viewModelStore.clear()
+                Dispatchers.resetMain()
+            }
         }
-    }
 
     @Test
     fun `startup check does not request profile for a newly logged in session`() =
@@ -534,10 +536,31 @@ class HeartGuardSessionViewModelTest {
 
 private class FakeAppSiteLinkRepository : AppSiteLinkRepository {
     var linkedSitesRequest: suspend () -> ApiResult<AppLinkedSites> = { ApiResult.Failure(ApiError.Network) }
-    override suspend fun getDashboard(siteId: String, expectedSessionGeneration: Long): ApiResult<AppSiteDashboard> = ApiResult.Failure(ApiError.Network)
-    override suspend fun unlinkTeam(teamId: String, siteId: String, expectedSessionGeneration: Long): ApiResult<Unit> = ApiResult.Failure(ApiError.Network)
-    override suspend fun claim(token: String, managerPhone: String, expectedSessionGeneration: Long): ApiResult<AppSiteLinkClaim> = ApiResult.Failure(ApiError.Network)
-    override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<AppLinkedSites> = linkedSitesRequest()
-    override suspend fun selectTeam(teamId: String, expectedSessionGeneration: Long): ApiResult<AppSelectedSite> = ApiResult.Failure(ApiError.Network)
+
+    override suspend fun getDashboard(
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSiteDashboard> = ApiResult.Failure(ApiError.Network)
+
+    override suspend fun unlinkTeam(
+        teamId: String,
+        siteId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<Unit> = ApiResult.Failure(ApiError.Network)
+
+    override suspend fun claim(
+        token: String,
+        managerPhone: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSiteLinkClaim> = ApiResult.Failure(ApiError.Network)
+
+    override suspend fun getLinkedSites(expectedSessionGeneration: Long): ApiResult<AppLinkedSites> =
+        linkedSitesRequest()
+
+    override suspend fun selectTeam(
+        teamId: String,
+        expectedSessionGeneration: Long,
+    ): ApiResult<AppSelectedSite> = ApiResult.Failure(ApiError.Network)
+
     override fun getSelectedSiteId(): String? = null
 }

@@ -18,9 +18,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -90,7 +90,9 @@ internal class HeartGuardSessionViewModel
             viewModelScope.launch {
                 sessionManager.initialize()
                 sessionManager.sessionSnapshot.collectLatest { sessionSnapshot ->
-                    if (sessionSnapshot.role == SessionRole.TEAM_MEMBER && !sessionSnapshot.accessToken.isNullOrBlank()) {
+                    if (sessionSnapshot.role == SessionRole.TEAM_MEMBER &&
+                        !sessionSnapshot.accessToken.isNullOrBlank()
+                    ) {
                         if (sessionManager.isRestoredSession()) checkRestoredSessionOnce()
                         if (sessionManager.getSnapshot() == sessionSnapshot) {
                             withTimeoutOrNull(STARTUP_SESSION_CHECK_TIMEOUT_MS) {
