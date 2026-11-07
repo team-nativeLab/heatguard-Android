@@ -309,7 +309,7 @@ internal fun AuthSignUpScreen(
                                         Modifier
                                             .fillMaxWidth()
                                             .background(
-                                                MaterialTheme.extraColors.authInputBackground,
+                                                MaterialTheme.colorScheme.primary,
                                                 RoundedCornerShape(HeartGuardRadius.InputBox),
                                             ).padding(HeartGuardSpacing.Item),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -318,17 +318,17 @@ internal fun AuthSignUpScreen(
                                     Icon(
                                         imageVector = Icons.Outlined.CheckCircle,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
                                     )
                                     Column {
                                         Text(
                                             text = stringResource(R.string.auth_signup_email_verified),
-                                            color = MaterialTheme.colorScheme.primary,
+                                            color = MaterialTheme.colorScheme.onPrimary,
                                             style = MaterialTheme.typography.labelLarge,
                                         )
                                         Text(
                                             text = email,
-                                            color = MaterialTheme.extraColors.authOnSurface,
+                                            color = MaterialTheme.colorScheme.onPrimary,
                                             style = MaterialTheme.typography.bodyMedium,
                                         )
                                     }
