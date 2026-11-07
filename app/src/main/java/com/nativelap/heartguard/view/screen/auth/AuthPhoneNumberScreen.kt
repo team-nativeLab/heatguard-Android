@@ -230,7 +230,7 @@ private fun PhoneNumberInput(
                     if (phoneNumber.isEmpty()) {
                         Text(
                             text = stringResource(R.string.auth_phone_hint),
-                            color = MaterialTheme.extraColors.strongText,
+                            color = MaterialTheme.extraColors.mutedText,
                             style = MaterialTheme.typography.bodyLarge.copy(fontSize = PHONE_INPUT_TEXT_SIZE),
                         )
                     }

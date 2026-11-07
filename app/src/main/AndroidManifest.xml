@@ -42,7 +42,7 @@
                 <data
                     android:host="team"
                     android:pathPrefix="/invitations/"
-                    android:scheme="heartguard" />
+                    android:scheme="heatguard" />
             </intent-filter>
         </activity>
 

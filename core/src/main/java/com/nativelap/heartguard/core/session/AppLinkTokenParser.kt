@@ -42,7 +42,7 @@ internal object AppLinkTokenParser {
         }
     }
 
-    private const val SUPPORTED_SCHEME = "heartguard"
+    private const val SUPPORTED_SCHEME = "heatguard"
     private const val SUPPORTED_HOST = "team"
     private const val LINK_PATH_PREFIX = "/invitations/"
     private const val PATH_SEPARATOR = '/'
