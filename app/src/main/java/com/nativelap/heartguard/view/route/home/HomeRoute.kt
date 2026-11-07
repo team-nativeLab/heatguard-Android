@@ -238,9 +238,8 @@ private fun skyStatusText(skyStatus: SkyStatus?): String =
         -> emptyValueText()
     }
 
-// 눈 전용 이미지가 없어 눈·미입력은 기본 홈 날씨 이미지를 쓴다.
 @DrawableRes
-private fun skyStatusImageRes(skyStatus: SkyStatus?): Int =
+internal fun skyStatusImageRes(skyStatus: SkyStatus?): Int =
     when (skyStatus) {
         SkyStatus.CLEAR -> R.drawable.weather_sunny
 
@@ -248,8 +247,9 @@ private fun skyStatusImageRes(skyStatus: SkyStatus?): Int =
 
         SkyStatus.RAIN -> R.drawable.weather_rain
 
+        SkyStatus.SNOW -> R.drawable.weather_snow
+
         SkyStatus.PARTLY_CLOUDY,
-        SkyStatus.SNOW,
         SkyStatus.UNKNOWN,
         null,
         -> R.drawable.heartguard_home_weather
