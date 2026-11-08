@@ -19,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -147,7 +148,22 @@ class HomeViewModel
             val requestId = ++currentLocationWeatherRequestId
             currentLocationWeatherJob =
                 viewModelScope.launch {
-                    val coordinates = currentLocationProvider.getCurrentLocation() ?: return@launch
+                    var coordinates =
+                        currentLocationProvider.getCurrentLocation()
+                            ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
+                    if (coordinates == null) {
+                        delay(LOCATION_RETRY_DELAY_MILLIS)
+                        ensureActive()
+                        if (requestId != currentLocationWeatherRequestId ||
+                            generation != sessionManager.getSnapshot().generation
+                        ) {
+                            return@launch
+                        }
+                        coordinates =
+                            currentLocationProvider.getCurrentLocation()
+                                ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
+                    }
+                    coordinates ?: return@launch
                     if (requestId != currentLocationWeatherRequestId ||
                         generation != sessionManager.getSnapshot().generation
                     ) {
@@ -270,5 +286,6 @@ class HomeViewModel
         private companion object {
             const val STOP_TIMEOUT_MILLIS = 5_000L
             const val TIME_TICK_MILLIS = 60_000L
+            const val LOCATION_RETRY_DELAY_MILLIS = 1_000L
         }
     }
