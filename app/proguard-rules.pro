@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# kotlinx.serialization: DTO와 Navigation NavKey(sealed 목적지)가 직렬화할 때 쓰는 생성 serializer를 유지한다.
+# 라이브러리 consumer 규칙과 겹치지만, release 축소 후 역직렬화 실패를 막기 위해 프로젝트 범위를 명시한다.
+-keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
+-keepclassmembers class com.nativelap.heartguard.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.nativelap.heartguard.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep,includedescriptorclasses class com.nativelap.heartguard.**$$serializer { *; }

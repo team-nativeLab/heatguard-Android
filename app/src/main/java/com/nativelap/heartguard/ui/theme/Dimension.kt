@@ -26,7 +26,6 @@ object HeartGuardSpacing {
     val AuthSignUpTitleForm = 31.dp
     val AuthSignUpFieldGroup = 21.dp
     val AuthSignUpActionsTop = 64.dp
-    val AuthFooterGap = 8.dp
     val PageContentTop = 12.dp
     val ResultHorizontal = 25.dp
     val ResultTitleTop = 18.dp
@@ -43,7 +42,6 @@ object HeartGuardSpacing {
     val ResultErrorDetailHorizontal = 28.dp
     val ResultErrorDetailTop = 20.dp
     val ResultErrorDetailTextIndent = 25.dp
-    val HomeCardHorizontal = 25.dp
     val HomeContentHorizontal = 27.dp
     val HomeHeroHorizontal = 35.dp
     val HomeMetricHorizontal = 18.dp
@@ -70,7 +68,6 @@ object HeartGuardSpacing {
     val PhotoSelectionDescriptionTop = 40.dp
     val SectionTitleHorizontal = 43.dp
     val Section = 20.dp
-    val CompactSection = 8.dp
     val LargeSection = 24.dp
     val Card = 16.dp
     val Item = 12.dp
@@ -87,7 +84,6 @@ object HeartGuardSpacing {
 object HeartGuardRadius {
     val Card = 16.dp
     val LargeCard = 25.dp
-    val WeatherCard = 32.dp
     val HomeMetric = 16.dp
     val HomeAction = 12.dp
     val Sheet = 40.dp
@@ -105,23 +101,17 @@ object HeartGuardRadius {
 object HeartGuardIconSize {
     val Navigation = 24.dp
     val HeaderAction = 28.dp
-    val Information = 28.dp
     val RecordOption = 48.dp
     val Checkbox = 24.dp
     val CameraAction = 42.dp
     val BrandMark = 80.dp
-    val Weather = 72.dp
-    val WeatherIllustrationMax = 150.dp
     val TimelineDot = 8.dp
     val TimelineCurrentDot = 10.dp
     val TimelineCurrentRing = 20.dp
-    val EmergencyIndicatorMax = 112.dp
     val Result = 84.dp
     val ResultSuccessGlyph = 53.dp
     val ResultFailureGlyph = 59.dp
-    val StatusIndicator = 12.dp
     val Small = 16.dp
-    val WeatherStatus = 48.dp
     val HomeMetric = 36.dp
     val HomeRecord = 44.dp
     val MenuAvatar = 48.dp
@@ -148,9 +138,6 @@ object HeartGuardComponentSize {
     // 스크롤 Column에서 끝까지 이만큼 남았을 때 다음 페이지를 미리 요청한다.
     val ListLoadMorePrefetchDistance = 200.dp
 
-    // 홈 날씨 지표 3개를 가로로 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 세로로 쌓는다.
-    val HomeMetricRowMinWidth = 260.dp
-
     // 기록 건수 4칸을 한 줄에 둘 수 있는 최소 폭(글꼴 배율로 나눈 값)이다. 이보다 좁으면 2×2로 나눈다.
     val HistoryCountRowMinWidth = 240.dp
     val PageContentMaxWidth = 600.dp
@@ -162,14 +149,7 @@ object HeartGuardComponentSize {
     val CompactInputHeight = 40.dp
     val TouchTarget = 48.dp
 
-    // Figma 카드의 콘텐츠가 잘리지 않도록 최소 높이만 제공하고, 긴 텍스트에는 높이를 열어 둔다.
-    val RecordOptionMinHeight = 110.dp
     val CameraAction = 64.dp
-    val WeatherCardMinHeight = 244.dp
-    val CompactScreenHeightBreakpoint = 840.dp
-    val WeatherWideLayoutBreakpoint = 300.dp
-    val MetricThreeColumnBreakpoint = 280.dp
-    val CompactLayoutBreakpoint = 360.dp
     val RecordTypeOptionHeight = 143.dp
     val PhotoSelectionHeight = 313.dp
     val PhotoPreviewHeight = 290.dp
@@ -178,13 +158,9 @@ object HeartGuardComponentSize {
     val PhotoCaptureTextMaxWidth = 220.dp
 
     // 온도 기록 화면의 현장 사진 선택 영역은 작업·휴식 사진 카드보다 낮은 Figma 컴포넌트다.
-    val FieldPhotoSelectionHeight = 104.dp
     val PhotoMemoMinHeight = 114.dp
-    val TemperatureSummaryHeight = 138.dp
     val FieldPhotoCaptureRowHeight = 79.dp
     val EmergencyAlertHeight = 73.dp
-    val EmergencyDescriptionMaxWidth = 180.dp
-    val HomeActionCardHeight = 148.dp
     val ProfileAvatar = 72.dp
     val ProfilePhotoBadge = 26.dp
     val ProfilePhotoCameraIcon = 14.dp
@@ -202,8 +178,6 @@ object HeartGuardComponentSize {
     val HomeContactHeight = 130.dp
     val EmergencyContactHeight = 143.dp
     val HomeAdditionalRecordHeight = 69.dp
-    val TemperatureDeltaMinWidth = 72.dp
-    val TemperatureDeltaMaxWidth = 96.dp
     val ResultMessageHeight = 218.dp
     val ResultErrorDetailHeight = 123.dp
 
@@ -240,14 +214,12 @@ object HeartGuardOverlayBlur {
 object HeartGuardBorderWidth {
     val Checkbox = 2.dp
     val RecordTypeSelection = 2.dp
-    val EmergencyIndicator = 8.dp
     val TimelineRail = 2.dp
     val TimelineDot = 1.5.dp
     val Divider = 1.dp
 }
 
 object HeartGuardElevation {
-    val HomeMetricCard = 2.dp
     val HomeRecordCard = 1.dp
 }
 
@@ -272,7 +244,6 @@ object HeartGuardFontSize {
     val TemperatureSummary = 32.sp
     val RecordOptionTitle = 16.sp
     val RecordOptionDescription = 14.sp
-    val Caption = 11.sp
     val SmallLabel = 13.sp
     val Badge = 10.sp
     val TemperatureDelta = 9.sp

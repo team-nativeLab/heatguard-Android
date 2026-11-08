@@ -69,10 +69,8 @@ fun EmergencyCallIndicator(
                     ),
             contentAlignment = Alignment.Center,
         ) {
-            // emergency_outer/emergency_inner 에셋은 투명 배경이 아니라 캔버스 전체를 불투명
-            // 검정으로 채운 채 내보내져 있어(clip으로도 모서리를 다 가릴 수 없다), 대신 상태
-            // 색상의 원을 직접 그린다. isCalling 상태에 따라 title 텍스트와 같은 색상 규칙
-            // (빨강/주황)을 적용해 원 색상도 함께 바뀌도록 한다.
+            // 원 배경은 이미지 에셋 대신 상태 색상의 원을 직접 그린다. isCalling 상태에 따라
+            // title 텍스트와 같은 색상 규칙(빨강/주황)을 적용해 원 색상도 함께 바뀌도록 한다.
             Box(
                 modifier =
                     Modifier
