@@ -1,11 +1,8 @@
 package com.nativelap.heartguard.data.auth.remote
 
-import com.nativelap.heartguard.core.network.ApiEnvelope
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.requireSuccessData
-import com.nativelap.heartguard.data.auth.dto.AppAccountLoginRequestDto
-import com.nativelap.heartguard.data.auth.dto.AppAccountLoginResponseDto
 import com.nativelap.heartguard.data.auth.dto.AppAccountRegistrationDto
 import com.nativelap.heartguard.data.auth.dto.AppEmailCodeResponseDto
 import com.nativelap.heartguard.data.auth.dto.AppEmailCodeVerificationDto
@@ -62,15 +59,6 @@ class AppAuthRemoteDataSourceImpl
                 }.requireSuccessData { response ->
                     response.userId.isNotBlank() && response.email.isNotBlank()
                 }
-
-        override suspend fun login(
-            email: String,
-            password: String,
-        ): ApiResult<AppAccountLoginResponseDto> =
-            apiExecutor
-                .execute {
-                    appAuthApiService.login(AppAccountLoginRequestDto(email = email, password = password))
-                }.requireSuccessData { response -> response.accessToken.isNotBlank() }
 
         override suspend fun logout(): ApiResult<Unit> =
             apiExecutor.execute {

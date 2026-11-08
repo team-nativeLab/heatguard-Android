@@ -28,5 +28,4 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
-    testImplementation(libs.kotlin.test.junit)
 }

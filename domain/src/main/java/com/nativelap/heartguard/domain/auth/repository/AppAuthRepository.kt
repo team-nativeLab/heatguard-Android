@@ -20,10 +20,5 @@ interface AppAuthRepository {
         verificationToken: String,
     ): ApiResult<AppAccountRegistration>
 
-    suspend fun login(
-        email: String,
-        password: String,
-    ): ApiResult<Unit>
-
     suspend fun logout(): ApiResult<Unit>
 }

@@ -478,7 +478,6 @@ internal class ChecklistRoundsViewModel
 
         private companion object {
             const val ROUND_NOT_OPEN_ERROR_CODE = "ROUND_NOT_OPEN"
-            const val MAX_ROUND_REFRESH_INTERVAL_MILLIS = 60_000L
         }
     }
 

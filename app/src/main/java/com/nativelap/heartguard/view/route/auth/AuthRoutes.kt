@@ -17,7 +17,6 @@ import com.nativelap.heartguard.view.screen.auth.AuthLoginScreen
 import com.nativelap.heartguard.view.screen.auth.AuthPhoneNumberScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreenEvent
-import com.nativelap.heartguard.viewmodel.auth.AppAccountLoginViewModel
 import com.nativelap.heartguard.viewmodel.auth.AppAccountSignUpFailure
 import com.nativelap.heartguard.viewmodel.auth.AppAccountSignUpViewModel
 import com.nativelap.heartguard.viewmodel.auth.TeamLoginFailure
@@ -69,29 +68,6 @@ internal fun HeartGuardLoginRoute(
                 null
             },
         isSubmitting = uiState.isSubmitting,
-        onSignUpClick = onNavigateToSignUp,
-    )
-}
-
-@Composable
-internal fun HeartGuardAppAccountLoginRoute(
-    onNavigateToSignUp: () -> Unit,
-    viewModel: AppAccountLoginViewModel = hiltViewModel(),
-) {
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    AuthLoginScreen(
-        email = email,
-        password = password,
-        onEmailChange = { email = it },
-        onPasswordChange = { password = it },
-        onLoginClick = { viewModel.login(email = email, password = password) },
-        titleResource = R.string.auth_login_app_account,
-        descriptionResource = R.string.auth_login_app_account_description,
-        isSubmitting = uiState.isSubmitting,
-        statusMessage = if (uiState.hasFailure) stringResource(R.string.auth_login_generic_error) else null,
         onSignUpClick = onNavigateToSignUp,
     )
 }

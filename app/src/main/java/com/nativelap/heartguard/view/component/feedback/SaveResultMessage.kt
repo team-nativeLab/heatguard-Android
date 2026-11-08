@@ -92,9 +92,7 @@ fun SaveResultMessage(
                             ),
                 )
                 // 아래 제목 텍스트가 이미 같은 의미를 전달하므로 아이콘은 장식용으로 처리한다.
-                // save_check/save_warning 에셋은 투명 배경이 아니라 캔버스 전체를 불투명 검정으로
-                // 채운 채 내보내져 있어(clip으로 해결 불가), 대신 Material 아이콘을 성공/실패
-                // 색상으로 tint해 사용한다.
+                // 결과 아이콘은 이미지 에셋 대신 Material 아이콘을 성공/실패 색상으로 tint해 사용한다.
                 Icon(
                     imageVector =
                         if (isSuccess) {

@@ -1,8 +1,6 @@
 package com.nativelap.heartguard.data.auth.remote
 
 import com.nativelap.heartguard.core.network.ApiEnvelope
-import com.nativelap.heartguard.data.auth.dto.AppAccountLoginRequestDto
-import com.nativelap.heartguard.data.auth.dto.AppAccountLoginResponseDto
 import com.nativelap.heartguard.data.auth.dto.AppAccountRegistrationDto
 import com.nativelap.heartguard.data.auth.dto.AppEmailCodeResponseDto
 import com.nativelap.heartguard.data.auth.dto.AppEmailCodeVerificationDto
@@ -27,9 +25,4 @@ interface AppAuthApiService {
     suspend fun register(
         @Body request: RegisterAppAccountDto,
     ): ApiEnvelope<AppAccountRegistrationDto>
-
-    @POST("api/v1/auth/team/login")
-    suspend fun login(
-        @Body request: AppAccountLoginRequestDto,
-    ): ApiEnvelope<AppAccountLoginResponseDto>
 }
