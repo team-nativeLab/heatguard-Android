@@ -3,8 +3,10 @@ package com.nativelap.heartguard.view.component.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -21,19 +25,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
 import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
@@ -43,6 +53,9 @@ import com.nativelap.heartguard.ui.theme.HeartGuardRadius
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
+
+private val HOME_TIMELINE_ITEM_MIN_WIDTH = 48.dp
+private const val HOME_TIMELINE_LABEL_SEPARATOR = "\u0000"
 
 @Immutable
 data class CheckTimelineItem(
@@ -77,13 +90,8 @@ fun HomeCheckTimeline(
                     onClickLabel = accessibilityActionLabel,
                     role = Role.Button,
                     onClick = onClick,
-                ).clearAndSetSemantics {
+                ).semantics {
                     contentDescription = accessibilityDescription
-                    role = Role.Button
-                    onClick(label = accessibilityActionLabel) {
-                        onClick()
-                        true
-                    }
                 },
         shape = RoundedCornerShape(HeartGuardRadius.Card),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -149,73 +157,132 @@ private fun HomeTimelineRail(
 ) {
     val trackColor = MaterialTheme.extraColors.homeTimelineTrack
     val activeColor = MaterialTheme.extraColors.homeTimelineActive
+    val scrollState = rememberScrollState()
+    var initialScrollSignature by rememberSaveable { mutableStateOf<String?>(null) }
 
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .drawBehind {
-                    if (items.size < 2) {
-                        return@drawBehind
+    BoxWithConstraints(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        val density = LocalDensity.current
+        val textMeasurer = rememberTextMeasurer()
+        val timelineTextStyle =
+            MaterialTheme.typography.labelSmall.copy(
+                fontSize = HeartGuardFontSize.TimelineLabel,
+            )
+        val timelineLabelSignature =
+            items.joinToString(separator = HOME_TIMELINE_LABEL_SEPARATOR) { timelineItem ->
+                timelineItem.timeLabel
+            }
+        val timelineMeasurementStyle = timelineTextStyle.copy(fontWeight = FontWeight.Bold)
+        val measuredItemWidth =
+            items
+                .maxOfOrNull { timelineItem ->
+                    with(density) {
+                        textMeasurer
+                            .measure(
+                                text = timelineItem.timeLabel,
+                                style = timelineMeasurementStyle,
+                            ).size.width
+                            .toDp()
                     }
+                } ?: HOME_TIMELINE_ITEM_MIN_WIDTH
+        val timelineItemWidth = maxOf(HOME_TIMELINE_ITEM_MIN_WIDTH, measuredItemWidth)
+        val timelineWidth = maxOf(maxWidth, timelineItemWidth * items.size)
+        val viewportWidthPx = with(density) { maxWidth.roundToPx() }
+        val timelineItemWidthPx = with(density) { timelineItemWidth.roundToPx() }
 
-                    val cellWidth = size.width / items.size
-                    val railCenterY = HeartGuardIconSize.TimelineCurrentRing.toPx() / 2
-                    val railStroke = HeartGuardBorderWidth.TimelineRail.toPx()
+        // 시간 시각 목록이 바뀔 때만 초기 위치를 맞춰 분 단위 갱신과 수동 스크롤을 보존한다.
+        LaunchedEffect(timelineLabelSignature) {
+            if (timelineLabelSignature != initialScrollSignature) {
+                if (items.isNotEmpty()) {
+                    val currentIndex = items.indexOfFirst { timelineItem -> timelineItem.isCurrent }
+                    val initialIndex = if (currentIndex >= 0) currentIndex else items.lastIndex
+                    val desiredScrollOffset =
+                        (
+                            timelineItemWidthPx * initialIndex +
+                                timelineItemWidthPx / 2 -
+                                viewportWidthPx / 2
+                        ).coerceAtLeast(0)
 
-                    fun cellCenterX(index: Int): Float = cellWidth * (index + 0.5f)
+                    scrollState.scrollTo(desiredScrollOffset)
+                }
+                initialScrollSignature = timelineLabelSignature
+            }
+        }
 
-                    drawLine(
-                        color = trackColor,
-                        start = Offset(cellCenterX(0), railCenterY),
-                        end = Offset(cellCenterX(items.lastIndex), railCenterY),
-                        strokeWidth = railStroke,
-                    )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState),
+        ) {
+            Row(
+                modifier =
+                    Modifier
+                        .width(timelineWidth)
+                        .drawBehind {
+                            if (items.size < 2) {
+                                return@drawBehind
+                            }
 
-                    items.zipWithNext().forEachIndexed { segmentIndex, (startItem, endItem) ->
-                        val isSegmentActive =
-                            startItem.isCompleted &&
-                                (endItem.isCompleted || endItem.isCurrent)
+                            val cellWidth = size.width / items.size
+                            val railCenterY = HeartGuardIconSize.TimelineCurrentRing.toPx() / 2
+                            val railStroke = HeartGuardBorderWidth.TimelineRail.toPx()
 
-                        if (isSegmentActive) {
+                            fun cellCenterX(index: Int): Float = cellWidth * (index + 0.5f)
+
                             drawLine(
-                                color = activeColor,
-                                start = Offset(cellCenterX(segmentIndex), railCenterY),
-                                end = Offset(cellCenterX(segmentIndex + 1), railCenterY),
+                                color = trackColor,
+                                start = Offset(cellCenterX(0), railCenterY),
+                                end = Offset(cellCenterX(items.lastIndex), railCenterY),
                                 strokeWidth = railStroke,
                             )
-                        }
-                    }
-                },
-        verticalAlignment = Alignment.Top,
-    ) {
-        items.forEach { timelineItem ->
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
-            ) {
-                Box(
-                    modifier = Modifier.size(HeartGuardIconSize.TimelineCurrentRing),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    HomeTimelineDot(timelineItem = timelineItem)
-                }
 
-                Text(
-                    text = timelineItem.timeLabel,
-                    color = timelineLabelColor(timelineItem),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontSize = HeartGuardFontSize.TimelineLabel,
-                            fontWeight =
-                                if (timelineItem.isCurrent) {
-                                    FontWeight.Bold
-                                } else {
-                                    FontWeight.Normal
-                                },
-                        ),
-                )
+                            items.zipWithNext().forEachIndexed { segmentIndex, (startItem, endItem) ->
+                                val isSegmentActive =
+                                    startItem.isCompleted &&
+                                        (endItem.isCompleted || endItem.isCurrent)
+
+                                if (isSegmentActive) {
+                                    drawLine(
+                                        color = activeColor,
+                                        start = Offset(cellCenterX(segmentIndex), railCenterY),
+                                        end = Offset(cellCenterX(segmentIndex + 1), railCenterY),
+                                        strokeWidth = railStroke,
+                                    )
+                                }
+                            }
+                        },
+                verticalAlignment = Alignment.Top,
+            ) {
+                items.forEach { timelineItem ->
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                    ) {
+                        Box(
+                            modifier = Modifier.size(HeartGuardIconSize.TimelineCurrentRing),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            HomeTimelineDot(timelineItem = timelineItem)
+                        }
+
+                        Text(
+                            text = timelineItem.timeLabel,
+                            color = timelineLabelColor(timelineItem),
+                            style =
+                                timelineTextStyle.copy(
+                                    fontWeight =
+                                        if (timelineItem.isCurrent) {
+                                            FontWeight.Bold
+                                        } else {
+                                            FontWeight.Normal
+                                        },
+                                ),
+                        )
+                    }
+                }
             }
         }
     }
