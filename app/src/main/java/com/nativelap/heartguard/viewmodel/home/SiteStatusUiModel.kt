@@ -47,8 +47,11 @@ fun SiteStatusUiModel.toHomeRiskBadgeType(): HomeRiskBadgeType =
 
 /** 홈 화면 상태와 현재 위치 날씨를 공용 현장 상태로 바꾼다. */
 fun HomeUiState.toSiteStatusUiModel(locationWeather: CurrentLocationWeather? = null): SiteStatusUiModel {
-    val overview = (this as? HomeUiState.Success)?.overview ?: return SiteStatusUiModel()
-    val siteStatus = overview.toSiteStatusUiModel()
+    val siteStatus =
+        (this as? HomeUiState.Success)
+            ?.overview
+            ?.toSiteStatusUiModel()
+            ?: SiteStatusUiModel()
     val availableLocationWeather =
         locationWeather?.takeIf { weather ->
             weather.availability == WeatherAvailability.AVAILABLE ||

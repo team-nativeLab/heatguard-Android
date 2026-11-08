@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
@@ -28,32 +29,45 @@ class AndroidCurrentLocationProvider
                 return null
             }
 
+            val locationManager = context.getSystemService(LocationManager::class.java)
+            return withTimeoutOrNull(LOCATION_TIMEOUT_MILLIS) {
+                requestProviderLocation(locationManager, LocationManager.NETWORK_PROVIDER)
+                    ?: requestProviderLocation(locationManager, LocationManager.GPS_PROVIDER)
+            }
+        }
+
+        private suspend fun requestProviderLocation(
+            locationManager: LocationManager,
+            provider: String,
+        ): CurrentCoordinates? {
             return try {
-                val locationManager = context.getSystemService(LocationManager::class.java)
-                if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                if (!locationManager.isProviderEnabled(provider)) {
                     return null
                 }
 
-                suspendCancellableCoroutine { continuation ->
-                    val cancellationSignal = CancellationSignal()
-                    continuation.invokeOnCancellation {
-                        cancellationSignal.cancel()
-                    }
-                    locationManager.getCurrentLocation(
-                        LocationManager.NETWORK_PROVIDER,
-                        cancellationSignal,
-                        context.mainExecutor,
-                    ) { location ->
-                        val coordinates =
-                            location?.let { currentLocation ->
-                                CurrentCoordinates(
-                                    latitude = currentLocation.latitude,
-                                    longitude = currentLocation.longitude,
-                                )
+                withTimeoutOrNull(PROVIDER_TIMEOUT_MILLIS) {
+                    suspendCancellableCoroutine { continuation ->
+                        val cancellationSignal = CancellationSignal()
+                        continuation.invokeOnCancellation {
+                            cancellationSignal.cancel()
+                        }
+                        locationManager.getCurrentLocation(
+                            provider,
+                            cancellationSignal,
+                            context.mainExecutor,
+                        ) { location ->
+                            val coordinates =
+                                location
+                                    ?.let { currentLocation ->
+                                        CurrentCoordinates(
+                                            latitude = currentLocation.latitude,
+                                            longitude = currentLocation.longitude,
+                                        )
+                                    }?.takeIf(CurrentCoordinates::isValid)
+                            val resumeToken = continuation.tryResume(coordinates)
+                            if (resumeToken != null) {
+                                continuation.completeResume(resumeToken)
                             }
-                        val resumeToken = continuation.tryResume(coordinates)
-                        if (resumeToken != null) {
-                            continuation.completeResume(resumeToken)
                         }
                     }
                 }
@@ -62,5 +76,10 @@ class AndroidCurrentLocationProvider
             } catch (exception: IllegalArgumentException) {
                 null
             }
+        }
+
+        private companion object {
+            const val PROVIDER_TIMEOUT_MILLIS = 5_000L
+            const val LOCATION_TIMEOUT_MILLIS = 10_000L
         }
     }
