@@ -36,8 +36,10 @@ import com.nativelap.heartguard.view.component.menu.MenuDrawerOverlay
 import com.nativelap.heartguard.view.component.temperatureValueText
 import com.nativelap.heartguard.view.route.menu.CollectMenuDrawerLogoutBlocked
 import com.nativelap.heartguard.view.screen.home.HomeScreen
+import com.nativelap.heartguard.viewmodel.home.HomeRiskBadgeType
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
+import com.nativelap.heartguard.viewmodel.home.toHomeRiskBadgeType
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
 import com.nativelap.heartguard.viewmodel.notification.TeamNotificationUnreadViewModel
@@ -136,6 +138,7 @@ internal fun HeartGuardHomeRoute(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        val riskBadgeType = siteStatus.toHomeRiskBadgeType()
         HomeScreen(
             currentTemperature = homeTemperatureText(siteStatus.temperature),
             feelsLikeTemperature = temperatureValueText(siteStatus.apparentTemperature),
@@ -145,7 +148,21 @@ internal fun HeartGuardHomeRoute(
             isTemperatureDeltaZero = siteStatus.isTemperatureDeltaZero,
             weatherValue = skyStatusText(siteStatus.skyStatus),
             weatherImageRes = skyStatusImageRes(siteStatus.skyStatus),
-            riskLabel = heatLevelLabelText(siteStatus.heatLevel),
+            riskLabel =
+                when (riskBadgeType) {
+                    HomeRiskBadgeType.HEAT -> {
+                        heatLevelLabelText(siteStatus.heatLevel)
+                    }
+
+                    HomeRiskBadgeType.COLD_WAVE_ADVISORY -> {
+                        stringResource(R.string.home_cold_wave_advisory)
+                    }
+
+                    HomeRiskBadgeType.COLD_WAVE_WARNING -> {
+                        stringResource(R.string.home_cold_wave_warning)
+                    }
+                },
+            isColdWaveAlert = riskBadgeType != HomeRiskBadgeType.HEAT,
             nextCheckDescription = nextCheckDescriptionText(checkSchedule),
             checkTimelineItems = checkTimelineItems(checkSchedule),
             onMenuClick = {

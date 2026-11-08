@@ -49,6 +49,7 @@ fun WeatherStatusCard(
     isTemperatureIncreasing: Boolean?,
     isTemperatureDeltaZero: Boolean,
     modifier: Modifier = Modifier,
+    isColdWaveAlert: Boolean = false,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -81,6 +82,7 @@ fun WeatherStatusCard(
                 HeatRiskBadge(
                     riskLabel = riskLabel,
                     modifier = Modifier.padding(start = HeartGuardSpacing.HomeHeroHorizontal),
+                    isColdWaveAlert = isColdWaveAlert,
                 )
 
                 Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))

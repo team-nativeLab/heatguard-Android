@@ -20,6 +20,7 @@ internal fun TeamSiteResponseDto.toDomain(): TeamSiteOverview =
         headquartersPhoneNumber = company?.phone.nullIfBlank(),
         skyStatus = weather?.skyStatus.nullIfBlank()?.toSkyStatus(),
         temperatureDelta = weather?.temperatureDelta,
+        coldWaveWarning = weather?.coldWaveWarning?.toDomain(),
     )
 
 private fun String.toSkyStatus(): SkyStatus =
