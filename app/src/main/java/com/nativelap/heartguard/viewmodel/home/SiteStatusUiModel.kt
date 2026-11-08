@@ -1,6 +1,9 @@
 package com.nativelap.heartguard.viewmodel.home
 
 import androidx.compose.runtime.Immutable
+import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
+import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
+import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
@@ -26,7 +29,21 @@ data class SiteStatusUiModel(
     val isTemperatureDeltaZero: Boolean = false,
     val recordTemperature: Double? = null,
     val recordHumidity: Double? = null,
+    val coldWaveWarning: ColdWaveWarning? = null,
 )
+
+enum class HomeRiskBadgeType {
+    HEAT,
+    COLD_WAVE_ADVISORY,
+    COLD_WAVE_WARNING,
+}
+
+fun SiteStatusUiModel.toHomeRiskBadgeType(): HomeRiskBadgeType =
+    when (coldWaveWarning.confirmedForHome()?.level) {
+        ColdWaveLevel.ADVISORY -> HomeRiskBadgeType.COLD_WAVE_ADVISORY
+        ColdWaveLevel.WARNING -> HomeRiskBadgeType.COLD_WAVE_WARNING
+        else -> HomeRiskBadgeType.HEAT
+    }
 
 /** 홈 화면 상태와 현재 위치 날씨를 공용 현장 상태로 바꾼다. */
 fun HomeUiState.toSiteStatusUiModel(locationWeather: CurrentLocationWeather? = null): SiteStatusUiModel {
@@ -37,6 +54,10 @@ fun HomeUiState.toSiteStatusUiModel(locationWeather: CurrentLocationWeather? = n
             weather.availability == WeatherAvailability.AVAILABLE ||
                 weather.availability == WeatherAvailability.CACHED
         } ?: return siteStatus
+
+    val selectedColdWaveWarning =
+        availableLocationWeather.coldWaveWarning.confirmedForHome()
+            ?: siteStatus.coldWaveWarning.confirmedForHome()
 
     return siteStatus.copy(
         temperature = availableLocationWeather.temperature.toDisplayNumber(),
@@ -49,6 +70,7 @@ fun HomeUiState.toSiteStatusUiModel(locationWeather: CurrentLocationWeather? = n
         isTemperatureDeltaZero = availableLocationWeather.temperatureDelta == 0.0,
         recordTemperature = availableLocationWeather.temperature,
         recordHumidity = availableLocationWeather.humidity,
+        coldWaveWarning = selectedColdWaveWarning,
     )
 }
 
@@ -68,6 +90,7 @@ private fun TeamSiteOverview.toSiteStatusUiModel(): SiteStatusUiModel =
         isTemperatureDeltaZero = temperatureDelta == 0.0,
         recordTemperature = currentTemperature,
         recordHumidity = humidity,
+        coldWaveWarning = coldWaveWarning,
     )
 
 private fun Double.toSignedDisplayNumber(): String =
@@ -83,3 +106,14 @@ private fun Double.toIncreasingDirection(): Boolean? =
         this < 0.0 -> false
         else -> null
     }
+
+private fun ColdWaveWarning?.confirmedForHome(): ColdWaveWarning? =
+    this
+        ?.takeIf { warning ->
+            warning.availability == ColdWaveAvailability.AVAILABLE ||
+                warning.availability == ColdWaveAvailability.CACHED
+        }?.takeIf { warning ->
+            warning.level == ColdWaveLevel.NONE ||
+                warning.level == ColdWaveLevel.ADVISORY ||
+                warning.level == ColdWaveLevel.WARNING
+        }

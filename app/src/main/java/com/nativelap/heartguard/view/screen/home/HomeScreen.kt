@@ -57,6 +57,7 @@ fun HomeScreen(
     onRecordClick: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnreadNotifications: Boolean = false,
+    isColdWaveAlert: Boolean = false,
 ) {
     Scaffold(
         modifier = modifier,
@@ -121,6 +122,7 @@ fun HomeScreen(
                         riskLabel = riskLabel,
                         isTemperatureIncreasing = isTemperatureIncreasing,
                         isTemperatureDeltaZero = isTemperatureDeltaZero,
+                        isColdWaveAlert = isColdWaveAlert,
                     )
                 }
 

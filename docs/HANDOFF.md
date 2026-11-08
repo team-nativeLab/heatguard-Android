@@ -1,3 +1,11 @@
+# 2026-11-08: 홈 한파 특보 배지 작업 인계 (#285, Draft PR #286)
+
+- 작업 브랜치: `feature/#285-cold-wave-home-badge`, 커밋 `4d75620ec7cf53f2110aef5118c4079f29f7fa9a`. Draft PR #286은 사용자 후속 검토 대상이다.
+- 변경: 기존 팀 조회와 GPS 날씨 응답의 `coldWaveWarning`을 앱 모델에 연결하고, 홈에서 확인된 한파주의보·경보를 파란색 배지로 표시한다. 기존 폭염 단계와 기본 주황색 배지는 유지한다.
+- 검증: `:data` 및 `:app` 관련 단위 테스트, `:app:compileDebugKotlin`, `:app:assembleDebug`, `spotlessCheck`가 통과했다.
+- 미확인: 에뮬레이터 런타임 판정은 수행하지 못했다. `user_reviewer` hook이 차단했고 ADB daemon도 권한 오류로 시작되지 않았다.
+- 다음 작업: 사용자가 PR #286의 checks와 리뷰를 확인하고, 승인된 범위에서 PR 상태·병합을 진행한다. PR checks/review/merge는 사용자 후속 작업이며 아직 확인·완료되지 않았다.
+
 # 작업 인계: Figma 미구현 화면
 
 ## 2026-11-04: 앱 첫 실행 시 복원 세션 확인·홈 조회 중복 제거 (#260, Draft PR #261)

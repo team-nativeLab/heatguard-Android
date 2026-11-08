@@ -28,6 +28,8 @@ data class HeartGuardExtraColors(
     val successContainer: Color,
     val warningContainer: Color,
     val onWarningContainer: Color,
+    val coldWaveWarningContainer: Color,
+    val onColdWaveWarningContainer: Color,
     val authBackground: Color,
     val authPrimary: Color,
     val authOnSurface: Color,
@@ -140,6 +142,8 @@ private val alertContainerColor = Color(0xFFFFEEEE)
 private val successContainerColor = Color(0xFFE2F5EA)
 private val warningContainerColor = Color(0xFFFFE2D6)
 private val onWarningContainerColor = Color(0xFFFF6B00)
+private val coldWaveWarningContainerColor = Color(0xFFD3F3FF)
+private val onColdWaveWarningContainerColor = Color(0xFF199EF7)
 private val authBackgroundColor = Color(0xFFFFFFFF)
 private val authPrimaryColor = Color(0xFF467EE5)
 private val authOnSurfaceColor = Color(0xFF202632)
@@ -263,6 +267,8 @@ private val heartGuardExtraColors =
         successContainer = successContainerColor,
         warningContainer = warningContainerColor,
         onWarningContainer = onWarningContainerColor,
+        coldWaveWarningContainer = coldWaveWarningContainerColor,
+        onColdWaveWarningContainer = onColdWaveWarningContainerColor,
         authBackground = authBackgroundColor,
         authPrimary = authPrimaryColor,
         authOnSurface = authOnSurfaceColor,
