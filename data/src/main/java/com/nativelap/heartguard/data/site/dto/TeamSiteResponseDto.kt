@@ -88,6 +88,8 @@ data class WeatherDto(
     val comparisonObservedAt: String? = null,
     @SerialName("comparisonBasis")
     val comparisonBasis: String? = null,
+    @SerialName("coldWaveWarning")
+    val coldWaveWarning: ColdWaveWarningDto? = null,
 )
 
 @Serializable

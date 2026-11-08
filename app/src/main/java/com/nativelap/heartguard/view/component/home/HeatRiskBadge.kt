@@ -15,17 +15,28 @@ import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
 
-/** 폭염 위험도를 짧은 상태 배지로 보여준다. */
+/** 폭염 위험도는 주황색으로, 홈의 한파 특보는 파란색으로 표시한다. */
 @Composable
 fun HeatRiskBadge(
     riskLabel: String,
     modifier: Modifier = Modifier,
+    isColdWaveAlert: Boolean = false,
 ) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(HeartGuardRadius.Pill),
-        color = MaterialTheme.extraColors.warningContainer,
-        contentColor = MaterialTheme.extraColors.onWarningContainer,
+        color =
+            if (isColdWaveAlert) {
+                MaterialTheme.extraColors.coldWaveWarningContainer
+            } else {
+                MaterialTheme.extraColors.warningContainer
+            },
+        contentColor =
+            if (isColdWaveAlert) {
+                MaterialTheme.extraColors.onColdWaveWarningContainer
+            } else {
+                MaterialTheme.extraColors.onWarningContainer
+            },
     ) {
         Text(
             text = riskLabel,

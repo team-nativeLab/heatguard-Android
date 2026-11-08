@@ -10,4 +10,5 @@ data class CurrentLocationWeather(
     val skyStatus: SkyStatus?,
     val temperatureDelta: Double?,
     val availability: WeatherAvailability,
+    val coldWaveWarning: ColdWaveWarning? = null,
 )

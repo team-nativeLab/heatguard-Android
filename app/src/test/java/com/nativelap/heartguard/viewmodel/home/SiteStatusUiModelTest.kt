@@ -1,5 +1,8 @@
 package com.nativelap.heartguard.viewmodel.home
 
+import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
+import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
+import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
@@ -129,26 +132,170 @@ class SiteStatusUiModelTest {
         assertNull(siteStatus.recordHumidity)
     }
 
-    private fun siteOverview(temperatureDelta: Double? = null) =
-        TeamSiteOverview(
-            teamName = null,
-            workplace = null,
-            siteName = null,
-            managerPhoneNumber = null,
-            currentTemperature = 22.0,
-            humidity = 40.0,
-            apparentTemperature = 22.5,
-            heatLevel = 1,
-            checkTimes = emptyList(),
-            hasActiveEmergencyCall = false,
-            skyStatus = SkyStatus.CLOUDY,
-            temperatureDelta = temperatureDelta,
-        )
+    @Test
+    fun usesConfirmedGpsColdWaveLevelBeforeTeamLevel() {
+        val siteStatus =
+            HomeUiState
+                .Success(
+                    siteOverview(
+                        coldWaveWarning = coldWaveWarning(ColdWaveLevel.WARNING),
+                    ),
+                ).toSiteStatusUiModel(
+                    locationWeather(
+                        availability = WeatherAvailability.AVAILABLE,
+                        coldWaveWarning = coldWaveWarning(ColdWaveLevel.ADVISORY),
+                    ),
+                )
+
+        assertEquals(ColdWaveLevel.ADVISORY, siteStatus.coldWaveWarning?.level)
+        assertEquals(HomeRiskBadgeType.COLD_WAVE_ADVISORY, siteStatus.toHomeRiskBadgeType())
+    }
+
+    @Test
+    fun usesCachedGpsColdWaveLevelWhenConfirmed() {
+        val siteStatus =
+            HomeUiState
+                .Success(siteOverview())
+                .toSiteStatusUiModel(
+                    locationWeather(
+                        availability = WeatherAvailability.CACHED,
+                        coldWaveWarning = coldWaveWarning(ColdWaveLevel.WARNING, isStale = true),
+                    ),
+                )
+
+        assertEquals(ColdWaveLevel.WARNING, siteStatus.coldWaveWarning?.level)
+        assertEquals(true, siteStatus.coldWaveWarning?.isStale)
+        assertEquals(HomeRiskBadgeType.COLD_WAVE_WARNING, siteStatus.toHomeRiskBadgeType())
+    }
+
+    @Test
+    fun fallsBackToTeamColdWaveLevelWhenGpsAlertIsUnknownOrUnavailable() {
+        val unknownGpsAlert =
+            siteOverview(coldWaveWarning = coldWaveWarning(ColdWaveLevel.WARNING))
+                .let { overview ->
+                    HomeUiState.Success(overview).toSiteStatusUiModel(
+                        locationWeather(
+                            availability = WeatherAvailability.AVAILABLE,
+                            coldWaveWarning = coldWaveWarning(ColdWaveLevel.UNKNOWN),
+                        ),
+                    )
+                }
+        val unavailableGpsAlert =
+            HomeUiState
+                .Success(siteOverview(coldWaveWarning = coldWaveWarning(ColdWaveLevel.ADVISORY)))
+                .toSiteStatusUiModel(
+                    locationWeather(
+                        availability = WeatherAvailability.UNAVAILABLE,
+                        coldWaveWarning = coldWaveWarning(ColdWaveLevel.WARNING),
+                    ),
+                )
+
+        assertEquals(ColdWaveLevel.WARNING, unknownGpsAlert.coldWaveWarning?.level)
+        assertEquals(ColdWaveLevel.ADVISORY, unavailableGpsAlert.coldWaveWarning?.level)
+    }
+
+    @Test
+    fun fallsBackToTeamColdWaveLevelWhenGpsLevelIsNull() {
+        val siteStatus =
+            HomeUiState
+                .Success(siteOverview(coldWaveWarning = coldWaveWarning(ColdWaveLevel.WARNING)))
+                .toSiteStatusUiModel(
+                    locationWeather(
+                        availability = WeatherAvailability.AVAILABLE,
+                        coldWaveWarning = coldWaveWarning(null),
+                    ),
+                )
+
+        assertEquals(ColdWaveLevel.WARNING, siteStatus.coldWaveWarning?.level)
+    }
+
+    @Test
+    fun fallsBackWhenGpsColdWaveAvailabilityRequiresLocation() {
+        val siteStatus =
+            HomeUiState
+                .Success(siteOverview(coldWaveWarning = coldWaveWarning(ColdWaveLevel.ADVISORY)))
+                .toSiteStatusUiModel(
+                    locationWeather(
+                        availability = WeatherAvailability.AVAILABLE,
+                        coldWaveWarning =
+                            coldWaveWarning(
+                                ColdWaveLevel.WARNING,
+                                availability = ColdWaveAvailability.LOCATION_REQUIRED,
+                            ),
+                    ),
+                )
+
+        assertEquals(ColdWaveLevel.ADVISORY, siteStatus.coldWaveWarning?.level)
+    }
+
+    @Test
+    fun confirmedGpsNoneWinsOverTeamAlertAndKeepsHeatBadge() {
+        val siteStatus =
+            HomeUiState
+                .Success(siteOverview(coldWaveWarning = coldWaveWarning(ColdWaveLevel.WARNING)))
+                .toSiteStatusUiModel(
+                    locationWeather(
+                        availability = WeatherAvailability.AVAILABLE,
+                        coldWaveWarning = coldWaveWarning(ColdWaveLevel.NONE),
+                    ),
+                )
+
+        assertEquals(ColdWaveLevel.NONE, siteStatus.coldWaveWarning?.level)
+        assertEquals(HomeRiskBadgeType.HEAT, siteStatus.toHomeRiskBadgeType())
+        assertEquals(0, siteStatus.heatLevel)
+    }
+
+    @Test
+    fun nullUnknownAndUnavailableTeamAlertsKeepHeatBadge() {
+        val missingLevel =
+            HomeUiState
+                .Success(siteOverview(coldWaveWarning = coldWaveWarning(null)))
+                .toSiteStatusUiModel()
+        val unknownLevel =
+            HomeUiState
+                .Success(siteOverview(coldWaveWarning = coldWaveWarning(ColdWaveLevel.UNKNOWN)))
+                .toSiteStatusUiModel()
+        val unavailableAlert =
+            HomeUiState
+                .Success(
+                    siteOverview(
+                        coldWaveWarning =
+                            coldWaveWarning(
+                                ColdWaveLevel.ADVISORY,
+                                availability = ColdWaveAvailability.UNAVAILABLE,
+                            ),
+                    ),
+                ).toSiteStatusUiModel()
+
+        assertEquals(HomeRiskBadgeType.HEAT, missingLevel.toHomeRiskBadgeType())
+        assertEquals(HomeRiskBadgeType.HEAT, unknownLevel.toHomeRiskBadgeType())
+        assertEquals(HomeRiskBadgeType.HEAT, unavailableAlert.toHomeRiskBadgeType())
+    }
+
+    private fun siteOverview(
+        temperatureDelta: Double? = null,
+        coldWaveWarning: ColdWaveWarning? = null,
+    ) = TeamSiteOverview(
+        teamName = null,
+        workplace = null,
+        siteName = null,
+        managerPhoneNumber = null,
+        currentTemperature = 22.0,
+        humidity = 40.0,
+        apparentTemperature = 22.5,
+        heatLevel = 1,
+        checkTimes = emptyList(),
+        hasActiveEmergencyCall = false,
+        skyStatus = SkyStatus.CLOUDY,
+        temperatureDelta = temperatureDelta,
+        coldWaveWarning = coldWaveWarning,
+    )
 
     private fun locationWeather(
         availability: WeatherAvailability,
         temperature: Double? = 31.0,
         humidity: Double? = 55.0,
+        coldWaveWarning: ColdWaveWarning? = null,
     ) = CurrentLocationWeather(
         temperature = temperature,
         humidity = humidity,
@@ -158,5 +305,23 @@ class SiteStatusUiModelTest {
         skyStatus = SkyStatus.CLEAR,
         temperatureDelta = 2.1,
         availability = availability,
+        coldWaveWarning = coldWaveWarning,
+    )
+
+    private fun coldWaveWarning(
+        level: ColdWaveLevel?,
+        availability: ColdWaveAvailability = ColdWaveAvailability.AVAILABLE,
+        isStale: Boolean? = false,
+    ) = ColdWaveWarning(
+        level = level,
+        availability = availability,
+        areaCode = null,
+        areaName = null,
+        issuedAt = null,
+        effectiveAt = null,
+        fetchedAt = null,
+        isStale = isStale,
+        errorCode = null,
+        source = null,
     )
 }
