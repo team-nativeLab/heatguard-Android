@@ -149,7 +149,8 @@ class HomeViewModel
             currentLocationWeatherJob =
                 viewModelScope.launch {
                     var coordinates =
-                        currentLocationProvider.getCurrentLocation()
+                        currentLocationProvider
+                            .getCurrentLocation()
                             ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
                     if (coordinates == null) {
                         delay(LOCATION_RETRY_DELAY_MILLIS)
@@ -160,7 +161,8 @@ class HomeViewModel
                             return@launch
                         }
                         coordinates =
-                            currentLocationProvider.getCurrentLocation()
+                            currentLocationProvider
+                                .getCurrentLocation()
                                 ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
                     }
                     coordinates ?: return@launch

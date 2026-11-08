@@ -57,12 +57,13 @@ class AndroidCurrentLocationProvider
                             context.mainExecutor,
                         ) { location ->
                             val coordinates =
-                                location?.let { currentLocation ->
-                                    CurrentCoordinates(
-                                        latitude = currentLocation.latitude,
-                                        longitude = currentLocation.longitude,
-                                    )
-                                }?.takeIf(CurrentCoordinates::isValid)
+                                location
+                                    ?.let { currentLocation ->
+                                        CurrentCoordinates(
+                                            latitude = currentLocation.latitude,
+                                            longitude = currentLocation.longitude,
+                                        )
+                                    }?.takeIf(CurrentCoordinates::isValid)
                             val resumeToken = continuation.tryResume(coordinates)
                             if (resumeToken != null) {
                                 continuation.completeResume(resumeToken)
