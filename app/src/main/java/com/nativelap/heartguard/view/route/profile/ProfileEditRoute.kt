@@ -82,6 +82,7 @@ internal fun HeartGuardProfileEditRoute(
 
     val photoCapture =
         rememberPhotoCameraCapture(
+            captureOwnerKey = "profile",
             isSourceSheetVisible = isPhotoSheetVisible,
             onCaptureResult = { captureResult ->
                 when (captureResult) {
@@ -169,7 +170,9 @@ internal fun HeartGuardProfileEditRoute(
             }
 
             ProfileEditScreenEvent.SaveClicked -> {
-                viewModel.saveProfile()
+                if (!photoCapture.isSavingCapture) {
+                    viewModel.saveProfile()
+                }
             }
 
             ProfileEditScreenEvent.RetryClicked -> {
@@ -184,7 +187,7 @@ internal fun HeartGuardProfileEditRoute(
             }
 
             ProfileEditScreenEvent.ProfilePhotoClicked -> {
-                if (!isSavingNow()) {
+                if (!isSavingNow() && !photoCapture.isSavingCapture) {
                     isPhotoSheetVisible = true
                 }
             }
@@ -201,13 +204,15 @@ internal fun HeartGuardProfileEditRoute(
             }
 
             ProfileEditScreenEvent.ProfilePhotoChangeSelected -> {
-                isPhotoSheetVisible = false
-                photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                if (!photoCapture.isSavingCapture) {
+                    isPhotoSheetVisible = false
+                    photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
             }
 
             ProfileEditScreenEvent.ProfilePhotoDeleteSelected -> {
                 isPhotoSheetVisible = false
-                if (!isSavingNow()) {
+                if (!isSavingNow() && !photoCapture.isSavingCapture) {
                     when (uiState.defaultPhotoAction) {
                         ProfileDefaultPhotoAction.ConfirmDeletion -> {
                             isPhotoDeleteConfirmationVisible = true
