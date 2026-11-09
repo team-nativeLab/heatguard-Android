@@ -175,8 +175,18 @@ private fun PhoneNumberInput(
                 .onFocusChanged { focusState -> isFocused = focusState.hasFocus }
                 .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(PHONE_INPUT_RADIUS))
                 .border(
-                    width = if (isFocused) PHONE_INPUT_BORDER_WIDTH else 0.dp,
-                    color = MaterialTheme.extraColors.authPrimary,
+                    width =
+                        if (isFocused) {
+                            PHONE_INPUT_BORDER_WIDTH
+                        } else {
+                            PHONE_INPUT_UNFOCUSED_BORDER_WIDTH
+                        },
+                    color =
+                        if (isFocused) {
+                            MaterialTheme.extraColors.authPrimary
+                        } else {
+                            MaterialTheme.colorScheme.outline
+                        },
                     shape = RoundedCornerShape(PHONE_INPUT_RADIUS),
                 ).padding(horizontal = PHONE_INPUT_HORIZONTAL_PADDING),
         verticalAlignment = Alignment.CenterVertically,
@@ -374,6 +384,7 @@ private val PHONE_SCREEN_BOTTOM_PADDING = 16.dp
 private val PHONE_INPUT_HEIGHT = 58.dp
 private val PHONE_INPUT_RADIUS = 16.dp
 private val PHONE_INPUT_BORDER_WIDTH = 2.dp
+private val PHONE_INPUT_UNFOCUSED_BORDER_WIDTH = 1.dp
 private val PHONE_INPUT_HORIZONTAL_PADDING = 18.dp
 private val PHONE_INPUT_COUNTRY_GAP = 12.dp
 private val PHONE_INPUT_FIELD_GAP = 12.dp
