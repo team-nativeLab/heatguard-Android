@@ -56,6 +56,7 @@ internal fun HeartGuardFieldPhotoRoute(
     }
 
     PhotoSelectionFlow(
+        captureOwnerKey = "field",
         selectedPhotoUris = draftState.fieldPhotoUris,
         onPhotoAdded = { photoUri ->
             recordDraftViewModel.addPhoto(RecordType.TEMPERATURE, photoUri)
@@ -64,7 +65,7 @@ internal fun HeartGuardFieldPhotoRoute(
             recordDraftViewModel.removePhoto(RecordType.TEMPERATURE, photoUri)
         },
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.TEMPERATURE) },
-    ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, _ ->
+    ) { selectedPhotoUris, isSavingCapture, isCaptureSaving, onAddPhotoClick, onRemovePhoto, _ ->
         FieldPhotoScreen(
             onBackClick = onBackClick,
             onNotificationClick = onNotificationClick,
@@ -78,11 +79,14 @@ internal fun HeartGuardFieldPhotoRoute(
                 ),
             selectedPhotoUris = selectedPhotoUris,
             showSaveError = showSaveError,
-            isSaveEnabled = submissionState.canAttemptSubmission,
+            isSaveEnabled = submissionState.canAttemptSubmission && !isSavingCapture,
             onCaptureClick = onAddPhotoClick,
             onRemovePhoto = onRemovePhoto,
             // 사진이 없거나 직접 입력한 온도·습도가 올바르지 않으면 저장하지 않고 15 상태로 알린다(아무 반응 없이 끝나지 않게).
             onSaveClick = {
+                if (isCaptureSaving()) {
+                    return@FieldPhotoScreen
+                }
                 if (
                     selectedPhotoUris.isEmpty() ||
                     (draftState.isManualInputEnabled && !draftState.isManualTemperatureValid)
@@ -120,6 +124,7 @@ internal fun HeartGuardWorkPhotoRoute(
         )
 
     PhotoSelectionFlow(
+        captureOwnerKey = "work",
         selectedPhotoUris = draftState.workPhotoUris,
         onPhotoAdded = { photoUri ->
             recordDraftViewModel.addPhoto(RecordType.WORK, photoUri)
@@ -128,7 +133,7 @@ internal fun HeartGuardWorkPhotoRoute(
             recordDraftViewModel.removePhoto(RecordType.WORK, photoUri)
         },
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.WORK) },
-    ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
+    ) { selectedPhotoUris, isSavingCapture, isCaptureSaving, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         WorkPhotoScreen(
             onBackClick = onBackClick,
             onNotificationClick = onNotificationClick,
@@ -139,10 +144,15 @@ internal fun HeartGuardWorkPhotoRoute(
             onRemovePhoto = onRemovePhoto,
             onRetakeClick = onClearPhotos,
             onMemoChange = recordDraftViewModel::updateWorkMemo,
-            onUploadClick = submitRecord,
+            onUploadClick = {
+                if (!isCaptureSaving()) {
+                    submitRecord()
+                }
+            },
             isSaveEnabled =
                 selectedPhotoUris.isNotEmpty() &&
-                    submissionState.canAttemptSubmission,
+                    submissionState.canAttemptSubmission &&
+                    !isSavingCapture,
         )
     }
 }
@@ -200,6 +210,7 @@ internal fun HeartGuardRestPhotoRoute(
     }
 
     PhotoSelectionFlow(
+        captureOwnerKey = "rest",
         selectedPhotoUris = draftState.restPhotoUris,
         onPhotoAdded = { photoUri ->
             recordDraftViewModel.addPhoto(RecordType.REST, photoUri)
@@ -208,7 +219,7 @@ internal fun HeartGuardRestPhotoRoute(
             recordDraftViewModel.removePhoto(RecordType.REST, photoUri)
         },
         onClearPhotos = { recordDraftViewModel.clearPhotos(RecordType.REST) },
-    ) { selectedPhotoUris, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
+    ) { selectedPhotoUris, isSavingCapture, isCaptureSaving, onAddPhotoClick, onRemovePhoto, onClearPhotos ->
         RestPhotoScreen(
             onBackClick = onBackClick,
             onNotificationClick = onNotificationClick,
@@ -223,6 +234,9 @@ internal fun HeartGuardRestPhotoRoute(
             onRestTimeClick = { isSelectingRestStart = true },
             hasRestTimeError = hasRestTimeError,
             onUploadClick = {
+                if (isCaptureSaving()) {
+                    return@RestPhotoScreen
+                }
                 if (draftState.hasValidRestTimeRange) {
                     submitRecord()
                 } else {
@@ -231,7 +245,8 @@ internal fun HeartGuardRestPhotoRoute(
             },
             isSaveEnabled =
                 selectedPhotoUris.isNotEmpty() &&
-                    submissionState.canAttemptSubmission,
+                    submissionState.canAttemptSubmission &&
+                    !isSavingCapture,
         )
     }
 

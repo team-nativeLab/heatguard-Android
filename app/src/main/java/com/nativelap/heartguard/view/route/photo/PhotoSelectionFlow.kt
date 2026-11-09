@@ -21,12 +21,15 @@ import com.nativelap.heartguard.view.component.photo.PhotoSourceBottomSheet
 /** 사진 유형별 ViewModel 목록에 앨범 사진을 추가하고 카메라 화면 진입을 제공한다. */
 @Composable
 internal fun PhotoSelectionFlow(
+    captureOwnerKey: String,
     selectedPhotoUris: List<Uri>,
     onPhotoAdded: (Uri) -> Boolean,
     onRemovePhoto: (Uri) -> Unit,
     onClearPhotos: () -> Unit,
     content: @Composable (
         selectedPhotoUris: List<Uri>,
+        isSavingCapture: Boolean,
+        isCaptureSaving: () -> Boolean,
         onAddPhotoClick: () -> Unit,
         onRemovePhoto: (Uri) -> Unit,
         onClearPhotos: () -> Unit,
@@ -42,6 +45,7 @@ internal fun PhotoSelectionFlow(
 
     val photoCapture =
         rememberPhotoCameraCapture(
+            captureOwnerKey = captureOwnerKey,
             isSourceSheetVisible = isSourceSheetVisible,
             onCaptureResult = { captureResult ->
                 when (captureResult) {
@@ -101,13 +105,23 @@ internal fun PhotoSelectionFlow(
 
     content(
         selectedPhotoUris,
+        photoCapture.isSavingCapture,
+        { photoCapture.isSavingCapture },
         {
-            if (selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT) {
+            if (!photoCapture.hasPendingCapture && selectedPhotoUris.size < MAX_RECORD_PHOTO_COUNT) {
                 isSourceSheetVisible = true
             }
         },
-        onRemovePhoto,
-        onClearPhotos,
+        { uri ->
+            if (!photoCapture.isSavingCapture) {
+                onRemovePhoto(uri)
+            }
+        },
+        {
+            if (!photoCapture.isSavingCapture) {
+                onClearPhotos()
+            }
+        },
     )
 
     if (isSourceSheetVisible) {

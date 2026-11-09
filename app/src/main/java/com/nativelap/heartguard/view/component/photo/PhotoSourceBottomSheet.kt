@@ -17,6 +17,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 
@@ -32,6 +33,8 @@ internal fun PhotoSourceBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
     ) {
         Column(
             modifier =
@@ -65,6 +68,7 @@ internal fun PhotoSourceBottomSheet(
                 )
                 Text(
                     text = stringResource(R.string.photo_source_camera),
+                    style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(start = HeartGuardSpacing.Compact),
                 )
             }
@@ -79,6 +83,7 @@ internal fun PhotoSourceBottomSheet(
                 )
                 Text(
                     text = stringResource(R.string.photo_source_gallery),
+                    style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(start = HeartGuardSpacing.Compact),
                 )
             }
