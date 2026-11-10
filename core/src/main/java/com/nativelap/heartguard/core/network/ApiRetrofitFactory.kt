@@ -2,6 +2,7 @@ package com.nativelap.heartguard.core.network
 
 import com.nativelap.heartguard.core.network.di.AuthenticatedApiClient
 import com.nativelap.heartguard.core.network.di.UnauthenticatedApiClient
+import com.nativelap.heartguard.core.network.di.WeatherApiClient
 import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.core.session.SessionRole
 import kotlinx.serialization.json.Json
@@ -19,6 +20,7 @@ class ApiRetrofitFactory
     constructor(
         @param:AuthenticatedApiClient private val authenticatedApiClient: OkHttpClient,
         @param:UnauthenticatedApiClient private val unauthenticatedApiClient: OkHttpClient,
+        @param:WeatherApiClient private val weatherApiClient: OkHttpClient,
         private val sessionManager: SessionManager,
         private val json: Json,
     ) {
@@ -49,6 +51,7 @@ class ApiRetrofitFactory
             serviceClass: Class<ApiService>,
             authentication: ApiAuthentication,
             allowRequestReplay: Boolean = true,
+            useWeatherTimeout: Boolean = false,
         ): ApiService {
             val callFactory: Call.Factory =
                 when (authentication) {
@@ -62,7 +65,7 @@ class ApiRetrofitFactory
                         SessionBoundCallFactory(
                             delegateClient =
                                 if (allowRequestReplay) {
-                                    authenticatedApiClient
+                                    if (useWeatherTimeout) weatherApiClient else authenticatedApiClient
                                 } else {
                                     singleAttemptClient
                                 },

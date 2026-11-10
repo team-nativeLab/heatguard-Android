@@ -6,6 +6,7 @@ import com.nativelap.heartguard.data.BuildConfig
 import com.nativelap.heartguard.data.site.remote.TeamSiteApiService
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSource
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSourceImpl
+import com.nativelap.heartguard.data.site.remote.TeamWeatherApiService
 import com.nativelap.heartguard.data.site.repository.TeamSiteRepositoryImpl
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import dagger.Binds
@@ -35,6 +36,16 @@ abstract class TeamSiteDataModule {
                 baseUrl = BuildConfig.BASE_URL,
                 serviceClass = TeamSiteApiService::class.java,
                 authentication = ApiAuthentication.BEARER,
+            )
+
+        @Provides
+        @Singleton
+        fun provideTeamWeatherApiService(apiRetrofitFactory: ApiRetrofitFactory): TeamWeatherApiService =
+            apiRetrofitFactory.createService(
+                baseUrl = BuildConfig.BASE_URL,
+                serviceClass = TeamWeatherApiService::class.java,
+                authentication = ApiAuthentication.BEARER,
+                useWeatherTimeout = true,
             )
     }
 }

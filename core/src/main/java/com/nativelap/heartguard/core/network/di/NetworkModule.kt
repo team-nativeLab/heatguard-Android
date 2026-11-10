@@ -46,6 +46,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    @WeatherApiClient
+    fun provideWeatherApiClient(
+        @AuthenticatedApiClient authenticatedApiClient: OkHttpClient,
+    ): OkHttpClient =
+        authenticatedApiClient
+            .newBuilder()
+            .readTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
+            .build()
+
+    @Provides
+    @Singleton
     @ExternalUploadClient
     fun provideExternalUploadClient(): OkHttpClient =
         OkHttpClient

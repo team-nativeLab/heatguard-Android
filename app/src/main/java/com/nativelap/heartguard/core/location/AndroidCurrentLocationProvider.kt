@@ -79,7 +79,7 @@ class AndroidCurrentLocationProvider
         }
 
         private companion object {
-            const val PROVIDER_TIMEOUT_MILLIS = 5_000L
-            const val LOCATION_TIMEOUT_MILLIS = 10_000L
+            const val PROVIDER_TIMEOUT_MILLIS = 7_000L
+            const val LOCATION_TIMEOUT_MILLIS = 14_000L
         }
     }

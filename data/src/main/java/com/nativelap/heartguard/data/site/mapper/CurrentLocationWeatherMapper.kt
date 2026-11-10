@@ -8,10 +8,12 @@ import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
+import com.nativelap.heartguard.domain.site.model.WeatherUnavailableReason
 import java.util.Locale
 
-internal fun CurrentLocationWeatherResponseDto.toDomain(): CurrentLocationWeather =
-    CurrentLocationWeather(
+internal fun CurrentLocationWeatherResponseDto.toDomain(): CurrentLocationWeather {
+    val mappedAvailability = availability.toWeatherAvailability()
+    return CurrentLocationWeather(
         temperature = temperature,
         humidity = humidity,
         apparentTemperature = apparentTemperature,
@@ -19,9 +21,19 @@ internal fun CurrentLocationWeatherResponseDto.toDomain(): CurrentLocationWeathe
         observedAt = observedAt,
         skyStatus = skyStatus.toSkyStatus(),
         temperatureDelta = temperatureDelta,
-        availability = availability.toWeatherAvailability(),
+        availability = mappedAvailability,
         coldWaveWarning = coldWaveWarning?.toDomain(),
+        unavailableReason =
+            if (mappedAvailability == WeatherAvailability.UNAVAILABLE) {
+                errorCode
+                    ?.takeIf(String::isNotBlank)
+                    ?.let(WeatherUnavailableReason::ServerReported)
+                    ?: WeatherUnavailableReason.Unknown
+            } else {
+                null
+            },
     )
+}
 
 internal fun ColdWaveWarningDto.toDomain(): ColdWaveWarning =
     ColdWaveWarning(

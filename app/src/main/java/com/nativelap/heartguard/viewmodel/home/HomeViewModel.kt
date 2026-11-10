@@ -11,6 +11,7 @@ import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
+import com.nativelap.heartguard.domain.site.model.WeatherUnavailableReason
 import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
 import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
@@ -54,6 +55,9 @@ class HomeViewModel
         private val todayRecordTimes = MutableStateFlow<List<LocalTime>>(emptyList())
 
         private val currentLocationWeather = MutableStateFlow<CurrentLocationWeather?>(null)
+        private val mutableLocationWeatherStatus =
+            MutableStateFlow<LocationWeatherStatus>(LocationWeatherStatus.Idle)
+        val locationWeatherStatus: StateFlow<LocationWeatherStatus> = mutableLocationWeatherStatus.asStateFlow()
 
         /** 여러 화면이 공통으로 쓰는 현장 값. 응답이 없으면 모든 값이 null이다. */
         val siteStatus: StateFlow<SiteStatusUiModel> =
@@ -144,6 +148,7 @@ class HomeViewModel
             }
             currentLocationWeatherJob?.cancel()
             currentLocationWeather.value = null
+            mutableLocationWeatherStatus.value = LocationWeatherStatus.CheckingLocation
             currentLocationWeatherGeneration = generation
             val requestId = ++currentLocationWeatherRequestId
             currentLocationWeatherJob =
@@ -165,12 +170,16 @@ class HomeViewModel
                                 .getCurrentLocation()
                                 ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
                     }
-                    coordinates ?: return@launch
+                    if (coordinates == null) {
+                        mutableLocationWeatherStatus.value = LocationWeatherStatus.LocationUnavailable
+                        return@launch
+                    }
                     if (requestId != currentLocationWeatherRequestId ||
                         generation != sessionManager.getSnapshot().generation
                     ) {
                         return@launch
                     }
+                    mutableLocationWeatherStatus.value = LocationWeatherStatus.RequestingWeather
                     val result =
                         getCurrentLocationWeatherUseCase(
                             coordinates.latitude,
@@ -181,13 +190,24 @@ class HomeViewModel
                     ) {
                         return@launch
                     }
-                    if (result is ApiResult.Success &&
-                        (
-                            result.value.availability == WeatherAvailability.AVAILABLE ||
+                    when (result) {
+                        is ApiResult.Failure -> {
+                            mutableLocationWeatherStatus.value = LocationWeatherStatus.WeatherRequestFailed
+                        }
+
+                        is ApiResult.Success -> {
+                            if (result.value.availability == WeatherAvailability.AVAILABLE ||
                                 result.value.availability == WeatherAvailability.CACHED
-                        )
-                    ) {
-                        currentLocationWeather.value = result.value
+                            ) {
+                                currentLocationWeather.value = result.value
+                                mutableLocationWeatherStatus.value = LocationWeatherStatus.Available
+                            } else {
+                                mutableLocationWeatherStatus.value =
+                                    LocationWeatherStatus.WeatherUnavailable(
+                                        result.value.unavailableReason ?: WeatherUnavailableReason.Unknown,
+                                    )
+                            }
+                        }
                     }
                 }
         }
@@ -199,6 +219,16 @@ class HomeViewModel
             currentLocationWeatherJob = null
             currentLocationWeatherGeneration = null
             currentLocationWeather.value = null
+            mutableLocationWeatherStatus.value = LocationWeatherStatus.Idle
+        }
+
+        fun markLocationPermissionDenied() {
+            currentLocationWeatherRequestId += 1
+            currentLocationWeatherJob?.cancel()
+            currentLocationWeatherJob = null
+            currentLocationWeatherGeneration = null
+            currentLocationWeather.value = null
+            mutableLocationWeatherStatus.value = LocationWeatherStatus.PermissionDenied
         }
 
         /** 자정 이후에는 전날 완료 기록을 제거한 뒤 오늘 일정과 기록을 다시 불러온다. */
@@ -291,3 +321,23 @@ class HomeViewModel
             const val LOCATION_RETRY_DELAY_MILLIS = 1_000L
         }
     }
+
+sealed interface LocationWeatherStatus {
+    data object Idle : LocationWeatherStatus
+
+    data object CheckingLocation : LocationWeatherStatus
+
+    data object RequestingWeather : LocationWeatherStatus
+
+    data object LocationUnavailable : LocationWeatherStatus
+
+    data object WeatherRequestFailed : LocationWeatherStatus
+
+    data class WeatherUnavailable(
+        val reason: WeatherUnavailableReason,
+    ) : LocationWeatherStatus
+
+    data object Available : LocationWeatherStatus
+
+    data object PermissionDenied : LocationWeatherStatus
+}

@@ -1,8 +1,12 @@
 package com.nativelap.heartguard.view.route.home
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -39,6 +44,7 @@ import com.nativelap.heartguard.view.screen.home.HomeScreen
 import com.nativelap.heartguard.viewmodel.home.HomeRiskBadgeType
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
+import com.nativelap.heartguard.viewmodel.home.LocationWeatherStatus
 import com.nativelap.heartguard.viewmodel.home.toHomeRiskBadgeType
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
@@ -73,16 +79,18 @@ internal fun HeartGuardHomeRoute(
 ) {
     val context = LocalContext.current
     var hasRequestedLocationPermission by rememberSaveable { mutableStateOf(false) }
+    var locationPermissionRequestCount by rememberSaveable { mutableStateOf(0) }
     val locationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 homeViewModel.loadCurrentLocationWeather()
             } else {
-                homeViewModel.clearCurrentLocationWeather()
+                homeViewModel.markLocationPermissionDenied()
             }
         }
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
+    val locationWeatherStatus by homeViewModel.locationWeatherStatus.collectAsStateWithLifecycle()
     val checkSchedule by homeViewModel.checkSchedule.collectAsStateWithLifecycle()
     val menuDrawerProfile by menuDrawerViewModel.profile.collectAsStateWithLifecycle()
     val isMenuDrawerLoggingOut by menuDrawerViewModel.isLoggingOut.collectAsStateWithLifecycle()
@@ -99,6 +107,7 @@ internal fun HeartGuardHomeRoute(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                 ) == PackageManager.PERMISSION_GRANTED
             if (!permissionGranted) {
+                locationPermissionRequestCount += 1
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
             }
         }
@@ -117,7 +126,7 @@ internal fun HeartGuardHomeRoute(
         if (isLocationPermissionGranted) {
             homeViewModel.loadCurrentLocationWeather()
         } else {
-            homeViewModel.clearCurrentLocationWeather()
+            homeViewModel.markLocationPermissionDenied()
         }
         onPauseOrDispose {}
     }
@@ -128,6 +137,16 @@ internal fun HeartGuardHomeRoute(
             Toast.makeText(context, loadFailureMessage, Toast.LENGTH_SHORT).show()
         }
     }
+    val shouldShowLocationPermissionRationale =
+        (context as? ComponentActivity)?.let { activity ->
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            )
+        } == true
+    val shouldOpenAppSettingsForLocationPermission =
+        locationPermissionRequestCount >= LOCATION_PERMISSION_SETTINGS_THRESHOLD &&
+            !shouldShowLocationPermissionRationale
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
@@ -163,6 +182,59 @@ internal fun HeartGuardHomeRoute(
                     }
                 },
             isColdWaveAlert = riskBadgeType != HomeRiskBadgeType.HEAT,
+            weatherNotice =
+                when (locationWeatherStatus) {
+                    LocationWeatherStatus.CheckingLocation -> stringResource(R.string.home_location_checking)
+                    LocationWeatherStatus.RequestingWeather -> stringResource(R.string.home_weather_requesting)
+                    LocationWeatherStatus.LocationUnavailable -> stringResource(R.string.home_location_timeout)
+                    LocationWeatherStatus.WeatherRequestFailed -> stringResource(R.string.home_weather_request_failed)
+                    is LocationWeatherStatus.WeatherUnavailable -> stringResource(R.string.home_weather_unavailable)
+                    LocationWeatherStatus.PermissionDenied -> stringResource(R.string.home_location_permission_denied)
+                    LocationWeatherStatus.Idle, LocationWeatherStatus.Available -> null
+                },
+            coldWaveNotice =
+                if (siteStatus.isColdWaveWarningUnavailable) {
+                    stringResource(R.string.home_cold_wave_unavailable)
+                } else {
+                    null
+                },
+            onWeatherRetry =
+                when (locationWeatherStatus) {
+                    LocationWeatherStatus.PermissionDenied -> {
+                        {
+                            if (!shouldOpenAppSettingsForLocationPermission) {
+                                locationPermissionRequestCount += 1
+                                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                            } else {
+                                context.startActivity(
+                                    Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.fromParts("package", context.packageName, null),
+                                    ),
+                                )
+                            }
+                        }
+                    }
+
+                    LocationWeatherStatus.LocationUnavailable,
+                    LocationWeatherStatus.WeatherRequestFailed,
+                    is LocationWeatherStatus.WeatherUnavailable,
+                    -> {
+                        ({ homeViewModel.loadCurrentLocationWeather() })
+                    }
+
+                    else -> {
+                        null
+                    }
+                },
+            weatherRetryLabel =
+                if (locationWeatherStatus == LocationWeatherStatus.PermissionDenied &&
+                    shouldOpenAppSettingsForLocationPermission
+                ) {
+                    stringResource(R.string.home_open_settings)
+                } else {
+                    stringResource(R.string.home_retry)
+                },
             nextCheckDescription = nextCheckDescriptionText(checkSchedule),
             checkTimelineItems = checkTimelineItems(checkSchedule),
             onMenuClick = {
@@ -225,6 +297,8 @@ internal fun HeartGuardHomeRoute(
         }
     }
 }
+
+private const val LOCATION_PERMISSION_SETTINGS_THRESHOLD = 2
 
 // 온도를 받지 못했으면 Figma 홈의 관측값 없음 표기("--.- °C")를 쓴다.
 @Composable
