@@ -12,6 +12,7 @@ class TeamSiteRemoteDataSourceImpl
     @Inject
     constructor(
         private val teamSiteApiService: TeamSiteApiService,
+        private val teamWeatherApiService: TeamWeatherApiService,
         private val apiExecutor: ApiExecutor,
     ) : TeamSiteRemoteDataSource {
         override suspend fun getTeamSite(): ApiResult<TeamSiteResponseDto> =
@@ -25,6 +26,6 @@ class TeamSiteRemoteDataSourceImpl
         ): ApiResult<CurrentLocationWeatherResponseDto> =
             apiExecutor
                 .execute {
-                    teamSiteApiService.getCurrentLocationWeather(request)
+                    teamWeatherApiService.getCurrentLocationWeather(request)
                 }.requireSuccessData()
     }

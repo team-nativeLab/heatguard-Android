@@ -93,6 +93,15 @@
     <string name="app_account_site_unselected_action_description">%1$s, %2$s, 선택되지 않은 팀. 누르면 선택됩니다.</string>
     <string name="app_account_site_unlinking_action_description">%1$s, %2$s, 소속 해제 요청 중.</string>
     <string name="home_weather_status">현재 온도</string>
+    <string name="home_location_checking">현재 위치를 확인하고 있습니다.</string>
+    <string name="home_weather_requesting">위치를 확인했습니다. 날씨 정보를 불러오고 있습니다.</string>
+    <string name="home_location_timeout">현재 날씨 정보를 사용할 수 없습니다.</string>
+    <string name="home_weather_request_failed">날씨 정보를 불러오지 못했습니다.</string>
+    <string name="home_weather_unavailable">현재 날씨를 사용할 수 없어 현장 날씨를 표시합니다.</string>
+    <string name="home_location_permission_denied">위치 권한이 없어 현장 날씨를 표시합니다.</string>
+    <string name="home_cold_wave_unavailable">한파특보 정보를 불러오지 못했습니다.</string>
+    <string name="home_retry">다시 시도</string>
+    <string name="home_open_settings">앱 설정 열기</string>
     <string name="home_weather_label">날씨</string>
     <string name="home_current_temperature">현재 온도</string>
     <string name="home_feels_like">체감온도</string>

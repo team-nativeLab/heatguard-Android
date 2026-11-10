@@ -30,6 +30,7 @@ data class SiteStatusUiModel(
     val recordTemperature: Double? = null,
     val recordHumidity: Double? = null,
     val coldWaveWarning: ColdWaveWarning? = null,
+    val isColdWaveWarningUnavailable: Boolean = false,
 )
 
 enum class HomeRiskBadgeType {
@@ -74,6 +75,8 @@ fun HomeUiState.toSiteStatusUiModel(locationWeather: CurrentLocationWeather? = n
         recordTemperature = availableLocationWeather.temperature,
         recordHumidity = availableLocationWeather.humidity,
         coldWaveWarning = selectedColdWaveWarning,
+        isColdWaveWarningUnavailable =
+            availableLocationWeather.coldWaveWarning?.availability == ColdWaveAvailability.UNAVAILABLE,
     )
 }
 

@@ -8,6 +8,10 @@ annotation class AuthenticatedApiClient
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
+annotation class WeatherApiClient
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
 annotation class UnauthenticatedApiClient
 
 @Qualifier
