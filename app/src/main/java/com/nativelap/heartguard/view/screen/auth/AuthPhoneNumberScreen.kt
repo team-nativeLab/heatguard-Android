@@ -249,6 +249,8 @@ private fun PhoneNumberInput(
             },
         )
         if (phoneNumber.isNotEmpty()) {
+            Spacer(modifier = Modifier.width(PHONE_CLEAR_GAP))
+
             Box(
                 modifier =
                     Modifier
@@ -259,7 +261,7 @@ private fun PhoneNumberInput(
                         }.clickable(role = Role.Button, onClickLabel = clearLabel, onClick = {
                             onPhoneNumberChange("")
                         }),
-                contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.CenterStart,
             ) {
                 Box(
                     modifier =
@@ -388,6 +390,7 @@ private val PHONE_INPUT_UNFOCUSED_BORDER_WIDTH = 1.dp
 private val PHONE_INPUT_HORIZONTAL_PADDING = 18.dp
 private val PHONE_INPUT_COUNTRY_GAP = 12.dp
 private val PHONE_INPUT_FIELD_GAP = 12.dp
+private val PHONE_CLEAR_GAP = 15.dp
 private val PHONE_INPUT_DIVIDER_WIDTH = 1.dp
 private val PHONE_INPUT_DIVIDER_HEIGHT = 18.dp
 private val PHONE_COUNTRY_TEXT_SIZE = 15.sp
