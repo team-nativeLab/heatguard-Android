@@ -8,6 +8,10 @@ interface TokenStorage {
 
     fun readSessionRole(): SessionRole? = null
 
+    fun readSessionIdentifier(): String? = null
+
+    fun saveSessionIdentifier(identifier: String) = Unit
+
     fun saveSession(
         accessToken: String,
         role: SessionRole,

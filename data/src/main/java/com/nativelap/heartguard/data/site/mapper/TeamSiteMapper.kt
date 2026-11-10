@@ -21,6 +21,7 @@ internal fun TeamSiteResponseDto.toDomain(): TeamSiteOverview =
         skyStatus = weather?.skyStatus.nullIfBlank()?.toSkyStatus(),
         temperatureDelta = weather?.temperatureDelta,
         coldWaveWarning = weather?.coldWaveWarning?.toDomain(),
+        observedAt = weather?.observedAt,
     )
 
 private fun String.toSkyStatus(): SkyStatus =

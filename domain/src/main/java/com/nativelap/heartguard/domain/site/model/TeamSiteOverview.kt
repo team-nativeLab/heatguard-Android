@@ -17,4 +17,5 @@ data class TeamSiteOverview(
     val skyStatus: SkyStatus? = null,
     val temperatureDelta: Double? = null,
     val coldWaveWarning: ColdWaveWarning? = null,
+    val observedAt: String? = null,
 )

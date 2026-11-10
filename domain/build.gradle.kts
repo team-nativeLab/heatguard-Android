@@ -20,4 +20,5 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(project(":core"))
+    testImplementation(libs.junit)
 }

@@ -183,20 +183,47 @@ internal fun HeartGuardHomeRoute(
                 },
             isColdWaveAlert = riskBadgeType != HomeRiskBadgeType.HEAT,
             weatherNotice =
-                when (locationWeatherStatus) {
-                    LocationWeatherStatus.CheckingLocation -> stringResource(R.string.home_location_checking)
-                    LocationWeatherStatus.RequestingWeather -> stringResource(R.string.home_weather_requesting)
-                    LocationWeatherStatus.LocationUnavailable -> stringResource(R.string.home_location_timeout)
-                    LocationWeatherStatus.WeatherRequestFailed -> stringResource(R.string.home_weather_request_failed)
-                    is LocationWeatherStatus.WeatherUnavailable -> stringResource(R.string.home_weather_unavailable)
-                    LocationWeatherStatus.PermissionDenied -> stringResource(R.string.home_location_permission_denied)
-                    LocationWeatherStatus.Idle, LocationWeatherStatus.Available -> null
+                if (siteStatus.isLocationWeatherCached) {
+                    siteStatus.weatherAgeMinutes?.let { elapsedMinutes ->
+                        stringResource(R.string.home_weather_cache_age_format, elapsedMinutes)
+                    }
+                } else if (siteStatus.isLocationWeatherExpired) {
+                    stringResource(R.string.home_weather_unavailable)
+                } else {
+                    when (locationWeatherStatus) {
+                        LocationWeatherStatus.CheckingLocation,
+                        LocationWeatherStatus.RequestingWeather,
+                        LocationWeatherStatus.Idle,
+                        LocationWeatherStatus.Available,
+                        -> null
+
+                        LocationWeatherStatus.LocationUnavailable ->
+                            stringResource(R.string.home_weather_unavailable)
+
+                        LocationWeatherStatus.WeatherRequestFailed ->
+                            stringResource(R.string.home_weather_request_failed)
+
+                        is LocationWeatherStatus.WeatherUnavailable ->
+                            stringResource(R.string.home_weather_unavailable)
+
+                        LocationWeatherStatus.PermissionDenied ->
+                            stringResource(R.string.home_location_permission_denied)
+                    }
                 },
             coldWaveNotice =
-                if (siteStatus.isColdWaveWarningUnavailable) {
-                    stringResource(R.string.home_cold_wave_unavailable)
-                } else {
-                    null
+                when {
+                    siteStatus.coldWaveWarning?.availability ==
+                        com.nativelap.heartguard.domain.site.model.ColdWaveAvailability.CACHED ||
+                        siteStatus.coldWaveWarning?.isStale == true -> {
+                        siteStatus.coldWaveAgeMinutes?.let { elapsedMinutes ->
+                            stringResource(R.string.home_cold_wave_cache_age_format, elapsedMinutes)
+                        }
+                    }
+
+                    siteStatus.isColdWaveWarningUnavailable ->
+                        stringResource(R.string.home_cold_wave_unavailable)
+
+                    else -> null
                 },
             onWeatherRetry =
                 when (locationWeatherStatus) {
@@ -235,6 +262,14 @@ internal fun HeartGuardHomeRoute(
                 } else {
                     stringResource(R.string.home_retry)
                 },
+            isRefreshingWeather =
+                locationWeatherStatus == LocationWeatherStatus.CheckingLocation ||
+                    locationWeatherStatus == LocationWeatherStatus.RequestingWeather,
+            onRefreshWeather = {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    homeViewModel.refreshCurrentLocationWeather()
+                }
+            },
             nextCheckDescription = nextCheckDescriptionText(checkSchedule),
             checkTimelineItems = checkTimelineItems(checkSchedule),
             onMenuClick = {

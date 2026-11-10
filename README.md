@@ -67,7 +67,7 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | `GET·PATCH /auth/team/me` | 연결 | 응답 `{userId, name, email, phone, companyName, role, …, version}`. PATCH는 `name·email·phone` 중 하나 이상 필요, 앱은 `name`과 마지막으로 받은 `version`을 보냄. 409는 최신 정보 재조회 후 안내 |
 | `PUT /auth/team/password` | 연결 | 요청 `{currentPassword, newPassword}`, 성공 `{changedAt}`, 현재 비밀번호 오류 401 `INVALID_CREDENTIALS`, 8자 미만 400. 변경 후에도 현재 세션 유지 |
 | `GET /team` | 연결 | 기상 미입력 시 기상·비교 필드는 null, 관리자 연락처는 빈 문자열일 수 있음. 응답 DTO가 `company.phone`, `weather.observedAt`·`skyStatus`·`temperatureDelta`·비교값, `unreadNotificationCount`를 파싱한다. 화면에서 사용하는 값만 Domain에 매핑한다.
-| `POST /api/v1/team/weather` | 연결 | 홈에서 사용자가 coarse 위치 권한을 허용하면 현재 좌표를 숫자 JSON `{latitude, longitude}`으로 전송한다. `TEAM_MEMBER` Bearer 인증을 사용하고 `X-Team-Id`는 보내지 않아 선택 팀 기본값을 사용한다. 격자·KMA 키는 서버가 관리한다. `AVAILABLE`·`CACHED`만 홈 및 기록 기본값에 적용하고, `UNAVAILABLE`·요청/위치 실패·권한 거부는 `GET /team` 및 수동 입력으로 fallback한다. null 측정값은 null로 유지하며 관리자 저장 현장 설정은 변경하지 않는다. 사용자 요구, 2026-11-06. |
+| `POST /api/v1/team/weather` | 연결 | 홈 진입·화면 재개와 당겨서 새로고침에서 현재 좌표를 숫자 JSON `{latitude, longitude}`으로 전송한다. 당겨서 새로고침은 이 날씨 API만 호출한다. `TEAM_MEMBER` Bearer 인증을 사용하고 격자·KMA 키는 서버가 관리한다. 마지막 성공 응답을 DataStore에 위치와 함께 한 건만 보관하고, 요청 실패·`UNAVAILABLE`·`UNKNOWN`이면 현재 위치 1km 이내에서만 캐시를 홈에 표시한다. 홈 안내는 서버 `observedAt` 또는 한파의 `fetchedAt` 기준 경과 시간을 다음 경과 분 경계마다 갱신한다. 서버 시각 기준 정확히 60분부터 홈 표시·영속 캐시 재사용·기록 기본값에서 제외하고, 만료 캐시는 다음 앱 실행 또는 접근 때 정리한다(앱 종료 중 즉시 삭제는 요구하지 않음). 앱 시작 시 인증 복원 후에도 캐시 만료를 확인한다. 로그아웃 시 캐시는 삭제하며 Android 백업·기기 전송에서 제외한다. 온도·사진 기록 기본값 및 기록 제출 기준은 서버 `observedAt` 기준 60분 이내이며, 누락·잘못된 시각은 제외한다. (사용자 확인, 2026-11-11) |
 | `POST /team/uploads` → presigned `PUT` → `POST /team/records` | 연결 | 발급 요청은 `files[{contentType, size}]`이며, 실제 크기 1~5 MiB의 JPEG·PNG·WebP 사진을 1~2장 보냅니다. 응답 `uploads` 순서대로 `requiredHeaders`를 적용해 원본 바이너리를 PUT하고, 앱 Authorization은 보내지 않습니다. 응답의 `objectKey`를 기록 요청의 `photoKeys`에 사용하며 URL 만료 시각을 확인합니다. REST 기록은 필수로 선택한 `restStartedAt`·`restEndedAt`을 오프셋 포함 시각으로 보내며, 종료 시간이 같거나 이르면 다음 날로 처리. `restMinutes`는 서버가 계산 |
 | `GET /team/records`, `GET /team/records/{recordId}` | 연결 | 목록은 선택적 `date=YYYY-MM-DD` 하루 단위 필터를 지원하고 `measuredAt`을 서울 날짜로 변환해 페이지네이션 전에 적용합니다. 기간·유형 쿼리는 지원하지 않음. 목록 항목에는 `photoKeys`만, 상세에는 `photoUrls` 추가. `restMinutes`·`teamName`·`workplace`·`siteName`은 기록 당시 값(이전 기록은 null) |
 | `POST·GET /team/inquiries` | 연결 | 목록 항목 `{inquiryId, title, content, status, deliveryStatus, replies[], createdAt}`, 알 수 없는 cursor는 400 |
@@ -133,10 +133,11 @@ PRD 문서는 저장소에 없습니다. 사용자 확인에 따라 기존 READM
 | 네트워크 | Retrofit, OkHttp, kotlinx.serialization 컨버터 |
 | 이미지 | Coil 3.3.0 (`coil-compose`, `coil-network-okhttp`) — 기록 상세 사진 표시. 3.4 이상은 Kotlin 2.3+ stdlib이 필요해 현재 Kotlin 2.2와 호환되는 버전 사용 |
 | 직렬화 | kotlinx.serialization.json 1.8.1 |
+| 로컬 설정·날씨 캐시 | AndroidX DataStore Preferences 1.3.0 (날씨 캐시는 백업·기기 전송 제외) |
 | 빌드 | Gradle (Kotlin DSL), Version Catalog, AGP 9.2.1 |
 | minSdk / targetSdk / compileSdk | 34 / 37 / 37 |
 
-Hilt와 Retrofit/OkHttp를 사용합니다. `core/di`, `core/network`, `core/session`에는 DI 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리가 있습니다. `domain`과 `data`에는 로그인·로그아웃, 내 정보·비밀번호, 홈, 사진 업로드·기록 저장, 기록 내역, 긴급 호출, 문의, 회원탈퇴 기능의 UseCase·Repository·RemoteDataSource 흐름이 있습니다. 화면 상태는 `viewmodel`에 있습니다. 로컬 데이터베이스(Room 등)는 없으며, 결과 불명 기록 제출 표식은 Android `AtomicFile`로 별도 영속화합니다.
+Hilt와 Retrofit/OkHttp를 사용합니다. `core/di`, `core/network`, `core/session`에는 DI 모듈, Retrofit 서비스 생성 팩토리(`ApiRetrofitFactory`), 공통 API 결과 타입(`ApiResult`/`ApiError`), 세션 관리가 있습니다. `domain`과 `data`에는 로그인·로그아웃, 내 정보·비밀번호, 홈, 사진 업로드·기록 저장, 기록 내역, 긴급 호출, 문의, 회원탈퇴 기능의 UseCase·Repository·RemoteDataSource 흐름이 있습니다. 화면 상태는 `viewmodel`에 있습니다. 관계형 로컬 DB(Room)는 없으며, 위치 날씨 최신 1건은 DataStore Preferences에 위치·서버 시각과 함께 저장하고, 결과 불명 기록 제출 표식은 Android `AtomicFile`로 별도 영속화합니다.
 
 ## 아키텍처
 `AGENTS.md`가 안내하는 Presentation/Domain/Data/Core 책임을 `:app`, `:domain`, `:data`, `:core` Gradle 모듈로 나눕니다. 기존 Kotlin 패키지명과 화면·API 흐름은 유지합니다. Compose Route/Screen이 ViewModel의 상태와 이벤트를 연결하고, ViewModel은 UseCase를 호출합니다. Repository 구현은 RemoteDataSource를 통해 Retrofit API와 사진 파일 업로드를 처리하고, 기록 제출 표식은 LocalDataSource를 통해 처리합니다. `RecordDataModule`이 제출 Repository와 LocalDataSource 인터페이스를 Hilt로 연결하며, 로컬 파일 접근은 Application Context에서 얻은 경로·IO dispatcher·Singleton Mutex를 사용합니다.
@@ -226,10 +227,10 @@ HEARTGUARD_DEBUG_BASE_URL=https://YOUR_DEBUG_API_HOST/
 HEARTGUARD_RELEASE_BASE_URL=https://YOUR_RELEASE_API_HOST/
 ```
 
-Release 빌드도 `:data:validateReleaseServerConfiguration` 단계에서 기본 주소 또는 재정의 주소의 HTTPS URL 형식이 유효한지 검증합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API는 배포 서버 접근이 없어 당시 명세 기반 단위 테스트까지만 검증했습니다. 해당 테스트 소스는 현재 제거되어 자동 검증을 다시 실행할 수 없습니다.
+Release 빌드도 `:data:validateReleaseServerConfiguration` 단계에서 기본 주소 또는 재정의 주소의 HTTPS URL 형식이 유효한지 검증합니다. 앱의 Release 빌드도 이 검증에 의존합니다. 2026-10-01 테스트 서버와 테스트 계정으로 로그인·자동 로그인 복원, 홈 조회, 사진 촬영·업로드, 기록 내역 이어 받기, 알림 모두 읽음, 문의 목록, 긴급호출 생성·취소, 로그아웃 후 재로그인 시 초안 정리, 온도계 기록 저장을 에뮬레이터에서 확인했습니다. 휴식·작업 기록 저장 성공은 위 서버 기상값 문제로 확인하지 못했습니다. 앱 계정 신규 API의 과거 명세 기반 테스트 소스는 현재 보존되어 있지 않습니다. 현재 테스트 범위는 아래 날씨 캐시 기능의 회귀 검증에 한정됩니다.
 
 ## 검증과 품질 검사
-사용자 요청에 따라 네 모듈(`app`, `core`, `domain`, `data`)의 `src/test`, `src/androidTest`, `src/testFixtures` 테스트 소스와 테스트 전용 구성을 제거했습니다. 따라서 현재 단위·계측 테스트는 없으며 `testDebugUnitTest`, `connectedDebugAndroidTest`로 기능 회귀를 자동 확인할 수 없습니다. 인증·세션·권한 분리·기록 저장 안전성을 포함한 과거 테스트 보호도 더 이상 실행되지 않습니다.
+기존 테스트 소스 제거 후, 날씨 캐시 기능 회귀 검증을 위해 네 모듈(`app`, `core`, `domain`, `data`)의 `src/test`에 단위 테스트 18개를 다시 추가했습니다. 검증 범위는 날씨 시각의 60분 경계, 화면 경과 분 갱신, 캐시 빈 값·불완전·손상·정상 데이터 판별과 정리, 세션 분리·저장/삭제 경합·I/O 오류 처리입니다. `src/androidTest`에는 현재 테스트가 없으며, 계측 테스트 명령 `connectedDebugAndroidTest`로 자동 확인할 수 있는 범위는 없습니다. 기존 인증·권한·기록 저장 테스트는 복구하지 않았습니다.
 
 | 목적 | 명령 |
 |---|---|
@@ -238,7 +239,7 @@ Release 빌드도 `:data:validateReleaseServerConfiguration` 단계에서 기본
 | Kotlin·Gradle 포맷 검사 | `./gradlew spotlessCheck` |
 
 ### 과거 검증 기록
-아래 결과는 테스트 코드가 저장소에 있던 시점의 기록이며, 현재 코드에서 재실행할 수 없습니다. 2026-10-01 `testDebugUnitTest` 167개와 `connectedDebugAndroidTest` 20개가 통과했고, `lintDebug`는 오류 0개(경고 46개), `assembleDebug`는 성공했습니다. 2026-10-04 기록된 시점에는 단위 테스트 276개와 계측 테스트 32개가 통과했고, 마지막 응답 검증 변경 뒤 단위 테스트·`assembleDebug`·`lintDebug`가 성공했습니다(Lint 오류 0개·경고 52개). 당시 알림·REST·긴급호출·문의·기록·인증/세션 및 UI 테스트가 API 계약, 실패 경로, 계정 전환과 저장 안전성 등을 다뤘습니다. 이는 과거 상태의 결과이며 현재 기능 회귀 방지를 보장하지 않습니다.
+아래 결과는 과거 테스트 코드가 저장소에 있던 시점의 기록이며, 당시 실행을 현재 재현할 수는 없습니다. 2026-10-01 `testDebugUnitTest` 167개와 `connectedDebugAndroidTest` 20개가 통과했고, `lintDebug`는 오류 0개(경고 46개), `assembleDebug`는 성공했습니다. 2026-10-04 기록된 시점에는 단위 테스트 276개와 계측 테스트 32개가 통과했고, 마지막 응답 검증 변경 뒤 단위 테스트·`assembleDebug`·`lintDebug`가 성공했습니다(Lint 오류 0개·경고 52개). 당시 알림·REST·긴급호출·문의·기록·인증/세션 및 UI 테스트가 API 계약, 실패 경로, 계정 전환과 저장 안전성 등을 다뤘습니다. 이 과거 테스트 코드는 현재 없고, 현재 실행 가능한 18개 단위 테스트는 날씨 캐시 기능만 다룹니다.
 
 로그인·탈퇴 IME의 과거 계측 재검증과 당시 남은 서버·관리자 연동 검증 조건은 [2026-10-04 회귀 검증 보고서](docs/verification/2026-10-04-functional-regression.md)에 기록되어 있습니다. 서버 실검증과 관리자 웹 연동은 당시에도 완료되지 않은 범위였습니다.
 

@@ -2,7 +2,9 @@ package com.nativelap.heartguard.data.site.di
 
 import com.nativelap.heartguard.core.network.ApiAuthentication
 import com.nativelap.heartguard.core.network.ApiRetrofitFactory
+import com.nativelap.heartguard.core.session.SessionScopedDataCleaner
 import com.nativelap.heartguard.data.BuildConfig
+import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherCache
 import com.nativelap.heartguard.data.site.remote.TeamSiteApiService
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSource
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSourceImpl
@@ -12,6 +14,7 @@ import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
+import dagger.multibindings.IntoSet
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -19,6 +22,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class TeamSiteDataModule {
+    @Binds
+    @IntoSet
+    @Singleton
+    abstract fun bindCurrentLocationWeatherCacheCleaner(impl: CurrentLocationWeatherCache): SessionScopedDataCleaner
+
     @Binds
     @Singleton
     abstract fun bindTeamSiteRemoteDataSource(impl: TeamSiteRemoteDataSourceImpl): TeamSiteRemoteDataSource
