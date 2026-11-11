@@ -45,6 +45,7 @@ import com.nativelap.heartguard.viewmodel.home.HomeRiskBadgeType
 import com.nativelap.heartguard.viewmodel.home.HomeUiState
 import com.nativelap.heartguard.viewmodel.home.HomeViewModel
 import com.nativelap.heartguard.viewmodel.home.LocationWeatherStatus
+import com.nativelap.heartguard.viewmodel.home.SiteStatusUiModel
 import com.nativelap.heartguard.viewmodel.home.toHomeRiskBadgeType
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerEvent
 import com.nativelap.heartguard.viewmodel.menu.MenuDrawerViewModel
@@ -147,6 +148,95 @@ internal fun HeartGuardHomeRoute(
     val shouldOpenAppSettingsForLocationPermission =
         locationPermissionRequestCount >= LOCATION_PERMISSION_SETTINGS_THRESHOLD &&
             !shouldShowLocationPermissionRationale
+    val weatherUnavailableNoticeResource =
+        if (siteStatus.hasWeatherValueToDisplay()) {
+            R.string.home_weather_unavailable
+        } else {
+            R.string.home_weather_request_failed
+        }
+    val locationWeatherNotice =
+        if (siteStatus.isLocationWeatherCached) {
+            siteStatus.weatherAgeMinutes?.let { elapsedMinutes ->
+                stringResource(R.string.home_weather_cache_age_format, elapsedMinutes)
+            }
+        } else if (siteStatus.isLocationWeatherExpired) {
+            stringResource(weatherUnavailableNoticeResource)
+        } else {
+            when (locationWeatherStatus) {
+                LocationWeatherStatus.CheckingLocation,
+                LocationWeatherStatus.RequestingWeather,
+                LocationWeatherStatus.Idle,
+                LocationWeatherStatus.Available,
+                -> {
+                    null
+                }
+
+                LocationWeatherStatus.LocationUnavailable -> {
+                    stringResource(weatherUnavailableNoticeResource)
+                }
+
+                LocationWeatherStatus.WeatherRequestFailed -> {
+                    stringResource(weatherUnavailableNoticeResource)
+                }
+
+                is LocationWeatherStatus.WeatherUnavailable -> {
+                    stringResource(weatherUnavailableNoticeResource)
+                }
+
+                LocationWeatherStatus.PermissionDenied -> {
+                    stringResource(R.string.home_location_permission_denied)
+                }
+            }
+        }
+    val locationWeatherRetry =
+        when (locationWeatherStatus) {
+            LocationWeatherStatus.PermissionDenied -> {
+                {
+                    if (!shouldOpenAppSettingsForLocationPermission) {
+                        locationPermissionRequestCount += 1
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    } else {
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", context.packageName, null),
+                            ),
+                        )
+                    }
+                }
+            }
+
+            LocationWeatherStatus.LocationUnavailable,
+            LocationWeatherStatus.WeatherRequestFailed,
+            is LocationWeatherStatus.WeatherUnavailable,
+            -> {
+                ({ homeViewModel.loadCurrentLocationWeather() })
+            }
+
+            else -> {
+                null
+            }
+        }
+    val coldWaveNotice =
+        when {
+            siteStatus.coldWaveWarning?.availability ==
+                com.nativelap.heartguard.domain.site.model.ColdWaveAvailability.CACHED ||
+                siteStatus.coldWaveWarning?.isStale == true -> {
+                siteStatus.coldWaveAgeMinutes?.let { elapsedMinutes ->
+                    stringResource(R.string.home_cold_wave_cache_age_format, elapsedMinutes)
+                }
+            }
+
+            siteStatus.isColdWaveWarningUnavailable -> {
+                stringResource(R.string.home_cold_wave_unavailable)
+            }
+
+            else -> {
+                null
+            }
+        }
+    val homeNotice = locationWeatherNotice ?: coldWaveNotice
+    val onHomeNoticeRetry = locationWeatherRetry.takeIf { locationWeatherNotice != null }
     var isMenuDrawerOpen by rememberSaveable {
         mutableStateOf(false)
     }
@@ -182,87 +272,8 @@ internal fun HeartGuardHomeRoute(
                     }
                 },
             isColdWaveAlert = riskBadgeType != HomeRiskBadgeType.HEAT,
-            weatherNotice =
-                if (siteStatus.isLocationWeatherCached) {
-                    siteStatus.weatherAgeMinutes?.let { elapsedMinutes ->
-                        stringResource(R.string.home_weather_cache_age_format, elapsedMinutes)
-                    }
-                } else if (siteStatus.isLocationWeatherExpired) {
-                    stringResource(R.string.home_weather_unavailable)
-                } else {
-                    when (locationWeatherStatus) {
-                        LocationWeatherStatus.CheckingLocation,
-                        LocationWeatherStatus.RequestingWeather,
-                        LocationWeatherStatus.Idle,
-                        LocationWeatherStatus.Available,
-                        -> {
-                            null
-                        }
-
-                        LocationWeatherStatus.LocationUnavailable -> {
-                            stringResource(R.string.home_weather_unavailable)
-                        }
-
-                        LocationWeatherStatus.WeatherRequestFailed -> {
-                            stringResource(R.string.home_weather_request_failed)
-                        }
-
-                        is LocationWeatherStatus.WeatherUnavailable -> {
-                            stringResource(R.string.home_weather_unavailable)
-                        }
-
-                        LocationWeatherStatus.PermissionDenied -> {
-                            stringResource(R.string.home_location_permission_denied)
-                        }
-                    }
-                },
-            coldWaveNotice =
-                when {
-                    siteStatus.coldWaveWarning?.availability ==
-                        com.nativelap.heartguard.domain.site.model.ColdWaveAvailability.CACHED ||
-                        siteStatus.coldWaveWarning?.isStale == true -> {
-                        siteStatus.coldWaveAgeMinutes?.let { elapsedMinutes ->
-                            stringResource(R.string.home_cold_wave_cache_age_format, elapsedMinutes)
-                        }
-                    }
-
-                    siteStatus.isColdWaveWarningUnavailable -> {
-                        stringResource(R.string.home_cold_wave_unavailable)
-                    }
-
-                    else -> {
-                        null
-                    }
-                },
-            onWeatherRetry =
-                when (locationWeatherStatus) {
-                    LocationWeatherStatus.PermissionDenied -> {
-                        {
-                            if (!shouldOpenAppSettingsForLocationPermission) {
-                                locationPermissionRequestCount += 1
-                                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                            } else {
-                                context.startActivity(
-                                    Intent(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.fromParts("package", context.packageName, null),
-                                    ),
-                                )
-                            }
-                        }
-                    }
-
-                    LocationWeatherStatus.LocationUnavailable,
-                    LocationWeatherStatus.WeatherRequestFailed,
-                    is LocationWeatherStatus.WeatherUnavailable,
-                    -> {
-                        ({ homeViewModel.loadCurrentLocationWeather() })
-                    }
-
-                    else -> {
-                        null
-                    }
-                },
+            notice = homeNotice,
+            onNoticeRetry = onHomeNoticeRetry,
             weatherRetryLabel =
                 if (locationWeatherStatus == LocationWeatherStatus.PermissionDenied &&
                     shouldOpenAppSettingsForLocationPermission
@@ -345,6 +356,12 @@ internal fun HeartGuardHomeRoute(
 }
 
 private const val LOCATION_PERMISSION_SETTINGS_THRESHOLD = 2
+
+internal fun SiteStatusUiModel.hasWeatherValueToDisplay(): Boolean =
+    temperature != null ||
+        humidity != null ||
+        apparentTemperature != null ||
+        (skyStatus != null && skyStatus != SkyStatus.UNKNOWN)
 
 // 온도를 받지 못했으면 Figma 홈의 관측값 없음 표기("--.- °C")를 쓴다.
 @Composable

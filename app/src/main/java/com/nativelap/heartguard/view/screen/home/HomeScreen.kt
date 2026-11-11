@@ -3,6 +3,7 @@ package com.nativelap.heartguard.view.screen.home
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,13 +66,14 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     hasUnreadNotifications: Boolean = false,
     isColdWaveAlert: Boolean = false,
-    weatherNotice: String? = null,
-    coldWaveNotice: String? = null,
-    onWeatherRetry: (() -> Unit)? = null,
+    notice: String? = null,
+    onNoticeRetry: (() -> Unit)? = null,
     weatherRetryLabel: String = "",
     isRefreshingWeather: Boolean = false,
     onRefreshWeather: (() -> Unit)? = null,
 ) {
+    val pullToRefreshState = rememberPullToRefreshState()
+
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
@@ -96,6 +100,16 @@ fun HomeScreen(
                 isRefreshing = isRefreshingWeather,
                 onRefresh = { onRefreshWeather?.invoke() },
                 modifier = Modifier.fillMaxSize(),
+                state = pullToRefreshState,
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        state = pullToRefreshState,
+                        isRefreshing = isRefreshingWeather,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                },
             ) {
                 LazyColumn(
                     modifier =
@@ -142,63 +156,69 @@ fun HomeScreen(
                         )
                     }
 
-                    if (weatherNotice != null) {
+                    if (notice != null) {
                         item {
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
-                                verticalAlignment = Alignment.CenterVertically,
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
                             ) {
-                                Text(
-                                    text = weatherNotice,
-                                    modifier = if (onWeatherRetry != null) Modifier.weight(1f) else Modifier,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                                if (onWeatherRetry != null) {
-                                    TextButton(
-                                        onClick = onWeatherRetry,
-                                        contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
-                                    ) {
-                                        Text(
-                                            text = weatherRetryLabel,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 1,
-                                        )
+                                Row(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = HeartGuardSpacing.HomeMetricCardHorizontal),
+                                    horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = notice,
+                                        modifier = if (onNoticeRetry != null) Modifier.weight(1f) else Modifier,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                    if (onNoticeRetry != null) {
+                                        TextButton(
+                                            onClick = onNoticeRetry,
+                                            contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
+                                        ) {
+                                            Text(
+                                                text = weatherRetryLabel,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                maxLines = 1,
+                                            )
+                                        }
                                     }
                                 }
+
+                                Text(
+                                    text = stringResource(R.string.home_data_records),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = HeartGuardSpacing.SectionTitleHorizontal),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
                             }
                         }
                     }
 
-                    if (coldWaveNotice != null) {
+                    if (notice == null) {
                         item {
                             Text(
-                                text = coldWaveNotice,
-                                modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
+                                text = stringResource(R.string.home_data_records),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            start = HeartGuardSpacing.SectionTitleHorizontal,
+                                            top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                                            end = HeartGuardSpacing.SectionTitleHorizontal,
+                                        ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                style = MaterialTheme.typography.labelMedium,
                             )
                         }
-                    }
-
-                    item {
-                        Text(
-                            text = stringResource(R.string.home_data_records),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        start = HeartGuardSpacing.SectionTitleHorizontal,
-                                        top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                                        end = HeartGuardSpacing.SectionTitleHorizontal,
-                                    ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
                     }
 
                     item {
