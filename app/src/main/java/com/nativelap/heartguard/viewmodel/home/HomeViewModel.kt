@@ -3,6 +3,7 @@ package com.nativelap.heartguard.viewmodel.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.location.CurrentCoordinates
 import com.nativelap.heartguard.core.location.CurrentLocationProvider
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
@@ -10,10 +11,13 @@ import com.nativelap.heartguard.core.session.SessionState
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.record.usecase.GetRecordHistoryUseCase
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
+import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.model.WeatherUnavailableReason
 import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
+import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
+import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import com.nativelap.heartguard.domain.site.usecase.GetCachedCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
@@ -64,6 +68,8 @@ class HomeViewModel
         private val todayRecordTimes = MutableStateFlow<List<LocalTime>>(emptyList())
 
         private val currentLocationWeather = MutableStateFlow<CurrentLocationWeather?>(null)
+        private var currentWeatherCoordinates: CurrentCoordinates? = null
+        private var currentWeatherGeneration: Long? = null
         private val mutableLocationWeatherStatus =
             MutableStateFlow<LocationWeatherStatus>(LocationWeatherStatus.Idle)
         val locationWeatherStatus: StateFlow<LocationWeatherStatus> = mutableLocationWeatherStatus.asStateFlow()
@@ -201,6 +207,8 @@ class HomeViewModel
                     }
                     if (coordinates == null) {
                         currentLocationWeather.value = null
+                        currentWeatherCoordinates = null
+                        currentWeatherGeneration = null
                         mutableLocationWeatherStatus.value = LocationWeatherStatus.LocationUnavailable
                         return@launch
                     }
@@ -220,29 +228,87 @@ class HomeViewModel
                     ) {
                         return@launch
                     }
-                    when (result) {
-                        is ApiResult.Failure -> {
-                            currentLocationWeather.value =
-                                getCachedCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
-                            mutableLocationWeatherStatus.value = LocationWeatherStatus.WeatherRequestFailed
-                        }
-
-                        is ApiResult.Success -> {
-                            if (result.value.availability == WeatherAvailability.AVAILABLE ||
-                                result.value.availability == WeatherAvailability.CACHED
-                            ) {
-                                currentLocationWeather.value = result.value
-                                mutableLocationWeatherStatus.value = LocationWeatherStatus.Available
-                            } else {
-                                currentLocationWeather.value =
-                                    getCachedCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
-                                mutableLocationWeatherStatus.value =
-                                    LocationWeatherStatus.WeatherUnavailable(
-                                        result.value.unavailableReason ?: WeatherUnavailableReason.Unknown,
-                                    )
-                            }
-                        }
+                    val returnedWeather = (result as? ApiResult.Success)?.value
+                    val currentMemory = currentLocationWeather.value
+                    val canUseMemory =
+                        canUseWeatherMemory(
+                            currentMemory,
+                            currentWeatherCoordinates,
+                            coordinates,
+                            currentWeatherGeneration,
+                            generation,
+                            clock.instant(),
+                        )
+                    val hasMemoryBaseline =
+                        canUseMemory && currentMemory?.temperature != null && currentMemory.humidity != null
+                    if (preferWeatherMemory(currentMemory, returnedWeather, canUseMemory, clock.instant())) {
+                        currentLocationWeather.value =
+                            preserveMemoryWeather(currentMemory!!, listOf(returnedWeather), clock.instant())
+                        mutableLocationWeatherStatus.value = LocationWeatherStatus.Available
+                        return@launch
                     }
+                    if (returnedWeather != null &&
+                        (
+                            returnedWeather.availability == WeatherAvailability.AVAILABLE ||
+                                returnedWeather.availability == WeatherAvailability.CACHED
+                        ) &&
+                        (
+                            !hasMemoryBaseline ||
+                                (returnedWeather.temperature != null && returnedWeather.humidity != null)
+                        )
+                    ) {
+                        currentLocationWeather.value = returnedWeather
+                        currentWeatherCoordinates = coordinates
+                        currentWeatherGeneration = generation
+                        mutableLocationWeatherStatus.value = LocationWeatherStatus.Available
+                        return@launch
+                    }
+
+                    val cachedWeather =
+                        getCachedCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
+                    if (requestId != currentLocationWeatherRequestId ||
+                        generation != sessionManager.getSnapshot().generation
+                    ) {
+                        return@launch
+                    }
+                    val canUseMemoryAfterRead =
+                        canUseWeatherMemory(
+                            currentMemory,
+                            currentWeatherCoordinates,
+                            coordinates,
+                            currentWeatherGeneration,
+                            generation,
+                            clock.instant(),
+                        )
+                    val preferMemoryAfterRead =
+                        preferWeatherMemory(currentMemory, cachedWeather, canUseMemoryAfterRead, clock.instant())
+                    val selectedCached =
+                        cachedWeather?.takeIf { weather ->
+                            !preferMemoryAfterRead &&
+                                (!hasMemoryBaseline || (weather.temperature != null && weather.humidity != null))
+                        }
+                    currentLocationWeather.value =
+                        selectedCached ?: currentMemory?.takeIf { canUseMemoryAfterRead }?.let { memory ->
+                            preserveMemoryWeather(memory, listOf(cachedWeather, returnedWeather), clock.instant())
+                        } ?: returnedWeather?.takeIf { weather ->
+                            weather.availability == WeatherAvailability.AVAILABLE ||
+                                weather.availability == WeatherAvailability.CACHED
+                        }
+                    if (selectedCached != null) {
+                        currentWeatherCoordinates = coordinates
+                        currentWeatherGeneration = generation
+                    } else if (!canUseMemoryAfterRead) {
+                        currentWeatherCoordinates = null
+                        currentWeatherGeneration = null
+                    }
+                    mutableLocationWeatherStatus.value =
+                        if (result is ApiResult.Failure) {
+                            LocationWeatherStatus.WeatherRequestFailed
+                        } else {
+                            LocationWeatherStatus.WeatherUnavailable(
+                                returnedWeather?.unavailableReason ?: WeatherUnavailableReason.Unknown,
+                            )
+                        }
                 }
         }
 
@@ -272,6 +338,8 @@ class HomeViewModel
             currentLocationWeatherJob = null
             currentLocationWeatherGeneration = null
             currentLocationWeather.value = null
+            currentWeatherCoordinates = null
+            currentWeatherGeneration = null
             mutableLocationWeatherStatus.value = LocationWeatherStatus.Idle
         }
 
@@ -281,6 +349,8 @@ class HomeViewModel
             currentLocationWeatherJob = null
             currentLocationWeatherGeneration = null
             currentLocationWeather.value = null
+            currentWeatherCoordinates = null
+            currentWeatherGeneration = null
             mutableLocationWeatherStatus.value = LocationWeatherStatus.PermissionDenied
         }
 
@@ -394,4 +464,51 @@ sealed interface LocationWeatherStatus {
     data object Available : LocationWeatherStatus
 
     data object PermissionDenied : LocationWeatherStatus
+}
+
+internal fun canUseWeatherMemory(
+    weather: CurrentLocationWeather?,
+    sourceCoordinates: CurrentCoordinates?,
+    requestedCoordinates: CurrentCoordinates,
+    sourceGeneration: Long?,
+    currentGeneration: Long,
+    now: java.time.Instant,
+): Boolean =
+    sourceCoordinates != null && sourceCoordinates == requestedCoordinates &&
+        sourceGeneration == currentGeneration && weather?.observedAt.isFreshWeatherTimestamp(now)
+
+internal fun preferWeatherMemory(
+    memory: CurrentLocationWeather?,
+    incoming: CurrentLocationWeather?,
+    canUseMemory: Boolean,
+    now: java.time.Instant,
+): Boolean {
+    val availableMemory = memory ?: return false
+    val memoryTime = availableMemory.observedAt.toWeatherInstantOrNull() ?: return false
+    if (!canUseMemory || !availableMemory.observedAt.isFreshWeatherTimestamp(now) ||
+        availableMemory.temperature == null || availableMemory.humidity == null
+    ) {
+        return false
+    }
+    val incomingTime = incoming?.observedAt.toWeatherInstantOrNull()
+    return incomingTime == null || !incoming?.observedAt.isFreshWeatherTimestamp(now) ||
+        incomingTime.isBefore(memoryTime)
+}
+
+internal fun preserveMemoryWeather(
+    memory: CurrentLocationWeather,
+    candidates: List<CurrentLocationWeather?>,
+    now: java.time.Instant,
+): CurrentLocationWeather {
+    val freshestWarning =
+        (listOf(memory) + candidates)
+            .mapNotNull { weather -> weather?.coldWaveWarning }
+            .filter { warning ->
+                warning.availability in setOf(ColdWaveAvailability.AVAILABLE, ColdWaveAvailability.CACHED) &&
+                    warning.fetchedAt.isFreshWeatherTimestamp(now)
+            }.maxByOrNull { warning -> warning.fetchedAt.toWeatherInstantOrNull()!! }
+    return memory.copy(
+        availability = WeatherAvailability.CACHED,
+        coldWaveWarning = freshestWarning,
+    )
 }

@@ -137,6 +137,63 @@ class WeatherCacheSafetyTest {
     }
 
     @Test
+    fun emptyAndPartialResponsesPreserveFreshMainWeatherAndItsTimestamp() {
+        val now = java.time.Instant.parse("2026-11-11T01:00:00Z")
+        val previous =
+            CurrentLocationWeatherResponseDto(
+                temperature = 12.0,
+                humidity = 56.0,
+                observedAt = now.minusSeconds(3_540).toString(),
+                availability = "AVAILABLE",
+            )
+        val partial =
+            CurrentLocationWeatherResponseDto(
+                temperature = 13.0,
+                observedAt = now.toString(),
+                availability = "AVAILABLE",
+            )
+
+        val merged = partial.mergeFreshWeather(previous, now)
+        assertTrue(merged.temperature == 12.0 && merged.humidity == 56.0)
+        assertTrue(merged.observedAt == previous.observedAt && merged.availability == "CACHED")
+        assertFalse(merged.expireWeatherParts(now.plusSeconds(60)).hasFreshWeatherPart(now.plusSeconds(60)))
+    }
+
+    @Test
+    fun freshColdWaveDoesNotReplacePreviousWeatherObservation() {
+        val now = java.time.Instant.parse("2026-11-11T01:00:00Z")
+        val previous =
+            CurrentLocationWeatherResponseDto(
+                temperature = 12.0,
+                humidity = 56.0,
+                observedAt = now.minusSeconds(60).toString(),
+                availability = "AVAILABLE",
+            )
+        val incoming =
+            CurrentLocationWeatherResponseDto(
+                observedAt = now.toString(),
+                availability = "AVAILABLE",
+                coldWaveWarning =
+                    com.nativelap.heartguard.data.site.dto.ColdWaveWarningDto(
+                        level = "WARNING",
+                        availability = "AVAILABLE",
+                        fetchedAt = now.toString(),
+                    ),
+            )
+        val merged = incoming.mergeFreshWeather(previous, now)
+        assertTrue(merged.temperature == 12.0 && merged.observedAt == previous.observedAt)
+        assertTrue(merged.coldWaveWarning?.fetchedAt == now.toString())
+        assertTrue(merged.availability == "CACHED")
+    }
+
+    @Test
+    fun timestampWithoutWeatherIsNotFreshWeather() {
+        val now = java.time.Instant.parse("2026-11-11T01:00:00Z")
+        val empty = CurrentLocationWeatherResponseDto(observedAt = now.toString(), availability = "AVAILABLE")
+        assertFalse(empty.expireWeatherParts(now).hasFreshWeatherPart(now))
+    }
+
+    @Test
     fun failedDeletionCannotExposePreviousSessionCacheAfterRelogin() {
         val storedOwner = "old-session-identifier"
 
