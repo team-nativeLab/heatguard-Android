@@ -226,8 +226,9 @@ internal fun resolveReturnedWeather(
     selected: CurrentLocationWeatherResponseDto?,
     now: Instant,
 ): CurrentLocationWeather {
-    val liveWeather = incoming.toDisplayableLiveWeather(now)
-        ?: return (selected ?: incoming.expireWeatherParts(now)).toDomain()
+    val liveWeather =
+        incoming.toDisplayableLiveWeather(now)
+            ?: return (selected ?: incoming.expireWeatherParts(now)).toDomain()
     if (selected?.availability == "CACHED" && selected.temperature != null && selected.humidity != null) {
         return selected.toDomain()
     }

@@ -77,9 +77,11 @@ fun HomeUiState.toSiteStatusUiModel(
     val observationTime = availableLocationWeather.observedAt.toWeatherInstantOrNull()
     val isMainWeatherDisplayable =
         isMainWeatherFresh ||
-            (availableLocationWeather.availability == WeatherAvailability.AVAILABLE &&
-                availableLocationWeather.serverReceivedAt.isFreshWeatherTimestamp(now) &&
-                observationTime != null && !observationTime.isAfter(now))
+            (
+                availableLocationWeather.availability == WeatherAvailability.AVAILABLE &&
+                    availableLocationWeather.serverReceivedAt.isFreshWeatherTimestamp(now) &&
+                    observationTime != null && !observationTime.isAfter(now)
+            )
     val freshLocationColdWaveWarning =
         availableLocationWeather.coldWaveWarning
             ?.takeIf { warning -> warning.fetchedAt.isFreshWeatherTimestamp(now) }

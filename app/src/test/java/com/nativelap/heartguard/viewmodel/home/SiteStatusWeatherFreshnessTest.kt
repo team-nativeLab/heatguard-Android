@@ -227,7 +227,9 @@ class SiteStatusWeatherFreshnessTest {
             Instant.parse("2026-11-11T01:21:00Z"),
             nextLiveWeatherAgeRefresh(observedAt.toString(), receivedAt.toString(), receivedAt),
         )
-        assertNull(nextLiveWeatherAgeRefresh(observedAt.toString(), receivedAt.toString(), receivedAt.plusSeconds(3_600)))
+        assertNull(
+            nextLiveWeatherAgeRefresh(observedAt.toString(), receivedAt.toString(), receivedAt.plusSeconds(3_600)),
+        )
     }
 
     @Test
