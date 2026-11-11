@@ -8,8 +8,8 @@ import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.SkyStatus
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
-import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
 import com.nativelap.heartguard.domain.site.model.elapsedWeatherMinutes
+import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
 import com.nativelap.heartguard.viewmodel.toDisplayNumber
 import java.time.Instant
 
@@ -137,9 +137,11 @@ fun HomeUiState.toSiteStatusUiModel(
         isLocationWeatherExpired = !isMainWeatherFresh,
         isColdWaveWarningUnavailable =
             !hasFreshSelectedColdWaveWarning &&
-                (availableLocationWeather.coldWaveWarning?.availability == ColdWaveAvailability.UNAVAILABLE ||
-                    (availableLocationWeather.coldWaveWarning != null && freshLocationColdWaveWarning == null) ||
-                    siteStatus.isColdWaveWarningUnavailable),
+                (
+                    availableLocationWeather.coldWaveWarning?.availability == ColdWaveAvailability.UNAVAILABLE ||
+                        (availableLocationWeather.coldWaveWarning != null && freshLocationColdWaveWarning == null) ||
+                        siteStatus.isColdWaveWarningUnavailable
+                ),
     )
 }
 

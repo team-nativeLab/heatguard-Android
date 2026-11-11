@@ -55,11 +55,16 @@ internal suspend fun WeatherCacheRead.resolveOrClearInvalid(
     clearCache: suspend () -> Unit,
 ): CachedCurrentLocationWeather? =
     when (this) {
-        WeatherCacheRead.Empty -> null
+        WeatherCacheRead.Empty -> {
+            null
+        }
+
         WeatherCacheRead.Invalid -> {
             clearCache()
             null
         }
 
-        is WeatherCacheRead.Valid -> cachedWeather
+        is WeatherCacheRead.Valid -> {
+            cachedWeather
+        }
     }

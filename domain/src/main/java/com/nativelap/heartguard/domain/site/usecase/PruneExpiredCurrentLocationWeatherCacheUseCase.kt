@@ -9,6 +9,5 @@ class PruneExpiredCurrentLocationWeatherCacheUseCase
     constructor(
         private val teamSiteRepository: TeamSiteRepository,
     ) {
-        suspend operator fun invoke(now: Instant) =
-            teamSiteRepository.pruneExpiredCurrentLocationWeatherCache(now)
+        suspend operator fun invoke(now: Instant) = teamSiteRepository.pruneExpiredCurrentLocationWeatherCache(now)
     }

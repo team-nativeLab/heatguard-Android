@@ -1,8 +1,8 @@
 package com.nativelap.heartguard.viewmodel.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.util.Log
 import com.nativelap.heartguard.core.location.CurrentLocationProvider
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
@@ -14,14 +14,14 @@ import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.model.WeatherUnavailableReason
 import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
-import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetCachedCurrentLocationWeatherUseCase
-import com.nativelap.heartguard.domain.site.usecase.PruneExpiredCurrentLocationWeatherCacheUseCase
+import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
+import com.nativelap.heartguard.domain.site.usecase.PruneExpiredCurrentLocationWeatherCacheUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -37,9 +37,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.Duration
 import javax.inject.Inject
 
 /** 작업자 홈(GET /api/v1/team) 정보를 불러와 홈과 기록·긴급 화면에 함께 제공한다.
@@ -107,6 +107,7 @@ class HomeViewModel
             }
 
         // 화면이 떠 있는 동안 1분마다 현재 시각을 흘려보내 "다음 체크까지 N분" 문구와 현재 체크 표시를 갱신한다.
+
         /** 서버 체크 시각·오늘 기록·현재 시각으로 계산한 오늘의 체크 일정. 홈 응답이 없으면 null이다. */
         val checkSchedule: StateFlow<CheckSchedule?> =
             combine(
@@ -260,7 +261,7 @@ class HomeViewModel
                     locationWeather?.coldWaveWarning?.fetchedAt,
                     teamOverview?.observedAt,
                     teamOverview?.coldWaveWarning?.fetchedAt,
-                )
+                ),
             )
         }
 

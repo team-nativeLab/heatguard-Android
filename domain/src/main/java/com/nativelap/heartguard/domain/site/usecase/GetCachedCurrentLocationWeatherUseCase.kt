@@ -9,6 +9,8 @@ class GetCachedCurrentLocationWeatherUseCase
     constructor(
         private val teamSiteRepository: TeamSiteRepository,
     ) {
-        suspend operator fun invoke(latitude: Double, longitude: Double): CurrentLocationWeather? =
-            teamSiteRepository.getCachedCurrentLocationWeather(latitude, longitude)
+        suspend operator fun invoke(
+            latitude: Double,
+            longitude: Double,
+        ): CurrentLocationWeather? = teamSiteRepository.getCachedCurrentLocationWeather(latitude, longitude)
     }

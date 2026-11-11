@@ -13,8 +13,7 @@ internal class WeatherCacheLock {
 internal fun isOwnedByCurrentSession(
     storedOwner: String,
     currentSessionIdentifier: String?,
-): Boolean =
-    currentSessionIdentifier == storedOwner
+): Boolean = currentSessionIdentifier == storedOwner
 
 internal suspend fun <T> runCacheOperationSafely(
     onFailure: (Exception) -> Unit,

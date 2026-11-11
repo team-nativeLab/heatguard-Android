@@ -195,19 +195,25 @@ internal fun HeartGuardHomeRoute(
                         LocationWeatherStatus.RequestingWeather,
                         LocationWeatherStatus.Idle,
                         LocationWeatherStatus.Available,
-                        -> null
+                        -> {
+                            null
+                        }
 
-                        LocationWeatherStatus.LocationUnavailable ->
+                        LocationWeatherStatus.LocationUnavailable -> {
                             stringResource(R.string.home_weather_unavailable)
+                        }
 
-                        LocationWeatherStatus.WeatherRequestFailed ->
+                        LocationWeatherStatus.WeatherRequestFailed -> {
                             stringResource(R.string.home_weather_request_failed)
+                        }
 
-                        is LocationWeatherStatus.WeatherUnavailable ->
+                        is LocationWeatherStatus.WeatherUnavailable -> {
                             stringResource(R.string.home_weather_unavailable)
+                        }
 
-                        LocationWeatherStatus.PermissionDenied ->
+                        LocationWeatherStatus.PermissionDenied -> {
                             stringResource(R.string.home_location_permission_denied)
+                        }
                     }
                 },
             coldWaveNotice =
@@ -220,10 +226,13 @@ internal fun HeartGuardHomeRoute(
                         }
                     }
 
-                    siteStatus.isColdWaveWarningUnavailable ->
+                    siteStatus.isColdWaveWarningUnavailable -> {
                         stringResource(R.string.home_cold_wave_unavailable)
+                    }
 
-                    else -> null
+                    else -> {
+                        null
+                    }
                 },
             onWeatherRetry =
                 when (locationWeatherStatus) {
@@ -266,7 +275,9 @@ internal fun HeartGuardHomeRoute(
                 locationWeatherStatus == LocationWeatherStatus.CheckingLocation ||
                     locationWeatherStatus == LocationWeatherStatus.RequestingWeather,
             onRefreshWeather = {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+                ) {
                     homeViewModel.refreshCurrentLocationWeather()
                 }
             },

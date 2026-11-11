@@ -1,11 +1,11 @@
 package com.nativelap.heartguard.domain.site.model
 
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class WeatherTimestampFreshnessTest {
     private val now = Instant.parse("2026-11-11T04:00:00Z")

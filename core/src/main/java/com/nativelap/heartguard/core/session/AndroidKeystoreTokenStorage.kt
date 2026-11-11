@@ -8,13 +8,13 @@ import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.GeneralSecurityException
 import java.security.KeyStore
+import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.util.UUID
 
 /** Android Keystore의 분리된 AES-GCM 키로 세션·초대 토큰을 암호화한다. */
 @Singleton

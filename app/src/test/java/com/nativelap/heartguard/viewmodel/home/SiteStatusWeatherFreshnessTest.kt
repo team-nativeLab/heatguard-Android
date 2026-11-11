@@ -1,17 +1,17 @@
 package com.nativelap.heartguard.viewmodel.home
 
-import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
 import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
 import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
+import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class SiteStatusWeatherFreshnessTest {
     @Test

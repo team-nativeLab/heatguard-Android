@@ -10,12 +10,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.nativelap.heartguard.core.session.SessionScopedDataCleaner
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherResponseDto
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Clock
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.time.Clock
+import javax.inject.Inject
+import javax.inject.Singleton
 
 private val Context.currentLocationWeatherDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "current_location_weather")

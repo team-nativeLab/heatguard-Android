@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.data.site.repository
 
+import android.util.Log
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.network.map
 import com.nativelap.heartguard.core.session.SessionManager
@@ -17,7 +18,6 @@ import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
-import android.util.Log
 import java.time.Clock
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -63,7 +63,8 @@ class TeamSiteRepositoryImpl
                         val previousTime = previous?.weather?.observedAt.toServerInstant()
                         if (previous != null && incomingTime != null && previousTime != null &&
                             incomingTime.isBefore(previousTime) &&
-                            haversineDistanceMeters(latitude, longitude, previous.latitude, previous.longitude) <= CACHE_LOCATION_RADIUS_METERS
+                            haversineDistanceMeters(latitude, longitude, previous.latitude, previous.longitude) <=
+                            CACHE_LOCATION_RADIUS_METERS
                         ) {
                             return@cache previous.weather.asCachedWeather()
                         }
@@ -118,7 +119,9 @@ class TeamSiteRepositoryImpl
             owner: String?,
         ): CachedCurrentLocationWeather? {
             val cached = transaction.read() ?: return null
-            if (owner == null || !isOwnedByCurrentSession(cached.sessionOwner, sessionManager.getSnapshot().sessionIdentifier)) {
+            if (owner == null ||
+                !isOwnedByCurrentSession(cached.sessionOwner, sessionManager.getSnapshot().sessionIdentifier)
+            ) {
                 transaction.clear()
                 return null
             }

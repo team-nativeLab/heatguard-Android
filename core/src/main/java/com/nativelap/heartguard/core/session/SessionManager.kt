@@ -1,7 +1,7 @@
 package com.nativelap.heartguard.core.session
 
-import com.nativelap.heartguard.core.di.IoDispatcher
 import android.util.Log
+import com.nativelap.heartguard.core.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.BufferOverflow
@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.jvm.JvmSuppressWildcards
 import kotlin.coroutines.cancellation.CancellationException
-import java.util.UUID
+import kotlin.jvm.JvmSuppressWildcards
 
 /** 세션 토큰 저장과 인증 상태 공개를 단일 진입점으로 관리한다. */
 @Singleton
