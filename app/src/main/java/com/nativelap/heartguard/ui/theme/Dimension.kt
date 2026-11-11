@@ -47,6 +47,7 @@ object HeartGuardSpacing {
     val HomeMetricHorizontal = 18.dp
     val HomeMetricCardHorizontal = 41.dp
     val HomeHeroIllustrationEnd = 15.dp
+    val HomeNoticeToDataRecords = 32.dp
     val BadgeHorizontal = 10.dp
     val BadgeVertical = 5.dp
 
