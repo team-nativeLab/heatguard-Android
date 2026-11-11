@@ -10,17 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
@@ -38,6 +39,7 @@ import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
 
 /** Figma 홈 리디자인의 날씨, 점검, 연락처, 추가 기록 영역을 하나의 화면으로 조립한다. */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun HomeScreen(
     currentTemperature: String,
     feelsLikeTemperature: String,
@@ -65,6 +67,8 @@ fun HomeScreen(
     coldWaveNotice: String? = null,
     onWeatherRetry: (() -> Unit)? = null,
     weatherRetryLabel: String = "",
+    isRefreshingWeather: Boolean = false,
+    onRefreshWeather: (() -> Unit)? = null,
 ) {
     Scaffold(
         modifier = modifier,
@@ -88,176 +92,180 @@ fun HomeScreen(
                     .padding(innerPadding),
             contentAlignment = Alignment.TopCenter,
         ) {
-            LazyColumn(
-                modifier =
-                    Modifier
-                        .widthIn(max = 600.dp)
-                        .fillMaxSize()
-                        .testTag(HOME_SCROLL_CONTENT_TEST_TAG),
-                contentPadding = PaddingValues(bottom = homeRecordActionContentGap),
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+            PullToRefreshBox(
+                isRefreshing = isRefreshingWeather,
+                onRefresh = { onRefreshWeather?.invoke() },
+                modifier = Modifier.fillMaxSize(),
             ) {
-                item {
-                    HeartGuardHeader(
-                        title = stringResource(R.string.brand_name),
-                        menuPainter = painterResource(R.drawable.menu_hamburger),
-                        notificationPainter = painterResource(R.drawable.notification_bell),
-                        hasUnreadNotifications = hasUnreadNotifications,
-                        onMenuClick = onMenuClick,
-                        onNotificationClick = onNotificationClick,
-                    )
-                }
-
-                item {
-                    WeatherStatusCard(
-                        modifier =
-                            Modifier.padding(
-                                top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                            ),
-                        weatherPainter = painterResource(weatherImageRes),
-                        weatherContentDescription = null,
-                        statusTitle = stringResource(R.string.home_weather_status),
-                        currentTemperature = currentTemperature,
-                        feelsLikeTemperature = feelsLikeTemperature,
-                        feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),
-                        humidity = humidity,
-                        humidityLabel = stringResource(R.string.home_humidity),
-                        weatherValue = weatherValue,
-                        weatherLabel = stringResource(R.string.home_weather_label),
-                        temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
-                        temperatureDelta = temperatureDelta,
-                        riskLabel = riskLabel,
-                        isTemperatureIncreasing = isTemperatureIncreasing,
-                        isTemperatureDeltaZero = isTemperatureDeltaZero,
-                        isColdWaveAlert = isColdWaveAlert,
-                    )
-                }
-
-                if (weatherNotice != null) {
+                LazyColumn(
+                    modifier =
+                        Modifier
+                            .widthIn(max = 600.dp)
+                            .fillMaxSize()
+                            .testTag(HOME_SCROLL_CONTENT_TEST_TAG),
+                    contentPadding = PaddingValues(bottom = homeRecordActionContentGap),
+                    verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Compact),
+                ) {
                     item {
-                        Row(
+                        HeartGuardHeader(
+                            title = stringResource(R.string.brand_name),
+                            menuPainter = painterResource(R.drawable.menu_hamburger),
+                            notificationPainter = painterResource(R.drawable.notification_bell),
+                            hasUnreadNotifications = hasUnreadNotifications,
+                            onMenuClick = onMenuClick,
+                            onNotificationClick = onNotificationClick,
+                        )
+                    }
+
+                    item {
+                        WeatherStatusCard(
                             modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                            horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = weatherNotice,
-                                modifier = if (onWeatherRetry != null) Modifier.weight(1f) else Modifier,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            if (onWeatherRetry != null) {
-                                TextButton(
-                                    onClick = onWeatherRetry,
-                                    contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
-                                ) {
-                                    Text(
-                                        text = weatherRetryLabel,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 1,
-                                    )
+                                Modifier.padding(
+                                    top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                                ),
+                            weatherPainter = painterResource(weatherImageRes),
+                            weatherContentDescription = null,
+                            statusTitle = stringResource(R.string.home_weather_status),
+                            currentTemperature = currentTemperature,
+                            feelsLikeTemperature = feelsLikeTemperature,
+                            feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),
+                            humidity = humidity,
+                            humidityLabel = stringResource(R.string.home_humidity),
+                            weatherValue = weatherValue,
+                            weatherLabel = stringResource(R.string.home_weather_label),
+                            temperatureDeltaLabel = stringResource(R.string.home_temperature_change),
+                            temperatureDelta = temperatureDelta,
+                            riskLabel = riskLabel,
+                            isTemperatureIncreasing = isTemperatureIncreasing,
+                            isTemperatureDeltaZero = isTemperatureDeltaZero,
+                            isColdWaveAlert = isColdWaveAlert,
+                        )
+                    }
+
+                    if (weatherNotice != null) {
+                        item {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                                horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = weatherNotice,
+                                    modifier = if (onWeatherRetry != null) Modifier.weight(1f) else Modifier,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                if (onWeatherRetry != null) {
+                                    TextButton(
+                                        onClick = onWeatherRetry,
+                                        contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
+                                    ) {
+                                        Text(
+                                            text = weatherRetryLabel,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                if (coldWaveNotice != null) {
+                    if (coldWaveNotice != null) {
+                        item {
+                            Text(
+                                text = coldWaveNotice,
+                                modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+
                     item {
                         Text(
-                            text = coldWaveNotice,
-                            modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
+                            text = stringResource(R.string.home_data_records),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        start = HeartGuardSpacing.SectionTitleHorizontal,
+                                        top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
+                                        end = HeartGuardSpacing.SectionTitleHorizontal,
+                                    ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                }
 
-                item {
-                    Text(
-                        text = stringResource(R.string.home_data_records),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    start = HeartGuardSpacing.SectionTitleHorizontal,
-                                    top = HeartGuardSpacing.Section - HeartGuardSpacing.Compact,
-                                    end = HeartGuardSpacing.SectionTitleHorizontal,
-                                ),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
+                    item {
+                        HomeCheckTimeline(
+                            title = stringResource(R.string.home_today_check_title),
+                            nextCheckDescription = nextCheckDescription,
+                            items = checkTimelineItems,
+                            onClick = onChecklistClick,
+                            modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                        )
+                    }
 
-                item {
-                    HomeCheckTimeline(
-                        title = stringResource(R.string.home_today_check_title),
-                        nextCheckDescription = nextCheckDescription,
-                        items = checkTimelineItems,
-                        onClick = onChecklistClick,
-                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                    )
-                }
-
-                item {
-                    HomeContactCard(
-                        managerTitle = stringResource(R.string.home_manager_call),
-                        managerDescription = stringResource(R.string.home_manager_call_description),
-                        emergencyTitle = stringResource(R.string.home_emergency_call),
-                        emergencyDescription = stringResource(R.string.home_emergency_call_description),
-                        onManagerClick = onManagerCallClick,
-                        onEmergencyClick = onEmergencyClick,
-                        modifier =
-                            Modifier.padding(
-                                start = HeartGuardSpacing.HomeContentHorizontal,
-                                top = HeartGuardSpacing.Compact,
-                                end = HeartGuardSpacing.HomeContentHorizontal,
-                            ),
-                    )
-                }
-
-                item {
-                    Text(
-                        text = stringResource(R.string.home_additional_records),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    start = HeartGuardSpacing.SectionTitleHorizontal,
+                    item {
+                        HomeContactCard(
+                            managerTitle = stringResource(R.string.home_manager_call),
+                            managerDescription = stringResource(R.string.home_manager_call_description),
+                            emergencyTitle = stringResource(R.string.home_emergency_call),
+                            emergencyDescription = stringResource(R.string.home_emergency_call_description),
+                            onManagerClick = onManagerCallClick,
+                            onEmergencyClick = onEmergencyClick,
+                            modifier =
+                                Modifier.padding(
+                                    start = HeartGuardSpacing.HomeContentHorizontal,
                                     top = HeartGuardSpacing.Compact,
-                                    end = HeartGuardSpacing.SectionTitleHorizontal,
+                                    end = HeartGuardSpacing.HomeContentHorizontal,
                                 ),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
+                        )
+                    }
 
-                item {
-                    HomeAdditionalRecordCard(
-                        title = stringResource(R.string.home_field_photo),
-                        description = stringResource(R.string.home_field_photo_description),
-                        iconPainter = painterResource(R.drawable.ic_home_photo),
-                        onClick = onFieldPhotoClick,
-                        modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
-                    )
-                }
+                    item {
+                        Text(
+                            text = stringResource(R.string.home_additional_records),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        start = HeartGuardSpacing.SectionTitleHorizontal,
+                                        top = HeartGuardSpacing.Compact,
+                                        end = HeartGuardSpacing.SectionTitleHorizontal,
+                                    ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
 
-                item {
-                    HomeAdditionalRecordCard(
-                        title = stringResource(R.string.home_record_history),
-                        description = stringResource(R.string.home_record_history_description),
-                        iconPainter = painterResource(R.drawable.ic_home_history),
-                        onClick = onRecordHistoryClick,
-                        modifier =
-                            Modifier
-                                .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal)
-                                .testTag(HOME_RECORD_HISTORY_CARD_TEST_TAG),
-                    )
+                    item {
+                        HomeAdditionalRecordCard(
+                            title = stringResource(R.string.home_field_photo),
+                            description = stringResource(R.string.home_field_photo_description),
+                            iconPainter = painterResource(R.drawable.ic_home_photo),
+                            onClick = onFieldPhotoClick,
+                            modifier = Modifier.padding(horizontal = HeartGuardSpacing.HomeContentHorizontal),
+                        )
+                    }
+
+                    item {
+                        HomeAdditionalRecordCard(
+                            title = stringResource(R.string.home_record_history),
+                            description = stringResource(R.string.home_record_history_description),
+                            iconPainter = painterResource(R.drawable.ic_home_history),
+                            onClick = onRecordHistoryClick,
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = HeartGuardSpacing.HomeContentHorizontal)
+                                    .testTag(HOME_RECORD_HISTORY_CARD_TEST_TAG),
+                        )
+                    }
                 }
             }
         }

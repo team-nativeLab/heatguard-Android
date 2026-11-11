@@ -68,7 +68,7 @@ internal fun HeartGuardTemperatureRecordRoute(
     val draftState by recordDraftViewModel.uiState.collectAsStateWithLifecycle()
     val submissionState by recordDraftViewModel.submissionState.collectAsStateWithLifecycle()
     val siteStatus by homeViewModel.siteStatus.collectAsStateWithLifecycle()
-    val hasSiteWeatherBaseline = siteStatus.temperature != null && siteStatus.humidity != null
+    val hasSiteWeatherBaseline = siteStatus.recordTemperature != null && siteStatus.recordHumidity != null
     val submitRecord =
         rememberRecordSubmitter(
             recordDraftViewModel = recordDraftViewModel,

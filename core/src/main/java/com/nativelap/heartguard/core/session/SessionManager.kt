@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.core.session
 
+import android.util.Log
 import com.nativelap.heartguard.core.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
@@ -15,9 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.jvm.JvmSuppressWildcards
 
 /** 세션 토큰 저장과 인증 상태 공개를 단일 진입점으로 관리한다. */
 @Singleton
@@ -26,6 +29,7 @@ class SessionManager
     constructor(
         private val tokenStorage: TokenStorage,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        private val sessionScopedDataCleaners: Set<@JvmSuppressWildcards SessionScopedDataCleaner>,
     ) {
         private val sessionMutex = Mutex()
         private val selectedTeamLock = Any()
@@ -210,6 +214,10 @@ class SessionManager
                         if (storedTokenRead.isUnreadable || (storedAccessToken != null && validAccessToken == null)) {
                             clearStoredTokenSafely()
                         }
+                        if (validAccessToken == null) {
+                            clearSessionScopedData()
+                        }
+                        val sessionIdentifier = validAccessToken?.let { getOrCreateSessionIdentifier() }
                         val initializedGeneration = getSnapshot().generation + 1L
                         synchronized(selectedTeamLock) {
                             mutableSessionSnapshot.value =
@@ -222,10 +230,14 @@ class SessionManager
                                         } else {
                                             tokenStorage.readSessionRole() ?: SessionRole.TEAM_MEMBER
                                         },
+                                    sessionIdentifier = sessionIdentifier,
                                 )
                             restoredGeneration = initializedGeneration.takeIf { validAccessToken != null }
                             selectedTeamValidatedGeneration = null
                             selectedTeamSelectionVersion += 1L
+                        }
+                        if (sessionIdentifier != null) {
+                            pruneSessionDataAfterRestore(sessionIdentifier)
                         }
                         mutableSessionState.value =
                             if (validAccessToken == null) {
@@ -245,11 +257,13 @@ class SessionManager
                 withContext(ioDispatcher + NonCancellable) {
                     synchronized(selectedTeamLock) {
                         tokenStorage.saveSession(sessionToken.accessToken, sessionToken.role)
+                        val sessionIdentifier = getOrCreateSessionIdentifier()
                         mutableSessionSnapshot.value =
                             SessionSnapshot(
                                 generation = getSnapshot().generation + 1L,
                                 accessToken = sessionToken.accessToken,
                                 role = sessionToken.role,
+                                sessionIdentifier = sessionIdentifier,
                             )
                         mutableSessionState.value = SessionState.Authenticated
                         selectedTeamValidatedGeneration = null
@@ -278,7 +292,13 @@ class SessionManager
                             )
                         selectedTeamValidatedGeneration = null
                         selectedTeamSelectionVersion += 1L
-                        clearStoredTokenSafely()
+                    }
+                    try {
+                        clearSessionScopedData()
+                    } finally {
+                        synchronized(selectedTeamLock) {
+                            clearStoredTokenSafely()
+                        }
                     }
                 }
                 true
@@ -316,16 +336,66 @@ class SessionManager
                             generation = getSnapshot().generation + 1L,
                             accessToken = null,
                             role = null,
+                            sessionIdentifier = null,
                         )
-                    mutableSessionState.value = SessionState.Unauthenticated
                     selectedTeamValidatedGeneration = null
                     selectedTeamSelectionVersion += 1L
-                    clearStoredTokenSafely()
                 }
-                isInitialized = true
-                mutableSessionEvents.tryEmit(SessionEvent.Expired)
+                try {
+                    clearSessionScopedData()
+                } finally {
+                    synchronized(selectedTeamLock) {
+                        mutableSessionState.value = SessionState.Unauthenticated
+                        clearStoredTokenSafely()
+                    }
+                    isInitialized = true
+                    mutableSessionEvents.tryEmit(SessionEvent.Expired)
+                }
             }
             return true
+        }
+
+        private suspend fun clearSessionScopedData() {
+            sessionScopedDataCleaners.forEach { cleaner ->
+                try {
+                    cleaner.clearSessionData()
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (exception: Exception) {
+                    Log.e(TAG, "Failed to clear session-scoped data", exception)
+                }
+            }
+        }
+
+        private suspend fun pruneSessionDataAfterRestore(sessionIdentifier: String) {
+            sessionScopedDataCleaners.forEach { cleaner ->
+                try {
+                    cleaner.onSessionRestored(sessionIdentifier)
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (exception: Exception) {
+                    Log.w(TAG, "Failed to prune restored session data", exception)
+                }
+            }
+        }
+
+        private fun getOrCreateSessionIdentifier(): String {
+            val storedIdentifier =
+                try {
+                    tokenStorage.readSessionIdentifier()?.takeIf(String::isNotBlank)
+                } catch (exception: Exception) {
+                    Log.w(TAG, "Unable to read session identifier", exception)
+                    null
+                }
+            if (storedIdentifier != null) return storedIdentifier
+
+            val newIdentifier = UUID.randomUUID().toString()
+            try {
+                tokenStorage.saveSessionIdentifier(newIdentifier)
+            } catch (exception: Exception) {
+                Log.w(TAG, "Unable to persist session identifier", exception)
+            }
+            return newIdentifier
         }
 
         private fun readStoredAccessToken(): StoredTokenRead =
@@ -360,6 +430,7 @@ class SessionManager
         }
 
         private companion object {
+            const val TAG = "SessionManager"
             const val LEGACY_PLACEHOLDER_ACCESS_TOKEN = "placeholder-access-token"
         }
     }

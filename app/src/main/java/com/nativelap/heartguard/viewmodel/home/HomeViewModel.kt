@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.viewmodel.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nativelap.heartguard.core.location.CurrentLocationProvider
@@ -13,9 +14,13 @@ import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.model.WeatherUnavailableReason
 import com.nativelap.heartguard.domain.site.model.buildCheckSchedule
+import com.nativelap.heartguard.domain.site.usecase.GetCachedCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
+import com.nativelap.heartguard.domain.site.usecase.PruneExpiredCurrentLocationWeatherCacheUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -29,8 +34,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import javax.inject.Inject
@@ -47,6 +54,8 @@ class HomeViewModel
         private val clock: Clock,
         private val currentLocationProvider: CurrentLocationProvider,
         private val getCurrentLocationWeatherUseCase: GetCurrentLocationWeatherUseCase,
+        private val getCachedCurrentLocationWeatherUseCase: GetCachedCurrentLocationWeatherUseCase,
+        private val pruneExpiredCurrentLocationWeatherCacheUseCase: PruneExpiredCurrentLocationWeatherCacheUseCase,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
         val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
@@ -59,17 +68,36 @@ class HomeViewModel
             MutableStateFlow<LocationWeatherStatus>(LocationWeatherStatus.Idle)
         val locationWeatherStatus: StateFlow<LocationWeatherStatus> = mutableLocationWeatherStatus.asStateFlow()
 
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val weatherFreshnessTime =
+            combine(uiState, currentLocationWeather) { homeUiState, weather ->
+                homeUiState to weather
+            }.transformLatest { (homeUiState, weather) ->
+                while (true) {
+                    val now = clock.instant()
+                    emit(now)
+                    try {
+                        pruneExpiredCurrentLocationWeatherCacheUseCase(now)
+                    } catch (cancellationException: CancellationException) {
+                        throw cancellationException
+                    } catch (exception: Exception) {
+                        Log.w(TAG, "Unable to prune expired weather cache", exception)
+                    }
+                    val nextRefresh = nextWeatherRefreshAt(homeUiState, weather, now) ?: return@transformLatest
+                    delay(Duration.between(now, nextRefresh).toMillis().coerceAtLeast(1L))
+                }
+            }
+
         /** 여러 화면이 공통으로 쓰는 현장 값. 응답이 없으면 모든 값이 null이다. */
         val siteStatus: StateFlow<SiteStatusUiModel> =
-            combine(uiState, currentLocationWeather) { homeUiState, weather ->
-                homeUiState.toSiteStatusUiModel(weather)
+            combine(uiState, currentLocationWeather, weatherFreshnessTime) { homeUiState, weather, now ->
+                homeUiState.toSiteStatusUiModel(weather, now)
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 initialValue = SiteStatusUiModel(),
             )
 
-        // 화면이 떠 있는 동안 1분마다 현재 시각을 흘려보내 "다음 체크까지 N분" 문구와 현재 체크 표시를 갱신한다.
         private val currentTime =
             flow {
                 while (true) {
@@ -77,6 +105,8 @@ class HomeViewModel
                     delay(TIME_TICK_MILLIS)
                 }
             }
+
+        // 화면이 떠 있는 동안 1분마다 현재 시각을 흘려보내 "다음 체크까지 N분" 문구와 현재 체크 표시를 갱신한다.
 
         /** 서버 체크 시각·오늘 기록·현재 시각으로 계산한 오늘의 체크 일정. 홈 응답이 없으면 null이다. */
         val checkSchedule: StateFlow<CheckSchedule?> =
@@ -147,7 +177,6 @@ class HomeViewModel
                 return
             }
             currentLocationWeatherJob?.cancel()
-            currentLocationWeather.value = null
             mutableLocationWeatherStatus.value = LocationWeatherStatus.CheckingLocation
             currentLocationWeatherGeneration = generation
             val requestId = ++currentLocationWeatherRequestId
@@ -171,6 +200,7 @@ class HomeViewModel
                                 ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
                     }
                     if (coordinates == null) {
+                        currentLocationWeather.value = null
                         mutableLocationWeatherStatus.value = LocationWeatherStatus.LocationUnavailable
                         return@launch
                     }
@@ -192,6 +222,8 @@ class HomeViewModel
                     }
                     when (result) {
                         is ApiResult.Failure -> {
+                            currentLocationWeather.value =
+                                getCachedCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
                             mutableLocationWeatherStatus.value = LocationWeatherStatus.WeatherRequestFailed
                         }
 
@@ -202,6 +234,8 @@ class HomeViewModel
                                 currentLocationWeather.value = result.value
                                 mutableLocationWeatherStatus.value = LocationWeatherStatus.Available
                             } else {
+                                currentLocationWeather.value =
+                                    getCachedCurrentLocationWeatherUseCase(coordinates.latitude, coordinates.longitude)
                                 mutableLocationWeatherStatus.value =
                                     LocationWeatherStatus.WeatherUnavailable(
                                         result.value.unavailableReason ?: WeatherUnavailableReason.Unknown,
@@ -210,6 +244,25 @@ class HomeViewModel
                         }
                     }
                 }
+        }
+
+        fun refreshCurrentLocationWeather() = loadCurrentLocationWeather()
+
+        private fun nextWeatherRefreshAt(
+            homeUiState: HomeUiState,
+            locationWeather: CurrentLocationWeather?,
+            now: java.time.Instant,
+        ): java.time.Instant? {
+            val teamOverview = (homeUiState as? HomeUiState.Success)?.overview
+            return nextWeatherTimestampRefresh(
+                now,
+                listOfNotNull(
+                    locationWeather?.observedAt,
+                    locationWeather?.coldWaveWarning?.fetchedAt,
+                    teamOverview?.observedAt,
+                    teamOverview?.coldWaveWarning?.fetchedAt,
+                ),
+            )
         }
 
         /** 위치 권한이 없거나 철회된 경우 진행 중 요청과 위치 날씨 override를 제거한다. */
@@ -316,6 +369,7 @@ class HomeViewModel
         }
 
         private companion object {
+            const val TAG = "HomeViewModel"
             const val STOP_TIMEOUT_MILLIS = 5_000L
             const val TIME_TICK_MILLIS = 60_000L
             const val LOCATION_RETRY_DELAY_MILLIS = 1_000L

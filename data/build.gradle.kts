@@ -109,8 +109,10 @@ dependencies {
     implementation(project(":domain"))
     ksp(libs.hilt.compiler)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.datastore.preferences)
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
+    testImplementation(libs.junit)
 }

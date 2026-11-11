@@ -6,6 +6,7 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="heartguard_session.xml" />
+        <exclude domain="file" path="datastore/current_location_weather.preferences_pb" />
         <!-- TODO: Use <include> and <exclude> to control what is backed up.
         <include .../>
         <exclude .../>
@@ -19,5 +20,6 @@
     -->
     <device-transfer>
         <exclude domain="sharedpref" path="heartguard_session.xml" />
+        <exclude domain="file" path="datastore/current_location_weather.preferences_pb" />
     </device-transfer>
 </data-extraction-rules>

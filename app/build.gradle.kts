@@ -50,6 +50,7 @@ tasks
 
 dependencies {
     implementation(project(":core"))
+    testImplementation(libs.junit)
     debugImplementation(platform(libs.androidx.compose.bom))
     implementation(project(":domain"))
     implementation(project(":data"))

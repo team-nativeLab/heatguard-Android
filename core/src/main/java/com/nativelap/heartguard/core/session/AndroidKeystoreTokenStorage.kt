@@ -8,6 +8,7 @@ import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.GeneralSecurityException
 import java.security.KeyStore
+import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -52,6 +53,7 @@ class AndroidKeystoreTokenStorage
                     .edit()
                     .putString(KEY_ACCESS_TOKEN, encrypt(accessToken, SESSION_KEY_ALIAS))
                     .putString(KEY_SESSION_ROLE, SessionRole.TEAM_MEMBER.name)
+                    .putString(KEY_SESSION_IDENTIFIER, UUID.randomUUID().toString())
                     .commit()
 
             check(saved) { "Unable to persist the session tokens" }
@@ -66,6 +68,16 @@ class AndroidKeystoreTokenStorage
                 }
 
         @Synchronized
+        override fun readSessionIdentifier(): String? =
+            preferences.getString(KEY_SESSION_IDENTIFIER, null)?.takeIf(String::isNotBlank)
+
+        @Synchronized
+        override fun saveSessionIdentifier(identifier: String) {
+            val saved = preferences.edit().putString(KEY_SESSION_IDENTIFIER, identifier).commit()
+            check(saved) { "Unable to persist the session identifier" }
+        }
+
+        @Synchronized
         override fun saveSession(
             accessToken: String,
             role: SessionRole,
@@ -77,6 +89,7 @@ class AndroidKeystoreTokenStorage
                     .edit()
                     .putString(KEY_ACCESS_TOKEN, encrypt(accessToken, SESSION_KEY_ALIAS))
                     .putString(KEY_SESSION_ROLE, role.name)
+                    .putString(KEY_SESSION_IDENTIFIER, UUID.randomUUID().toString())
                     .remove(KEY_SELECTED_TEAM_ID)
                     .remove(KEY_SELECTED_SITE_ID)
                     .commit()
@@ -151,6 +164,7 @@ class AndroidKeystoreTokenStorage
                     .remove(KEY_SESSION_ROLE)
                     .remove(KEY_SELECTED_TEAM_ID)
                     .remove(KEY_SELECTED_SITE_ID)
+                    .remove(KEY_SESSION_IDENTIFIER)
                     .commit()
 
             if (!cleared) {
@@ -210,6 +224,7 @@ class AndroidKeystoreTokenStorage
         private fun discardUnreadableToken() {
             preferences.edit(commit = true) {
                 remove(KEY_ACCESS_TOKEN)
+                remove(KEY_SESSION_IDENTIFIER)
             }
         }
 
@@ -309,6 +324,7 @@ class AndroidKeystoreTokenStorage
             const val SESSION_KEY_ALIAS = "heartguard.session.aes"
             const val APP_LINK_KEY_ALIAS = "heartguard.app_link.aes"
             const val KEY_ACCESS_TOKEN = "access_token"
+            const val KEY_SESSION_IDENTIFIER = "session_identifier"
             const val KEY_PENDING_APP_LINK_TOKEN = "pending_app_link_token"
             const val KEY_SESSION_ROLE = "session_role"
             const val KEY_SELECTED_SITE_ID = "selected_site_id"
