@@ -134,8 +134,7 @@ fun HomeUiState.toSiteStatusUiModel(
         coldWaveFetchedAt = selectedColdWaveWarning?.fetchedAt,
         weatherAgeMinutes = availableLocationWeather.observedAt.elapsedWeatherMinutes(now),
         coldWaveAgeMinutes = selectedColdWaveWarning?.fetchedAt.elapsedWeatherMinutes(now),
-        isLocationWeatherExpired =
-            availableLocationWeather.observedAt != null && !isMainWeatherFresh,
+        isLocationWeatherExpired = !isMainWeatherFresh,
         isColdWaveWarningUnavailable =
             !hasFreshSelectedColdWaveWarning &&
                 (availableLocationWeather.coldWaveWarning?.availability == ColdWaveAvailability.UNAVAILABLE ||

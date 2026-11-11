@@ -109,6 +109,32 @@ class WeatherCacheSafetyTest {
     }
 
     @Test
+    fun expiredMainWeatherKeepsFreshColdWaveWarning() {
+        val now = java.time.Instant.parse("2026-11-11T01:00:00Z")
+        val response =
+            CurrentLocationWeatherResponseDto(
+                temperature = 12.0,
+                observedAt = now.minusSeconds(3_600).toString(),
+                availability = "AVAILABLE",
+                coldWaveWarning =
+                    com.nativelap.heartguard.data.site.dto.ColdWaveWarningDto(
+                        level = "WARNING",
+                        availability = "CACHED",
+                        fetchedAt = now.minusSeconds(60).toString(),
+                        isStale = true,
+                    ),
+            )
+
+        val pruned = response.expireWeatherParts(now)
+
+        assertNull(pruned.observedAt)
+        assertNull(pruned.temperature)
+        assertTrue(pruned.availability == "CACHED")
+        assertTrue(pruned.coldWaveWarning?.fetchedAt == now.minusSeconds(60).toString())
+        assertTrue(pruned.hasFreshWeatherPart(now))
+    }
+
+    @Test
     fun failedDeletionCannotExposePreviousSessionCacheAfterRelogin() {
         val storedOwner = "old-session-identifier"
 

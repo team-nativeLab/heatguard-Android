@@ -1,6 +1,9 @@
 package com.nativelap.heartguard.viewmodel.home
 
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
+import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
+import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
+import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import java.time.Instant
@@ -54,6 +57,42 @@ class SiteStatusWeatherFreshnessTest {
         assertFalse(atSixtyMinutes.isLocationWeatherCached)
         assertTrue(atSixtyMinutes.isLocationWeatherExpired)
         assertNull(atSixtyMinutes.recordTemperature)
+    }
+
+    @Test
+    fun expiredMainWeatherShowsFailureStateWhileFreshColdWaveRemainsAvailable() {
+        val now = Instant.parse("2026-11-11T01:00:00Z")
+        val homeState = HomeUiState.Success(emptyOverview())
+        val weather =
+            CurrentLocationWeather(
+                temperature = null,
+                humidity = null,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = null,
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.CACHED,
+                coldWaveWarning =
+                    ColdWaveWarning(
+                        level = ColdWaveLevel.WARNING,
+                        availability = ColdWaveAvailability.CACHED,
+                        areaCode = "11",
+                        areaName = "서울",
+                        issuedAt = null,
+                        effectiveAt = null,
+                        fetchedAt = now.minusSeconds(60).toString(),
+                        isStale = true,
+                        errorCode = null,
+                        source = "cache",
+                    ),
+            )
+
+        val status = homeState.toSiteStatusUiModel(weather, now)
+
+        assertTrue(status.isLocationWeatherExpired)
+        assertFalse(status.isColdWaveWarningUnavailable)
+        assertEquals(ColdWaveLevel.WARNING, status.coldWaveWarning?.level)
     }
 
     private fun emptyOverview() =
