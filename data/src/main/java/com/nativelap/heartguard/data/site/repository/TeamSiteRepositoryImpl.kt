@@ -11,16 +11,17 @@ import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherCache
 import com.nativelap.heartguard.data.site.local.expireWeatherParts
 import com.nativelap.heartguard.data.site.local.hasFreshWeatherPart
 import com.nativelap.heartguard.data.site.local.isOwnedByCurrentSession
+import com.nativelap.heartguard.data.site.local.mergeFreshWeather
 import com.nativelap.heartguard.data.site.local.runCacheOperationSafely
 import com.nativelap.heartguard.data.site.mapper.toDomain
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSource
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
+import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import java.time.Clock
 import java.time.Instant
-import java.time.OffsetDateTime
 import javax.inject.Inject
 
 class TeamSiteRepositoryImpl
@@ -59,25 +60,23 @@ class TeamSiteRepositoryImpl
                             return@cache incoming
                         }
 
-                        val incomingTime = response.value.observedAt.toServerInstant()
-                        val previousTime = previous?.weather?.observedAt.toServerInstant()
-                        if (previous != null && incomingTime != null && previousTime != null &&
-                            incomingTime.isBefore(previousTime) &&
-                            haversineDistanceMeters(latitude, longitude, previous.latitude, previous.longitude) <=
-                            CACHE_LOCATION_RADIUS_METERS
-                        ) {
-                            return@cache previous.weather.asCachedWeather()
-                        }
+                        val selection = selectWeatherForCache(incoming, previous, latitude, longitude, now)
+                        val merged = selection.weather
 
-                        if (incoming.hasFreshWeatherPart(now)) {
+                        if (merged.hasFreshWeatherPart(now)) {
                             val ownerAtWrite = sessionManager.getSnapshot()
                             if (ownerAtWrite == sessionSnapshot) {
                                 ownerAtWrite.sessionIdentifier?.let { owner ->
-                                    save(latitude, longitude, incoming, owner)
+                                    save(
+                                        selection.latitude,
+                                        selection.longitude,
+                                        merged,
+                                        owner,
+                                    )
                                 }
                             }
                         }
-                        incoming
+                        merged
                     }
                 }
             return ApiResult.Success((selectedWeather ?: response.value.expireWeatherParts(clock.instant())).toDomain())
@@ -94,9 +93,7 @@ class TeamSiteRepositoryImpl
                     val now = clock.instant()
                     if (sessionManager.getSnapshot() != snapshot) return@cache null
                     val cached = readFreshCachedWeather(this, now, owner) ?: return@cache null
-                    if (haversineDistanceMeters(latitude, longitude, cached.latitude, cached.longitude) >
-                        CACHE_LOCATION_RADIUS_METERS
-                    ) {
+                    if (!isWithinWeatherCacheRadius(latitude, longitude, cached.latitude, cached.longitude)) {
                         return@cache null
                     }
                     cached.weather.asCachedWeather().toDomain()
@@ -144,38 +141,65 @@ class TeamSiteRepositoryImpl
                 operation = operation,
             )
 
-        private fun CurrentLocationWeatherResponseDto.asCachedWeather(): CurrentLocationWeatherResponseDto =
-            copy(
-                availability = "CACHED",
-                coldWaveWarning =
-                    coldWaveWarning?.copy(
-                        availability = "CACHED",
-                        isStale = true,
-                    ),
-            )
-
-        private fun String?.toServerInstant(): Instant? =
-            runCatching { this?.let(OffsetDateTime::parse)?.toInstant() }.getOrNull()
-
-        private fun haversineDistanceMeters(
-            firstLatitude: Double,
-            firstLongitude: Double,
-            secondLatitude: Double,
-            secondLongitude: Double,
-        ): Double {
-            val latitudeDelta = Math.toRadians(secondLatitude - firstLatitude)
-            val longitudeDelta = Math.toRadians(secondLongitude - firstLongitude)
-            val haversine =
-                kotlin.math.sin(latitudeDelta / 2).let { it * it } +
-                    kotlin.math.cos(Math.toRadians(firstLatitude)) *
-                    kotlin.math.cos(Math.toRadians(secondLatitude)) *
-                    kotlin.math.sin(longitudeDelta / 2).let { it * it }
-            return 6_371_000.0 * 2 * kotlin.math.asin(kotlin.math.sqrt(haversine.coerceIn(0.0, 1.0)))
-        }
-
         private companion object {
             const val TAG = "TeamSiteRepository"
             val CACHED_WEATHER_STATUSES = setOf("AVAILABLE", "CACHED")
-            const val CACHE_LOCATION_RADIUS_METERS = 1_000.0
         }
     }
+
+internal data class WeatherCacheSelection(
+    val weather: CurrentLocationWeatherResponseDto,
+    val latitude: Double,
+    val longitude: Double,
+)
+
+internal fun selectWeatherForCache(
+    incoming: CurrentLocationWeatherResponseDto,
+    previous: CachedCurrentLocationWeather?,
+    latitude: Double,
+    longitude: Double,
+    now: Instant,
+): WeatherCacheSelection {
+    val nearby =
+        previous?.takeIf {
+            isWithinWeatherCacheRadius(latitude, longitude, it.latitude, it.longitude)
+        }
+    val previousWeather = nearby?.weather
+    val sameCoordinates = nearby?.latitude == latitude && nearby.longitude == longitude
+    val incomingTime = incoming.observedAt.toWeatherInstantOrNull()
+    val previousTime = previousWeather?.observedAt.toWeatherInstantOrNull()
+    val olderIncoming = incomingTime != null && previousTime != null && incomingTime.isBefore(previousTime)
+    val keepPrevious =
+        previousWeather?.temperature != null && previousWeather.humidity != null &&
+            (incoming.temperature == null || incoming.humidity == null || olderIncoming)
+    if (sameCoordinates) {
+        return WeatherCacheSelection(incoming.mergeFreshWeather(previousWeather, now), latitude, longitude)
+    }
+    if (keepPrevious) {
+        return WeatherCacheSelection(previousWeather!!.asCachedWeather(), nearby!!.latitude, nearby.longitude)
+    }
+    return WeatherCacheSelection(incoming, latitude, longitude)
+}
+
+private fun CurrentLocationWeatherResponseDto.asCachedWeather(): CurrentLocationWeatherResponseDto =
+    copy(
+        availability = "CACHED",
+        coldWaveWarning = coldWaveWarning?.copy(availability = "CACHED", isStale = true),
+    )
+
+internal fun isWithinWeatherCacheRadius(
+    firstLatitude: Double,
+    firstLongitude: Double,
+    secondLatitude: Double,
+    secondLongitude: Double,
+): Boolean {
+    val latitudeDelta = Math.toRadians(secondLatitude - firstLatitude)
+    val longitudeDelta = Math.toRadians(secondLongitude - firstLongitude)
+    val haversine =
+        kotlin.math.sin(latitudeDelta / 2).let { it * it } +
+            kotlin.math.cos(Math.toRadians(firstLatitude)) *
+            kotlin.math.cos(Math.toRadians(secondLatitude)) *
+            kotlin.math.sin(longitudeDelta / 2).let { it * it }
+    val distanceMeters = 6_371_000.0 * 2 * kotlin.math.asin(kotlin.math.sqrt(haversine.coerceIn(0.0, 1.0)))
+    return distanceMeters <= 1_000.0
+}

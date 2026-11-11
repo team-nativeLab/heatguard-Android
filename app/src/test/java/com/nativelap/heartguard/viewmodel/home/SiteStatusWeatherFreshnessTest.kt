@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.viewmodel.home
 
+import com.nativelap.heartguard.core.location.CurrentCoordinates
 import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
 import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
 import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
@@ -53,6 +54,8 @@ class SiteStatusWeatherFreshnessTest {
 
         assertEquals(1L, afterOneMinute.weatherAgeMinutes)
         assertTrue(afterOneMinute.isLocationWeatherCached)
+        assertEquals(12.0, afterOneMinute.recordTemperature!!, 0.0)
+        assertEquals(42.0, afterOneMinute.recordHumidity!!, 0.0)
         assertEquals(60L, atSixtyMinutes.weatherAgeMinutes)
         assertFalse(atSixtyMinutes.isLocationWeatherCached)
         assertTrue(atSixtyMinutes.isLocationWeatherExpired)
@@ -93,6 +96,89 @@ class SiteStatusWeatherFreshnessTest {
         assertTrue(status.isLocationWeatherExpired)
         assertFalse(status.isColdWaveWarningUnavailable)
         assertEquals(ColdWaveLevel.WARNING, status.coldWaveWarning?.level)
+    }
+
+    @Test
+    fun newerMemorySurvivesOlderCachedResponseOnlyForSameLocationSessionAndFreshness() {
+        val now = Instant.parse("2026-11-11T01:00:00Z")
+        val location = CurrentCoordinates(37.5, 127.0)
+        val memory =
+            CurrentLocationWeather(
+                temperature = 12.0,
+                humidity = 42.0,
+                apparentTemperature = 11.0,
+                heatLevel = 1,
+                observedAt = now.minusSeconds(60).toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.AVAILABLE,
+            )
+        val older =
+            memory.copy(
+                observedAt = now.minusSeconds(120).toString(),
+                availability = WeatherAvailability.CACHED,
+            )
+        val allowed = canUseWeatherMemory(memory, location, location, 1L, 1L, now)
+        assertTrue(preferWeatherMemory(memory, older, allowed, now))
+        assertFalse(preferWeatherMemory(memory, memory.copy(observedAt = now.toString()), allowed, now))
+        val differentSession = canUseWeatherMemory(memory, location, location, 1L, 2L, now)
+        assertFalse(preferWeatherMemory(memory, older, differentSession, now))
+        val differentLocation = canUseWeatherMemory(memory, location, CurrentCoordinates(37.6, 127.0), 1L, 1L, now)
+        assertFalse(preferWeatherMemory(memory, older, differentLocation, now))
+        val expiredAt = now.plusSeconds(3_540)
+        val expired = canUseWeatherMemory(memory, location, location, 1L, 1L, expiredAt)
+        assertFalse(preferWeatherMemory(memory, older, expired, expiredAt))
+    }
+
+    @Test
+    fun olderMainWeatherCanUpdateColdWaveIndependently() {
+        val now = Instant.parse("2026-11-11T01:00:00Z")
+        val oldWarning =
+            ColdWaveWarning(
+                level = ColdWaveLevel.ADVISORY,
+                availability = ColdWaveAvailability.CACHED,
+                areaCode = null,
+                areaName = null,
+                issuedAt = null,
+                effectiveAt = null,
+                fetchedAt = now.minusSeconds(300).toString(),
+                isStale = true,
+                errorCode = null,
+                source = null,
+            )
+        val memory =
+            CurrentLocationWeather(
+                temperature = 12.0,
+                humidity = 42.0,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = now.minusSeconds(60).toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.AVAILABLE,
+                coldWaveWarning = oldWarning,
+            )
+        val newerWarning =
+            oldWarning.copy(
+                level = ColdWaveLevel.WARNING,
+                availability = ColdWaveAvailability.AVAILABLE,
+                fetchedAt = now.minusSeconds(10).toString(),
+                isStale = false,
+            )
+        val olderResponse =
+            memory.copy(
+                temperature = 10.0,
+                observedAt = now.minusSeconds(120).toString(),
+                coldWaveWarning = newerWarning,
+            )
+        val merged = preserveMemoryWeather(memory, listOf(olderResponse), now)
+        assertEquals(memory.temperature, merged.temperature)
+        assertEquals(memory.observedAt, merged.observedAt)
+        assertEquals(newerWarning, merged.coldWaveWarning)
+        val expiredWarning = newerWarning.copy(fetchedAt = now.minusSeconds(3_600).toString())
+        val withExpiredWarning = olderResponse.copy(coldWaveWarning = expiredWarning)
+        val withoutExpired = preserveMemoryWeather(memory, listOf(withExpiredWarning), now)
+        assertEquals(oldWarning, withoutExpired.coldWaveWarning)
     }
 
     private fun emptyOverview() =
