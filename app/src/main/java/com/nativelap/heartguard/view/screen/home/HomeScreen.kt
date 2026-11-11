@@ -1,6 +1,7 @@
 package com.nativelap.heartguard.view.screen.home
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,19 +17,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
+import com.nativelap.heartguard.ui.theme.HeartGuardComponentSize
 import com.nativelap.heartguard.ui.theme.HeartGuardSpacing
 import com.nativelap.heartguard.ui.theme.HeartGuardTheme
 import com.nativelap.heartguard.ui.theme.extraColors
@@ -158,9 +165,40 @@ fun HomeScreen(
 
                     if (notice != null) {
                         item {
+                            val density = LocalDensity.current
+                            val noticeTextHeightState = remember(notice) { mutableIntStateOf(0) }
+                            val noticeTextLineCountState = remember(notice) { mutableIntStateOf(0) }
+                            val noticeTextHeight =
+                                with(density) {
+                                    noticeTextHeightState.intValue.toDp()
+                                }
+                            val retryRowHeight =
+                                maxOf(
+                                    HeartGuardComponentSize.TouchTarget,
+                                    noticeTextHeight,
+                                )
+                            // 48dp 재시도 영역 아래 남는 높이를 빼 안내 마지막 줄과 제목 사이를 약 32dp로 맞춘다.
+                            val retryNoticeToDataRecordsGap =
+                                when {
+                                    onNoticeRetry == null -> {
+                                        HeartGuardSpacing.HomeNoticeToDataRecords
+                                    }
+
+                                    noticeTextLineCountState.intValue == 1 && density.fontScale == 1f -> {
+                                        HeartGuardSpacing.Tight
+                                    }
+
+                                    else -> {
+                                        (
+                                            HeartGuardSpacing.HomeNoticeToDataRecords -
+                                                (retryRowHeight - noticeTextHeight)
+                                        ).coerceAtLeast(HeartGuardSpacing.Tight)
+                                    }
+                                }
+
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
+                                verticalArrangement = Arrangement.spacedBy(retryNoticeToDataRecordsGap),
                             ) {
                                 Row(
                                     modifier =
@@ -168,21 +206,37 @@ fun HomeScreen(
                                             .fillMaxWidth()
                                             .padding(horizontal = HeartGuardSpacing.HomeMetricCardHorizontal),
                                     horizontalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Tight),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                    verticalAlignment = Alignment.Top,
                                 ) {
                                     Text(
                                         text = notice,
                                         modifier = if (onNoticeRetry != null) Modifier.weight(1f) else Modifier,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodySmall,
+                                        onTextLayout = { textLayoutResult: TextLayoutResult ->
+                                            if (noticeTextHeightState.intValue != textLayoutResult.size.height) {
+                                                noticeTextHeightState.intValue = textLayoutResult.size.height
+                                            }
+                                            if (noticeTextLineCountState.intValue != textLayoutResult.lineCount) {
+                                                noticeTextLineCountState.intValue = textLayoutResult.lineCount
+                                            }
+                                        },
                                     )
                                     if (onNoticeRetry != null) {
-                                        TextButton(
-                                            onClick = onNoticeRetry,
-                                            contentPadding = PaddingValues(horizontal = HeartGuardSpacing.Tight),
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .widthIn(min = HeartGuardComponentSize.TouchTarget)
+                                                    .heightIn(min = HeartGuardComponentSize.TouchTarget)
+                                                    .clickable(
+                                                        role = Role.Button,
+                                                        onClick = onNoticeRetry,
+                                                    ).padding(horizontal = HeartGuardSpacing.Tight),
+                                            contentAlignment = Alignment.TopCenter,
                                         ) {
                                             Text(
                                                 text = weatherRetryLabel,
+                                                color = MaterialTheme.colorScheme.primary,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 maxLines = 1,
                                             )
