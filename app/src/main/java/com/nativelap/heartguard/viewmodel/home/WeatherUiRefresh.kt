@@ -1,5 +1,6 @@
 package com.nativelap.heartguard.viewmodel.home
 
+import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
 import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import java.time.Duration
 import java.time.Instant
@@ -26,3 +27,15 @@ private fun String?.nextWeatherTimestampRefresh(now: Instant): Instant? {
 
 private const val WEATHER_MAX_AGE_SECONDS = 3_600L
 private const val SECONDS_PER_MINUTE = 60L
+
+internal fun nextLiveWeatherAgeRefresh(
+    observedAt: String?,
+    receivedAt: String?,
+    now: Instant,
+): Instant? {
+    if (!receivedAt.isFreshWeatherTimestamp(now)) return null
+    val observation = observedAt.toWeatherInstantOrNull() ?: return null
+    if (observation.isAfter(now)) return null
+    val elapsedMinutes = Duration.between(observation, now).toMinutes()
+    return observation.plusSeconds((elapsedMinutes + 1L) * SECONDS_PER_MINUTE)
+}

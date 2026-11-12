@@ -29,6 +29,8 @@ data class CurrentLocationWeatherResponseDto(
     val temperatureDelta: Double? = null,
     @SerialName("availability")
     val availability: String? = null,
+    @SerialName("isStale")
+    val isStale: Boolean? = null,
     @SerialName("errorCode")
     val errorCode: String? = null,
     @SerialName("coldWaveWarning")

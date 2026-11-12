@@ -194,4 +194,62 @@ class SiteStatusWeatherFreshnessTest {
             checkTimes = emptyList(),
             hasActiveEmergencyCall = false,
         )
+
+    @Test
+    fun serverAvailableObservationOlderThanOneHourRemainsVisibleButNotRecordable() {
+        val now = Instant.parse("2026-11-11T01:20:00Z")
+        val weather =
+            CurrentLocationWeather(
+                temperature = 8.7,
+                humidity = 77.0,
+                apparentTemperature = 10.3,
+                heatLevel = 0,
+                observedAt = now.minusSeconds(4_800).toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.AVAILABLE,
+                serverReceivedAt = now.toString(),
+            )
+        val status = HomeUiState.Success(emptyOverview()).toSiteStatusUiModel(weather, now)
+        assertEquals("8.7", status.temperature)
+        assertNull(status.recordTemperature)
+        assertTrue(status.hasLocationWeatherValue)
+        val expired = HomeUiState.Success(emptyOverview()).toSiteStatusUiModel(weather, now.plusSeconds(3_600))
+        assertNull(expired.temperature)
+        assertTrue(expired.isLocationWeatherExpired)
+    }
+
+    @Test
+    fun oldLiveObservationStillRefreshesAgeAtTheNextObservationMinute() {
+        val observedAt = Instant.parse("2026-11-11T00:00:00Z")
+        val receivedAt = Instant.parse("2026-11-11T01:20:37Z")
+        assertEquals(
+            Instant.parse("2026-11-11T01:21:00Z"),
+            nextLiveWeatherAgeRefresh(observedAt.toString(), receivedAt.toString(), receivedAt),
+        )
+        assertNull(
+            nextLiveWeatherAgeRefresh(observedAt.toString(), receivedAt.toString(), receivedAt.plusSeconds(3_600)),
+        )
+    }
+
+    @Test
+    fun oldLiveObservationCannotBeReusedAsMemoryAfterFailure() {
+        val now = Instant.parse("2026-11-11T01:20:00Z")
+        val location = CurrentCoordinates(37.5, 127.0)
+        val weather =
+            CurrentLocationWeather(
+                temperature = 8.7,
+                humidity = 77.0,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = now.minusSeconds(4_800).toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.AVAILABLE,
+                serverReceivedAt = now.toString(),
+            )
+        assertFalse(canUseWeatherMemory(weather, location, location, 1L, 1L, now))
+        assertFalse(canUseWeatherMemory(weather, location, location, 1L, 2L, now))
+        assertFalse(canUseWeatherMemory(weather, location, CurrentCoordinates(37.6, 127.0), 1L, 1L, now))
+    }
 }

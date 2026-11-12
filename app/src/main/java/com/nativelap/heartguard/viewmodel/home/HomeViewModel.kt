@@ -320,15 +320,24 @@ class HomeViewModel
             now: java.time.Instant,
         ): java.time.Instant? {
             val teamOverview = (homeUiState as? HomeUiState.Success)?.overview
-            return nextWeatherTimestampRefresh(
-                now,
-                listOfNotNull(
+            val freshnessRefresh =
+                nextWeatherTimestampRefresh(
+                    now,
+                    listOfNotNull(
+                        locationWeather?.observedAt,
+                        locationWeather?.serverReceivedAt,
+                        locationWeather?.coldWaveWarning?.fetchedAt,
+                        teamOverview?.observedAt,
+                        teamOverview?.coldWaveWarning?.fetchedAt,
+                    ),
+                )
+            val liveAgeRefresh =
+                nextLiveWeatherAgeRefresh(
                     locationWeather?.observedAt,
-                    locationWeather?.coldWaveWarning?.fetchedAt,
-                    teamOverview?.observedAt,
-                    teamOverview?.coldWaveWarning?.fetchedAt,
-                ),
-            )
+                    locationWeather?.serverReceivedAt,
+                    now,
+                )
+            return listOfNotNull(freshnessRefresh, liveAgeRefresh).minOrNull()
         }
 
         /** 위치 권한이 없거나 철회된 경우 진행 중 요청과 위치 날씨 override를 제거한다. */

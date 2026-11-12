@@ -10,6 +10,7 @@ import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.model.elapsedWeatherMinutes
 import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
+import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import com.nativelap.heartguard.viewmodel.toDisplayNumber
 import java.time.Instant
 
@@ -73,6 +74,14 @@ fun HomeUiState.toSiteStatusUiModel(
                 weather.availability == WeatherAvailability.CACHED
         } ?: return siteStatus
     val isMainWeatherFresh = availableLocationWeather.observedAt.isFreshWeatherTimestamp(now)
+    val observationTime = availableLocationWeather.observedAt.toWeatherInstantOrNull()
+    val isMainWeatherDisplayable =
+        isMainWeatherFresh ||
+            (
+                availableLocationWeather.availability == WeatherAvailability.AVAILABLE &&
+                    availableLocationWeather.serverReceivedAt.isFreshWeatherTimestamp(now) &&
+                    observationTime != null && !observationTime.isAfter(now)
+            )
     val freshLocationColdWaveWarning =
         availableLocationWeather.coldWaveWarning
             ?.takeIf { warning -> warning.fetchedAt.isFreshWeatherTimestamp(now) }
@@ -84,39 +93,39 @@ fun HomeUiState.toSiteStatusUiModel(
 
     return siteStatus.copy(
         temperature =
-            if (isMainWeatherFresh) {
+            if (isMainWeatherDisplayable) {
                 availableLocationWeather.temperature.toDisplayNumber()
             } else {
                 siteStatus.temperature
             },
         humidity =
-            if (isMainWeatherFresh) {
+            if (isMainWeatherDisplayable) {
                 availableLocationWeather.humidity.toDisplayNumber()
             } else {
                 siteStatus.humidity
             },
         apparentTemperature =
-            if (isMainWeatherFresh) {
+            if (isMainWeatherDisplayable) {
                 availableLocationWeather.apparentTemperature.toDisplayNumber()
             } else {
                 siteStatus.apparentTemperature
             },
-        heatLevel = if (isMainWeatherFresh) availableLocationWeather.heatLevel else siteStatus.heatLevel,
-        skyStatus = if (isMainWeatherFresh) availableLocationWeather.skyStatus else siteStatus.skyStatus,
+        heatLevel = if (isMainWeatherDisplayable) availableLocationWeather.heatLevel else siteStatus.heatLevel,
+        skyStatus = if (isMainWeatherDisplayable) availableLocationWeather.skyStatus else siteStatus.skyStatus,
         temperatureDelta =
-            if (isMainWeatherFresh) {
+            if (isMainWeatherDisplayable) {
                 availableLocationWeather.temperatureDelta?.toSignedDisplayNumber()
             } else {
                 siteStatus.temperatureDelta
             },
         isTemperatureIncreasing =
-            if (isMainWeatherFresh) {
+            if (isMainWeatherDisplayable) {
                 availableLocationWeather.temperatureDelta?.toIncreasingDirection()
             } else {
                 siteStatus.isTemperatureIncreasing
             },
         isTemperatureDeltaZero =
-            if (isMainWeatherFresh) {
+            if (isMainWeatherDisplayable) {
                 availableLocationWeather.temperatureDelta == 0.0
             } else {
                 siteStatus.isTemperatureDeltaZero
@@ -126,15 +135,15 @@ fun HomeUiState.toSiteStatusUiModel(
         recordHumidity = if (isMainWeatherFresh) availableLocationWeather.humidity else siteStatus.recordHumidity,
         coldWaveWarning = selectedColdWaveWarning,
         weatherObservedAt =
-            if (isMainWeatherFresh) availableLocationWeather.observedAt else siteStatus.weatherObservedAt,
-        locationWeatherObservedAt = availableLocationWeather.observedAt.takeIf { isMainWeatherFresh },
-        hasLocationWeatherValue = isMainWeatherFresh,
+            if (isMainWeatherDisplayable) availableLocationWeather.observedAt else siteStatus.weatherObservedAt,
+        locationWeatherObservedAt = availableLocationWeather.observedAt.takeIf { isMainWeatherDisplayable },
+        hasLocationWeatherValue = isMainWeatherDisplayable,
         isLocationWeatherCached =
-            isMainWeatherFresh && availableLocationWeather.availability == WeatherAvailability.CACHED,
+            isMainWeatherDisplayable && availableLocationWeather.availability == WeatherAvailability.CACHED,
         coldWaveFetchedAt = selectedColdWaveWarning?.fetchedAt,
         weatherAgeMinutes = availableLocationWeather.observedAt.elapsedWeatherMinutes(now),
         coldWaveAgeMinutes = selectedColdWaveWarning?.fetchedAt.elapsedWeatherMinutes(now),
-        isLocationWeatherExpired = !isMainWeatherFresh,
+        isLocationWeatherExpired = !isMainWeatherDisplayable,
         isColdWaveWarningUnavailable =
             !hasFreshSelectedColdWaveWarning &&
                 (

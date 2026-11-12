@@ -10,6 +10,7 @@ import com.nativelap.heartguard.data.site.local.CachedCurrentLocationWeather
 import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherCache
 import com.nativelap.heartguard.data.site.local.expireWeatherParts
 import com.nativelap.heartguard.data.site.local.hasFreshWeatherPart
+import com.nativelap.heartguard.data.site.local.hasMainWeatherValue
 import com.nativelap.heartguard.data.site.local.isOwnedByCurrentSession
 import com.nativelap.heartguard.data.site.local.mergeFreshWeather
 import com.nativelap.heartguard.data.site.local.runCacheOperationSafely
@@ -48,6 +49,12 @@ class TeamSiteRepositoryImpl
                 return response.map { it.toDomain() }
             }
 
+            val responseWeather =
+                if (response.value.isStale == true && response.value.availability == "AVAILABLE") {
+                    response.value.copy(availability = "CACHED")
+                } else {
+                    response.value
+                }
             val selectedWeather =
                 cacheOperationOrNull {
                     weatherCache.withCacheLock cache@{
@@ -55,7 +62,7 @@ class TeamSiteRepositoryImpl
                         val currentSnapshot = sessionManager.getSnapshot()
                         val currentOwner = currentSnapshot.sessionIdentifier
                         val previous = readFreshCachedWeather(this, now, currentOwner)
-                        val incoming = response.value.expireWeatherParts(now)
+                        val incoming = responseWeather.copy(isStale = null).expireWeatherParts(now)
                         if (sessionManager.getSnapshot() != sessionSnapshot) {
                             return@cache incoming
                         }
@@ -79,7 +86,9 @@ class TeamSiteRepositoryImpl
                         merged
                     }
                 }
-            return ApiResult.Success((selectedWeather ?: response.value.expireWeatherParts(clock.instant())).toDomain())
+            return ApiResult.Success(
+                resolveReturnedWeather(responseWeather, selectedWeather, clock.instant()),
+            )
         }
 
         override suspend fun getCachedCurrentLocationWeather(
@@ -202,4 +211,27 @@ internal fun isWithinWeatherCacheRadius(
             kotlin.math.sin(longitudeDelta / 2).let { it * it }
     val distanceMeters = 6_371_000.0 * 2 * kotlin.math.asin(kotlin.math.sqrt(haversine.coerceIn(0.0, 1.0)))
     return distanceMeters <= 1_000.0
+}
+
+internal fun CurrentLocationWeatherResponseDto.toDisplayableLiveWeather(now: Instant): CurrentLocationWeather? {
+    val observation = observedAt.toWeatherInstantOrNull() ?: return null
+    if (availability != "AVAILABLE" || isStale == true || observation.isAfter(now) || !hasMainWeatherValue()) {
+        return null
+    }
+    return toDomain().copy(serverReceivedAt = now.toString())
+}
+
+internal fun resolveReturnedWeather(
+    incoming: CurrentLocationWeatherResponseDto,
+    selected: CurrentLocationWeatherResponseDto?,
+    now: Instant,
+): CurrentLocationWeather {
+    val liveWeather =
+        incoming.toDisplayableLiveWeather(now)
+            ?: return (selected ?: incoming.expireWeatherParts(now)).toDomain()
+    if (selected?.availability == "CACHED" && selected.temperature != null && selected.humidity != null) {
+        return selected.toDomain()
+    }
+    val selectedWarning = selected?.toDomain()?.coldWaveWarning
+    return liveWeather.copy(coldWaveWarning = selectedWarning ?: liveWeather.coldWaveWarning)
 }
