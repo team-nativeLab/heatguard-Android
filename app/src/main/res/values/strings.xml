@@ -504,7 +504,6 @@
     <string name="checklist_overview_empty">오늘 등록된 체크 시간이 없어요.</string>
     <string name="checklist_overview_open_detail">체크리스트 상세 열기</string>
     <string name="checklist_overview_rounds_heading">오늘 회차</string>
-    <string name="checklist_overview_interval">2시간마다 체크</string>
     <string name="checklist_overview_badge_completed">완료</string>
     <string name="checklist_overview_badge_current">진행 중</string>
     <string name="checklist_overview_badge_upcoming">예정</string>
