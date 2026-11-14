@@ -7,6 +7,8 @@ import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
+import com.nativelap.heartguard.domain.site.model.WeatherField
+import com.nativelap.heartguard.domain.site.model.WeatherFieldProvenance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -15,6 +17,78 @@ import org.junit.Test
 import java.time.Instant
 
 class SiteStatusWeatherFreshnessTest {
+    @Test
+    fun partialLocationWeatherKeepsSiteFallbackForMissingFields() {
+        val now = Instant.parse("2026-11-11T01:00:00Z")
+        val overview =
+            emptyOverview().copy(
+                currentTemperature = 18.0,
+                humidity = 40.0,
+                observedAt = now.minusSeconds(30).toString(),
+            )
+        val locationWeather =
+            CurrentLocationWeather(
+                temperature = null,
+                humidity = 53.0,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = now.toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.AVAILABLE,
+                fieldProvenance =
+                    WeatherFieldProvenance(
+                        observedAtByField = mapOf(WeatherField.HUMIDITY to now.toString()),
+                        fieldsFromPreviousValue = setOf(WeatherField.HUMIDITY),
+                    ),
+            )
+
+        val status = HomeUiState.Success(overview).toSiteStatusUiModel(locationWeather, now)
+
+        assertEquals("18", status.temperature)
+        assertEquals("53", status.humidity)
+        assertEquals(setOf(WeatherField.HUMIDITY), status.weatherFieldsFromPreviousValue)
+    }
+
+    @Test
+    fun teamRefreshRetainsOnlyFreshMissingWeatherFields() {
+        val now = Instant.parse("2026-11-11T01:00:00Z")
+        val previous =
+            emptyOverview().copy(
+                teamName = "이전 팀",
+                currentTemperature = 18.0,
+                humidity = 40.0,
+                observedAt = now.minusSeconds(120).toString(),
+                weatherFieldProvenance =
+                    WeatherFieldProvenance(
+                        observedAtByField =
+                            mapOf(
+                                WeatherField.TEMPERATURE to now.minusSeconds(120).toString(),
+                                WeatherField.HUMIDITY to now.minusSeconds(3_599).toString(),
+                            ),
+                    ),
+            )
+        val incoming =
+            emptyOverview().copy(
+                teamName = "새 팀",
+                currentTemperature = 21.0,
+                observedAt = now.toString(),
+            )
+
+        val merged = incoming.mergeWeatherFieldsFrom(previous, now)
+        val status = HomeUiState.Success(merged).toSiteStatusUiModel(now = now)
+
+        assertEquals("새 팀", merged.teamName)
+        assertEquals(21.0, merged.currentTemperature!!, 0.0)
+        assertEquals(40.0, merged.humidity!!, 0.0)
+        assertEquals(
+            now.minusSeconds(3_599).toString(),
+            merged.weatherFieldProvenance.observedAtByField[WeatherField.HUMIDITY],
+        )
+        assertEquals(setOf(WeatherField.HUMIDITY), status.weatherFieldsFromPreviousValue)
+        assertEquals("40", status.humidity)
+    }
+
     @Test
     fun refreshTimerUsesObservedAtMinuteBoundaryAndExpiration() {
         val timestamp = Instant.parse("2026-11-11T00:00:30Z")

@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.site.mapper
 
 import com.nativelap.heartguard.data.site.dto.ColdWaveWarningDto
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherResponseDto
+import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherSnapshot
 import com.nativelap.heartguard.domain.site.model.ColdWaveAvailability
 import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
 import com.nativelap.heartguard.domain.site.model.ColdWaveWarning
@@ -34,6 +35,9 @@ internal fun CurrentLocationWeatherResponseDto.toDomain(): CurrentLocationWeathe
             },
     )
 }
+
+internal fun CurrentLocationWeatherSnapshot.toDomain(): CurrentLocationWeather =
+    weather.toDomain().copy(fieldProvenance = fieldProvenance)
 
 internal fun ColdWaveWarningDto.toDomain(): ColdWaveWarning =
     ColdWaveWarning(

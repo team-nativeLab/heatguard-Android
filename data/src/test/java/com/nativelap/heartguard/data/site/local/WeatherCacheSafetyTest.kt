@@ -1,12 +1,14 @@
 package com.nativelap.heartguard.data.site.local
 
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherResponseDto
+import com.nativelap.heartguard.domain.site.model.WeatherField
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -95,6 +97,30 @@ class WeatherCacheSafetyTest {
         }
 
     @Test
+    fun legacyWeatherCacheUsesItsObservedAtForEachPopulatedField() {
+        val observedAt =
+            java.time.Instant
+                .parse("2026-11-11T00:59:00Z")
+                .toString()
+        val payload =
+            Json.encodeToString(
+                CurrentLocationWeatherResponseDto(
+                    temperature = 18.0,
+                    humidity = 45.0,
+                    observedAt = observedAt,
+                    availability = "AVAILABLE",
+                ),
+            )
+
+        val restored = readWeatherCacheFields(payload, 37.5, 127.0, "session-id", Json)
+
+        assertTrue(restored is WeatherCacheRead.Valid)
+        val provenance = (restored as WeatherCacheRead.Valid).cachedWeather.fieldProvenance
+        assertTrue(provenance.observedAtByField[WeatherField.TEMPERATURE] == observedAt)
+        assertTrue(provenance.observedAtByField[WeatherField.HUMIDITY] == observedAt)
+    }
+
+    @Test
     fun expiredPersistedWeatherIsRemovedByStartupPrunePolicy() {
         val now = java.time.Instant.parse("2026-11-11T01:00:00Z")
         val expired =
@@ -153,10 +179,57 @@ class WeatherCacheSafetyTest {
                 availability = "AVAILABLE",
             )
 
-        val merged = partial.mergeFreshWeather(previous, now)
-        assertTrue(merged.temperature == 12.0 && merged.humidity == 56.0)
-        assertTrue(merged.observedAt == previous.observedAt && merged.availability == "CACHED")
-        assertFalse(merged.expireWeatherParts(now.plusSeconds(60)).hasFreshWeatherPart(now.plusSeconds(60)))
+        val merged = partial.mergeFreshWeather(previous.toWeatherSnapshot(), now)
+        assertTrue(merged.weather.temperature == 13.0 && merged.weather.humidity == 56.0)
+        assertTrue(merged.weather.observedAt == now.toString() && merged.weather.availability == "AVAILABLE")
+        val expiredHumidity = merged.expireWeatherParts(now.plusSeconds(60))
+        assertNull(expiredHumidity.weather.humidity)
+        assertTrue(expiredHumidity.weather.temperature == 13.0)
+    }
+
+    @Test
+    fun partialAncillaryFieldsKeepTheirOwnPreviousObservationTime() {
+        val now = java.time.Instant.parse("2026-11-11T01:00:00Z")
+        val previousObservation = now.minusSeconds(600).toString()
+        val previous =
+            CurrentLocationWeatherResponseDto(
+                temperature = 12.0,
+                humidity = 56.0,
+                apparentTemperature = 10.0,
+                heatLevel = 1,
+                observedAt = previousObservation,
+                skyStatus = "CLOUDY",
+                temperatureDelta = -1.0,
+                availability = "AVAILABLE",
+            )
+        val incoming =
+            CurrentLocationWeatherResponseDto(
+                temperature = 13.0,
+                humidity = 50.0,
+                observedAt = now.toString(),
+                availability = "AVAILABLE",
+            )
+
+        val merged = incoming.mergeFreshWeather(previous.toWeatherSnapshot(), now)
+
+        assertEquals(13.0, merged.weather.temperature!!, 0.0)
+        assertEquals(50.0, merged.weather.humidity!!, 0.0)
+        assertEquals(10.0, merged.weather.apparentTemperature!!, 0.0)
+        assertEquals(1, merged.weather.heatLevel)
+        assertEquals("CLOUDY", merged.weather.skyStatus)
+        assertEquals(-1.0, merged.weather.temperatureDelta!!, 0.0)
+        assertEquals(previousObservation, merged.fieldProvenance.observedAtByField[WeatherField.APPARENT_TEMPERATURE])
+        assertTrue(WeatherField.APPARENT_TEMPERATURE in merged.fieldProvenance.fieldsFromPreviousValue)
+        assertFalse(
+            merged
+                .expireWeatherParts(now.plusSeconds(3_000))
+                .fieldProvenance
+                .fieldsFromPreviousValue
+                .contains(WeatherField.APPARENT_TEMPERATURE),
+        )
+        assertNull(
+            merged.expireWeatherParts(now.plusSeconds(3_000)).weather.apparentTemperature,
+        )
     }
 
     @Test
@@ -180,10 +253,10 @@ class WeatherCacheSafetyTest {
                         fetchedAt = now.toString(),
                     ),
             )
-        val merged = incoming.mergeFreshWeather(previous, now)
-        assertTrue(merged.temperature == 12.0 && merged.observedAt == previous.observedAt)
-        assertTrue(merged.coldWaveWarning?.fetchedAt == now.toString())
-        assertTrue(merged.availability == "CACHED")
+        val merged = incoming.mergeFreshWeather(previous.toWeatherSnapshot(), now)
+        assertTrue(merged.weather.temperature == 12.0 && merged.weather.observedAt == previous.observedAt)
+        assertTrue(merged.weather.coldWaveWarning?.fetchedAt == now.toString())
+        assertTrue(merged.weather.availability == "CACHED")
     }
 
     @Test

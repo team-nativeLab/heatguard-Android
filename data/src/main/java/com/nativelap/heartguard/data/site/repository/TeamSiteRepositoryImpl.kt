@@ -8,17 +8,20 @@ import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherRequestDto
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherResponseDto
 import com.nativelap.heartguard.data.site.local.CachedCurrentLocationWeather
 import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherCache
+import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherSnapshot
 import com.nativelap.heartguard.data.site.local.expireWeatherParts
 import com.nativelap.heartguard.data.site.local.hasFreshWeatherPart
 import com.nativelap.heartguard.data.site.local.hasMainWeatherValue
 import com.nativelap.heartguard.data.site.local.isOwnedByCurrentSession
 import com.nativelap.heartguard.data.site.local.mergeFreshWeather
 import com.nativelap.heartguard.data.site.local.runCacheOperationSafely
+import com.nativelap.heartguard.data.site.local.toWeatherSnapshot
 import com.nativelap.heartguard.data.site.mapper.toDomain
 import com.nativelap.heartguard.data.site.remote.TeamSiteRemoteDataSource
 import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
+import com.nativelap.heartguard.domain.site.model.WeatherField
 import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import java.time.Clock
@@ -62,9 +65,9 @@ class TeamSiteRepositoryImpl
                         val currentSnapshot = sessionManager.getSnapshot()
                         val currentOwner = currentSnapshot.sessionIdentifier
                         val previous = readFreshCachedWeather(this, now, currentOwner)
-                        val incoming = responseWeather.copy(isStale = null).expireWeatherParts(now)
+                        val incoming = responseWeather.copy(isStale = null)
                         if (sessionManager.getSnapshot() != sessionSnapshot) {
-                            return@cache incoming
+                            return@cache incoming.toWeatherSnapshot().expireWeatherParts(now)
                         }
 
                         val selection = selectWeatherForCache(incoming, previous, latitude, longitude, now)
@@ -77,8 +80,9 @@ class TeamSiteRepositoryImpl
                                     save(
                                         selection.latitude,
                                         selection.longitude,
-                                        merged,
+                                        merged.weather,
                                         owner,
+                                        merged.fieldProvenance,
                                     )
                                 }
                             }
@@ -105,7 +109,10 @@ class TeamSiteRepositoryImpl
                     if (!isWithinWeatherCacheRadius(latitude, longitude, cached.latitude, cached.longitude)) {
                         return@cache null
                     }
-                    cached.weather.asCachedWeather().toDomain()
+                    cached
+                        .toWeatherSnapshot()
+                        .copy(weather = cached.weather.asCachedWeather())
+                        .toDomain()
                 }
             }
 
@@ -131,15 +138,21 @@ class TeamSiteRepositoryImpl
                 transaction.clear()
                 return null
             }
-            val freshWeather = cached.weather.expireWeatherParts(now)
+            val freshWeather = cached.toWeatherSnapshot().expireWeatherParts(now)
             if (!freshWeather.hasFreshWeatherPart(now)) {
                 transaction.clear()
                 return null
             }
-            if (freshWeather != cached.weather) {
-                transaction.save(cached.latitude, cached.longitude, freshWeather, owner)
+            if (freshWeather.weather != cached.weather || freshWeather.fieldProvenance != cached.fieldProvenance) {
+                transaction.save(
+                    cached.latitude,
+                    cached.longitude,
+                    freshWeather.weather,
+                    owner,
+                    freshWeather.fieldProvenance,
+                )
             }
-            return cached.copy(weather = freshWeather)
+            return cached.copy(weather = freshWeather.weather, fieldProvenance = freshWeather.fieldProvenance)
         }
 
         private suspend fun <T> cacheOperationOrNull(operation: suspend () -> T): T? =
@@ -157,7 +170,7 @@ class TeamSiteRepositoryImpl
     }
 
 internal data class WeatherCacheSelection(
-    val weather: CurrentLocationWeatherResponseDto,
+    val weather: CurrentLocationWeatherSnapshot,
     val latitude: Double,
     val longitude: Double,
 )
@@ -173,22 +186,22 @@ internal fun selectWeatherForCache(
         previous?.takeIf {
             isWithinWeatherCacheRadius(latitude, longitude, it.latitude, it.longitude)
         }
-    val previousWeather = nearby?.weather
-    val sameCoordinates = nearby?.latitude == latitude && nearby.longitude == longitude
-    val incomingTime = incoming.observedAt.toWeatherInstantOrNull()
-    val previousTime = previousWeather?.observedAt.toWeatherInstantOrNull()
-    val olderIncoming = incomingTime != null && previousTime != null && incomingTime.isBefore(previousTime)
-    val keepPrevious =
-        previousWeather?.temperature != null && previousWeather.humidity != null &&
-            (incoming.temperature == null || incoming.humidity == null || olderIncoming)
-    if (sameCoordinates) {
-        return WeatherCacheSelection(incoming.mergeFreshWeather(previousWeather, now), latitude, longitude)
+    val previousSnapshot = nearby?.toWeatherSnapshot()
+    val mergedWeather = incoming.mergeFreshWeather(previousSnapshot, now)
+    val usesIncomingMainField =
+        mergedWeather.fieldProvenance.observedAtByField.keys.any { field ->
+            field != com.nativelap.heartguard.domain.site.model.WeatherField.COLD_WAVE_WARNING &&
+                field !in mergedWeather.fieldProvenance.fieldsFromPreviousValue
+        }
+    return if (!usesIncomingMainField && nearby != null) {
+        WeatherCacheSelection(mergedWeather, nearby.latitude, nearby.longitude)
+    } else {
+        WeatherCacheSelection(mergedWeather, latitude, longitude)
     }
-    if (keepPrevious) {
-        return WeatherCacheSelection(previousWeather!!.asCachedWeather(), nearby!!.latitude, nearby.longitude)
-    }
-    return WeatherCacheSelection(incoming, latitude, longitude)
 }
+
+private fun CachedCurrentLocationWeather.toWeatherSnapshot(): CurrentLocationWeatherSnapshot =
+    CurrentLocationWeatherSnapshot(weather, fieldProvenance)
 
 private fun CurrentLocationWeatherResponseDto.asCachedWeather(): CurrentLocationWeatherResponseDto =
     copy(
@@ -218,20 +231,76 @@ internal fun CurrentLocationWeatherResponseDto.toDisplayableLiveWeather(now: Ins
     if (availability != "AVAILABLE" || isStale == true || observation.isAfter(now) || !hasMainWeatherValue()) {
         return null
     }
-    return toDomain().copy(serverReceivedAt = now.toString())
+    return toWeatherSnapshot().toDomain().copy(serverReceivedAt = now.toString())
 }
 
 internal fun resolveReturnedWeather(
     incoming: CurrentLocationWeatherResponseDto,
-    selected: CurrentLocationWeatherResponseDto?,
+    selected: CurrentLocationWeatherSnapshot?,
     now: Instant,
 ): CurrentLocationWeather {
-    val liveWeather =
-        incoming.toDisplayableLiveWeather(now)
-            ?: return (selected ?: incoming.expireWeatherParts(now)).toDomain()
-    if (selected?.availability == "CACHED" && selected.temperature != null && selected.humidity != null) {
-        return selected.toDomain()
+    val liveWeather = incoming.toDisplayableLiveWeather(now)
+    val selectedWeather = selected ?: incoming.toWeatherSnapshot().expireWeatherParts(now)
+    if (liveWeather == null) {
+        return selectedWeather.toDomain()
     }
-    val selectedWarning = selected?.toDomain()?.coldWaveWarning
-    return liveWeather.copy(coldWaveWarning = selectedWarning ?: liveWeather.coldWaveWarning)
+    val selectedDomain = selectedWeather.toDomain()
+    val provenanceByField = selectedDomain.fieldProvenance.observedAtByField.toMutableMap()
+    val previousFields = selectedDomain.fieldProvenance.fieldsFromPreviousValue.toMutableSet()
+
+    fun <T> chooseField(
+        field: WeatherField,
+        selected: T?,
+        live: T?,
+    ): T? {
+        if (selected != null) return selected
+        if (live != null) {
+            liveWeather.fieldProvenance.observedAtByField[field]?.let { timestamp ->
+                provenanceByField[field] =
+                    timestamp
+            }
+            previousFields.remove(field)
+            return live
+        }
+        return null
+    }
+
+    val temperature =
+        chooseField(WeatherField.TEMPERATURE, selectedDomain.temperature, liveWeather.temperature)
+    val humidity = chooseField(WeatherField.HUMIDITY, selectedDomain.humidity, liveWeather.humidity)
+    val apparentTemperature =
+        chooseField(
+            WeatherField.APPARENT_TEMPERATURE,
+            selectedDomain.apparentTemperature,
+            liveWeather.apparentTemperature,
+        )
+    val heatLevel = chooseField(WeatherField.HEAT_LEVEL, selectedDomain.heatLevel, liveWeather.heatLevel)
+    val skyStatus = chooseField(WeatherField.SKY_STATUS, selectedDomain.skyStatus, liveWeather.skyStatus)
+    val temperatureDelta =
+        chooseField(WeatherField.TEMPERATURE_DELTA, selectedDomain.temperatureDelta, liveWeather.temperatureDelta)
+    val selectedAvailability =
+        if (selectedDomain.temperature != null || selectedDomain.humidity != null ||
+            selectedDomain.apparentTemperature != null ||
+            selectedDomain.heatLevel != null || selectedDomain.skyStatus != null ||
+            selectedDomain.temperatureDelta != null
+        ) {
+            selectedDomain.availability
+        } else {
+            liveWeather.availability
+        }
+    return selectedDomain.copy(
+        temperature = temperature,
+        humidity = humidity,
+        apparentTemperature = apparentTemperature,
+        heatLevel = heatLevel,
+        skyStatus = skyStatus,
+        temperatureDelta = temperatureDelta,
+        availability = selectedAvailability,
+        serverReceivedAt = now.toString(),
+        fieldProvenance =
+            selectedDomain.fieldProvenance.copy(
+                observedAtByField = provenanceByField,
+                fieldsFromPreviousValue = previousFields,
+            ),
+    )
 }

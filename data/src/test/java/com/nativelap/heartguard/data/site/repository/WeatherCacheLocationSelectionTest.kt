@@ -25,7 +25,7 @@ class WeatherCacheLocationSelectionTest {
 
         assertTrue(isWithinWeatherCacheRadius(0.0, 0.0, 0.008, 0.0))
         assertEquals(0.008, selected.latitude, 0.0)
-        assertEquals(13.0, selected.weather.temperature!!, 0.0)
+        assertEquals(13.0, selected.weather.weather.temperature!!, 0.0)
         assertFalse(isWithinWeatherCacheRadius(selected.latitude, selected.longitude, -0.008, 0.0))
     }
 
@@ -40,10 +40,11 @@ class WeatherCacheLocationSelectionTest {
                 availability = "AVAILABLE",
             )
         val previous = CachedCurrentLocationWeather(0.0, 0.0, oldWeather, "session")
-        val selected = selectWeatherForCache(oldWeather.copy(humidity = null), previous, 0.008, 0.0, now)
+        val selected =
+            selectWeatherForCache(oldWeather.copy(temperature = null, humidity = null), previous, 0.008, 0.0, now)
 
         assertEquals(0.0, selected.latitude, 0.0)
-        assertEquals("CACHED", selected.weather.availability)
+        assertEquals("CACHED", selected.weather.weather.availability)
         assertFalse(isWithinWeatherCacheRadius(selected.latitude, selected.longitude, 0.016, 0.0))
     }
 }

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.nativelap.heartguard.core.session.SessionScopedDataCleaner
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherResponseDto
+import com.nativelap.heartguard.domain.site.model.WeatherFieldProvenance
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
@@ -25,6 +26,7 @@ data class CachedCurrentLocationWeather(
     val longitude: Double,
     val weather: CurrentLocationWeatherResponseDto,
     val sessionOwner: String,
+    val fieldProvenance: WeatherFieldProvenance = weather.toInitialFieldProvenance(),
 )
 
 @Singleton
@@ -39,6 +41,7 @@ class CurrentLocationWeatherCache
         private val latitudeKey = doublePreferencesKey("latitude")
         private val longitudeKey = doublePreferencesKey("longitude")
         private val sessionOwnerKey = stringPreferencesKey("session_owner")
+        private val fieldProvenanceKey = stringPreferencesKey("field_provenance")
         private val mutex = WeatherCacheLock()
 
         suspend fun <T> withCacheLock(block: suspend CacheTransaction.() -> T): T =
@@ -57,6 +60,7 @@ class CurrentLocationWeatherCache
                                     longitude = preferences[longitudeKey],
                                     sessionOwner = preferences[sessionOwnerKey],
                                     json = json,
+                                    fieldProvenancePayload = preferences[fieldProvenanceKey],
                                 )
                             } catch (_: ClassCastException) {
                                 WeatherCacheRead.Invalid
@@ -69,9 +73,11 @@ class CurrentLocationWeatherCache
                 longitude: Double,
                 weather: CurrentLocationWeatherResponseDto,
                 sessionOwner: String,
+                fieldProvenance: WeatherFieldProvenance = weather.toInitialFieldProvenance(),
             ) {
                 context.currentLocationWeatherDataStore.edit { preferences ->
                     preferences[payloadKey] = json.encodeToString(weather)
+                    preferences[fieldProvenanceKey] = json.encodeToString(fieldProvenance.toCacheDto())
                     preferences[latitudeKey] = latitude
                     preferences[longitudeKey] = longitude
                     preferences[sessionOwnerKey] = sessionOwner
@@ -93,12 +99,23 @@ class CurrentLocationWeatherCache
                     return@withCacheLock
                 }
                 val now = clock.instant()
-                val freshWeather = cached.weather.expireWeatherParts(now)
+                val freshWeather = cached.toWeatherSnapshot().expireWeatherParts(now)
                 if (!freshWeather.hasFreshWeatherPart(now)) {
                     clear()
-                } else if (freshWeather != cached.weather) {
-                    save(cached.latitude, cached.longitude, freshWeather, sessionIdentifier)
+                } else if (freshWeather.weather != cached.weather ||
+                    freshWeather.fieldProvenance != cached.fieldProvenance
+                ) {
+                    save(
+                        cached.latitude,
+                        cached.longitude,
+                        freshWeather.weather,
+                        sessionIdentifier,
+                        freshWeather.fieldProvenance,
+                    )
                 }
             }
         }
     }
+
+private fun CachedCurrentLocationWeather.toWeatherSnapshot(): CurrentLocationWeatherSnapshot =
+    CurrentLocationWeatherSnapshot(weather, fieldProvenance)
