@@ -155,7 +155,9 @@ internal fun HeartGuardHomeRoute(
             R.string.home_weather_request_failed
         }
     val locationWeatherNotice =
-        if (siteStatus.isLocationWeatherCached) {
+        if (siteStatus.weatherFieldsFromPreviousValue.isNotEmpty() && !siteStatus.isLocationWeatherCached) {
+            stringResource(R.string.home_weather_partial_cache)
+        } else if (siteStatus.isLocationWeatherCached) {
             siteStatus.weatherAgeMinutes?.let { elapsedMinutes ->
                 stringResource(R.string.home_weather_cache_age_format, elapsedMinutes)
             }

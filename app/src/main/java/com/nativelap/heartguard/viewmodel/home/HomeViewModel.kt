@@ -404,7 +404,10 @@ class HomeViewModel
                     mutableUiState.value =
                         when (overviewResult) {
                             is ApiResult.Success -> {
-                                HomeUiState.Success(overviewResult.value)
+                                val previousOverview = (currentState as? HomeUiState.Success)?.overview
+                                HomeUiState.Success(
+                                    overviewResult.value.mergeWeatherFieldsFrom(previousOverview, clock.instant()),
+                                )
                             }
 
                             is ApiResult.Failure -> {

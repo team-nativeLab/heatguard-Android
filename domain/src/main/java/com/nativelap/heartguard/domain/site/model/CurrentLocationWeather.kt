@@ -13,6 +13,7 @@ data class CurrentLocationWeather(
     val coldWaveWarning: ColdWaveWarning? = null,
     val unavailableReason: WeatherUnavailableReason? = null,
     val serverReceivedAt: String? = null,
+    val fieldProvenance: WeatherFieldProvenance = WeatherFieldProvenance(),
 )
 
 /** 서버의 원본 errorCode를 앱 내부에서 구분하되 화면에는 노출하지 않는다. */
