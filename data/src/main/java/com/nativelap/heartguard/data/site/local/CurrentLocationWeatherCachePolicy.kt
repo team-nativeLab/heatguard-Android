@@ -14,15 +14,16 @@ internal data class CurrentLocationWeatherSnapshot(
 
 internal fun CurrentLocationWeatherResponseDto.toWeatherSnapshot(
     fieldProvenance: WeatherFieldProvenance = toInitialFieldProvenance(),
-): CurrentLocationWeatherSnapshot =
-    CurrentLocationWeatherSnapshot(this, fieldProvenance)
+): CurrentLocationWeatherSnapshot = CurrentLocationWeatherSnapshot(this, fieldProvenance)
 
 internal fun CurrentLocationWeatherSnapshot.expireWeatherParts(now: Instant): CurrentLocationWeatherSnapshot {
     val originalWeather = weather
     val originalProvenance = fieldProvenance
     val freshFields = mutableMapOf<WeatherField, String>()
+
     fun fieldTime(field: WeatherField): String? =
-        originalProvenance.observedAtFor(field, originalWeather.observedAt)
+        originalProvenance
+            .observedAtFor(field, originalWeather.observedAt)
             ?.takeIf { timestamp -> timestamp.isFreshWeatherTimestamp(now) }
 
     val temperatureTime = fieldTime(WeatherField.TEMPERATURE).takeIf { originalWeather.temperature != null }
@@ -85,7 +86,9 @@ internal fun CurrentLocationWeatherSnapshot.expireWeatherParts(now: Instant): Cu
 internal fun CurrentLocationWeatherSnapshot.hasFreshWeatherPart(now: Instant): Boolean =
     expireWeatherParts(now).let { snapshot ->
         snapshot.fieldProvenance.observedAtByField.isNotEmpty() ||
-            snapshot.weather.coldWaveWarning?.fetchedAt.isFreshWeatherTimestamp(now)
+            snapshot.weather.coldWaveWarning
+                ?.fetchedAt
+                .isFreshWeatherTimestamp(now)
     }
 
 internal fun CurrentLocationWeatherResponseDto.expireWeatherParts(now: Instant): CurrentLocationWeatherResponseDto {
@@ -199,7 +202,10 @@ internal fun CurrentLocationWeatherResponseDto.mergeFreshWeather(
         previousWarning != null &&
             (
                 incomingWarning == null || incomingWarning.availability !in setOf("AVAILABLE", "CACHED") ||
-                    (incomingWarningTime != null && previousWarningTime != null && incomingWarningTime.isBefore(previousWarningTime))
+                    (
+                        incomingWarningTime != null && previousWarningTime != null &&
+                            incomingWarningTime.isBefore(previousWarningTime)
+                    )
             )
     val selectedWarning =
         if (keepPreviousWarning) {

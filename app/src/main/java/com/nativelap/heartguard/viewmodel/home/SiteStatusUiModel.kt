@@ -76,24 +76,30 @@ fun HomeUiState.toSiteStatusUiModel(
             weather.availability == WeatherAvailability.AVAILABLE ||
                 weather.availability == WeatherAvailability.CACHED
         } ?: return siteStatus
-    val isTemperatureDisplayable = availableLocationWeather.temperature.isNotNullAnd {
-        availableLocationWeather.isFieldDisplayable(WeatherField.TEMPERATURE, now)
-    }
-    val isHumidityDisplayable = availableLocationWeather.humidity.isNotNullAnd {
-        availableLocationWeather.isFieldDisplayable(WeatherField.HUMIDITY, now)
-    }
-    val isApparentTemperatureDisplayable = availableLocationWeather.apparentTemperature.isNotNullAnd {
-        availableLocationWeather.isFieldDisplayable(WeatherField.APPARENT_TEMPERATURE, now)
-    }
-    val isHeatLevelDisplayable = availableLocationWeather.heatLevel.isNotNullAnd {
-        availableLocationWeather.isFieldDisplayable(WeatherField.HEAT_LEVEL, now)
-    }
-    val isSkyStatusDisplayable = availableLocationWeather.skyStatus.isNotNullAnd {
-        availableLocationWeather.isFieldDisplayable(WeatherField.SKY_STATUS, now)
-    }
-    val isTemperatureDeltaDisplayable = availableLocationWeather.temperatureDelta.isNotNullAnd {
-        availableLocationWeather.isFieldDisplayable(WeatherField.TEMPERATURE_DELTA, now)
-    }
+    val isTemperatureDisplayable =
+        availableLocationWeather.temperature.isNotNullAnd {
+            availableLocationWeather.isFieldDisplayable(WeatherField.TEMPERATURE, now)
+        }
+    val isHumidityDisplayable =
+        availableLocationWeather.humidity.isNotNullAnd {
+            availableLocationWeather.isFieldDisplayable(WeatherField.HUMIDITY, now)
+        }
+    val isApparentTemperatureDisplayable =
+        availableLocationWeather.apparentTemperature.isNotNullAnd {
+            availableLocationWeather.isFieldDisplayable(WeatherField.APPARENT_TEMPERATURE, now)
+        }
+    val isHeatLevelDisplayable =
+        availableLocationWeather.heatLevel.isNotNullAnd {
+            availableLocationWeather.isFieldDisplayable(WeatherField.HEAT_LEVEL, now)
+        }
+    val isSkyStatusDisplayable =
+        availableLocationWeather.skyStatus.isNotNullAnd {
+            availableLocationWeather.isFieldDisplayable(WeatherField.SKY_STATUS, now)
+        }
+    val isTemperatureDeltaDisplayable =
+        availableLocationWeather.temperatureDelta.isNotNullAnd {
+            availableLocationWeather.isFieldDisplayable(WeatherField.TEMPERATURE_DELTA, now)
+        }
     val isMainWeatherDisplayable =
         isTemperatureDisplayable || isHumidityDisplayable || isApparentTemperatureDisplayable ||
             isHeatLevelDisplayable || isSkyStatusDisplayable || isTemperatureDeltaDisplayable
@@ -201,7 +207,8 @@ private fun TeamSiteOverview.toSiteStatusUiModel(now: Instant): SiteStatusUiMode
             weatherFieldProvenance.observedAtFor(WeatherField.HUMIDITY, observedAt).isFreshWeatherTimestamp(now)
     val apparentTemperatureIsFresh =
         apparentTemperature != null &&
-            weatherFieldProvenance.observedAtFor(WeatherField.APPARENT_TEMPERATURE, observedAt)
+            weatherFieldProvenance
+                .observedAtFor(WeatherField.APPARENT_TEMPERATURE, observedAt)
                 .isFreshWeatherTimestamp(now)
     val heatLevelIsFresh =
         heatLevel != null &&
@@ -211,7 +218,8 @@ private fun TeamSiteOverview.toSiteStatusUiModel(now: Instant): SiteStatusUiMode
             weatherFieldProvenance.observedAtFor(WeatherField.SKY_STATUS, observedAt).isFreshWeatherTimestamp(now)
     val temperatureDeltaIsFresh =
         temperatureDelta != null &&
-            weatherFieldProvenance.observedAtFor(WeatherField.TEMPERATURE_DELTA, observedAt)
+            weatherFieldProvenance
+                .observedAtFor(WeatherField.TEMPERATURE_DELTA, observedAt)
                 .isFreshWeatherTimestamp(now)
     val freshColdWaveWarning = coldWaveWarning?.takeIf { warning -> warning.fetchedAt.isFreshWeatherTimestamp(now) }
     return SiteStatusUiModel(
@@ -256,7 +264,10 @@ private fun TeamSiteOverview.toSiteStatusUiModel(now: Instant): SiteStatusUiMode
 
 private inline fun <T> T?.isNotNullAnd(predicate: () -> Boolean): Boolean = this != null && predicate()
 
-private fun CurrentLocationWeather.isFieldDisplayable(field: WeatherField, now: Instant): Boolean {
+private fun CurrentLocationWeather.isFieldDisplayable(
+    field: WeatherField,
+    now: Instant,
+): Boolean {
     val fieldTimestamp = fieldProvenance.observedAtFor(field, observedAt)
     val observation = fieldTimestamp.toWeatherInstantOrNull() ?: return false
     if (observation.isAfter(now)) return false
@@ -267,8 +278,10 @@ private fun CurrentLocationWeather.isFieldDisplayable(field: WeatherField, now: 
         (availability == WeatherAvailability.AVAILABLE && serverReceivedAt.isFreshWeatherTimestamp(now))
 }
 
-private fun CurrentLocationWeather.isFieldFresh(field: WeatherField, now: Instant): Boolean =
-    fieldProvenance.observedAtFor(field, observedAt).isFreshWeatherTimestamp(now)
+private fun CurrentLocationWeather.isFieldFresh(
+    field: WeatherField,
+    now: Instant,
+): Boolean = fieldProvenance.observedAtFor(field, observedAt).isFreshWeatherTimestamp(now)
 
 internal fun TeamSiteOverview.mergeWeatherFieldsFrom(
     previous: TeamSiteOverview?,
@@ -302,7 +315,8 @@ internal fun TeamSiteOverview.mergeWeatherFieldsFrom(
         selectField(WeatherField.APPARENT_TEMPERATURE, apparentTemperature, previous.apparentTemperature)
     val mergedHeatLevel = selectField(WeatherField.HEAT_LEVEL, heatLevel, previous.heatLevel)
     val mergedSkyStatus = selectField(WeatherField.SKY_STATUS, skyStatus, previous.skyStatus)
-    val mergedTemperatureDelta = selectField(WeatherField.TEMPERATURE_DELTA, temperatureDelta, previous.temperatureDelta)
+    val mergedTemperatureDelta =
+        selectField(WeatherField.TEMPERATURE_DELTA, temperatureDelta, previous.temperatureDelta)
     val incomingWarningTime = coldWaveWarning?.fetchedAt?.takeIf { timestamp -> timestamp.isFreshWeatherTimestamp(now) }
     val previousWarningTime =
         previous.coldWaveWarning?.fetchedAt?.takeIf { timestamp -> timestamp.isFreshWeatherTimestamp(now) }

@@ -7,8 +7,8 @@ import com.nativelap.heartguard.core.session.SessionManager
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherRequestDto
 import com.nativelap.heartguard.data.site.dto.CurrentLocationWeatherResponseDto
 import com.nativelap.heartguard.data.site.local.CachedCurrentLocationWeather
-import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherSnapshot
 import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherCache
+import com.nativelap.heartguard.data.site.local.CurrentLocationWeatherSnapshot
 import com.nativelap.heartguard.data.site.local.expireWeatherParts
 import com.nativelap.heartguard.data.site.local.hasFreshWeatherPart
 import com.nativelap.heartguard.data.site.local.hasMainWeatherValue
@@ -109,7 +109,8 @@ class TeamSiteRepositoryImpl
                     if (!isWithinWeatherCacheRadius(latitude, longitude, cached.latitude, cached.longitude)) {
                         return@cache null
                     }
-                    cached.toWeatherSnapshot()
+                    cached
+                        .toWeatherSnapshot()
                         .copy(weather = cached.weather.asCachedWeather())
                         .toDomain()
                 }
@@ -247,10 +248,17 @@ internal fun resolveReturnedWeather(
     val provenanceByField = selectedDomain.fieldProvenance.observedAtByField.toMutableMap()
     val previousFields = selectedDomain.fieldProvenance.fieldsFromPreviousValue.toMutableSet()
 
-    fun <T> chooseField(field: WeatherField, selected: T?, live: T?): T? {
+    fun <T> chooseField(
+        field: WeatherField,
+        selected: T?,
+        live: T?,
+    ): T? {
         if (selected != null) return selected
         if (live != null) {
-            liveWeather.fieldProvenance.observedAtByField[field]?.let { timestamp -> provenanceByField[field] = timestamp }
+            liveWeather.fieldProvenance.observedAtByField[field]?.let { timestamp ->
+                provenanceByField[field] =
+                    timestamp
+            }
             previousFields.remove(field)
             return live
         }
@@ -261,14 +269,20 @@ internal fun resolveReturnedWeather(
         chooseField(WeatherField.TEMPERATURE, selectedDomain.temperature, liveWeather.temperature)
     val humidity = chooseField(WeatherField.HUMIDITY, selectedDomain.humidity, liveWeather.humidity)
     val apparentTemperature =
-        chooseField(WeatherField.APPARENT_TEMPERATURE, selectedDomain.apparentTemperature, liveWeather.apparentTemperature)
+        chooseField(
+            WeatherField.APPARENT_TEMPERATURE,
+            selectedDomain.apparentTemperature,
+            liveWeather.apparentTemperature,
+        )
     val heatLevel = chooseField(WeatherField.HEAT_LEVEL, selectedDomain.heatLevel, liveWeather.heatLevel)
     val skyStatus = chooseField(WeatherField.SKY_STATUS, selectedDomain.skyStatus, liveWeather.skyStatus)
     val temperatureDelta =
         chooseField(WeatherField.TEMPERATURE_DELTA, selectedDomain.temperatureDelta, liveWeather.temperatureDelta)
     val selectedAvailability =
-        if (selectedDomain.temperature != null || selectedDomain.humidity != null || selectedDomain.apparentTemperature != null ||
-            selectedDomain.heatLevel != null || selectedDomain.skyStatus != null || selectedDomain.temperatureDelta != null
+        if (selectedDomain.temperature != null || selectedDomain.humidity != null ||
+            selectedDomain.apparentTemperature != null ||
+            selectedDomain.heatLevel != null || selectedDomain.skyStatus != null ||
+            selectedDomain.temperatureDelta != null
         ) {
             selectedDomain.availability
         } else {

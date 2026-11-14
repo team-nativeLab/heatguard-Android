@@ -26,7 +26,9 @@ internal fun readWeatherCacheFields(
     json: Json,
     fieldProvenancePayload: String? = null,
 ): WeatherCacheRead {
-    if (payload == null && latitude == null && longitude == null && sessionOwner == null && fieldProvenancePayload == null) {
+    if (payload == null && latitude == null && longitude == null && sessionOwner == null &&
+        fieldProvenancePayload == null
+    ) {
         return WeatherCacheRead.Empty
     }
     if (payload.isNullOrBlank() ||
@@ -103,11 +105,12 @@ internal fun WeatherFieldProvenance.toCacheDto(): WeatherFieldProvenanceDto =
 private fun WeatherFieldProvenanceDto.toDomain(): WeatherFieldProvenance =
     WeatherFieldProvenance(
         observedAtByField =
-            observedAtByField.mapNotNull { (fieldName, observedAt) ->
-                WeatherField.entries
-                    .firstOrNull { field -> field.name == fieldName }
-                    ?.let { field -> field to observedAt }
-            }.toMap(),
+            observedAtByField
+                .mapNotNull { (fieldName, observedAt) ->
+                    WeatherField.entries
+                        .firstOrNull { field -> field.name == fieldName }
+                        ?.let { field -> field to observedAt }
+                }.toMap(),
         fieldsFromPreviousValue =
             fieldsFromPreviousValue.mapNotNullTo(mutableSetOf()) { fieldName ->
                 WeatherField.entries.firstOrNull { field -> field.name == fieldName }

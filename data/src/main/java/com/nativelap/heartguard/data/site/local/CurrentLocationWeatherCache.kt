@@ -102,7 +102,9 @@ class CurrentLocationWeatherCache
                 val freshWeather = cached.toWeatherSnapshot().expireWeatherParts(now)
                 if (!freshWeather.hasFreshWeatherPart(now)) {
                     clear()
-                } else if (freshWeather.weather != cached.weather || freshWeather.fieldProvenance != cached.fieldProvenance) {
+                } else if (freshWeather.weather != cached.weather ||
+                    freshWeather.fieldProvenance != cached.fieldProvenance
+                ) {
                     save(
                         cached.latitude,
                         cached.longitude,

@@ -81,7 +81,10 @@ class SiteStatusWeatherFreshnessTest {
         assertEquals("새 팀", merged.teamName)
         assertEquals(21.0, merged.currentTemperature!!, 0.0)
         assertEquals(40.0, merged.humidity!!, 0.0)
-        assertEquals(now.minusSeconds(3_599).toString(), merged.weatherFieldProvenance.observedAtByField[WeatherField.HUMIDITY])
+        assertEquals(
+            now.minusSeconds(3_599).toString(),
+            merged.weatherFieldProvenance.observedAtByField[WeatherField.HUMIDITY],
+        )
         assertEquals(setOf(WeatherField.HUMIDITY), status.weatherFieldsFromPreviousValue)
         assertEquals("40", status.humidity)
     }

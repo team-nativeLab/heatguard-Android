@@ -8,8 +8,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -98,7 +98,10 @@ class WeatherCacheSafetyTest {
 
     @Test
     fun legacyWeatherCacheUsesItsObservedAtForEachPopulatedField() {
-        val observedAt = java.time.Instant.parse("2026-11-11T00:59:00Z").toString()
+        val observedAt =
+            java.time.Instant
+                .parse("2026-11-11T00:59:00Z")
+                .toString()
         val payload =
             Json.encodeToString(
                 CurrentLocationWeatherResponseDto(
@@ -218,7 +221,9 @@ class WeatherCacheSafetyTest {
         assertEquals(previousObservation, merged.fieldProvenance.observedAtByField[WeatherField.APPARENT_TEMPERATURE])
         assertTrue(WeatherField.APPARENT_TEMPERATURE in merged.fieldProvenance.fieldsFromPreviousValue)
         assertFalse(
-            merged.expireWeatherParts(now.plusSeconds(3_000)).fieldProvenance
+            merged
+                .expireWeatherParts(now.plusSeconds(3_000))
+                .fieldProvenance
                 .fieldsFromPreviousValue
                 .contains(WeatherField.APPARENT_TEMPERATURE),
         )

@@ -6,8 +6,8 @@ import com.nativelap.heartguard.data.site.local.CachedCurrentLocationWeather
 import com.nativelap.heartguard.data.site.local.expireWeatherParts
 import com.nativelap.heartguard.domain.site.model.ColdWaveLevel
 import com.nativelap.heartguard.domain.site.model.SkyStatus
-import com.nativelap.heartguard.domain.site.model.WeatherField
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
+import com.nativelap.heartguard.domain.site.model.WeatherField
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

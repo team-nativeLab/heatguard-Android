@@ -40,7 +40,8 @@ class WeatherCacheLocationSelectionTest {
                 availability = "AVAILABLE",
             )
         val previous = CachedCurrentLocationWeather(0.0, 0.0, oldWeather, "session")
-        val selected = selectWeatherForCache(oldWeather.copy(temperature = null, humidity = null), previous, 0.008, 0.0, now)
+        val selected =
+            selectWeatherForCache(oldWeather.copy(temperature = null, humidity = null), previous, 0.008, 0.0, now)
 
         assertEquals(0.0, selected.latitude, 0.0)
         assertEquals("CACHED", selected.weather.weather.availability)
