@@ -52,8 +52,8 @@ object NetworkModule {
     ): OkHttpClient =
         authenticatedApiClient
             .newBuilder()
-            .readTimeout(60, TimeUnit.SECONDS)
-            .callTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(WEATHER_API_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(WEATHER_API_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
 
     @Provides
@@ -75,4 +75,5 @@ object NetworkModule {
     private const val API_READ_TIMEOUT_SECONDS = 10L
     private const val API_WRITE_TIMEOUT_SECONDS = 10L
     private const val API_CALL_TIMEOUT_SECONDS = 20L
+    private const val WEATHER_API_TIMEOUT_SECONDS = 20L
 }
