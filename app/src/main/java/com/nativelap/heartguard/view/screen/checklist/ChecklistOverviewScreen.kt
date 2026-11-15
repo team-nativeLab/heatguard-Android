@@ -295,22 +295,11 @@ internal fun ChecklistOverviewScreen(
                         Column(
                             modifier = Modifier.padding(top = CHECKLIST_OVERVIEW_HEADING_TOP_PADDING),
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.checklist_overview_rounds_heading),
-                                    color = MaterialTheme.extraColors.strongText,
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                )
-                                Text(
-                                    text = stringResource(R.string.checklist_overview_interval),
-                                    color = MaterialTheme.extraColors.strongText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                            }
+                            Text(
+                                text = stringResource(R.string.checklist_overview_rounds_heading),
+                                color = MaterialTheme.extraColors.strongText,
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            )
                             Spacer(modifier = Modifier.height(CHECKLIST_OVERVIEW_HEADING_ROW_GAP))
                         }
                     }
