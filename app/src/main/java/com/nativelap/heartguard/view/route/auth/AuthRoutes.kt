@@ -14,11 +14,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.core.session.PendingAppLink
 import com.nativelap.heartguard.view.screen.auth.AuthLoginScreen
+import com.nativelap.heartguard.view.screen.auth.AuthPasswordResetScreen
 import com.nativelap.heartguard.view.screen.auth.AuthPhoneNumberScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreen
 import com.nativelap.heartguard.view.screen.auth.AuthSignUpScreenEvent
 import com.nativelap.heartguard.viewmodel.auth.AppAccountSignUpFailure
 import com.nativelap.heartguard.viewmodel.auth.AppAccountSignUpViewModel
+import com.nativelap.heartguard.viewmodel.auth.PasswordResetViewModel
 import com.nativelap.heartguard.viewmodel.auth.TeamLoginFailure
 import com.nativelap.heartguard.viewmodel.auth.TeamLoginViewModel
 import com.nativelap.heartguard.viewmodel.site.ClaimAppSiteLinkFailure
@@ -29,6 +31,9 @@ import java.util.Locale
 @Composable
 internal fun HeartGuardLoginRoute(
     onNavigateToSignUp: () -> Unit = {},
+    onNavigateToPasswordReset: () -> Unit = {},
+    isPasswordResetCompleted: Boolean = false,
+    onPasswordResetSuccessShown: () -> Unit = {},
     viewModel: TeamLoginViewModel = hiltViewModel(),
 ) {
     var email by rememberSaveable {
@@ -50,15 +55,23 @@ internal fun HeartGuardLoginRoute(
     AuthLoginScreen(
         email = email,
         password = password,
-        onEmailChange = { email = it },
-        onPasswordChange = { password = it },
+        onEmailChange = {
+            email = it
+            onPasswordResetSuccessShown()
+        },
+        onPasswordChange = {
+            password = it
+            onPasswordResetSuccessShown()
+        },
         onLoginClick = {
+            onPasswordResetSuccessShown()
             viewModel.login(
                 email = email.trim(),
                 password = password,
             )
         },
         statusMessage = statusMessage,
+        successMessage = if (isPasswordResetCompleted) stringResource(R.string.auth_password_reset_done) else null,
         isEmailError = uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS,
         isPasswordError = uiState.failure == TeamLoginFailure.INVALID_CREDENTIALS,
         passwordErrorMessage =
@@ -68,7 +81,61 @@ internal fun HeartGuardLoginRoute(
                 null
             },
         isSubmitting = uiState.isSubmitting,
-        onSignUpClick = onNavigateToSignUp,
+        onSignUpClick = {
+            onPasswordResetSuccessShown()
+            onNavigateToSignUp()
+        },
+        onForgotPasswordClick = onNavigateToPasswordReset,
+    )
+}
+
+@Composable
+internal fun HeartGuardPasswordResetRoute(
+    onBack: () -> Unit,
+    onCompleted: () -> Unit,
+    viewModel: PasswordResetViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    BackHandler {
+        if (!uiState.isLoading) {
+            if (uiState.step > 0) {
+                viewModel.goBack()
+            } else {
+                viewModel.cancelAndClear()
+                onBack()
+            }
+        }
+    }
+    LaunchedEffect(uiState.completed) {
+        if (uiState.completed) {
+            viewModel.cancelAndClear()
+            onCompleted()
+        }
+    }
+    AuthPasswordResetScreen(
+        step = uiState.step,
+        email = uiState.email,
+        code = uiState.code,
+        isLoading = uiState.isLoading,
+        failure = uiState.failure,
+        resendSeconds = uiState.resendSeconds,
+        codeRemainingSeconds = uiState.codeRemainingSeconds,
+        resetTokenRemainingSeconds = uiState.resetTokenRemainingSeconds,
+        onBackClick = {
+            if (!uiState.isLoading) {
+                if (uiState.step > 0) {
+                    viewModel.goBack()
+                } else {
+                    viewModel.cancelAndClear()
+                    onBack()
+                }
+            }
+        },
+        onEmailChange = viewModel::setEmail,
+        onCodeChange = viewModel::setCode,
+        onRequestCode = viewModel::requestEmailCode,
+        onVerifyCode = viewModel::verifyEmailCode,
+        onSubmitPassword = viewModel::submitPassword,
     )
 }
 

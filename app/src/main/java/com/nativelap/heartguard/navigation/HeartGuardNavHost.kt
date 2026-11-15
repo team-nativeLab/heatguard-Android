@@ -31,6 +31,7 @@ import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawConfirmRout
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawDoneRoute
 import com.nativelap.heartguard.view.route.account.HeartGuardWithdrawNoticeRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardLoginRoute
+import com.nativelap.heartguard.view.route.auth.HeartGuardPasswordResetRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardPhoneNumberRoute
 import com.nativelap.heartguard.view.route.auth.HeartGuardSignUpRoute
 import com.nativelap.heartguard.view.route.checklist.ChecklistOverviewRoute
@@ -177,6 +178,7 @@ private fun HeartGuardDestination?.isRecordFlowDestination(): Boolean =
 private fun HeartGuardAuthNavDisplay(onStartupContentReady: () -> Unit) {
     val backStack = rememberNavBackStack(HeartGuardDestination.Login)
     var isBackStackReady by remember { mutableStateOf(false) }
+    var showPasswordResetSuccess by remember { mutableStateOf(false) }
 
     LaunchedEffect(backStack) {
         if (
@@ -225,21 +227,41 @@ private fun HeartGuardAuthNavDisplay(onStartupContentReady: () -> Unit) {
             entryProvider {
                 entry<HeartGuardDestination.Login> {
                     HeartGuardLoginRoute(
+                        isPasswordResetCompleted = showPasswordResetSuccess,
+                        onPasswordResetSuccessShown = { showPasswordResetSuccess = false },
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
                         },
+                        onNavigateToPasswordReset = { backStack.add(HeartGuardDestination.PasswordReset) },
                     )
                 }
                 entry<HeartGuardDestination.AppAccountLogin> {
                     HeartGuardLoginRoute(
+                        isPasswordResetCompleted = showPasswordResetSuccess,
+                        onPasswordResetSuccessShown = { showPasswordResetSuccess = false },
                         onNavigateToSignUp = {
                             backStack.add(HeartGuardDestination.SignUpForm)
+                        },
+                        onNavigateToPasswordReset = { backStack.add(HeartGuardDestination.PasswordReset) },
+                    )
+                }
+                entry<HeartGuardDestination.PasswordReset> {
+                    HeartGuardPasswordResetRoute(
+                        onBack = { backStack.removeLastOrNull() },
+                        onCompleted = {
+                            showPasswordResetSuccess = true
+                            backStack.clear()
+                            backStack.add(HeartGuardDestination.Login)
                         },
                     )
                 }
                 entry<HeartGuardDestination.SignUp> {
                     // 이전 버전에서 저장된 가입 NavKey가 복원돼도 가입 화면은 다시 노출하지 않는다.
-                    HeartGuardLoginRoute()
+                    HeartGuardLoginRoute(
+                        onNavigateToPasswordReset = {
+                            backStack.add(HeartGuardDestination.PasswordReset)
+                        },
+                    )
                 }
                 entry<HeartGuardDestination.SignUpForm> {
                     HeartGuardSignUpRoute(
