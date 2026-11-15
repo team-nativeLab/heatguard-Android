@@ -12,6 +12,9 @@ internal sealed interface HeartGuardDestination : NavKey {
     @Serializable
     data object AppAccountLogin : HeartGuardDestination
 
+    @Serializable
+    data object PasswordReset : HeartGuardDestination
+
     // Navigation 3가 이전 버전의 저장된 back stack을 복원할 때 사용할 호환 키다.
     @Serializable
     data object SignUp : HeartGuardDestination

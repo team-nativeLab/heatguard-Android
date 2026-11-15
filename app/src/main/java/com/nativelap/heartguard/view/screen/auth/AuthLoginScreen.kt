@@ -78,8 +78,10 @@ fun AuthLoginScreen(
     isPasswordError: Boolean = false,
     passwordErrorMessage: String? = null,
     statusMessage: String? = null,
+    successMessage: String? = null,
     isSubmitting: Boolean = false,
     onSignUpClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
     titleResource: Int = R.string.auth_login_title,
     descriptionResource: Int = R.string.auth_login_description,
 ) {
@@ -236,6 +238,20 @@ fun AuthLoginScreen(
                             },
                             style = AuthTextFieldStyle.SoftFilled,
                         )
+
+                        TextButton(onClick = onForgotPasswordClick, modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.auth_password_reset_forgot),
+                                    color = MaterialTheme.extraColors.authPrimary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -264,6 +280,15 @@ fun AuthLoginScreen(
                         style = MaterialTheme.typography.bodySmall,
                     )
 
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                }
+                if (successMessage != null) {
+                    Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
+                    Text(
+                        text = successMessage,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     Spacer(modifier = Modifier.height(HeartGuardSpacing.Compact))
                 }
 

@@ -257,3 +257,7 @@ Release 빌드도 `:data:validateReleaseServerConfiguration` 단계에서 기본
 
 ## 라이선스
 라이선스 파일이 저장소에 없어 확인 필요합니다.
+
+## 비밀번호 재설정
+
+로그인 화면에서 이메일 코드 요청, 6자리 코드 확인, 새 비밀번호 설정 순서로 재설정할 수 있습니다. API 계약은 사용자 제공 명세(2026-11-15)에 따라 `POST /api/v1/auth/password-reset/email-codes`, `/email-codes/verify`, `/api/v1/auth/password-reset`에 연결합니다. 재설정 전용 서비스는 익명 호출(`ApiAuthentication.NONE`)이며 세션 또는 현장 헤더를 사용하지 않습니다. 코드는 10분, 재발송 간격은 60초이며 성공 후 앱은 자동 로그인하지 않고 로그인 화면으로 돌아갑니다. 서버 배포 및 실서비스 동작은 확인하지 않았습니다.
