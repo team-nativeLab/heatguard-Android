@@ -49,6 +49,8 @@ class AndroidCurrentLocationProvider
                 currentLocation.toCurrentCoordinates()
             } catch (exception: CancellationException) {
                 throw exception
+            } catch (_: SecurityException) {
+                null
             } catch (_: Exception) {
                 null
             } finally {
@@ -59,8 +61,17 @@ class AndroidCurrentLocationProvider
         private suspend fun awaitCurrentLocation(
             fusedLocationProviderClient: FusedLocationProviderClient,
             cancellationTokenSource: CancellationTokenSource,
-        ): Location? =
-            suspendCancellableCoroutine { continuation ->
+        ): Location? {
+            if (
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return null
+            }
+
+            return suspendCancellableCoroutine { continuation ->
                 continuation.invokeOnCancellation {
                     cancellationTokenSource.cancel()
                 }
@@ -96,6 +107,7 @@ class AndroidCurrentLocationProvider
                     }
                 }
             }
+        }
 
         private fun Location?.toCurrentCoordinates(): CurrentCoordinates? =
             this
