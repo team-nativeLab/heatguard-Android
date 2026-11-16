@@ -155,7 +155,9 @@ internal fun HeartGuardHomeRoute(
             R.string.home_weather_request_failed
         }
     val locationWeatherNotice =
-        if (siteStatus.weatherFieldsFromPreviousValue.isNotEmpty() && !siteStatus.isLocationWeatherCached) {
+        if (siteStatus.isLastLocationWeather) {
+            stringResource(R.string.home_last_location_weather_reference)
+        } else if (siteStatus.weatherFieldsFromPreviousValue.isNotEmpty() && !siteStatus.isLocationWeatherCached) {
             stringResource(R.string.home_weather_partial_cache)
         } else if (siteStatus.isLocationWeatherCached) {
             siteStatus.weatherAgeMinutes?.let { elapsedMinutes ->
@@ -252,6 +254,14 @@ internal fun HeartGuardHomeRoute(
         val riskBadgeType = siteStatus.toHomeRiskBadgeType()
         HomeScreen(
             currentTemperature = homeTemperatureText(siteStatus.temperature),
+            weatherStatusTitle =
+                stringResource(
+                    if (siteStatus.isLastLocationWeather) {
+                        R.string.home_last_location_weather_title
+                    } else {
+                        R.string.home_weather_status
+                    },
+                ),
             feelsLikeTemperature = temperatureValueText(siteStatus.apparentTemperature),
             humidity = humidityValueText(siteStatus.humidity),
             temperatureDelta = temperatureValueText(siteStatus.temperatureDelta),

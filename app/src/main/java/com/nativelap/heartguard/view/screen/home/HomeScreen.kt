@@ -78,6 +78,7 @@ fun HomeScreen(
     weatherRetryLabel: String = "",
     isRefreshingWeather: Boolean = false,
     onRefreshWeather: (() -> Unit)? = null,
+    weatherStatusTitle: String? = null,
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -146,7 +147,7 @@ fun HomeScreen(
                                 ),
                             weatherPainter = painterResource(weatherImageRes),
                             weatherContentDescription = null,
-                            statusTitle = stringResource(R.string.home_weather_status),
+                            statusTitle = weatherStatusTitle ?: stringResource(R.string.home_weather_status),
                             currentTemperature = currentTemperature,
                             feelsLikeTemperature = feelsLikeTemperature,
                             feelsLikeTemperatureLabel = stringResource(R.string.home_feels_like),

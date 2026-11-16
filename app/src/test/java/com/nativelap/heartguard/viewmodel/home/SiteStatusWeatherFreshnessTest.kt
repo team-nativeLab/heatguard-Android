@@ -137,6 +137,105 @@ class SiteStatusWeatherFreshnessTest {
     }
 
     @Test
+    fun lastLocationWeatherIsDisplayedAsReferenceWithoutChangingRecordDefaults() {
+        val now = Instant.parse("2026-11-11T01:00:00Z")
+        val overview =
+            emptyOverview().copy(
+                currentTemperature = 18.0,
+                humidity = 41.0,
+                observedAt = now.minusSeconds(60).toString(),
+            )
+        val lastLocationWeather =
+            CurrentLocationWeather(
+                temperature = 12.0,
+                humidity = 42.0,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = now.minusSeconds(300).toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.CACHED,
+            )
+
+        val status =
+            HomeUiState.Success(overview).toSiteStatusUiModel(
+                now = now,
+                lastLocationWeather = lastLocationWeather,
+            )
+
+        assertEquals("12", status.temperature)
+        assertEquals("42", status.humidity)
+        assertTrue(status.isLastLocationWeather)
+        assertEquals(18.0, status.recordTemperature!!, 0.0)
+        assertEquals(41.0, status.recordHumidity!!, 0.0)
+    }
+
+    @Test
+    fun lastLocationWeatherExpiresAtSixtyMinutesAndPermissionFallbackRemainsUnchanged() {
+        val observedAt = Instant.parse("2026-11-11T00:00:00Z")
+        val overview =
+            emptyOverview().copy(
+                currentTemperature = 18.0,
+                observedAt = observedAt.plusSeconds(3_600).toString(),
+            )
+        val lastLocationWeather =
+            CurrentLocationWeather(
+                temperature = 12.0,
+                humidity = 42.0,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = observedAt.toString(),
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.CACHED,
+            )
+
+        val expired =
+            HomeUiState.Success(overview).toSiteStatusUiModel(
+                now = observedAt.plusSeconds(3_600),
+                lastLocationWeather = lastLocationWeather,
+            )
+        val permissionDeniedFallback =
+            HomeUiState.Success(overview).toSiteStatusUiModel(
+                now = observedAt.plusSeconds(3_660),
+            )
+
+        assertEquals("18", expired.temperature)
+        assertFalse(expired.isLastLocationWeather)
+        assertTrue(permissionDeniedFallback.temperature == "18")
+        assertFalse(permissionDeniedFallback.isLastLocationWeather)
+    }
+
+    @Test
+    fun lastLocationWeatherIsSelectedOnlyAfterLocationFailureWithoutPermissionDenial() {
+        val lastWeather =
+            CurrentLocationWeather(
+                temperature = 12.0,
+                humidity = 42.0,
+                apparentTemperature = null,
+                heatLevel = null,
+                observedAt = "2026-11-11T00:55:00Z",
+                skyStatus = null,
+                temperatureDelta = null,
+                availability = WeatherAvailability.CACHED,
+            )
+
+        assertEquals(
+            lastWeather,
+            selectLastWeatherForDisplay(LocationWeatherStatus.LocationUnavailable, null, lastWeather),
+        )
+        assertNull(selectLastWeatherForDisplay(LocationWeatherStatus.PermissionDenied, null, lastWeather))
+        assertNull(selectLastWeatherForDisplay(LocationWeatherStatus.CheckingLocation, null, lastWeather))
+        assertNull(
+            selectLastWeatherForDisplay(
+                LocationWeatherStatus.LocationUnavailable,
+                lastWeather.copy(availability = WeatherAvailability.AVAILABLE),
+                lastWeather,
+            ),
+        )
+    }
+
+    @Test
     fun expiredMainWeatherShowsFailureStateWhileFreshColdWaveRemainsAvailable() {
         val now = Instant.parse("2026-11-11T01:00:00Z")
         val homeState = HomeUiState.Success(emptyOverview())
