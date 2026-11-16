@@ -20,6 +20,7 @@ import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
 import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import com.nativelap.heartguard.domain.site.usecase.GetCachedCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetCurrentLocationWeatherUseCase
+import com.nativelap.heartguard.domain.site.usecase.GetLastCachedCurrentLocationWeatherUseCase
 import com.nativelap.heartguard.domain.site.usecase.GetTeamSiteOverviewUseCase
 import com.nativelap.heartguard.domain.site.usecase.PruneExpiredCurrentLocationWeatherCacheUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,6 +60,7 @@ class HomeViewModel
         private val currentLocationProvider: CurrentLocationProvider,
         private val getCurrentLocationWeatherUseCase: GetCurrentLocationWeatherUseCase,
         private val getCachedCurrentLocationWeatherUseCase: GetCachedCurrentLocationWeatherUseCase,
+        private val getLastCachedCurrentLocationWeatherUseCase: GetLastCachedCurrentLocationWeatherUseCase,
         private val pruneExpiredCurrentLocationWeatherCacheUseCase: PruneExpiredCurrentLocationWeatherCacheUseCase,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -68,6 +70,7 @@ class HomeViewModel
         private val todayRecordTimes = MutableStateFlow<List<LocalTime>>(emptyList())
 
         private val currentLocationWeather = MutableStateFlow<CurrentLocationWeather?>(null)
+        private val lastLocationWeather = MutableStateFlow<CurrentLocationWeather?>(null)
         private var currentWeatherCoordinates: CurrentCoordinates? = null
         private var currentWeatherGeneration: Long? = null
         private val mutableLocationWeatherStatus =
@@ -76,9 +79,9 @@ class HomeViewModel
 
         @OptIn(ExperimentalCoroutinesApi::class)
         private val weatherFreshnessTime =
-            combine(uiState, currentLocationWeather) { homeUiState, weather ->
-                homeUiState to weather
-            }.transformLatest { (homeUiState, weather) ->
+            combine(uiState, currentLocationWeather, lastLocationWeather) { homeUiState, weather, lastWeather ->
+                Triple(homeUiState, weather, lastWeather)
+            }.transformLatest { (homeUiState, weather, lastWeather) ->
                 while (true) {
                     val now = clock.instant()
                     emit(now)
@@ -89,15 +92,23 @@ class HomeViewModel
                     } catch (exception: Exception) {
                         Log.w(TAG, "Unable to prune expired weather cache", exception)
                     }
-                    val nextRefresh = nextWeatherRefreshAt(homeUiState, weather, now) ?: return@transformLatest
+                    val nextRefresh =
+                        nextWeatherRefreshAt(homeUiState, weather, lastWeather, now) ?: return@transformLatest
                     delay(Duration.between(now, nextRefresh).toMillis().coerceAtLeast(1L))
                 }
             }
 
         /** 여러 화면이 공통으로 쓰는 현장 값. 응답이 없으면 모든 값이 null이다. */
         val siteStatus: StateFlow<SiteStatusUiModel> =
-            combine(uiState, currentLocationWeather, weatherFreshnessTime) { homeUiState, weather, now ->
-                homeUiState.toSiteStatusUiModel(weather, now)
+            combine(
+                uiState,
+                currentLocationWeather,
+                lastLocationWeather,
+                locationWeatherStatus,
+                weatherFreshnessTime,
+            ) { homeUiState, weather, lastWeather, locationStatus, now ->
+                val lastWeatherForDisplay = selectLastWeatherForDisplay(locationStatus, weather, lastWeather)
+                homeUiState.toSiteStatusUiModel(weather, now, lastWeatherForDisplay)
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -206,6 +217,17 @@ class HomeViewModel
                                 ?.takeIf { currentCoordinates -> currentCoordinates.isValid }
                     }
                     if (coordinates == null) {
+                        val cachedWeather = getLastCachedCurrentLocationWeatherUseCase()
+                        if (requestId != currentLocationWeatherRequestId ||
+                            generation != sessionManager.getSnapshot().generation
+                        ) {
+                            return@launch
+                        }
+                        lastLocationWeather.value =
+                            cachedWeather?.takeIf { weather ->
+                                weather.availability == WeatherAvailability.CACHED &&
+                                    weather.observedAt.isFreshWeatherTimestamp(clock.instant())
+                            }
                         currentLocationWeather.value = null
                         currentWeatherCoordinates = null
                         currentWeatherGeneration = null
@@ -217,6 +239,7 @@ class HomeViewModel
                     ) {
                         return@launch
                     }
+                    lastLocationWeather.value = null
                     mutableLocationWeatherStatus.value = LocationWeatherStatus.RequestingWeather
                     val result =
                         getCurrentLocationWeatherUseCase(
@@ -317,6 +340,7 @@ class HomeViewModel
         private fun nextWeatherRefreshAt(
             homeUiState: HomeUiState,
             locationWeather: CurrentLocationWeather?,
+            lastLocationWeather: CurrentLocationWeather?,
             now: java.time.Instant,
         ): java.time.Instant? {
             val teamOverview = (homeUiState as? HomeUiState.Success)?.overview
@@ -327,6 +351,9 @@ class HomeViewModel
                         locationWeather?.observedAt,
                         locationWeather?.serverReceivedAt,
                         locationWeather?.coldWaveWarning?.fetchedAt,
+                        lastLocationWeather?.observedAt,
+                        lastLocationWeather?.serverReceivedAt,
+                        lastLocationWeather?.coldWaveWarning?.fetchedAt,
                         teamOverview?.observedAt,
                         teamOverview?.coldWaveWarning?.fetchedAt,
                     ),
@@ -347,6 +374,7 @@ class HomeViewModel
             currentLocationWeatherJob = null
             currentLocationWeatherGeneration = null
             currentLocationWeather.value = null
+            lastLocationWeather.value = null
             currentWeatherCoordinates = null
             currentWeatherGeneration = null
             mutableLocationWeatherStatus.value = LocationWeatherStatus.Idle
@@ -358,6 +386,7 @@ class HomeViewModel
             currentLocationWeatherJob = null
             currentLocationWeatherGeneration = null
             currentLocationWeather.value = null
+            lastLocationWeather.value = null
             currentWeatherCoordinates = null
             currentWeatherGeneration = null
             mutableLocationWeatherStatus.value = LocationWeatherStatus.PermissionDenied
@@ -477,6 +506,15 @@ sealed interface LocationWeatherStatus {
 
     data object PermissionDenied : LocationWeatherStatus
 }
+
+internal fun selectLastWeatherForDisplay(
+    locationWeatherStatus: LocationWeatherStatus,
+    currentLocationWeather: CurrentLocationWeather?,
+    lastLocationWeather: CurrentLocationWeather?,
+): CurrentLocationWeather? =
+    lastLocationWeather.takeIf {
+        locationWeatherStatus == LocationWeatherStatus.LocationUnavailable && currentLocationWeather == null
+    }
 
 internal fun canUseWeatherMemory(
     weather: CurrentLocationWeather?,

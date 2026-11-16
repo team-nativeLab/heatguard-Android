@@ -41,6 +41,7 @@ data class SiteStatusUiModel(
     val locationWeatherObservedAt: String? = null,
     val hasLocationWeatherValue: Boolean = false,
     val isLocationWeatherCached: Boolean = false,
+    val isLastLocationWeather: Boolean = false,
     val weatherFieldsFromPreviousValue: Set<WeatherField> = emptySet(),
     val coldWaveFetchedAt: String? = null,
     val weatherAgeMinutes: Long? = null,
@@ -65,14 +66,16 @@ fun SiteStatusUiModel.toHomeRiskBadgeType(): HomeRiskBadgeType =
 fun HomeUiState.toSiteStatusUiModel(
     locationWeather: CurrentLocationWeather? = null,
     now: Instant = Instant.now(),
+    lastLocationWeather: CurrentLocationWeather? = null,
 ): SiteStatusUiModel {
     val siteStatus =
         (this as? HomeUiState.Success)
             ?.overview
             ?.toSiteStatusUiModel(now)
             ?: SiteStatusUiModel()
+    val isLastLocationWeather = locationWeather == null && lastLocationWeather != null
     val availableLocationWeather =
-        locationWeather?.takeIf { weather ->
+        (locationWeather ?: lastLocationWeather)?.takeIf { weather ->
             weather.availability == WeatherAvailability.AVAILABLE ||
                 weather.availability == WeatherAvailability.CACHED
         } ?: return siteStatus
@@ -163,13 +166,13 @@ fun HomeUiState.toSiteStatusUiModel(
                 siteStatus.isTemperatureDeltaZero
             },
         recordTemperature =
-            if (availableLocationWeather.isFieldFresh(WeatherField.TEMPERATURE, now)) {
+            if (!isLastLocationWeather && availableLocationWeather.isFieldFresh(WeatherField.TEMPERATURE, now)) {
                 availableLocationWeather.temperature
             } else {
                 siteStatus.recordTemperature
             },
         recordHumidity =
-            if (availableLocationWeather.isFieldFresh(WeatherField.HUMIDITY, now)) {
+            if (!isLastLocationWeather && availableLocationWeather.isFieldFresh(WeatherField.HUMIDITY, now)) {
                 availableLocationWeather.humidity
             } else {
                 siteStatus.recordHumidity
@@ -182,6 +185,7 @@ fun HomeUiState.toSiteStatusUiModel(
         hasLocationWeatherValue = isMainWeatherDisplayable,
         isLocationWeatherCached =
             isMainWeatherDisplayable && availableLocationWeather.availability == WeatherAvailability.CACHED,
+        isLastLocationWeather = isLastLocationWeather && isMainWeatherDisplayable,
         weatherFieldsFromPreviousValue =
             (siteStatus.weatherFieldsFromPreviousValue - replacedWeatherFields) + locationFieldsFromPrevious,
         coldWaveFetchedAt = selectedColdWaveWarning?.fetchedAt,

@@ -22,6 +22,7 @@ import com.nativelap.heartguard.domain.site.model.CurrentLocationWeather
 import com.nativelap.heartguard.domain.site.model.TeamSiteOverview
 import com.nativelap.heartguard.domain.site.model.WeatherAvailability
 import com.nativelap.heartguard.domain.site.model.WeatherField
+import com.nativelap.heartguard.domain.site.model.isFreshWeatherTimestamp
 import com.nativelap.heartguard.domain.site.model.toWeatherInstantOrNull
 import com.nativelap.heartguard.domain.site.repository.TeamSiteRepository
 import java.time.Clock
@@ -48,8 +49,29 @@ class TeamSiteRepositoryImpl
                 teamSiteRemoteDataSource.getCurrentLocationWeather(
                     CurrentLocationWeatherRequestDto(latitude = latitude, longitude = longitude),
                 )
-            if (response !is ApiResult.Success || response.value.availability !in CACHED_WEATHER_STATUSES) {
+            if (response !is ApiResult.Success) {
                 return response.map { it.toDomain() }
+            }
+            if (response.value.availability !in CACHED_WEATHER_STATUSES) {
+                val cachedWeather =
+                    cacheOperationOrNull {
+                        val owner = sessionSnapshot.sessionIdentifier ?: return@cacheOperationOrNull null
+                        weatherCache.withCacheLock cache@{
+                            if (sessionManager.getSnapshot() != sessionSnapshot) return@cache null
+                            readFreshCachedWeather(this, clock.instant(), owner)
+                        }
+                    }
+                return ApiResult.Success(
+                    resolveUnavailableWeather(
+                        incoming = response.value,
+                        cached = cachedWeather,
+                        requestedLatitude = latitude,
+                        requestedLongitude = longitude,
+                        currentSessionOwner = sessionSnapshot.sessionIdentifier,
+                        isRequestSessionCurrent = sessionManager.getSnapshot() == sessionSnapshot,
+                        now = clock.instant(),
+                    ),
+                )
             }
 
             val responseWeather =
@@ -116,6 +138,22 @@ class TeamSiteRepositoryImpl
                 }
             }
 
+        override suspend fun getLastCachedCurrentLocationWeather(): CurrentLocationWeather? =
+            cacheOperationOrNull {
+                val sessionSnapshot = sessionManager.getSnapshot()
+                val owner = sessionSnapshot.sessionIdentifier ?: return@cacheOperationOrNull null
+                weatherCache.withCacheLock cache@{
+                    if (sessionManager.getSnapshot() != sessionSnapshot) return@cache null
+                    val cached = readFreshCachedWeather(this, clock.instant(), owner)
+                    resolveLastCachedWeatherForSession(
+                        cached = cached,
+                        currentSessionOwner = owner,
+                        isSessionCurrent = sessionManager.getSnapshot() == sessionSnapshot,
+                        now = clock.instant(),
+                    )
+                }
+            }
+
         override suspend fun pruneExpiredCurrentLocationWeatherCache(now: Instant) {
             val snapshot = sessionManager.getSnapshot()
             val owner = snapshot.sessionIdentifier
@@ -174,6 +212,64 @@ internal data class WeatherCacheSelection(
     val latitude: Double,
     val longitude: Double,
 )
+
+internal fun resolveUnavailableWeather(
+    incoming: CurrentLocationWeatherResponseDto,
+    cached: CachedCurrentLocationWeather?,
+    requestedLatitude: Double,
+    requestedLongitude: Double,
+    currentSessionOwner: String?,
+    isRequestSessionCurrent: Boolean,
+    now: Instant,
+): CurrentLocationWeather {
+    val cachedSnapshot =
+        cached
+            ?.takeIf { candidate ->
+                isRequestSessionCurrent && currentSessionOwner != null &&
+                    candidate.sessionOwner == currentSessionOwner &&
+                    isWithinWeatherCacheRadius(
+                        requestedLatitude,
+                        requestedLongitude,
+                        candidate.latitude,
+                        candidate.longitude,
+                    )
+            }?.let { candidate -> candidate.toWeatherSnapshot() }
+            ?.let { snapshot -> snapshot.copy(weather = snapshot.weather.asCachedWeather()).expireWeatherParts(now) }
+            ?.takeIf { snapshot -> snapshot.hasFreshWeatherPart(now) }
+
+    return cachedSnapshot?.toDomain() ?: incoming.asUnavailableWeather(now)
+}
+
+private fun CurrentLocationWeatherResponseDto.asUnavailableWeather(now: Instant): CurrentLocationWeather =
+    copy(
+        temperature = null,
+        humidity = null,
+        apparentTemperature = null,
+        heatLevel = null,
+        observedAt = null,
+        skyStatus = null,
+        temperatureDelta = null,
+        coldWaveWarning =
+            coldWaveWarning?.takeIf { warning ->
+                warning.availability in VALID_COLD_WAVE_STATUSES && warning.fetchedAt.isFreshWeatherTimestamp(now)
+            },
+    ).toDomain()
+
+private val VALID_COLD_WAVE_STATUSES = setOf("AVAILABLE", "CACHED")
+
+internal fun resolveLastCachedWeatherForSession(
+    cached: CachedCurrentLocationWeather?,
+    currentSessionOwner: String?,
+    isSessionCurrent: Boolean,
+    now: Instant,
+): CurrentLocationWeather? =
+    cached
+        ?.takeIf { candidate ->
+            isSessionCurrent && currentSessionOwner != null && candidate.sessionOwner == currentSessionOwner
+        }?.let { candidate -> candidate.toWeatherSnapshot() }
+        ?.let { snapshot -> snapshot.copy(weather = snapshot.weather.asCachedWeather()).expireWeatherParts(now) }
+        ?.takeIf { snapshot -> snapshot.hasFreshWeatherPart(now) }
+        ?.toDomain()
 
 internal fun selectWeatherForCache(
     incoming: CurrentLocationWeatherResponseDto,

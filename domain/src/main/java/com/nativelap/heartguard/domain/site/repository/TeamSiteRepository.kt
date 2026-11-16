@@ -19,5 +19,7 @@ interface TeamSiteRepository {
         longitude: Double,
     ): CurrentLocationWeather?
 
+    suspend fun getLastCachedCurrentLocationWeather(): CurrentLocationWeather?
+
     suspend fun pruneExpiredCurrentLocationWeatherCache(now: Instant)
 }
