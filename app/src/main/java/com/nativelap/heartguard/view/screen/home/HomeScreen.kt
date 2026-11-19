@@ -109,6 +109,7 @@ fun HomeScreen(
                 onRefresh = { onRefreshWeather?.invoke() },
                 modifier = Modifier.fillMaxSize(),
                 state = pullToRefreshState,
+                contentAlignment = Alignment.TopCenter,
                 indicator = {
                     PullToRefreshDefaults.Indicator(
                         state = pullToRefreshState,
@@ -122,7 +123,7 @@ fun HomeScreen(
                 LazyColumn(
                     modifier =
                         Modifier
-                            .widthIn(max = 600.dp)
+                            .widthIn(max = HeartGuardComponentSize.PageContentMaxWidth)
                             .fillMaxSize()
                             .testTag(HOME_SCROLL_CONTENT_TEST_TAG),
                     contentPadding = PaddingValues(bottom = homeRecordActionContentGap),
