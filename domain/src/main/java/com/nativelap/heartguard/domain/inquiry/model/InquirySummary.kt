@@ -9,6 +9,7 @@ data class InquirySummary(
     val status: InquiryStatus,
     val replyCount: Int,
     val createdAt: OffsetDateTime?,
+    val content: String? = null,
 )
 
 /** 문의 처리 상태다. 서버가 새 상태를 추가해도 목록이 실패하지 않도록 [UNKNOWN]을 둔다. */

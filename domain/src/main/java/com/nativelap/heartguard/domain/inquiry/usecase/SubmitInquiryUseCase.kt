@@ -12,7 +12,8 @@ class SubmitInquiryUseCase
         private val inquiryRepository: InquiryRepository,
     ) {
         suspend operator fun invoke(
+            expectedSessionGeneration: Long,
             title: String,
             content: String,
-        ): ApiResult<InquirySubmission> = inquiryRepository.submitInquiry(title, content)
+        ): ApiResult<InquirySubmission> = inquiryRepository.submitInquiry(expectedSessionGeneration, title, content)
     }

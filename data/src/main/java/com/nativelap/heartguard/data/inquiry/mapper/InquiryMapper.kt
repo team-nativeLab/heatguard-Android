@@ -20,6 +20,7 @@ internal fun InquiryListItemDto.toDomain(): InquirySummary =
     InquirySummary(
         inquiryId = inquiryId,
         title = title?.takeIf { inquiryTitle -> inquiryTitle.isNotBlank() },
+        content = content,
         status = status.toInquiryStatus(),
         replyCount = replies.size,
         createdAt = createdAt?.toOffsetDateTimeOrNull(),

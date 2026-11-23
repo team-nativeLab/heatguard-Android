@@ -16,19 +16,24 @@ class InquiryRepositoryImpl
         private val inquiryRemoteDataSource: InquiryRemoteDataSource,
     ) : InquiryRepository {
         override suspend fun submitInquiry(
+            expectedSessionGeneration: Long,
             title: String,
             content: String,
         ): ApiResult<InquirySubmission> =
             inquiryRemoteDataSource
-                .submitInquiry(title, content)
+                .submitInquiry(expectedSessionGeneration, title, content)
                 .map { response -> response.toDomain() }
 
         /** 명세상 필수인 page 정보가 없거나, 더 있다는데 다음 커서가 없으면 목록이 잘린 것이므로 실패로 바꾼다. */
-        override suspend fun getInquiryPage(cursor: String?): ApiResult<InquiryPage> {
+        override suspend fun getInquiryPage(
+            cursor: String?,
+            expectedSessionGeneration: Long,
+        ): ApiResult<InquiryPage> {
             val pageResult =
                 inquiryRemoteDataSource.getInquiryPage(
                     cursor = cursor,
                     limit = PAGE_SIZE,
+                    expectedSessionGeneration = expectedSessionGeneration,
                 )
             val inquiryPage =
                 when (pageResult) {

@@ -2,6 +2,7 @@ package com.nativelap.heartguard.data.inquiry.remote
 
 import com.nativelap.heartguard.core.network.ApiExecutor
 import com.nativelap.heartguard.core.network.ApiResult
+import com.nativelap.heartguard.core.network.RequestSessionGeneration
 import com.nativelap.heartguard.core.network.requireSuccessData
 import com.nativelap.heartguard.data.inquiry.dto.InquiryListPageDto
 import com.nativelap.heartguard.data.inquiry.dto.InquirySubmissionResponseDto
@@ -15,6 +16,7 @@ class InquiryRemoteDataSourceImpl
         private val apiExecutor: ApiExecutor,
     ) : InquiryRemoteDataSource {
         override suspend fun submitInquiry(
+            expectedSessionGeneration: Long,
             title: String,
             content: String,
         ): ApiResult<InquirySubmissionResponseDto> =
@@ -25,6 +27,7 @@ class InquiryRemoteDataSourceImpl
                             title = title,
                             content = content,
                         ),
+                        RequestSessionGeneration(expectedSessionGeneration),
                     )
                 }.requireSuccessData()
 
@@ -32,12 +35,14 @@ class InquiryRemoteDataSourceImpl
         override suspend fun getInquiryPage(
             cursor: String?,
             limit: Int,
+            expectedSessionGeneration: Long,
         ): ApiResult<InquiryListPageDto> =
             apiExecutor
                 .execute {
                     inquiryApiService.getInquiries(
                         cursor = cursor,
                         limit = limit,
+                        owningSession = RequestSessionGeneration(expectedSessionGeneration),
                     )
                 }.requireSuccessData()
     }
