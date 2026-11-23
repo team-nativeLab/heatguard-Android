@@ -42,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +59,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.checklist.model.ChecklistRoundStatus
 import com.nativelap.heartguard.domain.site.model.CheckSchedule
@@ -106,6 +109,7 @@ internal fun ChecklistOverviewScreen(
     onRetryClick: () -> Unit,
     onPeriodClick: (LocalTime) -> Unit,
     onNewDay: () -> Unit = {},
+    onDateCheck: () -> Unit = {},
     hasChecklistLoaded: Boolean = true,
     hasChecklistLoadError: Boolean = false,
     onChecklistRetryClick: () -> Unit = {},
@@ -115,6 +119,9 @@ internal fun ChecklistOverviewScreen(
     onRoundClick: (LocalDate, String) -> Unit = { _, _ -> },
 ) {
     var overviewDate by remember { mutableStateOf(LocalDate.now(KOREA_ZONE)) }
+    val latestOnNewDay by rememberUpdatedState(onNewDay)
+    val latestOnDateCheck by rememberUpdatedState(onDateCheck)
+    val lifecycleOwner = LocalLifecycleOwner.current
     val serverOverview = roundsUiState?.rounds
     val periods =
         if (roundsUiState != null) {
@@ -128,13 +135,16 @@ internal fun ChecklistOverviewScreen(
     val totalCount = serverOverview?.totalRounds ?: periods.size
     val summaryDate = serverOverview?.date ?: overviewDate
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(lifecycleOwner) {
         while (true) {
             delay(CHECKLIST_OVERVIEW_DATE_POLL_MILLIS)
             val currentDate = LocalDate.now(KOREA_ZONE)
             if (currentDate != overviewDate) {
                 overviewDate = currentDate
-                onNewDay()
+                latestOnNewDay()
+            }
+            if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                latestOnDateCheck()
             }
         }
     }

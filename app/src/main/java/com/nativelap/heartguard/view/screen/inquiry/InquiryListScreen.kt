@@ -2,15 +2,16 @@ package com.nativelap.heartguard.view.screen.inquiry
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,7 +34,7 @@ import com.nativelap.heartguard.view.component.LoadErrorCard
 import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
-import com.nativelap.heartguard.view.component.list.LoadMoreWhenScrolledToEnd
+import com.nativelap.heartguard.view.component.list.LoadMoreWhenNearEnd
 import com.nativelap.heartguard.view.component.list.PagedListFooter
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
@@ -45,10 +46,10 @@ fun InquiryListScreen(
     onEvent: (InquiryScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scrollState = rememberScrollState()
+    val listScrollState = rememberLazyListState()
     val loadedState = uiState.listState as? InquiryListState.Loaded
-    LoadMoreWhenScrolledToEnd(
-        scrollState = scrollState,
+    LoadMoreWhenNearEnd(
+        listState = listScrollState,
         canLoadMore = loadedState?.nextCursor != null && !loadedState.isLoadingMore && !loadedState.hasLoadMoreError,
         onLoadMore = { onEvent(InquiryScreenEvent.LoadMore) },
     )
@@ -88,74 +89,102 @@ fun InquiryListScreen(
                 backContentDescription = stringResource(R.string.common_back_description),
                 onBackClick = { onEvent(InquiryScreenEvent.BackClicked) },
             )
-            Column(
+            LazyColumn(
+                state = listScrollState,
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(scrollState)
-                        .padding(horizontal = HeartGuardSpacing.AccountContentHorizontal)
-                        .padding(top = HeartGuardSpacing.Item, bottom = HeartGuardSpacing.Section),
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
+                        .fillMaxWidth(),
+                contentPadding =
+                    PaddingValues(
+                        start = HeartGuardSpacing.AccountContentHorizontal,
+                        end = HeartGuardSpacing.AccountContentHorizontal,
+                        top = HeartGuardSpacing.Item,
+                        bottom = HeartGuardSpacing.Section,
+                    ),
             ) {
-                Text(
-                    text = stringResource(R.string.inquiry_list_description),
-                    color = MaterialTheme.extraColors.secondaryText,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                item(key = "description") {
                     Text(
-                        text = stringResource(R.string.inquiry_my_list),
-                        color = MaterialTheme.extraColors.strongText,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(bottom = HeartGuardSpacing.Item),
+                        text = stringResource(R.string.inquiry_list_description),
+                        color = MaterialTheme.extraColors.secondaryText,
+                        style = MaterialTheme.typography.bodySmall,
                     )
-                    loadedState
-                        ?.takeIf { state -> state.nextCursor == null && !state.hasLoadMoreError }
-                        ?.let { state ->
-                            Text(
-                                text = stringResource(R.string.inquiry_list_count_format, state.inquiries.size),
-                                color = MaterialTheme.extraColors.secondaryText,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
+                }
+                item(key = "heading") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = HeartGuardSpacing.Item),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.inquiry_my_list),
+                            color = MaterialTheme.extraColors.strongText,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        )
+                        loadedState
+                            ?.takeIf { state -> state.nextCursor == null && !state.hasLoadMoreError }
+                            ?.let { state ->
+                                Text(
+                                    text = stringResource(R.string.inquiry_list_count_format, state.inquiries.size),
+                                    color = MaterialTheme.extraColors.secondaryText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                    }
                 }
                 when (val listState = uiState.listState) {
                     InquiryListState.Loading -> {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = HeartGuardSpacing.Section),
-                            contentAlignment = Alignment.Center,
-                        ) { CircularProgressIndicator() }
+                        item(key = "loading") {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = HeartGuardSpacing.Section),
+                                contentAlignment = Alignment.Center,
+                            ) { CircularProgressIndicator() }
+                        }
                     }
 
                     InquiryListState.Failed -> {
-                        LoadErrorCard(
-                            title = stringResource(R.string.inquiry_list_load_failure_title),
-                            description = stringResource(R.string.inquiry_list_load_failure_description),
-                            onRetryClick = { onEvent(InquiryScreenEvent.RetryListClicked) },
-                        )
+                        item(key = "error") {
+                            LoadErrorCard(
+                                title = stringResource(R.string.inquiry_list_load_failure_title),
+                                description = stringResource(R.string.inquiry_list_load_failure_description),
+                                onRetryClick = { onEvent(InquiryScreenEvent.RetryListClicked) },
+                            )
+                        }
                     }
 
                     is InquiryListState.Loaded -> {
                         if (listState.inquiries.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.inquiry_list_empty),
-                                modifier = Modifier.fillMaxWidth().padding(vertical = HeartGuardSpacing.Section),
-                                color = MaterialTheme.extraColors.secondaryText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                            )
+                            item(key = "empty") {
+                                Text(
+                                    text = stringResource(R.string.inquiry_list_empty),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = HeartGuardSpacing.Section),
+                                    color = MaterialTheme.extraColors.secondaryText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
                         } else {
-                            InquiryListCard(inquiries = listState.inquiries)
-                            PagedListFooter(
-                                isLoadingMore = listState.isLoadingMore,
-                                hasLoadMoreError = listState.hasLoadMoreError,
-                                canRetry = listState.nextCursor != null,
-                                onRetryClick = { onEvent(InquiryScreenEvent.LoadMore) },
-                            )
+                            itemsIndexed(
+                                items = listState.inquiries,
+                                key = { _, inquiry -> "inquiry-${inquiry.inquiryId}" },
+                            ) { index, inquiry ->
+                                InquiryListCard(
+                                    inquiries = listOf(inquiry),
+                                    isFirst = index == 0,
+                                    isLast = index == listState.inquiries.lastIndex,
+                                )
+                            }
+                            item(key = "footer") {
+                                Box(Modifier.padding(top = HeartGuardSpacing.Item)) {
+                                    PagedListFooter(
+                                        isLoadingMore = listState.isLoadingMore,
+                                        hasLoadMoreError = listState.hasLoadMoreError,
+                                        canRetry = listState.nextCursor != null,
+                                        onRetryClick = { onEvent(InquiryScreenEvent.LoadMore) },
+                                    )
+                                }
+                            }
                         }
                     }
                 }

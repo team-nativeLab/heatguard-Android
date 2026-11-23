@@ -1,12 +1,14 @@
 package com.nativelap.heartguard.view.screen.history
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.PendingRecordSubmission
@@ -121,9 +124,8 @@ fun RecordHistoryScreen(
                         top = HeartGuardSpacing.Item,
                         bottom = HeartGuardSpacing.Section,
                     ),
-                verticalArrangement = Arrangement.spacedBy(HeartGuardSpacing.Item),
             ) {
-                item(key = "dateStrip") {
+                spacedItem(key = "dateStrip") {
                     RecordHistoryDateStripCard(
                         selectedDate = uiState.selectedDate,
                         today = uiState.today,
@@ -136,7 +138,7 @@ fun RecordHistoryScreen(
                         },
                     )
                 }
-                item(key = "filters") {
+                spacedItem(key = "filters") {
                     RecordHistoryFilterRow(
                         selectedFilter = uiState.selectedFilter,
                         onFilterClick = { filter ->
@@ -146,7 +148,7 @@ fun RecordHistoryScreen(
                 }
 
                 if (hasPendingCleanup) {
-                    item(key = "cleanup-warning") {
+                    spacedItem(key = "cleanup-warning") {
                         LoadErrorCard(
                             title = stringResource(R.string.save_cleanup_title),
                             description = stringResource(R.string.save_cleanup_description),
@@ -155,7 +157,7 @@ fun RecordHistoryScreen(
                     }
                 }
                 if (hasPendingLoadFailed) {
-                    item(key = "pending-error") {
+                    spacedItem(key = "pending-error") {
                         LoadErrorCard(
                             title = stringResource(R.string.save_unknown_title),
                             description = stringResource(R.string.pending_submissions_load_failure),
@@ -164,14 +166,14 @@ fun RecordHistoryScreen(
                     }
                 }
                 pendingSubmissions.forEach { pending ->
-                    item(key = "pending-${pending.submissionId}") {
+                    spacedItem(key = "pending-${pending.submissionId}") {
                         PendingRecordSubmissionCard(submission = pending)
                     }
                 }
 
                 when (loadState) {
                     RecordHistoryLoadState.Loading -> {
-                        item(key = "loading") {
+                        spacedItem(key = "loading") {
                             Box(
                                 modifier =
                                     Modifier
@@ -185,7 +187,7 @@ fun RecordHistoryScreen(
                     }
 
                     RecordHistoryLoadState.Failed -> {
-                        item(key = "error") {
+                        spacedItem(key = "error") {
                             LoadErrorCard(
                                 title = stringResource(R.string.history_load_failure_title),
                                 description = stringResource(R.string.history_load_failure_description),
@@ -196,11 +198,11 @@ fun RecordHistoryScreen(
 
                     is RecordHistoryLoadState.Loaded -> {
                         if (isEmptyResult) {
-                            item(key = "empty") {
+                            spacedItem(key = "empty") {
                                 RecordHistoryEmptyState(selectedFilter = uiState.selectedFilter)
                             }
                         } else {
-                            item(key = "counts") {
+                            spacedItem(key = "counts") {
                                 RecordHistoryCountSummaryCard(
                                     recordCounts = uiState.recordCounts,
                                     hasMoreRecords = uiState.hasMore,
@@ -211,23 +213,38 @@ fun RecordHistoryScreen(
                                     dayGroup.date == uiState.selectedDate
                                 }
                             if (visibleTemporaryDraftType != null) {
-                                item(key = "header-${uiState.selectedDate}") {
-                                    RecordHistoryDayHeader(
-                                        date = uiState.selectedDate,
-                                        today = uiState.today,
-                                    )
+                                spacedItem(key = "header-${uiState.selectedDate}") {
+                                    RecordHistoryDayHeader(date = uiState.selectedDate, today = uiState.today)
                                 }
-                                item(key = "day-${uiState.selectedDate}") {
+                                val selectedEntries = selectedDayGroup?.entries.orEmpty()
+                                item(key = "draft-${uiState.selectedDate}") {
+                                    val draftSpacing = if (selectedEntries.isEmpty()) HeartGuardSpacing.Item else 0.dp
                                     RecordHistoryDayCard(
-                                        recordEntries = selectedDayGroup?.entries.orEmpty(),
+                                        recordEntries = emptyList(),
                                         temporaryDraftType = visibleTemporaryDraftType,
                                         temporaryDraftSavedAt = temporaryDraftSavedAt,
                                         onTemporaryDraftClick = {
                                             onEvent(RecordHistoryScreenEvent.TemporaryDraftClicked)
                                         },
-                                        onRecordClick = { recordId ->
-                                            onEvent(RecordHistoryScreenEvent.RecordClicked(recordId))
-                                        },
+                                        onRecordClick = {},
+                                        isLast = selectedEntries.isEmpty(),
+                                        modifier = Modifier.padding(bottom = draftSpacing),
+                                    )
+                                }
+                                itemsIndexed(
+                                    items = selectedEntries,
+                                    key = { _, entry -> "record-${uiState.selectedDate}-${entry.recordId}" },
+                                ) { index, entry ->
+                                    val isLast = index == selectedEntries.lastIndex
+                                    RecordHistoryDayCard(
+                                        recordEntries = listOf(entry),
+                                        onRecordClick = { id -> onEvent(RecordHistoryScreenEvent.RecordClicked(id)) },
+                                        isFirst = false,
+                                        isLast = isLast,
+                                        modifier =
+                                            Modifier.padding(
+                                                bottom = if (isLast) HeartGuardSpacing.Item else 0.dp,
+                                            ),
                                     )
                                 }
                             }
@@ -235,18 +252,25 @@ fun RecordHistoryScreen(
                                 .filterNot { dayGroup ->
                                     visibleTemporaryDraftType != null && dayGroup.date == uiState.selectedDate
                                 }.forEach { dayGroup ->
-                                    item(key = "header-${dayGroup.date}") {
-                                        RecordHistoryDayHeader(
-                                            date = dayGroup.date,
-                                            today = uiState.today,
-                                        )
+                                    spacedItem(key = "header-${dayGroup.date}") {
+                                        RecordHistoryDayHeader(date = dayGroup.date, today = uiState.today)
                                     }
-                                    item(key = "day-${dayGroup.date}") {
+                                    itemsIndexed(
+                                        items = dayGroup.entries,
+                                        key = { _, entry -> "record-${dayGroup.date}-${entry.recordId}" },
+                                    ) { index, entry ->
+                                        val isLast = index == dayGroup.entries.lastIndex
                                         RecordHistoryDayCard(
-                                            recordEntries = dayGroup.entries,
-                                            onRecordClick = { recordId ->
-                                                onEvent(RecordHistoryScreenEvent.RecordClicked(recordId))
+                                            recordEntries = listOf(entry),
+                                            onRecordClick = { id ->
+                                                onEvent(RecordHistoryScreenEvent.RecordClicked(id))
                                             },
+                                            isFirst = index == 0,
+                                            isLast = isLast,
+                                            modifier =
+                                                Modifier.padding(
+                                                    bottom = if (isLast) HeartGuardSpacing.Item else 0.dp,
+                                                ),
                                         )
                                     }
                                 }
@@ -261,6 +285,17 @@ fun RecordHistoryScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+private fun LazyListScope.spacedItem(
+    key: String,
+    content: @Composable LazyItemScope.() -> Unit,
+) {
+    item(key = key) {
+        Box(Modifier.padding(bottom = HeartGuardSpacing.Item)) {
+            content()
         }
     }
 }

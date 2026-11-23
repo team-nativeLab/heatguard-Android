@@ -10,7 +10,6 @@ class SelectAppTeamUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        // 선택된 팀 현장을 도메인 계층에 전달한다.
         suspend operator fun invoke(
             teamId: String,
             expectedSessionGeneration: Long,

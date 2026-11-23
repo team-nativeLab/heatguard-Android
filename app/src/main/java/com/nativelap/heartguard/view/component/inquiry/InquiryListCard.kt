@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.R
 import com.nativelap.heartguard.domain.inquiry.model.InquiryStatus
 import com.nativelap.heartguard.domain.inquiry.model.InquirySummary
@@ -37,6 +38,8 @@ import java.util.Locale
 fun InquiryListCard(
     inquiries: List<InquirySummary>,
     modifier: Modifier = Modifier,
+    isFirst: Boolean = true,
+    isLast: Boolean = true,
 ) {
     val dateFormatter =
         DateTimeFormatter.ofPattern(
@@ -46,12 +49,18 @@ fun InquiryListCard(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(HeartGuardRadius.Card),
+        shape =
+            RoundedCornerShape(
+                topStart = if (isFirst) HeartGuardRadius.Card else 0.dp,
+                topEnd = if (isFirst) HeartGuardRadius.Card else 0.dp,
+                bottomStart = if (isLast) HeartGuardRadius.Card else 0.dp,
+                bottomEnd = if (isLast) HeartGuardRadius.Card else 0.dp,
+            ),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column {
             inquiries.forEachIndexed { inquiryIndex, inquirySummary ->
-                if (inquiryIndex > 0) {
+                if (inquiryIndex > 0 || !isFirst) {
                     HorizontalDivider(
                         thickness = HeartGuardBorderWidth.Divider,
                         color = MaterialTheme.extraColors.cardBorder,

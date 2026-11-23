@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.nativelap.heartguard.domain.record.model.FieldRecordType
 import com.nativelap.heartguard.domain.record.model.RecordHistoryEntry
 import com.nativelap.heartguard.ui.theme.HeartGuardBorderWidth
@@ -27,13 +28,28 @@ fun RecordHistoryDayCard(
     temporaryDraftType: RecordType? = null,
     temporaryDraftSavedAt: OffsetDateTime? = null,
     onTemporaryDraftClick: () -> Unit = {},
+    isFirst: Boolean = true,
+    isLast: Boolean = true,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(HeartGuardRadius.Card),
+        shape =
+            RoundedCornerShape(
+                topStart = if (isFirst) HeartGuardRadius.Card else 0.dp,
+                topEnd = if (isFirst) HeartGuardRadius.Card else 0.dp,
+                bottomStart = if (isLast) HeartGuardRadius.Card else 0.dp,
+                bottomEnd = if (isLast) HeartGuardRadius.Card else 0.dp,
+            ),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column {
+            if (!isFirst) {
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = HeartGuardBorderWidth.Divider,
+                    color = MaterialTheme.extraColors.cardBorder,
+                )
+            }
             if (temporaryDraftType != null) {
                 RecordHistoryTemporaryDraftRow(
                     recordType = temporaryDraftType,

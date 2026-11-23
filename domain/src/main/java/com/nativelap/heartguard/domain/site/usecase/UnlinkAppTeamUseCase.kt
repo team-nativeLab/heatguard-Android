@@ -9,7 +9,6 @@ class UnlinkAppTeamUseCase
     constructor(
         private val appSiteLinkRepository: AppSiteLinkRepository,
     ) {
-        // 팀 현장 연결을 해제한다.
         suspend operator fun invoke(
             teamId: String,
             siteId: String,
