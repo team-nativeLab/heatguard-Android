@@ -43,6 +43,8 @@ import com.nativelap.heartguard.view.component.ResponsivePageContent
 import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.input.keyboardInputBounds
 import com.nativelap.heartguard.view.component.temperature.RecordSaveButton
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryError
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
 
@@ -52,6 +54,9 @@ fun InquiryScreen(
     onEvent: (InquiryScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isListLoaded = uiState.listState is InquiryListState.Loaded
+    val isInitialListLoading = uiState.listState is InquiryListState.Loading
+    val failedListState = uiState.listState as? InquiryListState.Failed
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.extraColors.pageBackground,
@@ -111,13 +116,73 @@ fun InquiryScreen(
                 if (uiState.isSubmitting) {
                     Text(stringResource(R.string.inquiry_submitting), color = MaterialTheme.extraColors.secondaryText)
                 }
-                if (uiState.hasError) {
-                    Text(stringResource(R.string.inquiry_submit_error), color = MaterialTheme.colorScheme.error)
+                if (!isListLoaded) {
+                    val listError = failedListState?.error
+                    Text(
+                        stringResource(
+                            when {
+                                isInitialListLoading -> R.string.inquiry_list_checking
+                                listError != null -> listError.messageResource()
+                                else -> R.string.inquiry_list_check_required
+                            },
+                        ),
+                        color =
+                            if (listError != null) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.extraColors.secondaryText
+                            },
+                    )
+                    if (failedListState != null) {
+                        androidx.compose.material3.TextButton(
+                            onClick = { onEvent(InquiryScreenEvent.VerifySubmissionClicked) },
+                        ) {
+                            Text(stringResource(R.string.inquiry_submission_check_action))
+                        }
+                    }
+                }
+                uiState.submissionError?.let { error ->
+                    Text(stringResource(error.messageResource()), color = MaterialTheme.colorScheme.error)
+                }
+                if (uiState.requiresListCheckBeforeResubmission) {
+                    Text(
+                        stringResource(R.string.inquiry_submission_check_required),
+                        color = MaterialTheme.extraColors.secondaryText,
+                    )
+                    androidx.compose.material3.TextButton(
+                        onClick = { onEvent(InquiryScreenEvent.VerifySubmissionClicked) },
+                    ) {
+                        Text(stringResource(R.string.inquiry_submission_check_action))
+                    }
+                }
+                uiState.submissionCheckResult?.let { result ->
+                    val message =
+                        if (result ==
+                            com.nativelap.heartguard.viewmodel.inquiry.InquirySubmissionCheckResult.Found
+                        ) {
+                            R.string.inquiry_submission_found
+                        } else {
+                            R.string.inquiry_submission_not_found
+                        }
+                    Text(stringResource(message), color = MaterialTheme.extraColors.secondaryText)
                 }
             }
         }
     }
 }
+
+private fun InquiryError.messageResource(): Int =
+    when (this) {
+        InquiryError.LoginRequired -> R.string.inquiry_login_required
+        InquiryError.Network -> R.string.inquiry_network_error
+        InquiryError.RequestRejected -> R.string.inquiry_request_rejected
+        InquiryError.AccessDenied -> R.string.inquiry_access_denied
+        InquiryError.Server -> R.string.inquiry_server_error
+        InquiryError.UnreadableResponse -> R.string.inquiry_response_error
+        InquiryError.ListCheckRequired -> R.string.inquiry_list_check_required
+        InquiryError.LocalStorage -> R.string.inquiry_local_storage_error
+        InquiryError.Unknown -> R.string.inquiry_unknown_error
+    }
 
 @Composable
 private fun InquiryInputField(
@@ -153,6 +218,8 @@ private fun InquiryInputField(
                 disabledContainerColor = MaterialTheme.colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent,
             )
         if (characterCount == null) {
             TextField(

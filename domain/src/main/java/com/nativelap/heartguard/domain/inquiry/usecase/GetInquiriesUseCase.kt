@@ -11,8 +11,11 @@ class GetInquiriesUseCase
     constructor(
         private val inquiryRepository: InquiryRepository,
     ) {
-        suspend operator fun invoke(cursor: String?): ApiResult<InquiryPage> =
-            when (val pageResult = inquiryRepository.getInquiryPage(cursor)) {
+        suspend operator fun invoke(
+            cursor: String?,
+            expectedSessionGeneration: Long,
+        ): ApiResult<InquiryPage> =
+            when (val pageResult = inquiryRepository.getInquiryPage(cursor, expectedSessionGeneration)) {
                 is ApiResult.Success -> {
                     ApiResult.Success(
                         pageResult.value.copy(

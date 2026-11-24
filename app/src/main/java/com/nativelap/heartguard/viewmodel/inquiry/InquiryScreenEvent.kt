@@ -18,6 +18,8 @@ sealed interface InquiryScreenEvent {
 
     data object RetryListClicked : InquiryScreenEvent
 
+    data object VerifySubmissionClicked : InquiryScreenEvent
+
     // 목록 끝에 닿았거나 이어 받기 실패 후 재시도를 눌렀을 때 다음 문의를 요청한다.
     data object LoadMore : InquiryScreenEvent
 }

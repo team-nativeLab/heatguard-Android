@@ -2,11 +2,15 @@ package com.nativelap.heartguard.viewmodel.inquiry
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nativelap.heartguard.core.network.ApiError
 import com.nativelap.heartguard.core.network.ApiResult
 import com.nativelap.heartguard.core.session.SessionManager
+import com.nativelap.heartguard.core.session.SessionRole
+import com.nativelap.heartguard.core.session.SessionSnapshot
 import com.nativelap.heartguard.core.session.clearStateWhenSessionEnds
 import com.nativelap.heartguard.domain.inquiry.model.InquirySummary
 import com.nativelap.heartguard.domain.inquiry.usecase.GetInquiriesUseCase
+import com.nativelap.heartguard.domain.inquiry.usecase.InquirySubmissionGuardUseCase
 import com.nativelap.heartguard.domain.inquiry.usecase.SubmitInquiryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -25,186 +29,550 @@ class InquiryViewModel
     constructor(
         private val submitInquiryUseCase: SubmitInquiryUseCase,
         private val getInquiriesUseCase: GetInquiriesUseCase,
+        private val submissionGuardUseCase: InquirySubmissionGuardUseCase,
         private val sessionManager: SessionManager,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(InquiryUiState())
         val uiState: StateFlow<InquiryUiState> = mutableUiState.asStateFlow()
-
         private val effectChannel = Channel<InquiryEffect>(Channel.BUFFERED)
         val effects: Flow<InquiryEffect> = effectChannel.receiveAsFlow()
-
         private var submitInquiryJob: Job? = null
         private var loadInquiriesJob: Job? = null
-
-        // 현재 목록에서 이미 받은 커서다. 서버 커서가 되돌아오면 무한 반복 대신 목록을 끝내고 실패를 알린다.
-        private val loadedCursors = mutableSetOf<String>()
+        private var loadedCursors = mutableSetOf<String>()
+        private var activeGuardOwnerId: String? = null
+        private var hasPendingSubmissionGuard = false
+        private var guardRestoreJob: Job? = null
+        private var observedSessionSnapshot: SessionSnapshot? = null
 
         init {
-            // Activity 수명 ViewModel이라 로그아웃 뒤 다른 작업자가 로그인해도 이전 입력·접수 결과가 남지 않게 한다.
             clearStateWhenSessionEnds(sessionManager) {
-                submitInquiryJob?.cancel()
-                submitInquiryJob = null
-                loadInquiriesJob?.cancel()
-                loadInquiriesJob = null
-                loadedCursors.clear()
-                mutableUiState.value = InquiryUiState()
+                val currentSession = sessionManager.getSnapshot()
+                val alreadyResetForCurrentSession =
+                    hasObservedInquirySessionIdentity(observedSessionSnapshot, currentSession)
+                if (!alreadyResetForCurrentSession) {
+                    resetSessionScopedInquiryState()
+                }
+            }
+            viewModelScope.launch {
+                sessionManager.sessionSnapshot.collect { session ->
+                    if (shouldResetInquiryStateForSessionTransition(observedSessionSnapshot, session)) {
+                        resetSessionScopedInquiryState()
+                    }
+                    observedSessionSnapshot = session
+                    val ownerId = session.sessionIdentifier
+                    if (session.isTeamMemberSessionActive() && !ownerId.isNullOrBlank()) {
+                        restoreSubmissionGuard(session.generation, ownerId)
+                    }
+                }
             }
         }
 
-        /** 화면에 들어올 때 호출한다. 이전 오류 안내를 지우고 내 문의 목록을 새로 조회한다(작성 중인 입력은 유지). */
-        fun openInquiry() {
-            mutableUiState.value =
-                mutableUiState.value.copy(
-                    hasError = false,
+        private fun resetSessionScopedInquiryState() {
+            val hasActiveJobs =
+                submitInquiryJob?.isActive == true ||
+                    loadInquiriesJob?.isActive == true ||
+                    guardRestoreJob?.isActive == true
+            val hasStateToReset =
+                hasSessionScopedInquiryState(
+                    hasActiveJobs = hasActiveJobs,
+                    hasLoadedCursors = loadedCursors.isNotEmpty(),
+                    hasGuardOwner = activeGuardOwnerId != null,
+                    hasPendingSubmission = hasPendingSubmissionGuard,
+                    uiStateIsDefault = mutableUiState.value == InquiryUiState(),
                 )
+            if (!hasStateToReset) return
+
+            submitInquiryJob?.cancel()
+            loadInquiriesJob?.cancel()
+            guardRestoreJob?.cancel()
+            submitInquiryJob = null
+            loadInquiriesJob = null
+            guardRestoreJob = null
+            loadedCursors.clear()
+            activeGuardOwnerId = null
+            hasPendingSubmissionGuard = false
+            mutableUiState.value = InquiryUiState()
+        }
+
+        fun openInquiry() {
             loadInquiries()
         }
 
-        /** 내 문의 목록 첫 페이지를 조회한다. 오류 카드의 재시도와 등록 성공 후 갱신에서도 쓴다. */
         fun loadInquiries() {
             loadInquiriesJob?.cancel()
             loadedCursors.clear()
-            mutableUiState.value =
-                mutableUiState.value.copy(
-                    listState = InquiryListState.Loading,
-                )
+            val session = sessionManager.getSnapshot()
+            if (!session.isTeamMemberSessionActive()) {
+                mutableUiState.value =
+                    mutableUiState.value.copy(
+                        listState = InquiryListState.Failed(InquiryError.LoginRequired),
+                    )
+                return
+            }
+            mutableUiState.value = mutableUiState.value.copy(listState = InquiryListState.Loading)
             requestInquiryPage(
                 cursor = null,
                 previousInquiries = null,
+                owningGeneration = session.generation,
             )
         }
 
-        /** 목록 끝에 닿았을 때 다음 문의를 이어 받는다. 이어 받기 실패 뒤의 재시도에서도 쓴다. */
         fun loadMoreInquiries() {
             val loadedState = mutableUiState.value.listState as? InquiryListState.Loaded ?: return
             val nextCursor = loadedState.nextCursor ?: return
-            if (loadedState.isLoadingMore) {
+            if (loadedState.isLoadingMore) return
+            val session = sessionManager.getSnapshot()
+            if (!session.isTeamMemberSessionActive()) {
+                mutableUiState.value =
+                    mutableUiState.value.copy(
+                        listState = loadedState.afterLoadMoreFailure(InquiryError.LoginRequired),
+                    )
+                return
+            }
+            if (!loadedState.belongsToSession(session.generation)) {
+                loadInquiries()
                 return
             }
             mutableUiState.value =
                 mutableUiState.value.copy(
-                    listState =
-                        loadedState.copy(
-                            isLoadingMore = true,
-                            hasLoadMoreError = false,
-                        ),
+                    listState = loadedState.copy(isLoadingMore = true, loadMoreError = null),
                 )
-            requestInquiryPage(
-                cursor = nextCursor,
-                previousInquiries = loadedState.inquiries,
-            )
+            requestInquiryPage(nextCursor, loadedState.inquiries, session.generation)
         }
 
         private fun requestInquiryPage(
             cursor: String?,
             previousInquiries: List<InquirySummary>?,
+            owningGeneration: Long,
         ) {
-            val owningGeneration = sessionManager.getSnapshot().generation
             loadInquiriesJob =
                 viewModelScope.launch {
-                    val pageResult = getInquiriesUseCase(cursor)
-                    // 응답을 기다리는 동안 계정이 바뀌었으면 이전 계정 문의를 섞지 않는다.
-                    if (owningGeneration != sessionManager.getSnapshot().generation) {
+                    val result =
+                        getInquiriesUseCase(
+                            cursor = cursor,
+                            expectedSessionGeneration = owningGeneration,
+                        )
+                    if (!isCurrentInquirySessionGeneration(owningGeneration, sessionManager.getSnapshot().generation)) {
                         return@launch
                     }
-                    mutableUiState.value =
-                        mutableUiState.value.copy(
-                            listState =
-                                when (pageResult) {
-                                    is ApiResult.Success -> {
-                                        cursor?.let(loadedCursors::add)
-                                        val receivedCursor = pageResult.value.nextCursor
-                                        val isRepeatedCursor = receivedCursor != null && receivedCursor in loadedCursors
-                                        InquiryListState.Loaded(
-                                            inquiries =
-                                                (previousInquiries.orEmpty() + pageResult.value.inquiries)
-                                                    .distinctBy { inquirySummary -> inquirySummary.inquiryId },
-                                            nextCursor = receivedCursor.takeUnless { isRepeatedCursor },
-                                            hasLoadMoreError = isRepeatedCursor,
-                                        )
-                                    }
+                    when (result) {
+                        is ApiResult.Success -> {
+                            cursor?.let(loadedCursors::add)
+                            val receivedCursor = result.value.nextCursor
+                            val repeatedCursor =
+                                receivedCursor != null && receivedCursor in loadedCursors
+                            val nextCursor = if (repeatedCursor) null else receivedCursor
+                            val inquiries =
+                                (previousInquiries.orEmpty() + result.value.inquiries)
+                                    .distinctBy(InquirySummary::inquiryId)
+                            if (cursor == null && hasPendingSubmissionGuard) {
+                                verifySubmissionGuard(owningGeneration, inquiries)
+                            }
+                            if (!isCurrentInquirySessionGeneration(
+                                    owningGeneration,
+                                    sessionManager.getSnapshot().generation,
+                                )
+                            ) {
+                                return@launch
+                            }
+                            val loadMoreError =
+                                if (repeatedCursor) {
+                                    InquiryError.Unknown
+                                } else {
+                                    null
+                                }
+                            val loadedState =
+                                InquiryListState.Loaded(
+                                    inquiries = inquiries,
+                                    nextCursor = nextCursor,
+                                    loadMoreError = loadMoreError,
+                                    sessionGeneration = owningGeneration,
+                                )
+                            mutableUiState.value = mutableUiState.value.copy(listState = loadedState)
+                        }
 
-                                    is ApiResult.Failure -> {
-                                        val loadedState = mutableUiState.value.listState as? InquiryListState.Loaded
+                        is ApiResult.Failure -> {
+                            if (!isCurrentInquirySessionGeneration(
+                                    owningGeneration,
+                                    sessionManager.getSnapshot().generation,
+                                )
+                            ) {
+                                return@launch
+                            }
+                            val error =
+                                result.error.toInquiryError(
+                                    sessionManager.getSnapshot().isTeamMemberSessionActive(),
+                                )
+                            val loadedState = mutableUiState.value.listState as? InquiryListState.Loaded
+                            mutableUiState.value =
+                                mutableUiState.value.copy(
+                                    listState =
                                         if (previousInquiries == null || loadedState == null) {
-                                            InquiryListState.Failed
+                                            InquiryListState.Failed(error)
                                         } else {
-                                            loadedState.copy(
-                                                isLoadingMore = false,
-                                                hasLoadMoreError = true,
-                                            )
-                                        }
-                                    }
-                                },
-                        )
+                                            loadedState.afterLoadMoreFailure(error)
+                                        },
+                                )
+                        }
+                    }
                 }
         }
 
-        /** 제목 입력을 현재 화면 상태에 반영하고 이전 요청 결과를 지운다. */
         fun updateTitle(title: String) {
             mutableUiState.value =
                 mutableUiState.value.copy(
                     title = title,
-                    hasError = false,
+                    submissionError = null,
+                    submissionCheckResult = null,
                 )
         }
 
-        /** 문의 내용 입력을 현재 화면 상태에 반영하고 이전 요청 결과를 지운다. */
         fun updateContent(content: String) {
             mutableUiState.value =
                 mutableUiState.value.copy(
                     content = content.takeCodePoints(INQUIRY_CONTENT_LIMIT),
-                    hasError = false,
+                    submissionError = null,
+                    submissionCheckResult = null,
                 )
         }
 
-        private companion object {
-            const val INQUIRY_CONTENT_LIMIT = 500
-        }
-
-        private fun String.takeCodePoints(maxCodePoints: Int): String {
-            val codePointCount = codePointCount(0, length)
-            if (codePointCount <= maxCodePoints) {
-                return this
-            }
-            return substring(0, offsetByCodePoints(0, maxCodePoints))
-        }
-
-        /** 제목과 내용을 서버에 등록하고 성공 시 목록 복귀 효과를 보낸다. */
         fun submitInquiry() {
             val currentState = mutableUiState.value
-            if (!currentState.canSubmitInquiry()) {
+            if (!currentState.canSubmitInquiry()) return
+            val session = sessionManager.getSnapshot()
+            if (!session.isTeamMemberSessionActive()) {
+                mutableUiState.value = currentState.copy(submissionError = InquiryError.LoginRequired)
                 return
             }
-
             mutableUiState.value =
                 currentState.copy(
                     isSubmitting = true,
-                    hasError = false,
+                    submissionError = null,
+                    submissionCheckResult = null,
                 )
             submitInquiryJob =
                 viewModelScope.launch {
+                    val ownerId = session.sessionIdentifier
+                    if (ownerId.isNullOrBlank()) {
+                        mutableUiState.value =
+                            mutableUiState.value.copy(
+                                isSubmitting = false,
+                                submissionError = InquiryError.LoginRequired,
+                            )
+                        return@launch
+                    }
+                    val baselineIds =
+                        (currentState.listState as InquiryListState.Loaded)
+                            .inquiries
+                            .mapTo(mutableSetOf(), InquirySummary::inquiryId)
+                    val markerResult =
+                        submissionGuardUseCase.begin(
+                            ownerId,
+                            baselineIds,
+                            currentState.title,
+                            currentState.content,
+                        )
+                    if (!isCurrentInquirySessionGeneration(
+                            session.generation,
+                            sessionManager.getSnapshot().generation,
+                        )
+                    ) {
+                        return@launch
+                    }
+                    when (markerResult) {
+                        is ApiResult.Failure -> {
+                            if (session.generation != sessionManager.getSnapshot().generation) return@launch
+                            mutableUiState.value =
+                                mutableUiState.value.copy(
+                                    isSubmitting = false,
+                                    isSubmissionGuardReady = false,
+                                    requiresListCheckBeforeResubmission = true,
+                                    submissionError = InquiryError.LocalStorage,
+                                )
+                            return@launch
+                        }
+
+                        is ApiResult.Success -> {
+                            activeGuardOwnerId = ownerId
+                            hasPendingSubmissionGuard = true
+                            mutableUiState.value =
+                                mutableUiState.value.copy(
+                                    requiresListCheckBeforeResubmission = true,
+                                )
+                        }
+                    }
+                    if (!isCurrentInquirySessionGeneration(
+                            session.generation,
+                            sessionManager.getSnapshot().generation,
+                        )
+                    ) {
+                        return@launch
+                    }
                     when (
-                        val submitResult =
+                        val result =
                             submitInquiryUseCase(
-                                title = currentState.title,
-                                content = currentState.content,
+                                session.generation,
+                                currentState.title,
+                                currentState.content,
                             )
                     ) {
                         is ApiResult.Success -> {
-                            mutableUiState.value =
-                                mutableUiState.value.copy(
-                                    title = "",
-                                    content = "",
-                                    isSubmitting = false,
-                                )
-                            effectChannel.send(InquiryEffect.NavigateToList)
+                            handleSubmissionSuccess(session.generation, ownerId, currentState)
                         }
 
                         is ApiResult.Failure -> {
-                            mutableUiState.value = mutableUiState.value.afterSubmissionFailure()
+                            handleSubmissionFailure(session.generation, ownerId, result.error)
                         }
                     }
                 }
         }
+
+        private suspend fun handleSubmissionSuccess(
+            generation: Long,
+            ownerId: String,
+            submittedState: InquiryUiState,
+        ) {
+            if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+            val clearResult = submissionGuardUseCase.clear(ownerId)
+            if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+            when (clearResult) {
+                is ApiResult.Success -> {
+                    hasPendingSubmissionGuard = false
+                    val currentState = mutableUiState.value
+                    val draftUnchanged =
+                        currentState.title == submittedState.title &&
+                            currentState.content == submittedState.content
+                    mutableUiState.value =
+                        currentState.copy(
+                            title = if (draftUnchanged) "" else currentState.title,
+                            content = if (draftUnchanged) "" else currentState.content,
+                            isSubmitting = false,
+                            isSubmissionGuardReady = true,
+                            requiresListCheckBeforeResubmission = false,
+                        )
+                }
+
+                is ApiResult.Failure -> {
+                    mutableUiState.value =
+                        mutableUiState.value.copy(
+                            isSubmitting = false,
+                            isSubmissionGuardReady = false,
+                            submissionError = InquiryError.LocalStorage,
+                        )
+                }
+            }
+            if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+            effectChannel.send(InquiryEffect.NavigateToList)
+        }
+
+        private suspend fun handleSubmissionFailure(
+            generation: Long,
+            ownerId: String,
+            error: ApiError,
+        ) {
+            if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+            val isTeamMemberSessionActive = sessionManager.getSnapshot().isTeamMemberSessionActive()
+            val inquiryError = error.toInquiryError(isTeamMemberSessionActive)
+            if (error.requiresInquiryListCheck()) {
+                mutableUiState.value =
+                    mutableUiState.value.copy(
+                        isSubmitting = false,
+                        requiresListCheckBeforeResubmission = true,
+                        submissionError = inquiryError,
+                    )
+                return
+            }
+            val clearResult = submissionGuardUseCase.clear(ownerId)
+            if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+            when (clearResult) {
+                is ApiResult.Success -> {
+                    hasPendingSubmissionGuard = false
+                    applySubmissionFailure(inquiryError, requiresCheck = false)
+                }
+
+                is ApiResult.Failure -> {
+                    mutableUiState.value =
+                        mutableUiState.value.copy(
+                            isSubmitting = false,
+                            isSubmissionGuardReady = false,
+                            requiresListCheckBeforeResubmission = true,
+                            submissionError = InquiryError.LocalStorage,
+                        )
+                }
+            }
+        }
+
+        private fun String.takeCodePoints(maxCodePoints: Int): String {
+            if (codePointCount(0, length) <= maxCodePoints) return this
+            return substring(0, offsetByCodePoints(0, maxCodePoints))
+        }
+
+        private fun applySubmissionFailure(
+            error: InquiryError,
+            requiresCheck: Boolean,
+        ) {
+            mutableUiState.value = mutableUiState.value.afterSubmissionFailure(error, requiresCheck)
+        }
+
+        fun retrySubmissionGuardAndVerification() {
+            val session = sessionManager.getSnapshot()
+            val ownerId = session.sessionIdentifier
+            if (!session.isTeamMemberSessionActive() || ownerId.isNullOrBlank()) {
+                mutableUiState.value =
+                    mutableUiState.value.copy(
+                        submissionError = InquiryError.LoginRequired,
+                    )
+                return
+            }
+            restoreSubmissionGuard(session.generation, ownerId) { loadInquiries() }
+        }
+
+        private fun restoreSubmissionGuard(
+            generation: Long,
+            ownerId: String,
+            onRestored: (() -> Unit)? = null,
+        ) {
+            if (activeGuardOwnerId == ownerId && mutableUiState.value.isSubmissionGuardReady) {
+                onRestored?.invoke()
+                return
+            }
+            guardRestoreJob?.cancel()
+            mutableUiState.value = mutableUiState.value.copy(isSubmissionGuardReady = false)
+            guardRestoreJob =
+                viewModelScope.launch {
+                    when (val restored = submissionGuardUseCase.restore(ownerId)) {
+                        is ApiResult.Success -> {
+                            if (generation != sessionManager.getSnapshot().generation) return@launch
+                            activeGuardOwnerId = ownerId
+                            hasPendingSubmissionGuard = restored.value != null
+                            mutableUiState.value =
+                                mutableUiState.value.copy(
+                                    isSubmissionGuardReady = true,
+                                    requiresListCheckBeforeResubmission = hasPendingSubmissionGuard,
+                                    submissionError =
+                                        if (hasPendingSubmissionGuard) {
+                                            InquiryError.ListCheckRequired
+                                        } else {
+                                            null
+                                        },
+                                )
+                            onRestored?.invoke()
+                            if (hasPendingSubmissionGuard &&
+                                onRestored == null &&
+                                mutableUiState.value.listState is InquiryListState.Loaded
+                            ) {
+                                loadInquiries()
+                            }
+                        }
+
+                        is ApiResult.Failure -> {
+                            if (generation != sessionManager.getSnapshot().generation) return@launch
+                            mutableUiState.value =
+                                mutableUiState.value.copy(
+                                    isSubmissionGuardReady = false,
+                                    requiresListCheckBeforeResubmission = true,
+                                    submissionError = InquiryError.LocalStorage,
+                                )
+                        }
+                    }
+                }
+        }
+
+        private suspend fun verifySubmissionGuard(
+            generation: Long,
+            inquiries: List<InquirySummary>,
+        ) {
+            if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+            val ownerId = activeGuardOwnerId ?: return
+            val draftAtCheckStart = mutableUiState.value
+            when (
+                val result =
+                    submissionGuardUseCase.confirmAndClear(
+                        ownerId = ownerId,
+                        inquiries = inquiries,
+                        currentTitle = draftAtCheckStart.title,
+                        currentContent = draftAtCheckStart.content,
+                    )
+            ) {
+                is ApiResult.Success -> {
+                    if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+                    val confirmation = result.value ?: return
+                    hasPendingSubmissionGuard = false
+                    mutableUiState.value =
+                        mutableUiState.value
+                            .afterSubmissionGuardConfirmation(
+                                submittedDraftIsUnchanged = confirmation.submittedDraftIsUnchanged,
+                                titleAtCheckStart = draftAtCheckStart.title,
+                                contentAtCheckStart = draftAtCheckStart.content,
+                            ).copy(isSubmissionGuardReady = true)
+                }
+
+                is ApiResult.Failure -> {
+                    if (!isCurrentInquirySessionGeneration(generation, sessionManager.getSnapshot().generation)) return
+                    mutableUiState.value =
+                        mutableUiState.value.copy(
+                            isSubmissionGuardReady = false,
+                            requiresListCheckBeforeResubmission = true,
+                            submissionError = InquiryError.LocalStorage,
+                        )
+                }
+            }
+        }
+
+        private fun com.nativelap.heartguard.core.session.SessionSnapshot.isTeamMemberSessionActive(): Boolean =
+            role == SessionRole.TEAM_MEMBER && !accessToken.isNullOrBlank()
+
+        private companion object {
+            const val INQUIRY_CONTENT_LIMIT = 500
+        }
     }
+
+internal fun isCurrentInquirySessionGeneration(
+    requestGeneration: Long,
+    currentGeneration: Long,
+): Boolean = requestGeneration == currentGeneration
+
+internal fun hasInquirySessionChanged(
+    previousSession: SessionSnapshot?,
+    currentSession: SessionSnapshot,
+): Boolean =
+    previousSession != null &&
+        (
+            previousSession.generation != currentSession.generation ||
+                previousSession.sessionIdentifier != currentSession.sessionIdentifier
+        )
+
+internal fun hasObservedInquirySessionIdentity(
+    observedSession: SessionSnapshot?,
+    currentSession: SessionSnapshot,
+): Boolean =
+    observedSession != null &&
+        observedSession.generation == currentSession.generation &&
+        observedSession.sessionIdentifier == currentSession.sessionIdentifier
+
+internal fun hasSessionScopedInquiryState(
+    hasActiveJobs: Boolean,
+    hasLoadedCursors: Boolean,
+    hasGuardOwner: Boolean,
+    hasPendingSubmission: Boolean,
+    uiStateIsDefault: Boolean,
+): Boolean =
+    hasActiveJobs ||
+        hasLoadedCursors ||
+        hasGuardOwner ||
+        hasPendingSubmission ||
+        !uiStateIsDefault
+
+internal fun shouldResetInquiryStateForSessionTransition(
+    previousSession: SessionSnapshot?,
+    currentSession: SessionSnapshot,
+): Boolean {
+    val currentIsActiveTeamSession =
+        currentSession.role == SessionRole.TEAM_MEMBER && !currentSession.accessToken.isNullOrBlank()
+    if (previousSession == null) return !currentIsActiveTeamSession
+
+    val previousWasActiveTeamSession =
+        previousSession.role == SessionRole.TEAM_MEMBER && !previousSession.accessToken.isNullOrBlank()
+    return hasInquirySessionChanged(previousSession, currentSession) ||
+        (previousWasActiveTeamSession && !currentIsActiveTeamSession)
+}

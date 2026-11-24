@@ -30,6 +30,8 @@ data class InquiryListItemDto(
     val inquiryId: String,
     @SerialName("title")
     val title: String? = null,
+    @SerialName("content")
+    val content: String? = null,
     @SerialName("status")
     val status: String? = null,
     @SerialName("replies")

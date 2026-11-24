@@ -2,6 +2,7 @@ package com.nativelap.heartguard.view.screen.inquiry
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +38,7 @@ import com.nativelap.heartguard.view.component.account.WithdrawTopBar
 import com.nativelap.heartguard.view.component.inquiry.InquiryListCard
 import com.nativelap.heartguard.view.component.list.LoadMoreWhenNearEnd
 import com.nativelap.heartguard.view.component.list.PagedListFooter
+import com.nativelap.heartguard.viewmodel.inquiry.InquiryError
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryListState
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryScreenEvent
 import com.nativelap.heartguard.viewmodel.inquiry.InquiryUiState
@@ -133,6 +136,48 @@ fun InquiryListScreen(
                             }
                     }
                 }
+                uiState.submissionCheckResult?.let { checkResult ->
+                    item(key = "submission-check-result") {
+                        val message =
+                            if (checkResult ==
+                                com.nativelap.heartguard.viewmodel.inquiry.InquirySubmissionCheckResult.Found
+                            ) {
+                                R.string.inquiry_submission_found
+                            } else {
+                                R.string.inquiry_submission_not_found
+                            }
+                        Text(
+                            text = stringResource(message),
+                            modifier = Modifier.padding(bottom = HeartGuardSpacing.Item),
+                            color = MaterialTheme.extraColors.secondaryText,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+                if (uiState.requiresListCheckBeforeResubmission) {
+                    item(key = "submission-check-required") {
+                        Column {
+                            Text(
+                                text =
+                                    stringResource(
+                                        uiState.submissionError?.let(InquiryError::messageResource)
+                                            ?: R.string.inquiry_submission_check_required,
+                                    ),
+                                modifier = Modifier.padding(bottom = HeartGuardSpacing.Compact),
+                                color =
+                                    if (uiState.submissionError == InquiryError.LocalStorage) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.extraColors.secondaryText
+                                    },
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            TextButton(onClick = { onEvent(InquiryScreenEvent.VerifySubmissionClicked) }) {
+                                Text(stringResource(R.string.inquiry_submission_check_action))
+                            }
+                        }
+                    }
+                }
                 when (val listState = uiState.listState) {
                     InquiryListState.Loading -> {
                         item(key = "loading") {
@@ -143,11 +188,11 @@ fun InquiryListScreen(
                         }
                     }
 
-                    InquiryListState.Failed -> {
+                    is InquiryListState.Failed -> {
                         item(key = "error") {
                             LoadErrorCard(
                                 title = stringResource(R.string.inquiry_list_load_failure_title),
-                                description = stringResource(R.string.inquiry_list_load_failure_description),
+                                description = stringResource(listState.error.messageResource()),
                                 onRetryClick = { onEvent(InquiryScreenEvent.RetryListClicked) },
                             )
                         }
@@ -176,7 +221,15 @@ fun InquiryListScreen(
                                 )
                             }
                             item(key = "footer") {
-                                Box(Modifier.padding(top = HeartGuardSpacing.Item)) {
+                                Column(Modifier.padding(top = HeartGuardSpacing.Item)) {
+                                    listState.loadMoreError?.let { error ->
+                                        Text(
+                                            text = stringResource(error.messageResource()),
+                                            modifier = Modifier.padding(bottom = HeartGuardSpacing.Compact),
+                                            color = MaterialTheme.colorScheme.error,
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    }
                                     PagedListFooter(
                                         isLoadingMore = listState.isLoadingMore,
                                         hasLoadMoreError = listState.hasLoadMoreError,
@@ -192,3 +245,16 @@ fun InquiryListScreen(
         }
     }
 }
+
+private fun InquiryError.messageResource(): Int =
+    when (this) {
+        InquiryError.LoginRequired -> R.string.inquiry_login_required
+        InquiryError.Network -> R.string.inquiry_network_error
+        InquiryError.RequestRejected -> R.string.inquiry_request_rejected
+        InquiryError.AccessDenied -> R.string.inquiry_access_denied
+        InquiryError.Server -> R.string.inquiry_server_error
+        InquiryError.UnreadableResponse -> R.string.inquiry_response_error
+        InquiryError.ListCheckRequired -> R.string.inquiry_list_check_required
+        InquiryError.LocalStorage -> R.string.inquiry_local_storage_error
+        InquiryError.Unknown -> R.string.inquiry_unknown_error
+    }

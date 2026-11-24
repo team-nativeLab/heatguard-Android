@@ -46,6 +46,8 @@ internal fun HeartGuardInquiryRoute(
 
                 InquiryScreenEvent.RetryListClicked -> inquiryViewModel.loadInquiries()
 
+                InquiryScreenEvent.VerifySubmissionClicked -> inquiryViewModel.retrySubmissionGuardAndVerification()
+
                 InquiryScreenEvent.LoadMore -> inquiryViewModel.loadMoreInquiries()
             }
         },
@@ -74,18 +76,33 @@ internal fun HeartGuardInquiryRegistrationRoute(
         uiState = uiState,
         onEvent = { event ->
             when (event) {
-                InquiryScreenEvent.BackClicked -> onBackClick()
+                InquiryScreenEvent.BackClicked -> {
+                    onBackClick()
+                }
 
-                is InquiryScreenEvent.TitleChanged -> inquiryViewModel.updateTitle(event.title)
+                is InquiryScreenEvent.TitleChanged -> {
+                    inquiryViewModel.updateTitle(event.title)
+                }
 
-                is InquiryScreenEvent.ContentChanged -> inquiryViewModel.updateContent(event.content)
+                is InquiryScreenEvent.ContentChanged -> {
+                    inquiryViewModel.updateContent(event.content)
+                }
 
-                InquiryScreenEvent.SubmitClicked -> inquiryViewModel.submitInquiry()
+                InquiryScreenEvent.SubmitClicked -> {
+                    inquiryViewModel.submitInquiry()
+                }
+
+                InquiryScreenEvent.VerifySubmissionClicked -> {
+                    inquiryViewModel.retrySubmissionGuardAndVerification()
+                    onBackClick()
+                }
 
                 InquiryScreenEvent.RegisterClicked,
                 InquiryScreenEvent.RetryListClicked,
                 InquiryScreenEvent.LoadMore,
-                -> Unit
+                -> {
+                    Unit
+                }
             }
         },
     )
